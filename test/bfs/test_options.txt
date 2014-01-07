@@ -1,0 +1,86 @@
+
+test_bfs <graph type> <graph type args> [--device=<device index>] [--v] [--instrumented] [--i=<num-iterations>] [--undirected][--src=< <source idx> | randomize >] [--queue-sizing=<sizing factor>
+[--mark-pred] [--strategy=<strategy>[,<strategy>]*]
+
+Unless otherwise specified, all graph types use 4-byte vertex-identifiers.
+
+Graph types and args:
+  grid2d <width>
+    2D square grid lattice having width <width>.  Interior vertices 
+    have 4 neighbors and 1 self-loop.  Default source vertex is the grid-center.
+  grid3d <side-length>
+    3D square grid lattice having width <width>.  Interior vertices 
+    have 6 neighbors and 1 self-loop.  Default source vertex is the grid-center.
+  dimacs [<file>]
+    Reads a DIMACS-formatted graph of directed edges from stdin (or 
+    from the optionally-specified file).  Default source vertex is random.
+  metis [<file>]
+    Reads a METIS-formatted graph of directed edges from stdin (or 
+    from the optionally-specified file).  Default source vertex is random.
+  market [<file>]
+    Reads a Matrix-Market coordinate-formatted graph of directed edges from stdin (or 
+    from the optionally-specified file).  Default source vertex is random.
+  random <n> <m>
+    A random graph generator that adds <m> edges to <n> nodes by randomly 
+    choosing a pair of nodes for each edge.  There are possibilities of 
+    loops and multiple edges between pairs of nodes. Default source vertex 
+    is random.
+  rr <n> <d>
+    A random graph generator that adds <d> randomly-chosen edges to each
+    of <n> nodes.  There are possibilities of loops and multiple edges
+    between pairs of nodes. Default source vertex is random.
+  g500 <n>
+    An R-MAT graph generator that adds 16n undirected edges to <n> nodes in accordance with
+    the Graph500 problem specification (8-byte vertex identifiers, A=.57,B=.19,C=.19,D=.05     skew parameters).
+  rmat <n> <m>
+    An R-MAT graph generator that adds <m> edges to <n> nodes in accordance with
+    the GTGraph generator defaults (A=.45,B=.15,C=.15,D=.25 skew parameters
+
+--strategy  Specifies the strategies to evaluate when num-gpus specified <= 1.
+  Valid strategies are: {0, 1, 2, 3}. Default: 3
+      "0": expand-contract
+        - Two O(n) global ping-pong buffers (out-of-core vertex frontier)
+        - single kernel invocation (in-kernel software global barriers between BFS iterations)
+        - Predecessor-marking not implemented
+      "1": contract-expand
+        - Two O(m) global ping-pong buffers (out-of-core edge frontier)
+        - Single kernel invocation (in-kernel software global barriers between BFS iterations)
+      "2": two-phase
+        - Uneven O(n) and O(m) global ping-pong buffers (out-of-core vertex and edge frontiers)
+        - Two kernel invocations per BFS iteration (pipelined)
+      "3": hybrid of contract-expand and two-phase strategies
+        - Uses high-throughput two-phase for BFS iterations with lots of concurrency,
+          switching to contract-expand when frontier falls below a certain threshold
+        - Two O(m) global ping-pong buffers 
+
+--v  Verbose launch and statistical output is displayed to the console.
+
+--v2  Same as --v, but also displays the input graph to the console.
+
+--instrumented  Kernels keep track of queue-search_depth, redundant work (i.e., the 
+    overhead of duplicates in the frontier), and average barrier duty (a 
+    relative indicator of load imbalance.)
+
+--i  Performs <num-iterations> test-iterations of BFS traversals.
+    Default = 1
+
+--src  Begins BFS from the vertex <source idx>. Default is specific to 
+    graph-type.  If alternatively specified as "randomize", each 
+    test-iteration will begin with a newly-chosen random source vertex.
+
+--queue-sizing  Allocates a frontier queue sized at (graph-edges * <queue-sizing>).  Default
+    is 1.15.
+
+--mark-pred  Parent vertices are marked instead of source distances, i.e., it
+    creates an ancestor tree rooted at the source vertex.
+
+--stream-from-host  Keeps the graph data (column indices, row offsets) on the host,
+    using zero-copy access to traverse it.
+
+--num-gpus  Number of GPUs to use
+
+--undirected  Edges are undirected.  Reverse edges are added to DIMACS and
+    random graphs, effectively doubling the CSR graph representation size.
+    Grid2d/grid3d graphs are undirected regardless of this flag, and rr 
+    graphs are directed regardless of this flag.
+

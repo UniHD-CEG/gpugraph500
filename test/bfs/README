@@ -1,0 +1,9 @@
+To compile:
+Make sure you have selected the right modules or set your PATH
+and LD_LIBRARY_PATH correctly.
+
+You can use the compile script or call "make force64=1" directly.
+
+The "run_test_1gpu_cuda5_5.sh" script is just a stripped down
+version of the full scripts in the scripts directory that can
+be used to test basic functionality.
