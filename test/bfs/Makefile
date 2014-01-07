@@ -48,13 +48,7 @@ GEN_SM20 = -gencode=arch=compute_20,code=\"sm_20,compute_20\"
 GEN_SM13 = -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
 GEN_SM10 = -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
 #SM_TARGETS = $(GEN_SM30) $(GEN_SM20) $(GEN_SM13) $(GEN_SM10)
-#SM_TARGETS = $(GEN_SM20)
-
-#Keeneland Fermi target
-SM_TARGETS = $(GEN_SM20)
-
-#Kepler target
-#SM_TARGETS = $(GEN_SM35) 
+SM_TARGETS = $(GEN_SM20) 
 
 #-------------------------------------------------------------------------------
 # Tune arch
@@ -110,7 +104,7 @@ DEFINES =
 # Compiler Flags
 #-------------------------------------------------------------------------------
 
-ifneq ($(force64), 1)
+ifeq ($(force64), 1)
 	# Compile with 32-bit device pointers by default
 	ARCH_SUFFIX = i386
 	ARCH = -m32
@@ -131,6 +125,8 @@ ifneq ($(abi), 1)
 	NVCCFLAGS += -Xptxas -abi=no
 endif
 endif
+
+NVCCFLAGS+= -I/sw/kfs/openmpi/1.6.1/centos6.2_intel2011_sp1.11.339-torque-4.2.5/include/openmpi/opal/mca/hwloc/hwloc132/hwloc/include -I/sw/kfs/openmpi/1.6.1/centos6.2_intel2011_sp1.11.339-torque-4.2.5/include -I/sw/kfs/openmpi/1.6.1/centos6.2_intel2011_sp1.11.339-torque-4.2.5/include/openmp -L/opt/torque/4.2.5/lib -L/sw/kfs/openmpi/1.6.1/centos6.2_intel2011_sp1.11.339-torque-4.2.5/lib -lmpi -losmcomp -lrdmacm -libverbs -lrt -lnsl -lutil -lpsm_infinipath -ltorque -ldl -lm -lnuma -lrt -lnsl -lutil
 
 ifeq ($(verbose), 1)
     NVCCFLAGS += -v
@@ -178,22 +174,22 @@ bin/test_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) : test_bfs.cu $(DEPS)
 # (make microbench) Microbenchmark gather & lookup test driver
 #-------------------------------------------------------------------------------
 
-#microbench: bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX)
+microbench: bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX)
 
-#bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) : microbench_bfs.cu $(DEPS)
-#	mkdir -p bin
-#	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) microbench_bfs.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
+bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) : microbench_bfs.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) microbench_bfs.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
 
 
 #-------------------------------------------------------------------------------
 # (make cull) Microbenchmark cull driver
 #-------------------------------------------------------------------------------
 
-#cull: bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX)
+cull: bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX)
 
-#bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX) : microbench_cull.cu $(DEPS)
-#	mkdir -p bin
-#	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX) microbench_cull.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
+bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX) : microbench_cull.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX) microbench_cull.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
 
 
 

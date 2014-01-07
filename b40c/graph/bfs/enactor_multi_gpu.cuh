@@ -74,7 +74,7 @@ namespace bfs {
  * All GPUs must be of the same SM architectural version (e.g., SM2.0).
  */
 template <bool INSTRUMENT>							// Whether or not to collect per-CTA clock-count statistics
-class EnactorMultiGpu : public EnactorBase
+class EnactorMultiNode : public EnactorBase
 {
 public :
 
@@ -359,7 +359,7 @@ public:
 	/**
 	 * Constructor
 	 */
-	EnactorMultiGpu(bool DEBUG = false) :
+	EnactorMultiNode(bool DEBUG = false) :
 		EnactorBase(MULTI_GPU_FRONTIERS, DEBUG),
 		DEBUG2(false)
 	{}
@@ -385,7 +385,7 @@ public:
 	/**
 	 * Destructor
 	 */
-	virtual ~EnactorMultiGpu()
+	virtual ~EnactorMultiNode()
 	{
 		ResetControlBlocks();
 	}
@@ -437,7 +437,7 @@ public:
 
 					// Set device
 					if (retval = util::B40CPerror(cudaSetDevice(csr_problem.graph_slices[i]->gpu),
-						"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					control_blocks.push_back(
 						new GpuControlBlock(csr_problem.graph_slices[i]->gpu,
@@ -450,7 +450,7 @@ public:
 
 				// Set device
 				if (retval = util::B40CPerror(cudaSetDevice(csr_problem.graph_slices[i]->gpu),
-					"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+					"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 				if (retval = control_blocks[i]->template Setup<ContractPolicy, ExpandPolicy, PartitionPolicy, CopyPolicy>(
 					max_grid_size, csr_problem.num_gpus)) break;
@@ -464,7 +464,7 @@ public:
 						csr_problem.graph_slices[i]->d_visited_mask,
 						bitmask_desc,
 						bytes),
-					"EnactorMultiGpu cudaBindTexture bitmask_tex_ref failed", __FILE__, __LINE__)) break;
+					"EnactorMultiNode cudaBindTexture bitmask_tex_ref failed", __FILE__, __LINE__)) break;
 
 				// Bind row-offsets texture
 				cudaChannelFormatDesc row_offsets_desc = cudaCreateChannelDesc<SizeT>();
@@ -474,7 +474,7 @@ public:
 						csr_problem.graph_slices[i]->d_row_offsets,
 						row_offsets_desc,
 						(csr_problem.graph_slices[i]->nodes + 1) * sizeof(SizeT)),
-					"EnactorMultiGpu cudaBindTexture row_offset_tex_ref failed", __FILE__, __LINE__)) break;
+					"EnactorMultiNode cudaBindTexture row_offset_tex_ref failed", __FILE__, __LINE__)) break;
 
 			}
 			if (retval) break;
@@ -500,6 +500,7 @@ public:
 	cudaError_t EnactSearch(
 		CsrProblem 							&csr_problem,
 		typename CsrProblem::VertexId 		src,
+		int 								world_rank,
 		int 								max_grid_size = 0)
 	{
 		typedef typename CsrProblem::VertexId			VertexId;
@@ -512,13 +513,15 @@ public:
 
 		cudaError_t retval = cudaSuccess;
 		bool done;
-
+		DEBUG=true;
+		DEBUG2=true;
 		do {
-
+		printf("Hello\n");
 			// Number of partitioning bins per GPU (in case we over-partition)
-			int bins_per_gpu = (csr_problem.num_gpus == 1) ?
-				PartitionPolicy::Upsweep::BINS :
-				1;
+//			int bins_per_gpu = (csr_problem.num_gpus == 1) ?
+//				PartitionPolicy::Upsweep::BINS :
+//				1;
+			int bins_per_gpu =1;
 			printf("Partition bins per GPU: %d\n", bins_per_gpu);
 
 			// Search setup / lazy initialization
@@ -529,7 +532,7 @@ public:
 			VertexId src_owner = csr_problem.GpuIndex(src);
 			src |= (src_owner << CsrProblem::ProblemType::GPU_MASK_SHIFT);
 
-
+			printf("1\n");
 			//---------------------------------------------------------------------
 			// Contract work queues (first iteration)
 			//---------------------------------------------------------------------
@@ -541,13 +544,12 @@ public:
 
 				// Set device
 				if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-					"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+					"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
-				bool owns_source = (control->gpu == src_owner);
+				bool owns_source = (world_rank == src_owner);
 				if (owns_source) {
-					printf("GPU %d owns source 0x%llX\n", control->gpu, (long long) src);
+					printf("Node %d owns source 0x%llX\n", world_rank, (long long) src);
 				}
-
 				// Contraction
 				two_phase::contract_atomic::Kernel<ContractPolicy>
 						<<<control->contract_grid_size, ContractPolicy::THREADS, 0, slice->stream>>>(
@@ -556,7 +558,7 @@ public:
 					(owns_source) ? 1 : 0,
 					control->queue_index,
 					control->steal_index,
-					csr_problem.num_gpus,
+					2,
 					NULL,										// d_done (not used)
 					slice->frontier_queues.d_keys[2],			// in filtered edge frontier
 					slice->frontier_queues.d_keys[0],			// out vertex frontier
@@ -569,7 +571,7 @@ public:
 					control->expand_kernel_stats);
 
 				if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-					"EnactorMultiGpu expand_atomic::Kernel failed", __FILE__, __LINE__))) break;
+					"EnactorMultiNode expand_atomic::Kernel failed", __FILE__, __LINE__))) break;
 
 				control->queue_index++;
 				control->steal_index++;
@@ -598,13 +600,13 @@ public:
 
 					// Set device
 					if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-						"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					two_phase::expand_atomic::Kernel<ExpandPolicy>
 							<<<control->expand_grid_size, ExpandPolicy::THREADS, 0, slice->stream>>>(
 						control->queue_index,
 						control->steal_index,
-						csr_problem.num_gpus,
+						2,//csr_problem.num_gpus,
 						NULL,										// d_done (not used)
 						slice->frontier_queues.d_keys[0],			// in local vertex frontier
 						slice->frontier_queues.d_keys[1],			// out local edge frontier
@@ -617,7 +619,7 @@ public:
 						control->expand_kernel_stats);
 
 					if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-						"EnactorMultiGpu expand_atomic::Kernel failed", __FILE__, __LINE__))) break;
+						"EnactorMultiNode expand_atomic::Kernel failed", __FILE__, __LINE__))) break;
 
 					control->queue_index++;
 					control->steal_index++;
@@ -626,12 +628,11 @@ public:
 					if (DEBUG) {
 						// Get expansion queue length
 						if (retval = control->template UpdateQueueLength<SizeT>()) break;
-						printf("Gpu %d expansion queue length: %lld\n", i, (long long) control->queue_length);
+						printf("Node %d expansion queue length: %lld\n", world_rank, (long long) control->queue_length);
 						fflush(stdout);
 					}
 				}
 				if (retval) break;
-
 
 				//---------------------------------------------------------------------
 				// Partition/contract work queues
@@ -644,13 +645,13 @@ public:
 
 					// Set device
 					if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-						"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					// Upsweep
 					partition_contract::upsweep::Kernel<PartitionUpsweep>
 							<<<control->partition_grid_size, PartitionUpsweep::THREADS, 0, slice->stream>>>(
 						control->queue_index,
-						csr_problem.num_gpus,
+						2,//csr_problem.num_gpus,
 						slice->frontier_queues.d_keys[1],			// in local edge frontier
 						slice->d_filter_mask,
 						(SizeT *) control->spine.d_spine,
@@ -660,11 +661,11 @@ public:
 						control->partition_kernel_stats);
 
 					if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-						"EnactorMultiGpu partition_contract::upsweep::Kernel failed", __FILE__, __LINE__))) break;
+						"EnactorMultiNode partition_contract::upsweep::Kernel failed", __FILE__, __LINE__))) break;
 
 					if (DEBUG2) {
-						printf("Presorted spine on gpu %d (%lld elements)\n",
-							control->gpu,
+						printf("Presorted spine on node %d (%lld elements)\n",
+							world_rank,
 							(long long) control->spine_elements);
 						DisplayDeviceResults((SizeT *) control->spine.d_spine, control->spine_elements);
 					}
@@ -676,11 +677,11 @@ public:
 						control->spine_elements);
 
 					if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-						"EnactorMultiGpu SpineKernel failed", __FILE__, __LINE__))) break;
+						"EnactorMultiNode SpineKernel failed", __FILE__, __LINE__))) break;
 
 					if (DEBUG2) {
-						printf("Postsorted spine on gpu %d (%lld elements)\n",
-							control->gpu,
+						printf("Postsorted spine on node %d (%lld elements)\n",
+							world_rank,
 							(long long) control->spine_elements);
 
 						DisplayDeviceResults((SizeT *) control->spine.d_spine, control->spine_elements);
@@ -690,7 +691,7 @@ public:
 					partition_contract::downsweep::Kernel<PartitionDownsweep>
 							<<<control->partition_grid_size, PartitionDownsweep::THREADS, 0, slice->stream>>>(
 						control->queue_index,
-						csr_problem.num_gpus,
+						2,//csr_problem.num_gpus,
 						slice->frontier_queues.d_keys[1],				// in local edge frontier
 						slice->frontier_queues.d_keys[2],				// out local sorted, filtered edge frontier
 						slice->frontier_queues.d_values[1],				// in local predecessors
@@ -702,7 +703,7 @@ public:
 						control->partition_kernel_stats);
 
 					if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-						"EnactorMultiGpu DownsweepKernel failed", __FILE__, __LINE__))) break;
+						"EnactorMultiNode DownsweepKernel failed", __FILE__, __LINE__))) break;
 
 					control->queue_index++;
 				}
@@ -717,9 +718,8 @@ public:
 
 					GpuControlBlock *control 	= control_blocks[i];
 					GraphSlice *slice 			= csr_problem.graph_slices[i];
-
 					if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-						"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					// The memcopy for spine sync synchronizes this GPU
 					control->spine.Sync();
@@ -728,22 +728,22 @@ public:
 					if (spine[control->spine_elements - 1]) done = false;
 
 					if (DEBUG) {
-						printf("Iteration %lld sort-contracted queue on gpu %d (%lld elements)\n",
+						printf("Iteration %lld sort-contracted queue on node %d (%lld elements)\n",
 							(long long) control->iteration,
-							control->gpu,
+							world_rank,
 							(long long) spine[control->spine_elements - 1]);
 
 						if (DEBUG2) {
 							DisplayDeviceResults(slice->frontier_queues.d_keys[0], spine[control->spine_elements - 1]);
-							printf("Source distance vector on gpu %d\n", control->gpu);
+							printf("Source distance vector on node %d\n", world_rank);
 							DisplayDeviceResults(slice->d_labels, slice->nodes);
 						}
 					}
 				}
 				if (retval) break;
-
 				// Check if all done in all GPUs
-				if (done) break;
+// todo fix this later across multinode
+//				if (done) break;
 
 				if (DEBUG2) printf("---------------------------------------------------------\n");
 
@@ -751,7 +751,31 @@ public:
 				//---------------------------------------------------------------------
 				// Stream-contract work queues
 				//---------------------------------------------------------------------
+				printf("Node %d synching...\n",world_rank);
+				MPI_Barrier(MPI_COMM_WORLD);
+				int doneNeighbor;
+				int doneInt=0;
+				if(done){
+					doneInt = 1;
+					}
+				for(int i =0; i<2; i++){
+					//be sender
+					if(world_rank==i){
+						int destrank = (world_rank+1)%2;
+						MPI_Send(&doneInt,1,MPI_INT, destrank,0, MPI_COMM_WORLD);
+					}	
+					else{
+						int srcrank = (world_rank+1)%2;
+						MPI_Recv(&doneNeighbor,1,MPI_INT,srcrank,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+					}
 
+				}
+				
+				printf("DONEFLAG rank : %d, done: %d, doneneighbor: %d",world_rank,doneInt, doneNeighbor);
+				if(done&&doneNeighbor==1){
+					printf("BFS DONE\n");
+					break;
+				}
 				for (int i = 0; i < csr_problem.num_gpus; i++) {
 
 					GpuControlBlock *control 	= control_blocks[i];
@@ -759,37 +783,37 @@ public:
 
 					// Set device
 					if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-						"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					// Stream in and filter inputs from all gpus (including ourselves)
 					for (int j = 0; j < csr_problem.num_gpus; j++) {
 
 						// Starting with ourselves (must copy our own bin first), stream
 						// bins into our queue
-						int peer 							= (i + j) % csr_problem.num_gpus;
+						int peer =						j;//	= (i + j) % csr_problem.num_gpus;
 						GpuControlBlock *peer_control 		= control_blocks[peer];
 						GraphSlice *peer_slice 				= csr_problem.graph_slices[peer];
 						SizeT *peer_spine 			= (SizeT*) peer_control->spine.h_spine;
 
-						SizeT queue_offset 	= peer_spine[bins_per_gpu * i * peer_control->partition_grid_size];
-						SizeT queue_oob 	= peer_spine[bins_per_gpu * (i + 1) * peer_control->partition_grid_size];
+						SizeT queue_offset 	= peer_spine[bins_per_gpu * world_rank * peer_control->partition_grid_size];
+						SizeT queue_oob 	= peer_spine[bins_per_gpu * (world_rank + 1) * peer_control->partition_grid_size];
 						SizeT num_elements	= queue_oob - queue_offset;
 
 						if (DEBUG2) {
-							printf("Gpu %d getting %d from gpu %d selector %d, queue_offset: %d @ %d, queue_oob: %d @ %d\n",
-								i,
+							printf("Node %d getting %d from node %d selector %d, queue_offset: %d @ %d, queue_oob: %d @ %d\n",
+								world_rank,
 								num_elements,
-								peer,
+								world_rank,
 								0,
 								queue_offset,
-								bins_per_gpu * i * peer_control->partition_grid_size,
+								bins_per_gpu * world_rank * peer_control->partition_grid_size,
 								queue_oob,
-								bins_per_gpu * (i + 1) * peer_control->partition_grid_size);
+								bins_per_gpu * (world_rank + 1) * peer_control->partition_grid_size);
 							fflush(stdout);
 						}
 
 						// Copy / copy+contract from peer
-						if (slice->gpu == peer_slice->gpu) {
+						if (0==0) {
 
 							// Check for vertex frontier overflow
 							if (num_elements > slice->frontier_elements[0]) {
@@ -799,7 +823,6 @@ public:
 							util::CtaWorkDistribution<SizeT> work_decomposition;
 							work_decomposition.template Init<CopyPolicy::LOG_SCHEDULE_GRANULARITY>(
 								num_elements, control->copy_grid_size);
-
 							// Simply copy from our own GPU
 							copy::Kernel<CopyPolicy>
 								<<<control->copy_grid_size, CopyPolicy::THREADS, 0, slice->stream>>>(
@@ -807,7 +830,7 @@ public:
 									num_elements,
 									control->queue_index,
 									control->steal_index,
-									csr_problem.num_gpus,
+									2,//csr_problem.num_gpus,
 									slice->frontier_queues.d_keys[2] + queue_offset,			// in local sorted, filtered edge frontier
 									slice->frontier_queues.d_keys[0],							// out local vertex frontier
 									slice->frontier_queues.d_values[2] + queue_offset,			// in local sorted, filtered predecessors
@@ -816,23 +839,107 @@ public:
 									control->copy_kernel_stats);
 
 							if (DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
-								"EnactorMultiGpu copy::Kernel failed ", __FILE__, __LINE__))) break;
+								"EnactorMultiNode copy::Kernel failed ", __FILE__, __LINE__))) break;
 
-						} else {
+						control->steal_index++;
+						}
+						int ind; 
+						queue_offset 	= peer_spine[bins_per_gpu * ((world_rank+1)%2) * peer_control->partition_grid_size];
+						queue_oob 	= peer_spine[bins_per_gpu * (((world_rank+1)%2) + 1) * peer_control->partition_grid_size];
+						num_elements	= queue_oob - queue_offset;
+						if (DEBUG2) {
+							printf("Node %d getting %d from node %d selector %d, queue_offset: %d @ %d, queue_oob: %d @ %d\n",
+								(world_rank+1)%2,
+								num_elements,
+								world_rank,
+								0,
+								queue_offset,
+								bins_per_gpu * world_rank * peer_control->partition_grid_size,
+								queue_oob,
+								bins_per_gpu * (world_rank + 1) * peer_control->partition_grid_size);
+							fflush(stdout);
+						}
 
-							// Contraction from peer GPU
-							two_phase::contract_atomic::Kernel<ContractPolicy>
-								<<<control->contract_grid_size, ContractPolicy::THREADS, 0, slice->stream>>>(
+
+						 for (ind=0;ind<2;ind++){
+							//be sender
+							if(world_rank==ind){
+								int destrank = (world_rank+1)%2;
+								//send the size of buf first so remote node can allocate memory accordingly
+								MPI_Send(&num_elements,1, MPI_INT,destrank,0,MPI_COMM_WORLD);
+								VertexId *hostd_keys= (VertexId*)malloc(num_elements*sizeof(VertexId));
+								VertexId *hostd_values= (VertexId*)malloc(num_elements*sizeof(VertexId));
+								cudaMemcpy(hostd_keys,slice->frontier_queues.d_keys[2]+queue_offset,sizeof(VertexId)*num_elements,cudaMemcpyDeviceToHost);
+								cudaMemcpy(hostd_values,slice->frontier_queues.d_values[2]+queue_offset,sizeof(VertexId)*num_elements,cudaMemcpyDeviceToHost);
+								printf("NODE%d DEBUGGGGGING START\n",world_rank);
+								for (int index=0; index<num_elements; index++){
+									PrintValue(hostd_keys[index]);
+									printf(",");
+								}
+								printf("\n");
+
+								for (int index=0; index<num_elements; index++){
+									PrintValue(hostd_values[index]);
+									printf(",");
+								}
+								printf("\n");
+
+								printf("NODE%d DEBUG DISPLAY DEVICE RESULTS\n",world_rank);
+								DisplayDeviceResults(slice->frontier_queues.d_keys[2]+queue_offset, num_elements);
+								DisplayDeviceResults(slice->frontier_queues.d_values[2]+queue_offset, num_elements);
+								
+								printf("NODE%d DEBUGGGGGING END\n",world_rank);
+								MPI_Send(hostd_keys, num_elements ,MPI_INT,destrank,0,MPI_COMM_WORLD);
+								MPI_Send(hostd_values, num_elements,MPI_INT,destrank,0,MPI_COMM_WORLD);
+							}
+							//be receiver
+							else{
+								int srcrank = (world_rank+1)%2;
+								int num_elem;
+							    	MPI_Recv(&num_elem,1,MPI_INT,srcrank,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+								printf("NODE%d received num_elem\n",world_rank);
+								VertexId *hostd_keys= (VertexId*)malloc(num_elem*sizeof(VertexId));
+                                                                VertexId *hostd_values= (VertexId*)malloc(num_elem*sizeof(VertexId));							
+								MPI_Recv(hostd_keys, num_elem, MPI_INT, srcrank, 0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+								printf("NODE%d received frontiner queue\n",world_rank);
+								MPI_Recv(hostd_values, num_elem, MPI_INT, srcrank, 0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+								printf("NODE%d DDR RECEIVED: num_elem: %d\n",world_rank,num_elem);
+								for (int index=0;index<num_elem; index++){
+									PrintValue(hostd_keys[index]);
+									printf(",");
+								}	
+								printf("\n");	
+								for(int index=0; index<num_elem; index++){
+									PrintValue(hostd_values[index]);
+									printf(",");
+								}
+								printf("\nNODE%d DDR RECEIVED DONE\n",world_rank);
+										
+								VertexId *deviced_keys;
+								VertexId *deviced_values;
+								if (retval = util::B40CPerror(cudaMalloc((void**) &deviced_keys,num_elem*sizeof(VertexId)),
+                                                "device cudaMalloc edge frontier failed", __FILE__, __LINE__)) break;
+								if (retval = util::B40CPerror(cudaMalloc((void**) &deviced_values,num_elem*sizeof(VertexId)),
+                                                "device cudaMalloc predecessor failed", __FILE__, __LINE__)) break;
+
+								cudaMemcpy(deviced_keys, hostd_keys,sizeof(VertexId)*num_elem, cudaMemcpyHostToDevice);	
+								cudaMemcpy(deviced_values, hostd_values,sizeof(VertexId)*num_elem, cudaMemcpyHostToDevice);
+								printf("NODE%d DDRAFTER RECEIVING\n",world_rank);
+								DisplayDeviceResults(deviced_keys, num_elem);
+								DisplayDeviceResults(deviced_values,num_elem);	
+								// Contraction from peer GPU
+								two_phase::contract_atomic::Kernel<ContractPolicy>
+									<<<control->contract_grid_size, ContractPolicy::THREADS, 0, slice->stream>>>(
 									-1,															// source (not used)
 									control->iteration,
-									num_elements,
+									num_elem,
 									control->queue_index,
 									control->steal_index,
-									csr_problem.num_gpus,
+									2,//csr_problem.num_gpus,
 									NULL,														// d_done (not used)
-									peer_slice->frontier_queues.d_keys[2] + queue_offset,		// in remote sorted, filtered edge frontier
+									deviced_keys,		// in remote sorted, filtered edge frontier
 									slice->frontier_queues.d_keys[0],							// out local vertex frontier
-									peer_slice->frontier_queues.d_values[2] + queue_offset,		// in remote sorted, filtered predecessors
+									deviced_values,		// in remote sorted, filtered predecessors
 									slice->d_labels,
 									slice->d_visited_mask,
 									control->work_progress,
@@ -840,10 +947,16 @@ public:
 									slice->frontier_elements[0],								// max vertex frontier vertices
 									control->expand_kernel_stats);
 							if (DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
-								"EnactorMultiGpu contract_atomic::Kernel failed ", __FILE__, __LINE__))) break;
+								"EnactorMultiNode contract_atomic::Kernel failed ", __FILE__, __LINE__))) break;
+							}
 
+							
+
+						
 						}
 						control->steal_index++;
+
+
 					}
 
 					control->queue_index++;
@@ -851,7 +964,7 @@ public:
 					if (DEBUG){
 						// Get contraction queue length
 						if (retval = control->template UpdateQueueLength<SizeT>()) break;
-						printf("Gpu %d contracted queue length: %lld\n", i, (long long) control->queue_length);
+						printf("Node %d contracted queue length: %lld\n", world_rank, (long long) control->queue_length);
 						fflush(stdout);
 					}
 				}
@@ -868,7 +981,7 @@ public:
 
 				// Set device
 				if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-					"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+					"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 				bool overflowed = false;
 				if (retval = control->work_progress.template CheckOverflow<SizeT>(overflowed)) break;
@@ -895,6 +1008,7 @@ public:
 	cudaError_t EnactSearch(
 		CsrProblem 							&csr_problem,
 		typename CsrProblem::VertexId 		src,
+		int					world_rank,
 		int 								max_grid_size = 0)
 	{
 		typedef typename CsrProblem::VertexId			VertexId;
@@ -908,7 +1022,7 @@ public:
 				typename CsrPolicy::ContractPolicy,
 				typename CsrPolicy::ExpandPolicy,
 				typename CsrPolicy::PartitionPolicy,
-				typename CsrPolicy::CopyPolicy>(csr_problem, src, max_grid_size);
+				typename CsrPolicy::CopyPolicy>(csr_problem, src, world_rank,max_grid_size);
 		}
 
 		printf("Not yet tuned for this architecture\n");
