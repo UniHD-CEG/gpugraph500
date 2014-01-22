@@ -501,6 +501,7 @@ public:
 		CsrProblem 							&csr_problem,
 		typename CsrProblem::VertexId 		src,
 		int 								world_rank,
+		int								num_nodes,
 		int 								max_grid_size = 0)
 	{
 		typedef typename CsrProblem::VertexId			VertexId;
@@ -758,7 +759,7 @@ public:
 				if(done){
 					doneInt = 1;
 					}
-				for(int i =0; i<2; i++){
+				for(int i =0; i<num_nodes; i++){
 					//be sender
 					if(world_rank==i){
 						int destrank = (world_rank+1)%2;
@@ -776,6 +777,59 @@ public:
 					printf("BFS DONE\n");
 					break;
 				}
+					
+				//rank 0 receives all the status and broadcast the result back to all the other nodes
+                                //if rank 0, receives
+				if(world_rank==0){
+                                        int ind = 0;
+					int sum=0;
+					int doneNeighbor;
+					for (ind=1;ind<num_nodes;ind++){
+						MPI_Recv(&doneNeighbor,1,MPI_INT,ind,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+						sum+=doneNeighbor;
+					}
+					
+					//done if sum equals number of nodes
+					int ind = 0;	
+					int doneAll;
+					if(num_nodes == sum){
+						doneAll=1;
+						printf("BFS DONE\n");
+						break;
+					}
+					else{
+						doneAll=0;
+					}
+					for(ind=1; ind<num_nodes; ind++){
+						MPI_Send(&doneAll,1,MPI_INT,ind,0,MPI_COMM_WORLD);
+					}
+                                }
+				//if rank other than 0, send to rank 0
+				else{
+					int doneAll;
+                                        MPI_Send(&doneInt,1,MPI_INT,0,0,MPI_COMM_WORLD);
+					MPI_Recv(&doneAll,1,MPI_INT,0,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+					if(doneAll==1){
+						printf("BFS DONE\n");
+						break;
+					}
+                                }
+				
+
+				/*
+                                for(int i =0; i<num_nodes; i++){
+                                        //be sender
+                                        if(world_rank==i){
+                                                int destrank = (world_rank+1)%2;
+                                                MPI_Send(&doneInt,1,MPI_INT, destrank,0, MPI_COMM_WORLD);
+                                        }
+                                        else{
+                                                int srcrank = (world_rank+1)%2;
+                                                MPI_Recv(&doneNeighbor,1,MPI_INT,srcrank,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+                                        }
+                                
+                                }*/
+
 				for (int i = 0; i < csr_problem.num_gpus; i++) {
 
 					GpuControlBlock *control 	= control_blocks[i];
@@ -861,7 +915,7 @@ public:
 						}
 
 
-						 for (ind=0;ind<2;ind++){
+						 for (ind=0;ind<num_nodes;ind++){
 							//be sender
 							if(world_rank==ind){
 								int destrank = (world_rank+1)%2;

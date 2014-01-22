@@ -736,7 +736,7 @@ void RunTests(
 				printf("Running for rank %d\n", world_rank);
 				if (retval = csr_problem.Reset(multi_node.GetFrontierType(), max_queue_sizing)) break;
                                 gpu_timer.Start();
-                                if (retval = multi_node.EnactSearch(csr_problem, src, world_rank, max_grid_size)) break;
+                                if (retval = multi_node.EnactSearch(csr_problem, src, world_rank, num_nodes, max_grid_size)) break;
                                 gpu_timer.Stop();
                                 multi_node.GetStatistics(total_queued, search_depth, avg_duty);
                                 break;
