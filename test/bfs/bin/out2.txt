@@ -1,0 +1,123 @@
+rank is 1
+rank is 0
+Using device 0: Tesla C2070
+
+Degree Histogram (121 vertices, 561 directed edges):
+	Degree 2^-1: 0 (0.00%)
+	Degree 2^0: 0 (0.00%)
+	Degree 2^1: 4 (3.31%)
+	Degree 2^2: 117 (96.69%)
+
+Using device 0: GeForce GTX 670
+
+Degree Histogram (121 vertices, 561 directed edges):
+	Degree 2^-1: 0 (0.00%)
+	Degree 2^0: 0 (0.00%)
+	Degree 2^1: 4 (3.31%)
+	Degree 2^2: 117 (96.69%)
+
+allocate on GPU
+More than one node
+Node 0 gets 61 vertices and 281 edges
+Done allocating gpu data structures on host
+Done constructing gpu data structures on host
+Node 0 row_offsets: 62 elements (248 bytes)
+Node 0 column_indices: 281 elements (4496 bytes)
+Done initializing gpu data structures on gpus
+done on gpu
+---------------------------------------------------------------
+[Simple CPU BFS] finished. 
+  elapsed: 0.000 ms, rate: inf MiEdges/s, search_depth: 17
+  src: 96, nodes visited: 121, edges visited: 561
+  Summary after 1 test iterations (bias-corrected):
+    [Search depth]:      u: 17.0, s: -nan, cv: -nan
+    [Time (ms)]:         u: 0.000
+    [Rate MiEdges/s]:    u: inf, s: -nan, cv: -nan
+
+Running for rank 0
+GPU 0 labels: 61 elements (244 bytes)
+GPU 0 visited mask: 16 elements (16 bytes)
+GPU 0 frontier queue[0] (queue-sizing factor 1.30x): 158 elements (632 bytes)
+GPU 0 frontier queue[1] (queue-sizing factor 1.30x): 365 elements (1460 bytes)
+GPU 0 frontier queue[2] (queue-sizing factor 1.30x): 365 elements (1460 bytes)
+GPU 0_filter_mask flags: 365 elements (365 bytes)
+Hello
+Partition bins per GPU: 4
+Gpu 0 contract  min occupancy 8, grid size 112
+Gpu 0 expand min occupancy 8, grid size 112
+Gpu 0 partition min occupancy 8, grid size 112, spine elements 449
+Gpu 0 copy min occupancy 8, grid size 112
+1
+Node 0 owns source 0x60
+Gpu 0 contracted queue length: 1
+Node 0 expansion queue length: 5
+Presorted spine on node 0 (449 elements)
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+
+Postsorted spine on node 0 (449 elements)
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 
+
+Iteration 1 sort-contracted queue on node 0 (4 elements)
+96, -1, -1, -1, 
+
+Source distance vector on node 0
+-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+
+---------------------------------------------------------
+Node 0 synching...
+More than one node
+Node 1 gets 60 vertices and 280 edges
+Done allocating gpu data structures on host
+Done constructing gpu data structures on host
+Node 1 row_offsets: 61 elements (244 bytes)
+Node 1 column_indices: 280 elements (4480 bytes)
+Done initializing gpu data structures on gpus
+---------------------------------------------------------------
+[Simple CPU BFS] finished. 
+  elapsed: 0.000 ms, rate: inf MiEdges/s, search_depth: 17
+  src: 96, nodes visited: 121, edges visited: 561
+  Summary after 1 test iterations (bias-corrected):
+    [Search depth]:      u: 17.0, s: -nan, cv: -nan
+    [Time (ms)]:         u: 0.000
+    [Rate MiEdges/s]:    u: inf, s: -nan, cv: -nan
+
+Running for rank 1
+GPU 0 labels: 60 elements (240 bytes)
+GPU 0 visited mask: 16 elements (16 bytes)
+GPU 0 frontier queue[0] (queue-sizing factor 1.30x): 156 elements (624 bytes)
+GPU 0 frontier queue[1] (queue-sizing factor 1.30x): 364 elements (1456 bytes)
+GPU 0 frontier queue[2] (queue-sizing factor 1.30x): 364 elements (1456 bytes)
+GPU 0_filter_mask flags: 364 elements (364 bytes)
+Hello
+Partition bins per GPU: 4
+Gpu 0 contract  min occupancy 8, grid size 56
+Gpu 0 expand min occupancy 8, grid size 56
+Gpu 0 partition min occupancy 8, grid size 56, spine elements 225
+Gpu 0 copy min occupancy 8, grid size 56
+1
+Gpu 0 contracted queue length: 0
+Node 1 expansion queue length: 0
+Presorted spine on node 1 (225 elements)
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+
+Postsorted spine on node 1 (225 elements)
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+
+Iteration 1 sort-contracted queue on node 1 (0 elements)
+
+
+Source distance vector on node 1
+-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 
+
+---------------------------------------------------------
+Node 1 synching...
+Node 1 getting 0 from node 1 selector 0, queue_offset: 0 @ 224, queue_oob: 0 @ 448
+Node 0 getting 0 from node 1 selector 0, queue_offset: 0 @ 224, queue_oob: 0 @ 448
+received num_elem
+Node 0 getting 4 from node 0 selector 0, queue_offset: 0 @ 0, queue_oob: 4 @ 448
+Node 1 getting -4 from node 0 selector 0, queue_offset: 4 @ 0, queue_oob: 0 @ 448
+sent num_elements 
+DEBUGGGGGING START
+
+
+DEBUG DISPLAY DEVICE RESULTS

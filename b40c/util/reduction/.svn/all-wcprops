@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/1031/trunk/b40c/util/reduction
+END
+tree_reduce.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/1031/trunk/b40c/util/reduction/tree_reduce.cuh
+END
+serial_reduce.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/1031/trunk/b40c/util/reduction/serial_reduce.cuh
+END
+cooperative_reduction.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/!svn/ver/1031/trunk/b40c/util/reduction/cooperative_reduction.cuh
+END
+warp_reduce.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/1031/trunk/b40c/util/reduction/warp_reduce.cuh
+END

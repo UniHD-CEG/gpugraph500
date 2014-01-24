@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs
+END
+problem_type.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/problem_type.cuh
+END
+enactor_two_phase.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/enactor_two_phase.cuh
+END
+enactor_base.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/enactor_base.cuh
+END
+enactor_expand_contract.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/enactor_expand_contract.cuh
+END
+csr_problem.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/csr_problem.cuh
+END
+enactor_contract_expand.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/enactor_contract_expand.cuh
+END
+enactor_hybrid.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/enactor_hybrid.cuh
+END
+enactor_multi_gpu.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/enactor_multi_gpu.cuh
+END

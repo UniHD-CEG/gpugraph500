@@ -736,7 +736,7 @@ void RunTests(
 				printf("Running for rank %d\n", world_rank);
 				if (retval = csr_problem.Reset(multi_node.GetFrontierType(), max_queue_sizing)) break;
                                 gpu_timer.Start();
-                                if (retval = multi_node.EnactSearch(csr_problem, src, world_rank, num_nodes, max_grid_size)) break;
+                                if (retval = multi_node.EnactSearch(csr_problem, src, world_rank, num_nodes,max_grid_size)) break;
                                 gpu_timer.Stop();
                                 multi_node.GetStatistics(total_queued, search_depth, avg_duty);
                                 break;
@@ -927,10 +927,9 @@ int main( int argc, char** argv)
         MPI_Init(NULL, NULL);
         //Find out rank and size
         int world_rank;
+
         MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
         printf("rank is %d\n", world_rank);
-
-
 
 	CommandLineArgs args(argc, argv);
 
@@ -961,6 +960,28 @@ int main( int argc, char** argv)
 	//
 	// Construct graph and perform search(es)
 	//
+                typedef int VertexId;                                                   // Use as the node identifier type
+                typedef int Value;                                                              // Use as the value type
+                typedef int SizeT;                                                              // Use as the graph size type
+                CsrGraph<VertexId, Value, SizeT> csr_graph(g_stream_from_host);
+	if (graph_type == "grid2d") {
+
+                // Two-dimensional regular lattice grid (degree 4)
+                if (graph_args < 2) { Usage(); return 1; }
+                VertexId width = atoi(argv[2]);
+                if (builder::BuildGrid2dGraph<false>(
+                        width,
+                        csr_graph) != 0)
+                {
+                        return 1;
+                }
+
+                // Run tests
+                RunTests(csr_graph, args, world_rank);
+
+        } 
+
+	
 
 	if (graph_type == "grid2d") {
 

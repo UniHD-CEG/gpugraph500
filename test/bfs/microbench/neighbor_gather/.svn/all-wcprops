@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/1031/trunk/test/bfs/microbench/neighbor_gather
+END
+cta.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/1031/trunk/test/bfs/microbench/neighbor_gather/cta.cuh
+END
+kernel_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/1031/trunk/test/bfs/microbench/neighbor_gather/kernel_policy.cuh
+END
+kernel.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/!svn/ver/1031/trunk/test/bfs/microbench/neighbor_gather/kernel.cuh
+END

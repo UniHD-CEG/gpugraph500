@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/1031/trunk/test/bfs/microbench/status_lookup
+END
+cta.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/!svn/ver/1031/trunk/test/bfs/microbench/status_lookup/cta.cuh
+END
+kernel_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/1031/trunk/test/bfs/microbench/status_lookup/kernel_policy.cuh
+END
+kernel.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/!svn/ver/1031/trunk/test/bfs/microbench/status_lookup/kernel.cuh
+END

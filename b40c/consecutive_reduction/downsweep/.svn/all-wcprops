@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/1031/trunk/b40c/consecutive_reduction/downsweep
+END
+cta.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/!svn/ver/1031/trunk/b40c/consecutive_reduction/downsweep/cta.cuh
+END
+kernel_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/!svn/ver/1031/trunk/b40c/consecutive_reduction/downsweep/kernel_policy.cuh
+END
+kernel.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/!svn/ver/1031/trunk/b40c/consecutive_reduction/downsweep/kernel.cuh
+END

@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/1031/trunk/b40c/partition/upsweep
+END
+tuning_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/1031/trunk/b40c/partition/upsweep/tuning_policy.cuh
+END
+composite_counters.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/!svn/ver/1031/trunk/b40c/partition/upsweep/composite_counters.cuh
+END
+cta.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/1031/trunk/b40c/partition/upsweep/cta.cuh
+END
+aggregate_counters.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/!svn/ver/1031/trunk/b40c/partition/upsweep/aggregate_counters.cuh
+END
+tile.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/1031/trunk/b40c/partition/upsweep/tile.cuh
+END
+kernel_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/1031/trunk/b40c/partition/upsweep/kernel_policy.cuh
+END

@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/1031/trunk/b40c/copy_if/upsweep
+END
+cta.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/1031/trunk/b40c/copy_if/upsweep/cta.cuh
+END
+kernel_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/1031/trunk/b40c/copy_if/upsweep/kernel_policy.cuh
+END
+kernel.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/1031/trunk/b40c/copy_if/upsweep/kernel.cuh
+END

@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/two_phase/filter_atomic
+END
+cta.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/two_phase/filter_atomic/cta.cuh
+END
+kernel_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/two_phase/filter_atomic/kernel_policy.cuh
+END
+kernel.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/two_phase/filter_atomic/kernel.cuh
+END

@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 34
+/svn/!svn/ver/1039/trunk/b40c/scan
+END
+problem_type.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/!svn/ver/1031/trunk/b40c/scan/problem_type.cuh
+END
+autotuned_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/1039/trunk/b40c/scan/autotuned_policy.cuh
+END
+enactor.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/1031/trunk/b40c/scan/enactor.cuh
+END
+kernel_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/1031/trunk/b40c/scan/kernel_policy.cuh
+END
+policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/1031/trunk/b40c/scan/policy.cuh
+END

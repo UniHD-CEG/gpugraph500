@@ -1,0 +1,83 @@
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/657/trunk/test/bfs/scripts
+END
+run_random_tests.sh
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/636/trunk/test/bfs/scripts/run_random_tests.sh
+END
+run_tests.sh
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/636/trunk/test/bfs/scripts/run_tests.sh
+END
+profile.config.a
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/636/trunk/test/bfs/scripts/profile.config.a
+END
+profile.config.b
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/636/trunk/test/bfs/scripts/profile.config.b
+END
+run_random_tests_1x.sh
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/636/trunk/test/bfs/scripts/run_random_tests_1x.sh
+END
+lookup_duty.sh
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/636/trunk/test/bfs/scripts/lookup_duty.sh
+END
+gather_duty.sh
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/636/trunk/test/bfs/scripts/gather_duty.sh
+END
+run_rmat_tests_1x.sh
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/636/trunk/test/bfs/scripts/run_rmat_tests_1x.sh
+END
+run_tests_1gpu.sh
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/636/trunk/test/bfs/scripts/run_tests_1gpu.sh
+END
+cull_efficiency.sh
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/657/trunk/test/bfs/scripts/cull_efficiency.sh
+END
+run_tests_2gpu.sh
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/636/trunk/test/bfs/scripts/run_tests_2gpu.sh
+END
+run_tests_3gpu.sh
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/636/trunk/test/bfs/scripts/run_tests_3gpu.sh
+END
+run_tests_4gpu.sh
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/636/trunk/test/bfs/scripts/run_tests_4gpu.sh
+END

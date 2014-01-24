@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/partition_contract/upsweep
+END
+cta.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/partition_contract/upsweep/cta.cuh
+END
+tile.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/partition_contract/upsweep/tile.cuh
+END
+kernel_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/partition_contract/upsweep/kernel_policy.cuh
+END
+kernel.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/!svn/ver/1031/trunk/b40c/graph/bfs/partition_contract/upsweep/kernel.cuh
+END

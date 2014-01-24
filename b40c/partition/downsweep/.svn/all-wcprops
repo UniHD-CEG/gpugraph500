@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/1031/trunk/b40c/partition/downsweep
+END
+tuning_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/!svn/ver/1031/trunk/b40c/partition/downsweep/tuning_policy.cuh
+END
+cta.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/1031/trunk/b40c/partition/downsweep/cta.cuh
+END
+tile.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/1031/trunk/b40c/partition/downsweep/tile.cuh
+END
+kernel_policy.cuh
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/!svn/ver/1031/trunk/b40c/partition/downsweep/kernel_policy.cuh
+END
