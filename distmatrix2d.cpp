@@ -3,14 +3,19 @@
 #include <algorithm>
 #include <iostream>
 
+#include <cstdlib> // only for values of packed_edge typ!!!
+#ifdef _OPENMP
+    #include <omp.h>
+#endif
+
 /*
  *Computes the owener node of a specific edge
 */
 long DistMatrix2d::computeOwner(unsigned long row, unsigned long column)
 {
-    int rowSlice, columnSlice;
-    int r_residuum, c_residuum;
-    int rSliceSize, cSliceSize;
+    long rowSlice, columnSlice;
+    long r_residuum, c_residuum;
+    long rSliceSize, cSliceSize;
 
     r_residuum = globalNumberOfVertex % R;
     rSliceSize = globalNumberOfVertex / R;
@@ -28,7 +33,26 @@ long DistMatrix2d::computeOwner(unsigned long row, unsigned long column)
     return rowSlice*C+columnSlice;
 }
 
-DistMatrix2d::DistMatrix2d(int _R, int _C, unsigned long scale):R(_R),C(_C),row_pointer(NULL),column_index(NULL)
+bool DistMatrix2d::comparePackedEdgeR(packed_edge i, packed_edge j){
+    if(i.v0<j.v0){
+        return true;
+    }else if(i.v0>j.v0 ){
+        return false;
+    } else
+        return (i.v1<j.v1);
+}
+bool DistMatrix2d::comparePackedEdgeC(packed_edge i, packed_edge j){
+    if(i.v1<j.v1){
+        return true;
+    }else if(i.v1>j.v1 ){
+        return false;
+    } else
+        return (i.v0<j.v0);
+}
+
+
+
+DistMatrix2d::DistMatrix2d(int _R, int _C):R(_R),C(_C),row_pointer(NULL),column_index(NULL)
 {
     int rank;
 
@@ -37,20 +61,13 @@ DistMatrix2d::DistMatrix2d(int _R, int _C, unsigned long scale):R(_R),C(_C),row_
     //Compute owen row and column id
     r = rank/C;
     c = rank%C;
-
-    globalNumberOfVertex   = 1 << scale;
-
-    row_start       = r*(globalNumberOfVertex/R) + ((r < globalNumberOfVertex%R)? r : globalNumberOfVertex%R);
-    row_length      = globalNumberOfVertex/R + ((r < globalNumberOfVertex%R)? 1 : 0);
-    column_start    = c*(globalNumberOfVertex/C) + ((c < globalNumberOfVertex%C)? c : globalNumberOfVertex%C);
-    column_length   = globalNumberOfVertex/C + ((c < globalNumberOfVertex%C)? 1 : 0);
 }
 
 DistMatrix2d::~DistMatrix2d()
 {
-   if(row_pointer!=NULL) delete[] row_pointer;
+   if(row_pointer!=NULL)    delete[] row_pointer;
    row_pointer=NULL;
-   if(column_index!=NULL) delete[] column_index;
+   if(column_index!=NULL)   delete[] column_index;
    column_index=NULL;
 
 }
@@ -65,17 +82,32 @@ DistMatrix2d::~DistMatrix2d()
  *
  * Should be optimised.
 */
-void DistMatrix2d::setupMatrix(packed_edge *input, int numberOfEdges, bool undirected)
+void DistMatrix2d::setupMatrix(packed_edge *input, long numberOfEdges, bool undirected)
 {
+    //get max vtx
+    vtxtype maxVertex = -1;
+
+    #pragma omp parallel for reduction(max: maxVertex)
+    for(long i = 0; i < numberOfEdges; i++){
+        packed_edge read = input[i];
+
+        maxVertex = (maxVertex > read.v0)? maxVertex :  read.v0;
+        maxVertex = (maxVertex > read.v1)? maxVertex :  read.v1;
+    }
+
+
+    MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
+    //because start at 0
+    globalNumberOfVertex = globalNumberOfVertex+1;
 
     row_pointer = new vtxtype[row_length+1];
-    vtxtype* row_elem = new vtxtype[row_length];
+    long* row_elem = new long[row_length];
     const int outstanding_sends=40;
     MPI_Request iqueue[outstanding_sends];
 
     // row_elem is in the first part a counter of nz columns per row
     for(long i=0; i< row_length; i++){
-        row_elem[i] = 0;
+       row_elem[i] = 0;
     }
     // Bad implementation: To many comunications
     int count_elementssend;
@@ -93,20 +125,20 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int numberOfEdges, bool undir
         for(int i=0; i < 10 && count_elementssend<numberOfEdges ; i++){
         //find free send buff;
         freeRqBuf = -1;
-        for(int i=0; i<outstanding_sends; i++){
-            MPI_Test(&(iqueue[i]),&flag,&status);
+        for(int j=0; j<outstanding_sends; j++){
+            MPI_Test(&(iqueue[(j+i)%outstanding_sends]),&flag,&status);
             if(flag){
-                freeRqBuf = i;
+                freeRqBuf = (j+i)%outstanding_sends;
                 break;
             }
         }
         
         //Send an element
         if(freeRqBuf>-1){
-            if(input[count_elementssend].v0 != input[count_elementssend].v1){
+            //if(input[count_elementssend].v0 != input[count_elementssend].v1){
                 long dest = computeOwner(input[count_elementssend].v0, input[count_elementssend].v1);
                 MPI_Issend(&(input[count_elementssend].v0), 1, MPI_LONG, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
-            }
+            //}
             count_elementssend++;
         }else{
             int gunfinished;
@@ -138,20 +170,20 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int numberOfEdges, bool undir
             for(int i=0; i < 10 && count_elementssend<numberOfEdges ; i++){
             //find free send buff;
             freeRqBuf = -1;
-            for(int i=0; i<outstanding_sends; i++){
-                MPI_Test(&(iqueue[i]),&flag,&status);
+            for(int j=0; j<outstanding_sends; j++){
+                MPI_Test(&(iqueue[(j+i)%outstanding_sends]),&flag,&status);
                 if(flag){
-                    freeRqBuf = i;
+                    freeRqBuf = (j+i)%outstanding_sends;
                     break;
                 }
             }
 
             //Send an element
             if(freeRqBuf>-1){
-                if(input[count_elementssend].v0 != input[count_elementssend].v1){
+                //if(input[count_elementssend].v0 != input[count_elementssend].v1){
                     long dest = computeOwner(input[count_elementssend].v1, input[count_elementssend].v0);
                     MPI_Issend(&(input[count_elementssend].v1), 1, MPI_LONG, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
-                }
+                //}
                 count_elementssend++;
             }else{
                 int gunfinished;
@@ -233,10 +265,10 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int numberOfEdges, bool undir
         for(int i=0; i < 10 && count_elementssend<numberOfEdges ; i++){
         //find free send buff;
         freeRqBuf = -1;
-        for(int i=0; i<outstanding_sends; i++){
-            MPI_Test(&(iqueue[i]),&flag,&status);
+        for(int j=0; j<outstanding_sends; j++){
+            MPI_Test(&(iqueue[(j+i)%outstanding_sends]),&flag,&status);
             if(flag){
-                freeRqBuf = i;
+                freeRqBuf = (j+i)%outstanding_sends;
                 break;
             }
         }
@@ -245,11 +277,11 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int numberOfEdges, bool undir
             long send_buf[2];
             send_buf[0]=input[count_elementssend].v0;
             send_buf[1]=input[count_elementssend].v1;
-            if(send_buf[0]!=send_buf[1]){
+            //if(send_buf[0]!=send_buf[1]){
                 long dest = computeOwner(input[count_elementssend].v0, input[count_elementssend].v1);
 
                 MPI_Issend(send_buf, 2, MPI_LONG, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
-            }
+            //}
             count_elementssend++;
         }else{
             int gunfinished;
@@ -295,10 +327,10 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int numberOfEdges, bool undir
             long send_buf[2];
             send_buf[0]=input[count_elementssend].v1;
             send_buf[1]=input[count_elementssend].v0;
-            if(send_buf[0]!=send_buf[1]){
+            //if(send_buf[0]!=send_buf[1]){
                 long dest = computeOwner(input[count_elementssend].v1, input[count_elementssend].v0);
                 MPI_Issend(send_buf, 2, MPI_LONG, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
-            }
+            //}
             count_elementssend++;
         }else{
             int gunfinished;
@@ -395,7 +427,6 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int numberOfEdges, bool undir
     for(long i=1; i< row_length+1; i++){
         tmp_row_pointer[i] = tmp_row_pointer[i-1]+row_elem[i-1];
     }
-    delete[] row_elem;
 
     tmp_column_index = new vtxtype[tmp_row_pointer[row_length]];
     //Copy unique entries in every row
@@ -414,13 +445,320 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int numberOfEdges, bool undir
         }
     }
 
+    delete[] row_elem;
     delete[] row_pointer;
     delete[] column_index;
     row_pointer = tmp_row_pointer;
     column_index = tmp_column_index;
  }
 
-std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties()
+void DistMatrix2d::setupMatrix2(packed_edge *&input, long &numberOfEdges, bool undirected){
+
+    vtxtype maxVertex = -1;
+    if(undirected == true){
+        //generate other direction to be undirected
+        input=(packed_edge *)realloc(input, 2*numberOfEdges*sizeof(packed_edge));
+
+        #pragma omp parallel for reduction(max: maxVertex)
+        for(long i = 0; i < numberOfEdges; i++){
+            packed_edge read = input[i];
+
+            input[numberOfEdges+i].v0 = read.v1;
+            input[numberOfEdges+i].v1 = read.v0;
+
+            maxVertex  = (maxVertex > read.v0)? maxVertex :  read.v0;
+            maxVertex  = (maxVertex > read.v1)? maxVertex :  read.v1;
+        }
+
+        numberOfEdges= 2*numberOfEdges;
+    } else {
+        #pragma omp parallel for reduction(max: maxVertex)
+        for(long i = 0; i < numberOfEdges; i++){
+            packed_edge read = input[i];
+
+            maxVertex  = (maxVertex > read.v0)? maxVertex:  read.v0;
+            maxVertex  = (maxVertex > read.v1)? maxVertex :  read.v1;
+        }
+
+    }
+
+    MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
+    //because start at 0
+    globalNumberOfVertex = globalNumberOfVertex+1;
+    row_start       = r*(globalNumberOfVertex/R) + ((r < globalNumberOfVertex%R)? r : globalNumberOfVertex%R);
+    row_length      = globalNumberOfVertex/R + ((r < globalNumberOfVertex%R)? 1 : 0);
+    column_start    = c*(globalNumberOfVertex/C) + ((c < globalNumberOfVertex%C)? c : globalNumberOfVertex%C);
+    column_length   = globalNumberOfVertex/C + ((c < globalNumberOfVertex%C)? 1 : 0);
+
+    // Split communicator into row and column communicator
+    MPI_Comm row_comm, col_comm;
+    // Split by row, rank by column
+    MPI_Comm_split(MPI_COMM_WORLD, r, c, &row_comm);
+    // Split by column, rank by row
+    MPI_Comm_split(MPI_COMM_WORLD, c, r, &col_comm);
+
+    MPI_Datatype packedEdgeMPI;
+    int tupsize[] = {2};
+    MPI_Aint tupoffset[] = {0};
+    MPI_Datatype tuptype[] = {MPI_LONG};
+    MPI_Type_struct(1,tupsize,tupoffset,tuptype,&packedEdgeMPI);
+    MPI_Type_commit(&packedEdgeMPI);
+
+    //column comunication
+    std::sort(input,input+numberOfEdges,DistMatrix2d::comparePackedEdgeR);
+
+    int* owen_send_size = new int[R];
+    int* owen_offset = new int[R+1];
+    int* other_size = new int[R];
+    int* other_offset =  new int[R+1];
+
+    long res = globalNumberOfVertex % R;
+    long ua_sl_size = globalNumberOfVertex / R;
+
+    // offset for transmission
+    long sl_start = 0;
+    owen_offset[0] = 0;
+    for(int i = 1; i < R; i++){
+        if(res > 0) {
+            sl_start += ua_sl_size +1;
+            res--;
+        }else{
+            sl_start += ua_sl_size;
+        }
+        packed_edge startEdge = {sl_start,0};
+        owen_offset[i] = std::lower_bound(input+owen_offset[i-1],input+numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
+    }
+    owen_offset[R] = numberOfEdges;
+
+    // compute transmission sizes
+    for(int i = 0; i < R; i++){
+        owen_send_size[i] = owen_offset[i+1]- owen_offset[i];
+    }
+    // send others sizes to recive sizes
+    MPI_Alltoall(owen_send_size,1,MPI_INT,other_size,1,MPI_INT, col_comm);
+    // compute transmission offsets
+    other_offset[0] = 0;
+    for(int i = 1; i < R+1; i++){
+        other_offset[i] = other_size [i-1]+ other_offset[i-1];
+    }
+    numberOfEdges= other_offset[R];
+
+    // allocate recive buffer
+    packed_edge * coltransBuf = (packed_edge *) malloc(numberOfEdges*sizeof(packed_edge));
+
+    // transmit data
+    MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, coltransBuf, other_size, other_offset, packedEdgeMPI, col_comm );
+
+
+    //not nessecary any more
+    free(input);
+    input = coltransBuf;
+
+    delete[] owen_send_size;
+    delete[] owen_offset;
+    delete[] other_size ;
+    delete[] other_offset;
+
+    //row comunication
+    //sort
+    std::sort(input,input+numberOfEdges,DistMatrix2d::comparePackedEdgeC);
+
+    owen_send_size = new int[C];
+    owen_offset = new int[C+1];
+    other_size = new int[C];
+    other_offset =  new int[C+1];
+
+    res = globalNumberOfVertex % C;
+    ua_sl_size = globalNumberOfVertex / C;
+
+    // offset for transmission
+    sl_start = 0;
+    owen_offset[0] = 0;
+    for(int i = 1; i < C; i++){
+        if(res > 0) {
+            sl_start += ua_sl_size +1;
+            res--;
+        }else{
+            sl_start += ua_sl_size;
+        }
+
+        packed_edge startEdge = {0,sl_start};
+        owen_offset[i] = std::lower_bound(input+owen_offset[i-1],input+numberOfEdges, startEdge , DistMatrix2d::comparePackedEdgeC) - input;       
+    }
+    owen_offset[C] = numberOfEdges;
+
+    // compute transmission sizes
+    for(int i = 0; i < C; i++){
+        owen_send_size[i] = owen_offset[i+1]- owen_offset[i];
+    }
+    // send others sizes to recive sizes
+    MPI_Alltoall(owen_send_size,1,MPI_INT,other_size,1,MPI_INT, row_comm);
+    // compute transmission offsets
+    other_offset[0] = 0;
+    for(int i = 1; i < C+1; i++){
+        other_offset[i] = other_size [i-1]+ other_offset[i-1];
+    }
+    numberOfEdges= other_offset[C];
+
+    // allocate recive buffer
+    packed_edge * rowtransBuf = (packed_edge *) malloc(other_offset[C]*sizeof(packed_edge));
+
+    // transmit data
+    MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, rowtransBuf, other_size, other_offset, packedEdgeMPI, row_comm );
+
+    //not nessecary any more
+    free(input);
+    input = rowtransBuf;
+
+    delete[] owen_send_size;
+    delete[] owen_offset;
+    delete[] other_size ;
+    delete[] other_offset;
+
+    MPI_Type_free(&packedEdgeMPI);
+    MPI_Comm_free(&row_comm);
+    MPI_Comm_free(&col_comm);
+
+    std::sort(input,input+numberOfEdges,DistMatrix2d::comparePackedEdgeR);
+
+    vtxtype* row_elm = new vtxtype[row_length];
+         row_pointer = new vtxtype[row_length+1];
+
+    #pragma omp parallel for
+    for(long i=0; i < row_length; i++){
+        row_elm[i]=0;
+    }
+
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        long this_thread = omp_get_thread_num(), num_threads = omp_get_num_threads();
+        long start = (this_thread  ) * row_length / num_threads;
+        long end   = (this_thread+1) * row_length / num_threads;
+
+        packed_edge startEdge = {start+row_start,0};
+        long j = std::lower_bound(input, input+numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR)-input;
+
+
+        for(long i=start; i < end && j < numberOfEdges; i++){
+            vtxtype last_valid = -1;
+
+            while(j < numberOfEdges && input[j].v0-row_start == i ){
+                if(input[j].v0 != input[j].v1){
+                    last_valid = input[j].v1;
+                    row_elm[i]++;
+                    j++;
+                    break;
+                }
+                j++;
+            }
+            while(j < numberOfEdges && input[j].v0-row_start == i ){
+                if(input[j].v0 != input[j].v1 && last_valid != input[j].v1){
+                    row_elm[i]++;
+                }
+                last_valid = input[j].v1;
+                j++;
+            }
+        }
+
+    }
+    #else
+    for(long i=0, j=0; i < row_length && j < numberOfEdges; i++){
+        vtxtype last_valid = -1;
+
+        while(j < numberOfEdges && input[j].v0-row_start == i ){
+            if(input[j].v0 != input[j].v1){
+                last_valid = input[j].v1;
+                row_elm[i]++;
+                j++;
+                break;
+            }
+            j++;
+        }
+        while(j < numberOfEdges && input[j].v0-row_start == i ){
+            if(input[j].v0 != input[j].v1 && last_valid != input[j].v1){
+                row_elm[i]++;
+            }
+            last_valid = input[j].v1;
+            j++;
+        }
+    }    
+    #endif
+
+    // prefix scan to compute row pointer
+    row_pointer[0] = 0;
+    for(long i = 0; i < row_length; i++){
+        row_pointer[i+1] = row_pointer[i] + row_elm[i];
+    }
+    delete[] row_elm;
+    column_index = new vtxtype[row_pointer[row_length]];
+
+    //build columns
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        long this_thread = omp_get_thread_num(), num_threads = omp_get_num_threads();
+        long start = (this_thread  ) * row_length / num_threads;
+        long end   = (this_thread+1) * row_length / num_threads;
+
+
+        packed_edge startEdge = {start+row_start,0};
+        long j = std::lower_bound(input, input+numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR)-input;
+
+        for(long i=start; i < end && j < numberOfEdges; i++){
+            vtxtype last_valid = -1;
+            long inrow = 0;
+
+            while(j < numberOfEdges && input[j].v0-row_start == i ){
+                if(input[j].v0 != input[j].v1){
+                    last_valid = input[j].v1;
+                    column_index[row_pointer[i]+inrow] = input[j].v1;
+                    inrow++;
+                    j++;
+                    break;
+                }
+                j++;
+            }
+            while(j < numberOfEdges && input[j].v0-row_start == i ){
+                if(input[j].v0 != input[j].v1 && last_valid != input[j].v1){
+                    column_index[row_pointer[i]+inrow] = input[j].v1;
+                    inrow++;
+                }
+                last_valid = input[j].v1;
+                j++;
+            }
+        }
+    }
+    #else
+    for(long i=0, j=0; i < row_length && j < numberOfEdges; i++){
+        vtxtype last_valid = -1;
+        long inrow = 0;
+
+        while(j < numberOfEdges && input[j].v0-row_start == i ){
+            if(input[j].v0 != input[j].v1){
+                last_valid = input[j].v1;
+                column_index[row_pointer[i]+inrow] = input[j].v1;
+                inrow++;
+                j++;
+                break;
+            }
+            j++;
+        }
+        while(j < numberOfEdges && input[j].v0-row_start == i ){
+            if(input[j].v0 != input[j].v1 && last_valid != input[j].v1){
+                column_index[row_pointer[i]+inrow] = input[j].v1;
+                inrow++;
+            }
+            last_valid = input[j].v1;
+            j++;
+        }
+    }
+    #endif
+
+}
+
+
+std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties() const
 {
     // compute the properties of global folding
     struct fold_prop newprop;
@@ -457,4 +795,24 @@ std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties()
         fold_fq_props.push_back(newprop);
     }
     return fold_fq_props;
+}
+/*
+ * For Validator
+ * Computes the column and the local pointer of the verteces in an array
+*/
+void DistMatrix2d::get_vertex_distribution_for_pred(size_t count, const int64_t *vertex_p, int *owner_p, size_t *local_p) const
+{
+  long c_residuum = globalNumberOfVertex % C;
+  long c_SliceSize = globalNumberOfVertex / C;
+
+  #pragma omp parallel for
+    for (long i = 0; i < (ptrdiff_t)count; ++i) {
+        if(( vertex_p[i]/(c_SliceSize+1)) >= c_residuum){
+            owner_p[i] = (vertex_p[i]-c_residuum)/c_SliceSize;
+            local_p[i] = (vertex_p[i]-c_residuum)%c_SliceSize;
+        } else {
+            owner_p[i] = vertex_p[i]/(c_SliceSize+1);
+            local_p[i] = vertex_p[i]%(c_SliceSize+1);
+        }
+    }
 }

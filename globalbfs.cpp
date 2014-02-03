@@ -43,6 +43,7 @@ void GlobalBFS::runBFS(vtxtype startVertex)
     anynewnodes = istheresomethingnew();
     MPI_Allreduce(&anynewnodes, &anynewnodes_global,1,MPI_INT,MPI_LOR,MPI_COMM_WORLD);
     if(!anynewnodes_global){
+        MPI_Allreduce(MPI_IN_PLACE, predessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
         return; //There is nothing too do. Finish iteration.
     }
 // 4
@@ -112,11 +113,7 @@ void GlobalBFS::runBFS(vtxtype startVertex)
 }
 
 
-void GlobalBFS::validate()
+vtxtype* GlobalBFS::getPredessor()
 {
-    //curently manual validation ;)
-    for(int i = 0; i < store.getLocColLength(); i++){
-        printf("%d:[%ld]\n", store.localtoglobalCol(i),  predessor[i]);
-    }
-
+    return  predessor;
 }

@@ -32,6 +32,8 @@ class DistMatrix2d
      */
     long computeOwner(unsigned long row, unsigned long column);
 
+    static bool comparePackedEdgeR(packed_edge i, packed_edge j);
+    static bool comparePackedEdgeC(packed_edge i, packed_edge j);
 public:
     struct fold_prop{
         int     sendColSl;
@@ -39,35 +41,41 @@ public:
         vtxtype size;
     };
 
-    DistMatrix2d(int _R, int _C, unsigned long scale);
+    DistMatrix2d(int _R, int _C);
     ~DistMatrix2d();
 
-    void setupMatrix(packed_edge* input, int numberOfEdges,bool undirected= true);
+    void setupMatrix(packed_edge* input, long numberOfEdges,bool undirected= true);
+    void setupMatrix2(packed_edge* &input, long &numberOfEdges, bool undirected= true);
     inline long getEdgeCount(){return (row_pointer!=0)?row_pointer[row_length]:0;}
-    std::vector<struct fold_prop> getFoldProperties();
+    std::vector<struct fold_prop> getFoldProperties() const;
 
-    inline vtxtype* getRowPointer() {return row_pointer;}
-    inline vtxtype* getColumnIndex(){ return column_index;}
+    inline const vtxtype* getRowPointer() const {return row_pointer;}
+    inline const vtxtype* getColumnIndex() const { return column_index;}
 
-    inline bool isSym(){return C==R;}
+    //inline bool isSym(){return C==R;}
 
-    inline int getNumRowSl(){return R;}
+    inline int getNumRowSl() const{return R;}
     inline int getNumColumnSl(){return C;}
 
-    inline int getLocalRowID(){return r;}
-    inline int getLocalColumnID(){return c;}
+    inline int getLocalRowID() const{return r;}
+    inline int getLocalColumnID() const{return c;}
 
-    inline bool isLocalRow(vtxtype vtx){return (row_start<=vtx) && (vtx < row_start+row_length);}
-    inline bool isLocalColumn(vtxtype vtx){ return (column_start<=vtx) && (vtx < column_start+column_length);}
+    inline bool isLocalRow(vtxtype vtx)const {return (row_start<=vtx) && (vtx < row_start+row_length);}
+    inline bool isLocalColumn(vtxtype vtx)const { return (column_start<=vtx) && (vtx < column_start+column_length);}
 
 
-    inline vtxtype globaltolocalRow(vtxtype vtx){return vtx-row_start;}
-    inline vtxtype globaltolocalCol(vtxtype vtx){return vtx-column_start;}
-    inline vtxtype localtoglobalRow(vtxtype vtx){return vtx+row_start;}
-    inline vtxtype localtoglobalCol(vtxtype vtx){return vtx+column_start;}
+    inline vtxtype globaltolocalRow(vtxtype vtx)const {return vtx-row_start;}
+    inline vtxtype globaltolocalCol(vtxtype vtx)const {return vtx-column_start;}
+    inline vtxtype localtoglobalRow(vtxtype vtx)const {return vtx+row_start;}
+    inline vtxtype localtoglobalCol(vtxtype vtx)const {return vtx+column_start;}
 
-    inline vtxtype getLocRowLength(){return row_length;}
-    inline vtxtype getLocColLength(){return column_length;}
+    inline vtxtype getLocRowLength()const {return row_length;}
+    inline vtxtype getLocColLength()const {return column_length;}
+
+    //For Validator
+    void get_vertex_distribution_for_pred(size_t count, const int64_t* vertex_p, int* owner_p, size_t* local_p) const;
+    //Number of edges during generation including self loops and duplicates
+    //long* getListOfEdges();
 
 };
 

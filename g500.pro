@@ -11,7 +11,11 @@ SOURCES += main.cpp \
     generator/make_graph.c \
     generator/graph_generator.c \
     globalbfs.cpp \
-    simplecpubfs.cpp
+    simplecpubfs.cpp \
+    validate/onesided.c \
+    validate/onesided_emul.c \
+    validate/validate.cpp #\
+    #opencl/opencl_bfs.cpp
 
 OTHER_FILES += \
     generator/README \
@@ -32,7 +36,11 @@ HEADERS += distmatrix2d.h \
     generator/make_graph.h \
     generator/graph_generator.h \
     globalbfs.h \
-    simplecpubfs.h
+    simplecpubfs.h \
+    validate/validate.h \
+    validate/onesided.h \
+    validate/mpi_workarounds.h #\
+    #opencl/opencl_bfs.h
 
 # MPI Settings
 QMAKE_CXX = mpicxx
@@ -40,12 +48,15 @@ QMAKE_CXX_RELEASE = $$QMAKE_CXX
 QMAKE_CXX_DEBUG = $$QMAKE_CXX
 QMAKE_LINK = $$QMAKE_CXX
 QMAKE_CC = mpicc
+QMAKE_CC_RELEASE = $$QMAKE_CC
+QMAKE_CC_DEBUG = $$QMAKE_CC
 
 QMAKE_CFLAGS += $$system(mpicc --showme:compile)
+QMAKE_CFLAGS_RELEASE += -O3
 QMAKE_LFLAGS += $$system(mpicxx --showme:link)
 QMAKE_CXXFLAGS += $$system(mpicxx --showme:compile) -DMPICH_IGNORE_CXX_SEEK
-QMAKE_CXXFLAGS_RELEASE += $$system(mpicxx --showme:compile) -DMPICH_IGNORE_CXX_SEEK
-QMAKE_CFLAGS += -std=c99
+QMAKE_CXXFLAGS_RELEASE += -O3
+QMAKE_CFLAGS += -std=c99 -fopenmp
 #QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS += -fopenmp
 QMAKE_LFLAGS += -fopenmp

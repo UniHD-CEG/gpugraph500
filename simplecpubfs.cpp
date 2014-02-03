@@ -3,7 +3,7 @@
 
 SimpleCPUBFS::SimpleCPUBFS(DistMatrix2d &_store):GlobalBFS(_store)
 {
-    fq_tp_type = MPI_LONG; //Frontier Queue Transport Type
+    fq_tp_type = MPI_INT64_T; //Frontier Queue Transport Type
 
     //allocate recive buffer
     recv_fq_buff_length = std::max(store.getLocRowLength(), store.getLocColLength());

@@ -36,9 +36,7 @@ public:
 
     void runBFS(vtxtype startVertex=0);
 
-    void validate();
-
-
+    vtxtype* getPredessor();
 };
 
 #endif // GLOBALBFS_H

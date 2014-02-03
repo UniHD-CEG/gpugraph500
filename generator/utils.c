@@ -40,6 +40,16 @@ void* xcalloc(size_t n, size_t k) {
   return p;
 }
 
+void* xMPI_Alloc_mem(size_t nbytes) {
+  void* p;
+  MPI_Alloc_mem(nbytes, MPI_INFO_NULL, &p);
+  if (nbytes != 0 && !p) {
+    fprintf(stderr, "MPI_Alloc_mem failed for size %zu\n", nbytes);
+    abort();
+  }
+  return p;
+}
+
 /* Spread the two 64-bit numbers into five nonzero values in the correct
  * range. */
 void make_mrg_seed(uint64_t userseed1, uint64_t userseed2, uint_fast32_t* seed) {
