@@ -1,0 +1,22 @@
+#!/bin/sh
+#PBS -N kiat-imb
+#PBS -j oe
+#PBS -A UT-NTNL0087
+
+### Unused PBS options ###
+## If left commented, must be specified when the job is submitted:
+## 'qsub -l walltime=hh:mm:ss,nodes=12:ppn=4'
+##
+##PBS -l walltime=00:30:00
+##PBS -l nodes=4:ppn=4:gpus=3
+
+### End of PBS options ###
+
+
+# run the program
+
+which mpirun
+mpirun -machinefile machinefile -np 4 test_bfs_4.2_x86_64 grid2d 10 --num-nodes=4
+date
+
+# eof
