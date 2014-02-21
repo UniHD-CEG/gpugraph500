@@ -24,7 +24,7 @@ static inline ptrdiff_t ptrdiff_min(ptrdiff_t a, ptrdiff_t b) {
  * most) each CHUNKSIZE one-sided operations. */
 /* It seams as there is a limit of the number of MPI_Get in an epoche in OpenMPI.
  * An incresed Chunksize can in this way problematic. */
-#define CHUNKSIZE (1 << 13)
+#define CHUNKSIZE (1 << 20)
 #define HALF_CHUNKSIZE ((CHUNKSIZE) / 2)
 
 #endif // VALIDATE_H

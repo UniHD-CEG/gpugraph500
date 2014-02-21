@@ -776,12 +776,21 @@ std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties() const
         newprop.size = ua_col_size-((row_start - col_size_res) % ua_col_size );
         newprop.size = (newprop.size < row_length)? newprop.size :  row_length;
         col_size_res = 0;
+        //column end
+        vtxtype colnextstart = (col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
+        (newprop.sendColSl+1)*ua_col_size+globalNumberOfVertex % C;
+        newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
     } else {
         newprop.sendColSl = a_quot;
         newprop.startvtx = row_start;
-        newprop.size = ua_col_size +1 - a_quot ;
+        newprop.size = ua_col_size +1;
         newprop.size = (newprop.size < row_length)? newprop.size :  row_length;
         col_size_res -= a_quot +1;
+        //column end
+        vtxtype colnextstart = (col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
+        (newprop.sendColSl+1)*ua_col_size+globalNumberOfVertex % C;
+        newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
+
     }
     fold_fq_props.push_back(newprop);
     // other
@@ -792,8 +801,13 @@ std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties() const
         newprop.size = (col_size_res > 0)? ua_col_size+1 : ua_col_size;
         col_size_res -= (col_size_res > 0)? 1 : 0;
         newprop.size = (newprop.startvtx+newprop.size < row_end )? newprop.size: row_end-newprop.startvtx;
+        //column end
+        vtxtype colnextstart = (col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
+        (newprop.sendColSl+1)*ua_col_size+globalNumberOfVertex % C;
+        newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
         fold_fq_props.push_back(newprop);
     }
+
     return fold_fq_props;
 }
 /*
@@ -805,9 +819,9 @@ void DistMatrix2d::get_vertex_distribution_for_pred(size_t count, const int64_t 
   long c_residuum = globalNumberOfVertex % C;
   long c_SliceSize = globalNumberOfVertex / C;
 
-  #pragma omp parallel for
+  //#pragma omp parallel for
     for (long i = 0; i < (ptrdiff_t)count; ++i) {
-        if(( vertex_p[i]/(c_SliceSize+1)) >= c_residuum){
+        if(( vertex_p[i]/(c_SliceSize+1)) > c_residuum){
             owner_p[i] = (vertex_p[i]-c_residuum)/c_SliceSize;
             local_p[i] = (vertex_p[i]-c_residuum)%c_SliceSize;
         } else {

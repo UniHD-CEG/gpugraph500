@@ -7,11 +7,13 @@
 /*  Authors: Jeremiah Willcock                                             */
 /*           Andrew Lumsdaine                                              */
 
-//#include "common.h"
+#include "mpi_workarounds.h"
 #include "onesided.h"
 #include <mpi.h>
+#include "../generator/utils.h"
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 /* One-sided emulation since many MPI implementations don't have good
@@ -42,7 +44,7 @@ struct gather {
   int* recv_offsets;
 };
 
-gather* init_gather(void* input, size_t input_count, size_t elt_size, void* output, size_t output_count, size_t nrequests_max, MPI_Datatype dt) {
+gather* init_gather(void* input, size_t input_count, size_t elt_size, void* output, size_t output_count, size_t nrequests_max, MPI_Datatype dt,  MPI_Comm com) {
   gather* g = (gather*)xmalloc(sizeof(gather));
   g->input = input;
   g->input_count = input_count;
@@ -52,7 +54,7 @@ gather* init_gather(void* input, size_t input_count, size_t elt_size, void* outp
   g->nrequests_max = nrequests_max;
   g->datatype = dt;
   g->valid = 0;
-  MPI_Comm_dup(MPI_COMM_WORLD, &g->comm);
+  MPI_Comm_dup(com, &g->comm);
   g->local_indices = (size_t*)xmalloc(nrequests_max * sizeof(size_t));
   g->remote_ranks = (int*)xmalloc(nrequests_max * sizeof(int));
   g->remote_indices = (MPI_Aint*)xmalloc(nrequests_max * sizeof(MPI_Aint));

@@ -89,13 +89,12 @@ static int build_bfs_depth_map(const DistMatrix2d& store, const int64_t nglobalv
   int* pred_owner = (int*)xmalloc(size_min(CHUNKSIZE, nlocalverts) * sizeof(int));
   size_t* pred_local = (size_t*)xmalloc(size_min(CHUNKSIZE, nlocalverts) * sizeof(size_t));
   int iter_number = 0;
+
   {
     /* Iteratively update depth[v] = min(depth[v], depth[pred[v]] + 1) [saturating at UINT16_MAX] until no changes. */
     while (1) {
-
       int any_changes = 0;
       for (ptrdiff_t ii = 0; ii < (ptrdiff_t)maxlocalverts; ii += CHUNKSIZE) {
-
         ptrdiff_t i_start = ptrdiff_min(ii, nlocalverts);
         ptrdiff_t i_end = ptrdiff_min(ii + CHUNKSIZE, nlocalverts);
         begin_gather(pred_win);
@@ -156,8 +155,6 @@ static int build_bfs_depth_map(const DistMatrix2d& store, const int64_t nglobalv
 int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_t number_of_edges,
                         const int64_t nglobalverts, const int64_t root, int64_t* const pred, int64_t* const edge_visit_count_ptr, int* level) {
 
-
-  //assert (tg->edgememory_size >= 0 && tg->max_edgememory_size >= tg->edgememory_size && tg->max_edgememory_size <= tg->nglobaledges);
   assert (pred);
   *edge_visit_count_ptr = 0; /* Ensure it is a valid pointer */
   int ranges_ok = check_value_ranges(store,nglobalverts, pred);
@@ -167,7 +164,6 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
   }
   if (!ranges_ok) return 0; /* Fail */
 
-  //assert (tg->edgememory_size >= 0 && tg->max_edgememory_size >= tg->edgememory_size && tg->max_edgememory_size <= tg->nglobaledges);
   assert (pred);
 
   int validation_passed = 1;
@@ -181,10 +177,6 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
   MPI_Allreduce(MPI_IN_PLACE, &maxlocalverts_ui, 1, MPI_UINT64_T, MPI_MAX, MPI_COMM_WORLD);
   size_t maxlocalverts = (size_t)maxlocalverts_ui;
 
-//  ptrdiff_t max_bufsize = tuple_graph_max_bufsize(tg);
-//  ptrdiff_t edge_chunk_size = ptrdiff_min(HALF_CHUNKSIZE, max_bufsize);
-
-//  assert (tg->edgememory_size >= 0 && tg->max_edgememory_size >= tg->edgememory_size && tg->max_edgememory_size <= tg->nglobaledges);
   assert (pred);
 
   /* Check that root is its own parent. */
@@ -196,7 +188,6 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
     }
   }
 
-//  assert (tg->edgememory_size >= 0 && tg->max_edgememory_size >= tg->edgememory_size && tg->max_edgememory_size <= tg->nglobaledges);
   assert (pred);
 
   /* Check that nothing else is its own parent. */
@@ -231,15 +222,16 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
     free(pred_vtx);
   }
 
-//  assert (tg->edgememory_size >= 0 && tg->max_edgememory_size >= tg->edgememory_size && tg->max_edgememory_size <= tg->nglobaledges);
   assert (pred);
-
+  if(validation_passed == 0)
+      printf("other f\n");
   {
     /* Create a vertex depth map to use for later validation. */
     int pred_ok = build_bfs_depth_map(store, nglobalverts, store.getLocColLength(), maxlocalverts, root, pred, level);
     if (!pred_ok) validation_passed = 0;
   }
-
+  if(validation_passed == 0)
+      printf("dmap faild\n");
   {
       MPI_Comm row_comm, col_comm;
       MPI_Comm_split(MPI_COMM_WORLD, store.getLocalRowID(), store.getLocalColumnID(), &row_comm);
@@ -262,10 +254,10 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
 
       for(std::vector<DistMatrix2d::fold_prop>::const_iterator it = rowFractions.begin(); it  != rowFractions.end(); it++){
           if(it->sendColSl == store.getLocalColumnID() ){
-              MPI_Bcast(pred+store.globaltolocalRow(it->startvtx),it->size,MPI_INT64_T,it->sendColSl,row_comm);
-              memcpy(rowPred+store.globaltolocalRow(it->startvtx),pred+store.globaltolocalRow(it->startvtx),it->size*sizeof(int64_t));
+              MPI_Bcast(&pred[store.globaltolocalCol(it->startvtx)],it->size,MPI_INT64_T,it->sendColSl,row_comm);
+              memcpy(&rowPred[store.globaltolocalRow(it->startvtx)],&pred[store.globaltolocalCol(it->startvtx)],it->size*sizeof(int64_t));
           }else{
-              MPI_Bcast(rowPred+store.globaltolocalRow(it->startvtx),it->size,MPI_INT64_T,it->sendColSl,row_comm);
+              MPI_Bcast(&rowPred[store.globaltolocalRow(it->startvtx)],it->size,MPI_INT64_T,it->sendColSl,row_comm);
           }
       }
 
@@ -281,6 +273,7 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
           // test if level diverenz is max. 1
           if((d0 - d1 > 1 || d1 - d0 > 1) ){
               valid_level = 0;
+              fprintf(stderr,"(%d:%d) Edge [%d:%d] with wrong levels: %d %d\n",store.getLocalRowID(), store.getLocalColumnID(),edge.v0,edge.v1,d0,d1);
           }
 
           // mark if there is an edge from each vertex to its claimed
@@ -299,6 +292,8 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
           if(get_pred_from_pred_entry(p_vertex0)!= -1)
               edge_visit_count++;
        }
+      if(valid_level==0)
+          printf("invalid_level\n");
 
        MPI_Allreduce(MPI_IN_PLACE,pred_visited, pred_visited_size, MPI_UINT64_T, MPI_BOR, col_comm);
 
@@ -320,6 +315,9 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
        free(pred_visited);
        MPI_Comm_free(&row_comm);
        MPI_Comm_free(&col_comm);
+
+       if(all_visited==0)
+           printf("not all visited\n");
 
        validation_passed = validation_passed && valid_level && all_visited;
 

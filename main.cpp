@@ -12,7 +12,13 @@
 #include <generator/make_graph.h>
 #include <validate/validate.h>
 #include "distmatrix2d.h"
-#include "simplecpubfs.h"
+
+#ifdef _OPENCL
+    #include "opencl/OCLrunner.hh"
+    #include "opencl/opencl_bfs.h"
+#else
+    #include "simplecpubfs.h"
+#endif
 
 struct statistic {
     double min;
@@ -217,7 +223,12 @@ int main(int argc, char** argv)
       tstart = MPI_Wtime();
       DistMatrix2d store(R, C);
       store.setupMatrix2(edgelist,number_of_edges);
+#ifdef _OPENCL
+      OCLRunner oclrun;
+      OpenCL_BFS runBfs(store, *oclrun);
+#else
       SimpleCPUBFS runBfs(store);
+#endif
       tstop = MPI_Wtime();
 
       long local_edges = store.getEdgeCount();
@@ -255,9 +266,8 @@ int main(int argc, char** argv)
       #endif
       // variables to control iterations
       int maxgenvtx = 32; // relativ number of maximum attempts to find a valid start vertix per posible attempt
-      std::vector<vtxtype> alreadyTryed;
-      int iteration =  0;
-      int giteration = 0; // number of tried iterations
+      std::vector<vtxtype> tries;
+      int iterations =  0;
       bool valid = true;
 
       // For statistic
@@ -265,89 +275,107 @@ int main(int argc, char** argv)
       std::vector<long>   nedge; //number of edges
       std::vector<double> teps;
 
-      while(iteration < num_of_iterations ){
-          // generate start node
-          vtxtype start;
+      if(rank == 0){
+          int giteration = 0; // number of tried iterations
+          while(iterations < num_of_iterations && giteration < num_of_iterations*maxgenvtx){
+            giteration++;
 
-          if(rank == 0){
-              while(giteration < num_of_iterations*maxgenvtx) {
-                #if __cplusplus > 199711L
-                start = distribution(generator);
-                #else
-                start = rand()% vertices;
-                #endif
+            // generate start node
+            vtxtype start;
+            #if __cplusplus > 199711L
+            start = distribution(generator);
+            #else
+            start = rand()% vertices;
+            #endif
 
-                giteration++;
-                if(std::find(alreadyTryed.begin(),alreadyTryed.end(),start)==alreadyTryed.end()){
-                    alreadyTryed.push_back(start);
-                    break;
-                } else {
-                    start = -1;
-                }
-              }
+            //skip already visited
+            if(std::find(tries.begin(),tries.end(),start)!=tries.end()){
+                continue;
+            }
+            // tell other nodes that there is another vertex to check
+            int next =1;
+            MPI_Bcast(&next,1,MPI_INT,0,MPI_COMM_WORLD);
+            // test if vertex has edges to other vertices
+            long elem = 0;
+            MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
+            if(store.isLocalRow(start)){
+                vtxtype locstart = store.globaltolocalRow(start);
+                elem = store.getRowPointer()[locstart+1]- store.getRowPointer()[locstart];
+            }
+            MPI_Reduce(MPI_IN_PLACE, &elem, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+
+            if(elem > 0){
+                tries.push_back(start);
+                iterations ++;
+            }
           }
-          // tell other nodes, if new found
-          MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
-          if(start == -1){
-              break;
-          }
+          int next =0;
+          MPI_Bcast(&next,1,MPI_INT,0,MPI_COMM_WORLD);
 
+      }else{
+           while(true){
+            int next;
+            MPI_Bcast(&next,1,MPI_INT,0,MPI_COMM_WORLD);
+            if(next == 0)
+                break;
+
+            vtxtype start;
+            long elem = 0;
+            MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
+            if(store.isLocalRow(start)){
+                vtxtype locstart = store.globaltolocalRow(start);
+                elem = store.getRowPointer()[locstart+1]- store.getRowPointer()[locstart];
+            }
+            MPI_Reduce(&elem, &elem, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+
+          }
+      }
+      MPI_Bcast(&iterations,1,MPI_INT,0,MPI_COMM_WORLD);
+
+      for(int i=0; i < iterations; i++){
           // BFS
           double rtstart,rtstop;
 
           MPI_Barrier(MPI_COMM_WORLD);
           rtstart = MPI_Wtime();
           if(rank == 0){
-            runBfs.runBFS(start);
+              runBfs.runBFS(tries[i]);
           }else{
             runBfs.runBFS();
           }
           rtstop = MPI_Wtime();
           if (rank == 0) {
-              printf("BFS Iteration %d: Finished in %fs\n", iteration,(rtstop-rtstart));
+              printf("BFS Iteration %d: Finished in %fs\n", i,(rtstop-rtstart));
           }
           // Validation
-          // Test also if this result should be rejected
-          //    // manual validation ;)
-          //    for(int i = 0; i < store.getLocColLength(); i++){
-          //        printf("%d:[%ld]\n", store.localtoglobalCol(i),  predessor[i]);
-          //    }
-          int reject;
           int level;
           int this_valid;
           vtxtype num_edges;
 
           tstart = MPI_Wtime();
+          vtxtype start;
+          if(rank==0){
+              start = tries[i];
+              MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
+          }else{
+              MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
+          }
           this_valid = validate_bfs_result(store, edgelist, number_of_edges,
                                            vertices, start, runBfs.getPredessor(), &num_edges, &level);
           tstop = MPI_Wtime();
-
           if (rank == 0) {
-              printf("Validation of iteration %d finished in %fs\n", iteration,(tstop-tstart));
+              printf("Validation of iteration %d finished in %fs\n", i,(tstop-tstart));
           }
           valid = valid && this_valid;
 
-          //test if the result should be rejected
+          //print and save statistic
           if(rank==0){
-              //because validate is not implemented
-              reject = level == 0;
-              if(reject)
-                  printf("Result rejected!\n");
-              else {
-                  printf("Result: %s %ld Edge(s) processed, %f MTeps\n", (this_valid)? "Valid":"Invalid", num_edges, num_edges/(rtstop-rtstart) * 1E-6 );
-                  //for statistic
-                  bfs_time.push_back(rtstop-rtstart);
-                  nedge.push_back(num_edges);
-                  teps.push_back(num_edges/(rtstop-rtstart));
-              }
+              printf("Result: %s %ld Edge(s) processed, %f MTeps\n", (this_valid)? "Valid":"Invalid", num_edges, num_edges/(rtstop-rtstart) * 1E-6 );
+              //for statistic
+              bfs_time.push_back(rtstop-rtstart);
+              nedge.push_back(num_edges);
+              teps.push_back(num_edges/(rtstop-rtstart));
           }
-          //tell other nodes, if this iteration should be rejected
-          MPI_Bcast(&reject,1,MPI_INT,0,MPI_COMM_WORLD);
-
-          if(reject == 0){
-              iteration++;
-          }
-          giteration++;
       }
       free(edgelist);
 
@@ -356,7 +384,7 @@ int main(int argc, char** argv)
         printf ("Validation: %s\n", (valid)? "passed":"failed!");
         printf ("SCALE: %d\n", scale);
         printf ("edgefactor: %d\n", edgefactor);
-        printf ("NBFS: %d\n", iteration);
+        printf ("NBFS: %d\n", iterations);
         printf ("graph_generation: %2.3e\n", make_graph_time);
         printf ("num_mpi_processes: %d\n", size);
         printf ("construction_time: %2.3e\n", constr_time);
@@ -378,20 +406,7 @@ int main(int argc, char** argv)
         printf ("max_nedge: %2.3e\n", nedge_s.max);
         printf ("mean_nedge: %2.3e\n", nedge_s.mean);
         printf ("stddev_nedge: %2.3e\n", nedge_s.stddev);
-/*
-       TEPS = kernel_2_nedge ./ kernel_2_time;
-       N = length (TEPS);
-       S = statistics (TEPS);
-       S(6) = mean (TEPS, 'h');
-       %% Harmonic standard deviation from:
-       %% Nilan Norris, The Standard Errors of the Geometric and Harmonic
-       %% Means and Their Application to Index Numbers, 1940.
-       %% http://www.jstor.org/stable/2235723
-       tmp = zeros (N, 1);
-       tmp(TEPS > 0) = 1./TEPS(TEPS > 0);
-       tmp = tmp - 1/S(6);
-       S(7) = (sqrt (sum (tmp.^2)) / (N-1)) * S(6)^2;
-*/
+
         statistic teps_s = getStatistics (teps);
         printf ("min_TEPS: %2.3e\n", teps_s.min);
         printf ("firstquartile_TEPS: %2.3e\n",  teps_s.firstquartile);

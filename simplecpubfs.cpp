@@ -81,7 +81,7 @@ void SimpleCPUBFS::setIncommingFQ(vtxtype globalstart, vtxtype size, void *start
 void SimpleCPUBFS::getOutgoingFQ(vtxtype globalstart, vtxtype size, void* &startaddr, vtxtype &outsize)
 {
     long sidx= 	static_cast<long>(std::lower_bound(fq_out.begin(),fq_out.end(), globalstart) - fq_out.begin());
-    long eidx= static_cast<long>(std::upper_bound(fq_out.begin(),fq_out.end(), globalstart+size) - fq_out.begin());
+    long eidx= static_cast<long>(std::upper_bound(fq_out.begin()+sidx,fq_out.end(), globalstart+size-1) - fq_out.begin());
 
     startaddr   = static_cast<void*>(fq_out.data()+sidx);
     outsize     = eidx-sidx;
