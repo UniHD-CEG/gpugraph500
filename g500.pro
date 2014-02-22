@@ -1,6 +1,5 @@
 TEMPLATE = app
 CONFIG += console
-#CONFIG -= app_bundle
 CONFIG -= qt core
 CONFIG += no_autoqmake
 #CONFIG += debug
@@ -73,14 +72,11 @@ QMAKE_CC = mpicc
 QMAKE_CC_RELEASE = $$QMAKE_CC
 QMAKE_CC_DEBUG = $$QMAKE_CC
 
-#QMAKE_CFLAGS += $$system(mpicc --showme:compile)
 QMAKE_CFLAGS_RELEASE += -O3
 QMAKE_CFLAGS_DEBUG += -O0
-#QMAKE_LFLAGS += $$system(mpicxx --showme:link)
-#QMAKE_CXXFLAGS += $$system(mpicxx --showme:compile) -DMPICH_IGNORE_CXX_SEEK
 QMAKE_CXXFLAGS_RELEASE += -O3
 QMAKE_CXXFLAGS_DEBUG += -O0
 QMAKE_CFLAGS += -std=c99 -fopenmp
 #QMAKE_CXXFLAGS += -std=c++11
-QMAKE_CXXFLAGS += -fopenmp
+QMAKE_CXXFLAGS += -fopenmp -DINSTRUMENTED
 QMAKE_LFLAGS += -fopenmp

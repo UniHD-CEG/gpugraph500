@@ -181,7 +181,7 @@ int main(int argc, char** argv)
             R = size;
             C = 1;
         }
-        printf("column slices: %d, row slices: %d\n", C, R );
+        printf("row slices: %d, column slices: %d\n", R, C);
       }
       MPI_Bcast(&scale     ,1,MPI_INT,0,MPI_COMM_WORLD);
       MPI_Bcast(&edgefactor,1,MPI_INT,0,MPI_COMM_WORLD);
@@ -274,6 +274,17 @@ int main(int argc, char** argv)
       std::vector<double> bfs_time;
       std::vector<long>   nedge; //number of edges
       std::vector<double> teps;
+      #ifdef INSTRUMENTED
+      std::vector<double> valid_time;
+
+      std::vector<double> bfs_local;
+      std::vector<double> bfs_local_share;
+      std::vector<double> queue_local;
+      std::vector<double> queue_local_share;
+      std::vector<double> rest;
+      std::vector<double> rest_share;
+      #endif
+
 
       if(rank == 0){
           int giteration = 0; // number of tried iterations
@@ -338,14 +349,43 @@ int main(int argc, char** argv)
 
           MPI_Barrier(MPI_COMM_WORLD);
           rtstart = MPI_Wtime();
+          #ifdef INSTRUMENTED
+          double lexp, lqueue;
+          if(rank == 0){
+              runBfs.runBFS(tries[i],lexp,lqueue);
+          }else{
+            runBfs.runBFS(-1,lexp,lqueue);
+          }
+          #else
           if(rank == 0){
               runBfs.runBFS(tries[i]);
           }else{
-            runBfs.runBFS();
+            runBfs.runBFS(-1);
           }
+          #endif
           rtstop = MPI_Wtime();
+
+          #ifdef INSTRUMENTED
+          double gmax_lexp,gmax_lqueue;
+          MPI_Reduce(&lexp, &gmax_lexp, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+          MPI_Reduce(&lqueue, &gmax_lqueue, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+          #endif
+
+
           if (rank == 0) {
               printf("BFS Iteration %d: Finished in %fs\n", i,(rtstop-rtstart));
+              #ifdef INSTRUMENTED
+              printf("max. local exp.:     %fs(%f%%)\n", gmax_lexp,  100.*gmax_lexp/(rtstop-rtstart));
+              printf("max. queue handling: %fs(%f%%)\n", gmax_lqueue,100.*gmax_lqueue/(rtstop-rtstart));
+              printf("est. rest:           %fs(%f%%)\n",(rtstop-rtstart)-gmax_lexp-gmax_lqueue, 1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart));
+
+              bfs_local.push_back(gmax_lexp);
+              bfs_local_share.push_back(gmax_lexp/(rtstop-rtstart));
+              queue_local.push_back(gmax_lqueue);
+              queue_local_share.push_back(gmax_lqueue/(rtstop-rtstart));
+              rest.push_back((rtstop-rtstart)-gmax_lexp-gmax_lqueue);
+              rest_share.push_back(1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart));
+              #endif
           }
           // Validation
           int level;
@@ -375,6 +415,9 @@ int main(int argc, char** argv)
               bfs_time.push_back(rtstop-rtstart);
               nedge.push_back(num_edges);
               teps.push_back(num_edges/(rtstop-rtstart));
+              #ifdef INSTRUMENTED
+              valid_time.push_back(tstop-tstart);
+              #endif
           }
       }
       free(edgelist);
@@ -416,6 +459,70 @@ int main(int argc, char** argv)
         printf ("harmonic_mean_TEPS: %2.3e\n",  teps_s.hmean);
         printf ("harmonic_stddev_TEPS: %2.3e\n",  teps_s.hstddev);
 
+        #ifdef INSTRUMENTED
+        statistic valid_time_s = getStatistics (valid_time);
+        printf ("min_validation_time: %2.3e\n", valid_time_s.min);
+        printf ("firstquartile_validation_time: %2.3e\n", valid_time_s.firstquartile);
+        printf ("median_validation_time: %2.3e\n",valid_time_s.median);
+        printf ("thirdquartile_validation_time: %2.3e\n", valid_time_s.thirdquartile);
+        printf ("max_validation_time: %2.3e\n", valid_time_s.max);
+        printf ("mean_validation_time: %2.3e\n", valid_time_s.mean);
+        printf ("stddev_validation_time: %2.3e\n", valid_time_s.stddev);
+
+        statistic lbfs_time_s = getStatistics (bfs_local);
+        printf ("min_local_bfs_time: %2.3e\n", lbfs_time_s.min);
+        printf ("firstquartile_local_bfs_time: %2.3e\n", lbfs_time_s.firstquartile);
+        printf ("median_local_bfs_time: %2.3e\n",lbfs_time_s.median);
+        printf ("thirdquartile_local_bfs_time: %2.3e\n", lbfs_time_s.thirdquartile);
+        printf ("max_local_bfs_time: %2.3e\n", lbfs_time_s.max);
+        printf ("mean_local_bfs_time: %2.3e\n", lbfs_time_s.mean);
+        printf ("stddev_local_bfs_time: %2.3e\n", lbfs_time_s.stddev);
+
+        statistic lbfs_share_s = getStatistics (bfs_local_share);
+        printf ("min_bfs_local_share: %2.3e\n", lbfs_share_s .min);
+        printf ("firstquartile_bfs_local_share: %2.3e\n",  lbfs_share_s .firstquartile);
+        printf ("median_bfs_local_share: %2.3e\n",  lbfs_share_s .median);
+        printf ("thirdquartile_bfs_local_share: %2.3e\n",  lbfs_share_s .thirdquartile);
+        printf ("max_bfs_local_share: %2.3e\n",  lbfs_share_s .max);
+        printf ("harmonic_mean_bfs_local_share: %2.3e\n",  lbfs_share_s .hmean);
+        printf ("harmonic_stddev_bfs_local_share: %2.3e\n",  lbfs_share_s .hstddev);
+
+        statistic lqueue_time_s = getStatistics (queue_local);
+        printf ("min_local_queue_time: %2.3e\n", lqueue_time_s.min);
+        printf ("firstquartile_local_queue_time: %2.3e\n", lqueue_time_s.firstquartile);
+        printf ("median_local_queue_time: %2.3e\n",lqueue_time_s.median);
+        printf ("thirdquartile_local_queue_time: %2.3e\n", lqueue_time_s.thirdquartile);
+        printf ("max_local_queue_time: %2.3e\n", lqueue_time_s.max);
+        printf ("mean_local_queue_time: %2.3e\n", lqueue_time_s.mean);
+        printf ("stddev_local_queue_time: %2.3e\n", lqueue_time_s.stddev);
+
+        statistic lqueue_share_s = getStatistics (queue_local_share);
+        printf ("min_queue_local_share: %2.3e\n", lqueue_share_s .min);
+        printf ("firstquartile_queue_local_share: %2.3e\n",  lqueue_share_s .firstquartile);
+        printf ("median_queue_local_share: %2.3e\n",  lqueue_share_s .median);
+        printf ("thirdquartile_queue_local_share: %2.3e\n",  lqueue_share_s .thirdquartile);
+        printf ("max_queue_local_share: %2.3e\n",  lqueue_share_s .max);
+        printf ("harmonic_mean_queue_local_share: %2.3e\n",  lqueue_share_s .hmean);
+        printf ("harmonic_stddev_queue_local_share: %2.3e\n",  lqueue_share_s .hstddev);
+
+        statistic rest_time_s = getStatistics (rest);
+        printf ("min_rest_time: %2.3e\n", rest_time_s.min);
+        printf ("firstquartile_rest_time: %2.3e\n", rest_time_s.firstquartile);
+        printf ("median_rest_time: %2.3e\n",rest_time_s.median);
+        printf ("thirdquartile_rest_time: %2.3e\n", rest_time_s.thirdquartile);
+        printf ("max_rest_time: %2.3e\n", rest_time_s.max);
+        printf ("mean_rest_time: %2.3e\n", rest_time_s.mean);
+        printf ("stddev_rest_time: %2.3e\n", rest_time_s.stddev);
+
+        statistic rest_share_s = getStatistics (rest_share);
+        printf ("min_rest_share: %2.3e\n", rest_share_s .min);
+        printf ("firstquartile_rest_share: %2.3e\n",  rest_share_s .firstquartile);
+        printf ("median_rest_share: %2.3e\n",  rest_share_s .median);
+        printf ("thirdquartile_rest_share: %2.3e\n",  rest_share_s .thirdquartile);
+        printf ("max_rest_share: %2.3e\n",  rest_share_s .max);
+        printf ("harmonic_mean_rest_share: %2.3e\n",  rest_share_s .hmean);
+        printf ("harmonic_stddev_rest_share: %2.3e\n",  rest_share_s .hstddev);
+        #endif
       }
       MPI_Finalize();
 }

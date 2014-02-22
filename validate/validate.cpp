@@ -273,7 +273,7 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
           // test if level diverenz is max. 1
           if((d0 - d1 > 1 || d1 - d0 > 1) ){
               valid_level = 0;
-              fprintf(stderr,"(%d:%d) Edge [%d:%d] with wrong levels: %d %d\n",store.getLocalRowID(), store.getLocalColumnID(),edge.v0,edge.v1,d0,d1);
+              fprintf(stderr,"(%d:%d) Edge [%ld:%ld] with wrong levels: %d %d\n",store.getLocalRowID(), store.getLocalColumnID(),edge.v0,edge.v1,d0,d1);
           }
 
           // mark if there is an edge from each vertex to its claimed

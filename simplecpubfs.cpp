@@ -51,6 +51,11 @@ void SimpleCPUBFS::runLocalBFS()
 
 void SimpleCPUBFS::setStartVertex(vtxtype start)
 {
+    //reset predessor list
+    for(int i = 0; i < store.getLocColLength(); i++){
+        predessor[i] = -1;
+    }
+
     visited.assign(store.getLocColLength(),false);
     fq_out.clear();
     fq_in.clear();

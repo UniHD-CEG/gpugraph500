@@ -34,7 +34,12 @@ protected:
 public:
     GlobalBFS(DistMatrix2d& _store);
 
-    void runBFS(vtxtype startVertex=0);
+    #ifdef INSTRUMENTED
+    void runBFS(vtxtype startVertex, double& lexp, double &lqueue);
+    #else
+    void runBFS(vtxtype startVertex);
+    #endif
+
 
     vtxtype* getPredessor();
 };
