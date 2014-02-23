@@ -590,7 +590,7 @@ public:
 				//---------------------------------------------------------------------
 				// Expand work queues
 				//---------------------------------------------------------------------
-
+				//change
 				for (int i = 0; i < csr_problem.num_gpus; i++) {
 
 					GpuControlBlock *control 	= control_blocks[i];
