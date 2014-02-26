@@ -17,15 +17,17 @@ long DistMatrix2d::computeOwner(unsigned long row, unsigned long column)
     long r_residuum, c_residuum;
     long rSliceSize, cSliceSize;
 
-    r_residuum = globalNumberOfVertex % R;
-    rSliceSize = globalNumberOfVertex / R;
+    long num8 = globalNumberOfVertex/8 + ((globalNumberOfVertex%8>0)? 1:0) ;
+
+    r_residuum = num8 % R;
+    rSliceSize = num8 / R;
 
     if((rowSlice = row/(rSliceSize+1)) >= r_residuum ){//compute row slice, if the slice number is in the bigger intervals
         rowSlice =  (row- r_residuum)/ rSliceSize; //compute row slice, if the slice number is in the smaler intervals
     }
 
-    c_residuum = globalNumberOfVertex % C;
-    cSliceSize = globalNumberOfVertex / C;
+    c_residuum = num8 % C;
+    cSliceSize = num8 / C;
 
     if((columnSlice = column/(cSliceSize+1)) >= c_residuum ){ //compute column slice, if the slice number is in the bigger intervals
         columnSlice =  (column- c_residuum)/ cSliceSize; //compute column slice, if the slice number is in the smaler interval
@@ -99,6 +101,11 @@ void DistMatrix2d::setupMatrix(packed_edge *input, long numberOfEdges, bool undi
     MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
     //because start at 0
     globalNumberOfVertex = globalNumberOfVertex+1;
+    long num8 = globalNumberOfVertex/8 + ((globalNumberOfVertex%8>0)? 1:0) ;
+    row_start       = (r*(num8/R) + ((r < num8%R)? r : num8%R))*8;
+    row_length      = (num8/R + ((r < num8%R)? 1 : 0))*8;
+    column_start    = (c*(num8/C) + ((c < num8%C)? c : num8%C))*8;
+    column_length   = (num8/C + ((c < num8%C)? 1 : 0))*8;
 
     row_pointer = new vtxtype[row_length+1];
     long* row_elem = new long[row_length];
@@ -479,16 +486,16 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, long &numberOfEdges, bool u
             maxVertex  = (maxVertex > read.v0)? maxVertex:  read.v0;
             maxVertex  = (maxVertex > read.v1)? maxVertex :  read.v1;
         }
-
     }
 
     MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
     //because start at 0
     globalNumberOfVertex = globalNumberOfVertex+1;
-    row_start       = r*(globalNumberOfVertex/R) + ((r < globalNumberOfVertex%R)? r : globalNumberOfVertex%R);
-    row_length      = globalNumberOfVertex/R + ((r < globalNumberOfVertex%R)? 1 : 0);
-    column_start    = c*(globalNumberOfVertex/C) + ((c < globalNumberOfVertex%C)? c : globalNumberOfVertex%C);
-    column_length   = globalNumberOfVertex/C + ((c < globalNumberOfVertex%C)? 1 : 0);
+    long num8 = globalNumberOfVertex/8 + ((globalNumberOfVertex%8>0)? 1:0) ;
+    row_start       = (r*(num8/R) + ((r < num8%R)? r : num8%R))*8;
+    row_length      = (num8/R + ((r < num8%R)? 1 : 0))*8;
+    column_start    = (c*(num8/C) + ((c < num8%C)? c : num8%C))*8;
+    column_length   = (num8/C + ((c < num8%C)? 1 : 0))*8;
 
     // Split communicator into row and column communicator
     MPI_Comm row_comm, col_comm;
@@ -512,18 +519,18 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, long &numberOfEdges, bool u
     int* other_size = new int[R];
     int* other_offset =  new int[R+1];
 
-    long res = globalNumberOfVertex % R;
-    long ua_sl_size = globalNumberOfVertex / R;
+    long res = num8 % R;
+    long ua_sl_size = num8 / R;
 
     // offset for transmission
     long sl_start = 0;
     owen_offset[0] = 0;
     for(int i = 1; i < R; i++){
         if(res > 0) {
-            sl_start += ua_sl_size +1;
+            sl_start += (ua_sl_size +1)*8;
             res--;
         }else{
-            sl_start += ua_sl_size;
+            sl_start += ua_sl_size*8;
         }
         packed_edge startEdge = {sl_start,0};
         owen_offset[i] = std::lower_bound(input+owen_offset[i-1],input+numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
@@ -568,18 +575,18 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, long &numberOfEdges, bool u
     other_size = new int[C];
     other_offset =  new int[C+1];
 
-    res = globalNumberOfVertex % C;
-    ua_sl_size = globalNumberOfVertex / C;
+    res = num8 % C;
+    ua_sl_size = num8 / C;
 
     // offset for transmission
     sl_start = 0;
     owen_offset[0] = 0;
     for(int i = 1; i < C; i++){
         if(res > 0) {
-            sl_start += ua_sl_size +1;
+            sl_start += (ua_sl_size +1)*8;
             res--;
         }else{
-            sl_start += ua_sl_size;
+            sl_start += ua_sl_size*8;
         }
 
         packed_edge startEdge = {0,sl_start};
@@ -763,32 +770,33 @@ std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties() const
     // compute the properties of global folding
     struct fold_prop newprop;
     std::vector<struct fold_prop> fold_fq_props;
+    long num8 = globalNumberOfVertex/8 + ((globalNumberOfVertex%8>0)? 1:0) ;
 
     // first fractions of first fq
-    vtxtype ua_col_size= globalNumberOfVertex /C; // non adjusted coumn size
-    vtxtype col_size_res = globalNumberOfVertex % C;
+    vtxtype ua_col_size= num8 /C; // non adjusted coumn size
+    vtxtype col_size_res = num8 % C;
 
-    vtxtype a_quot = row_start / (ua_col_size+1);
+    vtxtype a_quot = row_start / ((ua_col_size+1)*8);
 
     if(a_quot >=  col_size_res){
-        newprop.sendColSl = (row_start - col_size_res) / ua_col_size;
+        newprop.sendColSl = (row_start/8 - col_size_res) / ua_col_size;
         newprop.startvtx = row_start;
-        newprop.size = ua_col_size-((row_start - col_size_res) % ua_col_size );
+        newprop.size = (ua_col_size-((row_start/8 - col_size_res) % ua_col_size ))*8;
         newprop.size = (newprop.size < row_length)? newprop.size :  row_length;
         col_size_res = 0;
         //column end
-        vtxtype colnextstart = (col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
-        (newprop.sendColSl+1)*ua_col_size+globalNumberOfVertex % C;
+        vtxtype colnextstart = ((col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
+        (newprop.sendColSl+1)*ua_col_size+num8 % C)*8;
         newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
     } else {
         newprop.sendColSl = a_quot;
         newprop.startvtx = row_start;
-        newprop.size = ua_col_size +1;
+        newprop.size = (ua_col_size +1)*8;
         newprop.size = (newprop.size < row_length)? newprop.size :  row_length;
         col_size_res -= a_quot +1;
         //column end
-        vtxtype colnextstart = (col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
-        (newprop.sendColSl+1)*ua_col_size+globalNumberOfVertex % C;
+        vtxtype colnextstart = ((col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
+        (newprop.sendColSl+1)*ua_col_size+num8 % C)*8;
         newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
 
     }
@@ -798,12 +806,12 @@ std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties() const
     while(newprop.startvtx+newprop.size<row_end){
         newprop.sendColSl++;
         newprop.startvtx+=newprop.size;
-        newprop.size = (col_size_res > 0)? ua_col_size+1 : ua_col_size;
+        newprop.size = ((col_size_res > 0)? ua_col_size+1 : ua_col_size)*8;
         col_size_res -= (col_size_res > 0)? 1 : 0;
         newprop.size = (newprop.startvtx+newprop.size < row_end )? newprop.size: row_end-newprop.startvtx;
         //column end
-        vtxtype colnextstart = (col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
-        (newprop.sendColSl+1)*ua_col_size+globalNumberOfVertex % C;
+        vtxtype colnextstart = ((col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
+        (newprop.sendColSl+1)*ua_col_size+num8 % C)*8;
         newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
         fold_fq_props.push_back(newprop);
     }
@@ -816,17 +824,18 @@ std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties() const
 */
 void DistMatrix2d::get_vertex_distribution_for_pred(size_t count, const int64_t *vertex_p, int *owner_p, size_t *local_p) const
 {
-  long c_residuum = globalNumberOfVertex % C;
-  long c_SliceSize = globalNumberOfVertex / C;
+  long num8 = globalNumberOfVertex/8 + ((globalNumberOfVertex%8>0)? 1:0 );
+  long c_residuum = num8 % C;
+  long c_SliceSize = num8 / C;
 
   //#pragma omp parallel for
     for (long i = 0; i < (ptrdiff_t)count; ++i) {
-        if(( vertex_p[i]/(c_SliceSize+1)) > c_residuum){
-            owner_p[i] = (vertex_p[i]-c_residuum)/c_SliceSize;
-            local_p[i] = (vertex_p[i]-c_residuum)%c_SliceSize;
+        if( vertex_p[i]/((c_SliceSize+1)*8) >= c_residuum){
+            owner_p[i] = (vertex_p[i]-c_residuum*8)/(c_SliceSize*8);
+            local_p[i] = (vertex_p[i]-c_residuum*8)%(c_SliceSize*8);
         } else {
-            owner_p[i] = vertex_p[i]/(c_SliceSize+1);
-            local_p[i] = vertex_p[i]%(c_SliceSize+1);
+            owner_p[i] = vertex_p[i]/((c_SliceSize+1)*8);
+            local_p[i] = vertex_p[i]%((c_SliceSize+1)*8);
         }
     }
 }
