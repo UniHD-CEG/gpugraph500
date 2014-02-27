@@ -49,6 +49,11 @@ GEN_SM13 = -gencode=arch=compute_13,code=\"sm_13,compute_13\"
 GEN_SM10 = -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
 #SM_TARGETS = $(GEN_SM30) $(GEN_SM20) $(GEN_SM13) $(GEN_SM10)
 SM_TARGETS = $(GEN_SM20) 
+#Keeneland Fermi target
+SM_TARGETS = $(GEN_SM20)
+
+#Kepler target
+#SM_TARGETS = $(GEN_SM35) 
 
 #-------------------------------------------------------------------------------
 # Tune arch
@@ -174,22 +179,22 @@ bin/test_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) : test_bfs.cu $(DEPS)
 # (make microbench) Microbenchmark gather & lookup test driver
 #-------------------------------------------------------------------------------
 
-microbench: bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX)
+#microbench: bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX)
 
-bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) : microbench_bfs.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) microbench_bfs.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
+#bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) : microbench_bfs.cu $(DEPS)
+#	mkdir -p bin
+#	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/microbench_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) microbench_bfs.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
 
 
 #-------------------------------------------------------------------------------
 # (make cull) Microbenchmark cull driver
 #-------------------------------------------------------------------------------
 
-cull: bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX)
+#cull: bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX)
 
-bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX) : microbench_cull.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX) microbench_cull.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
+#bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX) : microbench_cull.cu $(DEPS)
+#	mkdir -p bin
+#	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/microbench_cull_$(NVCC_VERSION)_$(ARCH_SUFFIX) microbench_cull.cu $(NVCCFLAGS) $(ARCH) $(INC) -O3  
 
 
 
