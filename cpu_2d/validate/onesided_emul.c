@@ -183,7 +183,7 @@ void end_gather(gather* g) {
   MPI_Alltoallv(remote_indices, send_counts, send_offsets, MPI_AINT, recv_data, recv_counts, recv_offsets, MPI_AINT, comm);
   char* restrict reply_data = xmalloc(recv_offsets[size] * elt_size);
   for (i = 0; i < (size_t)recv_offsets[size]; ++i) {
-    assert (recv_data[i] >= 0 && recv_data[i] < input_count);
+    assert (recv_data[i] >= 0 && recv_data[i] < ((MPI_Aint) input_count));
     memcpy(reply_data + i * elt_size, input + recv_data[i] * elt_size, elt_size);
   }
   free(recv_data);
@@ -328,7 +328,7 @@ void end_scatter_constant(scatter_constant* sc) {
   MPI_Aint* restrict recv_data = (MPI_Aint*)xmalloc(recv_offsets[size] * sizeof(MPI_Aint));
   MPI_Alltoallv(remote_indices, send_counts, send_offsets, MPI_AINT, recv_data, recv_counts, recv_offsets, MPI_AINT, comm);
   for (i = 0; i < (size_t)recv_offsets[size]; ++i) {
-    assert (recv_data[i] >= 0 && recv_data[i] < array_count);
+    assert (recv_data[i] >= 0 && recv_data[i] < (MPI_Aint) array_count);
     memcpy(array + recv_data[i] * elt_size, constant, elt_size);
   }
   free(recv_data);
@@ -475,7 +475,7 @@ void end_scatter(scatter* sc) {
   MPI_Alltoallv(remote_indices, send_counts, send_offsets, MPI_AINT, recv_indices, recv_counts, recv_offsets, MPI_AINT, comm);
   MPI_Alltoallv(send_data, send_counts, send_offsets, sc->datatype, recv_data, recv_counts, recv_offsets, sc->datatype, comm);
   for (i = 0; i < (size_t)recv_offsets[size]; ++i) {
-    assert (recv_indices[i] >= 0 && recv_indices[i] < array_count);
+    assert (recv_indices[i] >= 0 && recv_indices[i] < (MPI_Aint)array_count);
     memcpy(array + recv_indices[i] * elt_size, recv_data + i * elt_size, elt_size);
   }
   free(recv_data);

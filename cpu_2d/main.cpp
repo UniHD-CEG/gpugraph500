@@ -3,6 +3,7 @@
  */
 #include "mpi.h"
 #include <cstring>
+#include <assert.h>
 #include <cmath>
 #if __cplusplus > 199711L  //C++11 active
 #include <random>
@@ -17,7 +18,8 @@
     #include "opencl/OCLrunner.hh"
     #include "opencl/opencl_bfs.h"
 #else
-    #include "simplecpubfs.h"
+  //  #include "simplecpubfs.h"
+    #include "cpubfs_bin.h"
 #endif
 
 struct statistic {
@@ -89,17 +91,17 @@ statistic getStatistics(std::vector<T>& input){
 int main(int argc, char** argv)
 {
 
-      int scale =  21;
-      int edgefactor = 16;
-      int num_of_iterations = 64;
+      int64_t scale =  21;
+      int64_t edgefactor = 16;
+      int64_t num_of_iterations = 64;
 
       MPI_Init(&argc, &argv);
       int   R,C;
       bool  R_set =false, C_set = false;
       int size, rank;
 
-      long vertices ;
-      long global_edges;
+      int64_t vertices ;
+      int64_t global_edges;
       MPI_Comm_size(MPI_COMM_WORLD, &size);
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -109,7 +111,7 @@ int main(int argc, char** argv)
         while(i < argc){
             if(!strcmp(argv[i], "-s")){
                 if(i+1 < argc){
-                    int s_tmp = atoi(argv[i+1]);
+                    int s_tmp = atol(argv[i+1]);
                     if(s_tmp < 1){
                         printf("Invalid scale factor: %s\n", argv[i+1]);
                     } else{
@@ -119,7 +121,7 @@ int main(int argc, char** argv)
                 }
             }else if(!strcmp(argv[i], "-e")){
                 if(i+1 < argc){
-                    int e_tmp = atoi(argv[i+1]);
+                    int e_tmp = atol(argv[i+1]);
                     if(e_tmp < 1){
                        printf("Invalid edge factor: %s\n", argv[i+1]);
                     } else{
@@ -129,7 +131,7 @@ int main(int argc, char** argv)
                 }
             }else if(!strcmp(argv[i], "-i")){
                 if(i+1 < argc){
-                    int i_tmp = atoi(argv[i+1]);
+                    int i_tmp = atol(argv[i+1]);
                     if(i_tmp < 1){
                        printf("Invalid number of iterations: %s\n", argv[i+1]);
                     } else{
@@ -183,9 +185,9 @@ int main(int argc, char** argv)
         }
         printf("row slices: %d, column slices: %d\n", R, C);
       }
-      MPI_Bcast(&scale     ,1,MPI_INT,0,MPI_COMM_WORLD);
-      MPI_Bcast(&edgefactor,1,MPI_INT,0,MPI_COMM_WORLD);
-      MPI_Bcast(&num_of_iterations,1,MPI_INT,0,MPI_COMM_WORLD);
+      MPI_Bcast(&scale     ,1,MPI_INT64_T,0,MPI_COMM_WORLD);
+      MPI_Bcast(&edgefactor,1,MPI_INT64_T,0,MPI_COMM_WORLD);
+      MPI_Bcast(&num_of_iterations,1,MPI_INT64_T,0,MPI_COMM_WORLD);
       MPI_Bcast(&R         ,1,MPI_INT,0,MPI_COMM_WORLD);
       MPI_Bcast(&C         ,1,MPI_INT,0,MPI_COMM_WORLD);
 
@@ -227,7 +229,8 @@ int main(int argc, char** argv)
       OCLRunner oclrun;
       OpenCL_BFS runBfs(store, *oclrun);
 #else
-      SimpleCPUBFS runBfs(store);
+      //SimpleCPUBFS runBfs(store);
+      CPUBFS_bin runBfs(store);
 #endif
       tstop = MPI_Wtime();
 
@@ -244,11 +247,12 @@ int main(int argc, char** argv)
           printf("(%ld:%ld) %ld:%ld\n", store.getLocalRowID(), store.getLocalColumnID(),edgelist[i].v0, edgelist[i].v1 );
       }
 */
+/*
      // print matrix
-   /*  const vtxtype* rowp = store.getRowPointer();
+     const vtxtype* rowp = store.getRowPointer();
      const vtxtype* columnp = store.getColumnIndex();
      for(int i = 0; i < store.getLocRowLength(); i++){
-          printf("%d: ",  store.localtoglobalRow(i));
+          printf("%ld: ",  store.localtoglobalRow(i));
           for(int j = rowp[i]; j < rowp[i+1]; j++){
               printf("%ld ",  columnp[j]);
           }
@@ -377,7 +381,7 @@ int main(int argc, char** argv)
               #ifdef INSTRUMENTED
               printf("max. local exp.:     %fs(%f%%)\n", gmax_lexp,  100.*gmax_lexp/(rtstop-rtstart));
               printf("max. queue handling: %fs(%f%%)\n", gmax_lqueue,100.*gmax_lqueue/(rtstop-rtstart));
-              printf("est. rest:           %fs(%f%%)\n",(rtstop-rtstart)-gmax_lexp-gmax_lqueue, 1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart));
+              printf("est. rest:           %fs(%f%%)\n",(rtstop-rtstart)-gmax_lexp-gmax_lqueue, 100.*(1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart)));
 
               bfs_local.push_back(gmax_lexp);
               bfs_local_share.push_back(gmax_lexp/(rtstop-rtstart));
@@ -425,8 +429,8 @@ int main(int argc, char** argv)
       // Statistic
       if(rank==0){
         printf ("Validation: %s\n", (valid)? "passed":"failed!");
-        printf ("SCALE: %d\n", scale);
-        printf ("edgefactor: %d\n", edgefactor);
+        printf ("SCALE: %ld\n", scale);
+        printf ("edgefactor: %ld\n", edgefactor);
         printf ("NBFS: %d\n", iterations);
         printf ("graph_generation: %2.3e\n", make_graph_time);
         printf ("num_mpi_processes: %d\n", size);

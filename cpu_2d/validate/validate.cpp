@@ -51,7 +51,7 @@ static int check_value_ranges(const DistMatrix2d& store, const int64_t nglobalve
       for (i = i_start; i < i_end; ++i) {
         int64_t p = get_pred_from_pred_entry(pred[i]);
         if (p < -1 || p >= nglobalverts) {            
-          fprintf(stderr, "(%d:%d): Validation error: parent of vertex %" PRId64 " is out-of-range value %" PRId64 ".\n", store.getLocalRowID(), store.getLocalColumnID() , store.localtoglobalCol(i), p);
+          fprintf(stderr, "(%ld:%ld): Validation error: parent of vertex %" PRId64 " is out-of-range value %" PRId64 ".\n", store.getLocalRowID(), store.getLocalColumnID() , store.localtoglobalCol(i), p);
           any_range_errors = 1;
         }
       }
@@ -92,7 +92,7 @@ static int build_bfs_depth_map(const DistMatrix2d& store, const int64_t nglobalv
 
   {
     /* Iteratively update depth[v] = min(depth[v], depth[pred[v]] + 1) [saturating at UINT16_MAX] until no changes. */
-    while (1) {
+   while (1) {
       int any_changes = 0;
       for (ptrdiff_t ii = 0; ii < (ptrdiff_t)maxlocalverts; ii += CHUNKSIZE) {
         ptrdiff_t i_start = ptrdiff_min(ii, nlocalverts);
@@ -114,7 +114,7 @@ static int build_bfs_depth_map(const DistMatrix2d& store, const int64_t nglobalv
             pred_pred[i - i_start] = -1;
           }
         }
-        end_gather(pred_win);
+        end_gather(pred_win);        
 #pragma omp parallel for reduction(&&:validation_passed) reduction(||:any_changes)
         for (ptrdiff_t i = i_start; i < i_end; ++i) {
           if (store.getLocalColumnID() == root_owner && (size_t)i == root_local) continue;
@@ -132,7 +132,7 @@ static int build_bfs_depth_map(const DistMatrix2d& store, const int64_t nglobalv
       }
       MPI_Allreduce(MPI_IN_PLACE, &any_changes, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
       if (!any_changes) break;
-      ++iter_number;
+      ++iter_number;   
     }
   }
 
@@ -159,7 +159,7 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
   *edge_visit_count_ptr = 0; /* Ensure it is a valid pointer */
   int ranges_ok = check_value_ranges(store,nglobalverts, pred);
   if (root < 0 || root >= nglobalverts) {
-    fprintf(stderr, "(%d:%d): Validation error: root vertex %" PRId64 " is invalid.\n", store.getLocalRowID(), store.getLocalColumnID(), root);
+    fprintf(stderr, "(%ld:%ld): Validation error: root vertex %" PRId64 " is invalid.\n", store.getLocalRowID(), store.getLocalColumnID(), root);
     ranges_ok = 0;
   }
   if (!ranges_ok) return 0; /* Fail */
@@ -183,7 +183,7 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
   if (root_is_mine) {
     assert (root_local < static_cast<size_t>(store.getLocColLength()));
     if (get_pred_from_pred_entry(pred[root_local]) != root) {
-      fprintf(stderr, "(%d:%d): Validation error: parent of root vertex %" PRId64 " is %" PRId64 ", not the root itself.\n", store.getLocalRowID(), store.getLocalColumnID(), root, get_pred_from_pred_entry(pred[root_local]));
+      fprintf(stderr, "(%ld:%ld): Validation error: parent of root vertex %" PRId64 " is %" PRId64 ", not the root itself.\n", store.getLocalRowID(), store.getLocalColumnID(), root, get_pred_from_pred_entry(pred[root_local]));
       validation_passed = 0;
     }
   }
@@ -212,7 +212,7 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
             get_pred_from_pred_entry(pred[i]) != -1 &&
             pred_owner[i - i_start] == store.getLocalColumnID() &&
             pred_local[i - i_start] == (size_t)i) {
-                 fprintf(stderr, "(%d:%d): Validation error: parent of non-root vertex %" PRId64 " is itself.\n", store.getLocalRowID(), store.getLocalColumnID(), store.localtoglobalCol(i));
+                 fprintf(stderr, "(%ld:%ld): Validation error: parent of non-root vertex %" PRId64 " is itself.\n", store.getLocalRowID(), store.getLocalColumnID(), store.localtoglobalCol(i));
                  validation_passed = 0;
         }
       }
@@ -273,7 +273,8 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
           // test if level diverenz is max. 1
           if((d0 - d1 > 1 || d1 - d0 > 1) ){
               valid_level = 0;
-              fprintf(stderr,"(%d:%d) Edge [%ld:%ld] with wrong levels: %d %d\n",store.getLocalRowID(), store.getLocalColumnID(),edge.v0,edge.v1,d0,d1);
+              fprintf(stderr,"(%ld:%ld) Edge [%ld(%ld):%ld(%ld)] with wrong levels: %d %d\n",store.getLocalRowID(),
+                      store.getLocalColumnID(),edge.v0,store.globaltolocalRow(edge.v0),edge.v1,store.globaltolocalCol(edge.v1),d0,d1);
           }
 
           // mark if there is an edge from each vertex to its claimed
@@ -317,7 +318,7 @@ int validate_bfs_result(const DistMatrix2d& store, packed_edge* edgelist, int64_
        MPI_Comm_free(&col_comm);
 
        if(all_visited==0)
-           printf("not all visited\n");
+           fprintf(stderr,"Not for every vertex with a claimed \n");
 
        validation_passed = validation_passed && valid_level && all_visited;
 
