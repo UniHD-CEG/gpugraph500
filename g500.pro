@@ -14,7 +14,8 @@ SOURCES += main.cpp \
     simplecpubfs.cpp \
     validate/onesided.c \
     validate/onesided_emul.c \
-    validate/validate.cpp
+    validate/validate.cpp \
+    cpubfs_bin.cpp
 
 OTHER_FILES += \
     generator/README \
@@ -39,7 +40,8 @@ HEADERS += distmatrix2d.h \
     simplecpubfs.h \
     validate/validate.h \
     validate/onesided.h \
-    validate/mpi_workarounds.h
+    validate/mpi_workarounds.h \
+    cpubfs_bin.h
 
 opencl{
 
@@ -56,11 +58,9 @@ LIBS += -lOpenCL
 
 gunrock{
 
-SOURCES += \
-    gunrock/gunrockbfs.cpp
+SOURCES +=
 
-HEADERS += \
-    gunrock/gunrockbfs.h
+HEADERS +=
 }
 
 # MPI Settings
@@ -73,9 +73,9 @@ QMAKE_CC_RELEASE = $$QMAKE_CC
 QMAKE_CC_DEBUG = $$QMAKE_CC
 
 QMAKE_CFLAGS_RELEASE += -O3
-QMAKE_CFLAGS_DEBUG += -O0
+QMAKE_CFLAGS_DEBUG += -O0 -g
 QMAKE_CXXFLAGS_RELEASE += -O3
-QMAKE_CXXFLAGS_DEBUG += -O0
+QMAKE_CXXFLAGS_DEBUG += -O0 -g
 QMAKE_CFLAGS += -std=c99 -fopenmp
 #QMAKE_CXXFLAGS += -std=c++11
 QMAKE_CXXFLAGS += -fopenmp -DINSTRUMENTED

@@ -11,7 +11,7 @@
 *   and column index indicate the edge. It uses MPI.
 *
 */
-typedef long vtxtype;
+typedef int64_t vtxtype;
 
 class DistMatrix2d
 {
@@ -30,13 +30,13 @@ class DistMatrix2d
     /*
      *  Computes the owner node of a row/column pair.
      */
-    long computeOwner(unsigned long row, unsigned long column);
+    int computeOwner(int64_t row, int64_t column);
 
     static bool comparePackedEdgeR(packed_edge i, packed_edge j);
     static bool comparePackedEdgeC(packed_edge i, packed_edge j);
 public:
     struct fold_prop{
-        int     sendColSl;
+        int64_t     sendColSl;
         vtxtype startvtx;
         vtxtype size;
     };
@@ -44,9 +44,9 @@ public:
     DistMatrix2d(int _R, int _C);
     ~DistMatrix2d();
 
-    void setupMatrix(packed_edge* input, long numberOfEdges,bool undirected= true);
-    void setupMatrix2(packed_edge* &input, long &numberOfEdges, bool undirected= true);
-    inline long getEdgeCount(){return (row_pointer!=0)?row_pointer[row_length]:0;}
+    void setupMatrix(packed_edge* input, int64_t numberOfEdges,bool undirected= true);
+    void setupMatrix2(packed_edge* &input, int64_t &numberOfEdges, bool undirected= true);
+    inline int64_t getEdgeCount(){return (row_pointer!=0)?row_pointer[row_length]:0;}
     std::vector<struct fold_prop> getFoldProperties() const;
 
     inline const vtxtype* getRowPointer() const {return row_pointer;}
@@ -54,11 +54,11 @@ public:
 
     //inline bool isSym(){return C==R;}
 
-    inline int getNumRowSl() const{return R;}
-    inline int getNumColumnSl(){return C;}
+    inline int64_t getNumRowSl() const{return R;}
+    inline int64_t getNumColumnSl(){return C;}
 
-    inline int getLocalRowID() const{return r;}
-    inline int getLocalColumnID() const{return c;}
+    inline int64_t getLocalRowID() const{return r;}
+    inline int64_t getLocalColumnID() const{return c;}
 
     inline bool isLocalRow(vtxtype vtx)const {return (row_start<=vtx) && (vtx < row_start+row_length);}
     inline bool isLocalColumn(vtxtype vtx)const { return (column_start<=vtx) && (vtx < column_start+column_length);}
