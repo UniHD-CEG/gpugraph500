@@ -1,41 +1,119 @@
-#include "distmatrix2d.h"
-
+#include <generator/graph_generator.h>
+#include "mpi.h"
+#include <vector>
 #include <algorithm>
-#include <iostream>
 
 #include <cstdlib> // only for values of packed_edge typ!!!
 #ifdef _OPENMP
     #include <omp.h>
 #endif
 
+#ifndef DISTMATRIX2D_HH
+#define DISTMATRIX2D_HH
+/*
+*   This class is a representation of a distributed 2d partitioned adjacency Matrix
+*   in CRS style. The edges are not weighted, so there is no value, because an row
+*   and column index indicate the edge. It uses MPI.
+*
+*/
+typedef int64_t vtxtype;
+
+// WOLO: without local offset; ALG: vertex alligment
+template<bool WOLO=false, int ALG=1>
+class DistMatrix2d
+{
+    int64_t R; //Row slices
+    int64_t C; //Column slices
+    int64_t r; //Row id of this node
+    int64_t c; //Column id of this node
+
+    vtxtype globalNumberOfVertex;
+
+    vtxtype row_start, row_length; // global index of first row; size of local row slice
+    vtxtype column_start, column_length; // global index of first (potential) column; size of local column slice
+    vtxtype* row_pointer;  //Row pointer to columns
+    vtxtype* column_index; //Column index
+
+    /*
+     *  Computes the owner node of a row/column pair.
+     */
+    int computeOwner(int64_t row, int64_t column);
+
+    static bool comparePackedEdgeR(packed_edge i, packed_edge j);
+    static bool comparePackedEdgeC(packed_edge i, packed_edge j);
+public:
+    struct fold_prop{
+        int64_t     sendColSl;
+        vtxtype startvtx;
+        vtxtype size;
+    };
+
+    DistMatrix2d(int64_t _R, int64_t _C);
+    ~DistMatrix2d();
+
+    void setupMatrix(packed_edge* input, int64_t numberOfEdges,bool undirected= true);
+    void setupMatrix2(packed_edge* &input, int64_t &numberOfEdges, bool undirected= true);
+    inline int64_t getEdgeCount(){return (row_pointer!=0)?row_pointer[row_length]:0;}
+    std::vector<struct fold_prop> getFoldProperties() const;
+
+    inline const vtxtype* getRowPointer() const {return row_pointer;}
+    inline const vtxtype* getColumnIndex() const { return column_index;}
+
+    //inline bool isSym(){return C==R;}
+
+    inline int64_t getNumRowSl() const{return R;}
+    inline int64_t getNumColumnSl(){return C;}
+
+    inline int64_t getLocalRowID() const{return r;}
+    inline int64_t getLocalColumnID() const{return c;}
+
+    inline bool isLocalRow(vtxtype vtx)const {return (row_start<=vtx) && (vtx < row_start+row_length);}
+    inline bool isLocalColumn(vtxtype vtx)const { return (column_start<=vtx) && (vtx < column_start+column_length);}
+
+
+    inline vtxtype globaltolocalRow(vtxtype vtx)const {return vtx-row_start;}
+    inline vtxtype globaltolocalCol(vtxtype vtx)const {return vtx-column_start;}
+    inline vtxtype localtoglobalRow(vtxtype vtx)const {return vtx+row_start;}
+    inline vtxtype localtoglobalCol(vtxtype vtx)const {return vtx+column_start;}
+
+    inline vtxtype getLocRowLength()const {return row_length;}
+    inline vtxtype getLocColLength()const {return column_length;}
+
+    //For Validator
+    void get_vertex_distribution_for_pred(size_t count, const int64_t* vertex_p, int* owner_p, size_t* local_p) const;
+
+};
+
+
 /*
  *Computes the owener node of a specific edge
 */
-int DistMatrix2d::computeOwner(int64_t row, int64_t column)
+template<bool WOLO, int ALG>
+int DistMatrix2d<WOLO,ALG>::computeOwner(int64_t row, int64_t column)
 {
     int64_t rowSlice, columnSlice;
     int64_t r_residuum, c_residuum;
     int64_t rSliceSize, cSliceSize;
 
-    int64_t num8 = globalNumberOfVertex/8 + ((globalNumberOfVertex%8>0)? 1:0) ;
+    int64_t numAlg = globalNumberOfVertex/ALG + ((globalNumberOfVertex%ALG>0)? 1:0) ;
 
-    r_residuum = num8 % R;
-    rSliceSize = num8 / R;
+    r_residuum = numAlg % R;
+    rSliceSize = numAlg / R;
 
     if((rowSlice = row/(rSliceSize+1)) >= r_residuum ){//compute row slice, if the slice number is in the bigger intervals
         rowSlice =  (row- r_residuum)/ rSliceSize; //compute row slice, if the slice number is in the smaler intervals
     }
 
-    c_residuum = num8 % C;
-    cSliceSize = num8 / C;
+    c_residuum = numAlg % C;
+    cSliceSize = numAlg / C;
 
     if((columnSlice = column/(cSliceSize+1)) >= c_residuum ){ //compute column slice, if the slice number is in the bigger intervals
         columnSlice =  (column- c_residuum)/ cSliceSize; //compute column slice, if the slice number is in the smaler interval
     }
     return rowSlice*C+columnSlice;
 }
-
-bool DistMatrix2d::comparePackedEdgeR(packed_edge i, packed_edge j){
+template<bool WOLO, int ALG>
+bool DistMatrix2d<WOLO,ALG>::comparePackedEdgeR(packed_edge i, packed_edge j){
     if(i.v0<j.v0){
         return true;
     }else if(i.v0>j.v0 ){
@@ -43,7 +121,8 @@ bool DistMatrix2d::comparePackedEdgeR(packed_edge i, packed_edge j){
     } else
         return (i.v1<j.v1);
 }
-bool DistMatrix2d::comparePackedEdgeC(packed_edge i, packed_edge j){
+template<bool WOLO, int ALG>
+bool DistMatrix2d<WOLO,ALG>::comparePackedEdgeC(packed_edge i, packed_edge j){
     if(i.v1<j.v1){
         return true;
     }else if(i.v1>j.v1 ){
@@ -52,9 +131,8 @@ bool DistMatrix2d::comparePackedEdgeC(packed_edge i, packed_edge j){
         return (i.v0<j.v0);
 }
 
-
-
-DistMatrix2d::DistMatrix2d(int _R, int _C):R(_R),C(_C),row_pointer(NULL),column_index(NULL)
+template<bool WOLO, int ALG>
+DistMatrix2d<WOLO,ALG>::DistMatrix2d(int64_t _R, int64_t _C):R(_R),C(_C),row_pointer(NULL),column_index(NULL)
 {
     int rank;
 
@@ -65,7 +143,8 @@ DistMatrix2d::DistMatrix2d(int _R, int _C):R(_R),C(_C),row_pointer(NULL),column_
     c = rank%C;
 }
 
-DistMatrix2d::~DistMatrix2d()
+template<bool WOLO, int ALG>
+DistMatrix2d<WOLO,ALG>::~DistMatrix2d()
 {
    if(row_pointer!=NULL)    delete[] row_pointer;
    row_pointer=NULL;
@@ -84,7 +163,8 @@ DistMatrix2d::~DistMatrix2d()
  *
  * Should be optimised.
 */
-void DistMatrix2d::setupMatrix(packed_edge *input, int64_t numberOfEdges, bool undirected)
+template<bool WOLO, int ALG>
+void DistMatrix2d<WOLO,ALG>::setupMatrix(packed_edge *input, int64_t numberOfEdges, bool undirected)
 {
     //get max vtx
     vtxtype maxVertex = -1;
@@ -97,15 +177,14 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int64_t numberOfEdges, bool u
         maxVertex = (maxVertex > read.v1)? maxVertex :  read.v1;
     }
 
-
     MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
     //because start at 0
     globalNumberOfVertex = globalNumberOfVertex+1;
-    int64_t num8 = globalNumberOfVertex/8 + ((globalNumberOfVertex%8>0)? 1:0) ;
-    row_start       = (r*(num8/R) + ((r < num8%R)? r : num8%R))*8;
-    row_length      = (num8/R + ((r < num8%R)? 1 : 0))*8;
-    column_start    = (c*(num8/C) + ((c < num8%C)? c : num8%C))*8;
-    column_length   = (num8/C + ((c < num8%C)? 1 : 0))*8;
+    int64_t numAlg = globalNumberOfVertex/ALG + ((globalNumberOfVertex%ALG>0)? 1:0) ;
+    row_start       = (r*(numAlg/R) + ((r < numAlg%R)? r : numAlg%R))*ALG;
+    row_length      = (numAlg/R + ((r < numAlg%R)? 1 : 0))*ALG;
+    column_start    = (c*(numAlg/C) + ((c < numAlg%C)? c : numAlg%C))*ALG;
+    column_length   = (numAlg/C + ((c < numAlg%C)? 1 : 0))*ALG;
 
     row_pointer = new vtxtype[row_length+1];
     int64_t* row_elem = new int64_t[row_length];
@@ -124,7 +203,7 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int64_t numberOfEdges, bool u
 
     //reset outgoing send status
     for(int i=0; i < outstanding_sends; i++){
-	iqueue[i]= MPI_REQUEST_NULL;
+    iqueue[i]= MPI_REQUEST_NULL;
     }
 
     count_elementssend = 0;
@@ -139,7 +218,7 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int64_t numberOfEdges, bool u
                 break;
             }
         }
-        
+
         //Send an element
         if(freeRqBuf>-1){
             //if(input[count_elementssend].v0 != input[count_elementssend].v1){
@@ -264,7 +343,7 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int64_t numberOfEdges, bool u
 //3.
     //reset outgoing send status
     for(int i=0; i < outstanding_sends; i++){
-	iqueue[i]=MPI_REQUEST_NULL;
+    iqueue[i]=MPI_REQUEST_NULL;
     }
 
     count_elementssend =0;
@@ -439,14 +518,23 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int64_t numberOfEdges, bool u
     //Copy unique entries in every row
     #pragma omp parallel for
     for(int64_t i=0; i< row_length; i++){
-        int64_t next_elem = tmp_row_pointer[i];
-        //skip empty row
-        if(next_elem == tmp_row_pointer[i+1]) continue;
-        tmp_column_index[next_elem] = column_index[row_pointer[i]];
+       int64_t next_elem = tmp_row_pointer[i];
+       //skip empty row
+       if(next_elem == tmp_row_pointer[i+1]) continue;
+       if(WOLO){
+            tmp_column_index[next_elem] = column_index[row_pointer[i]]-column_start;
+       }else{
+            tmp_column_index[next_elem] = column_index[row_pointer[i]];
+       }
        next_elem++;
         for(int64_t j = row_pointer[i]+1; j < row_pointer[i+1]; j++){
             if(column_index[j-1]!=column_index[j]){
-                tmp_column_index[next_elem] = column_index[j];
+                if(WOLO){
+                    tmp_column_index[next_elem] = column_index[j]-column_start;
+                }
+                else {
+                    tmp_column_index[next_elem] = column_index[j];
+                }
                 next_elem++;
             }
         }
@@ -459,7 +547,8 @@ void DistMatrix2d::setupMatrix(packed_edge *input, int64_t numberOfEdges, bool u
     column_index = tmp_column_index;
  }
 
-void DistMatrix2d::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, bool undirected){
+template<bool WOLO, int ALG>
+void DistMatrix2d<WOLO,ALG>::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, bool undirected){
 
     vtxtype maxVertex = -1;
     if(undirected == true){
@@ -491,11 +580,11 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, boo
     MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
     //because start at 0
     globalNumberOfVertex = globalNumberOfVertex+1;
-    int64_t num8 = globalNumberOfVertex/8 + ((globalNumberOfVertex%8>0)? 1:0) ;
-    row_start       = (r*(num8/R) + ((r < num8%R)? r : num8%R))*8;
-    row_length      = (num8/R + ((r < num8%R)? 1 : 0))*8;
-    column_start    = (c*(num8/C) + ((c < num8%C)? c : num8%C))*8;
-    column_length   = (num8/C + ((c < num8%C)? 1 : 0))*8;
+    int64_t numAlg = globalNumberOfVertex/ALG + ((globalNumberOfVertex%ALG>0)? 1:0) ;
+    row_start       = (r*(numAlg/R) + ((r < numAlg%R)? r : numAlg%R))*ALG;
+    row_length      = (numAlg/R + ((r < numAlg%R)? 1 : 0))*ALG;
+    column_start    = (c*(numAlg/C) + ((c < numAlg%C)? c : numAlg%C))*ALG;
+    column_length   = (numAlg/C + ((c < numAlg%C)? 1 : 0))*ALG;
 
     // Split communicator into row and column communicator
     MPI_Comm row_comm, col_comm;
@@ -519,18 +608,18 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, boo
     int* other_size = new int[R];
     int* other_offset =  new int[R+1];
 
-    int64_t res = num8 % R;
-    int64_t ua_sl_size = num8 / R;
+    int64_t res = numAlg % R;
+    int64_t ua_sl_size = numAlg / R;
 
     // offset for transmission
     int64_t sl_start = 0;
     owen_offset[0] = 0;
     for(int64_t i = 1; i < R; i++){
         if(res > 0) {
-            sl_start += (ua_sl_size +1)*8;
+            sl_start += (ua_sl_size +1)*ALG;
             res--;
         }else{
-            sl_start += ua_sl_size*8;
+            sl_start += ua_sl_size*ALG;
         }
         packed_edge startEdge = {sl_start,0};
         owen_offset[i] = std::lower_bound(input+owen_offset[i-1],input+numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
@@ -575,22 +664,22 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, boo
     other_size = new int[C];
     other_offset =  new int[C+1];
 
-    res = num8 % C;
-    ua_sl_size = num8 / C;
+    res = numAlg % C;
+    ua_sl_size = numAlg / C;
 
     // offset for transmission
     sl_start = 0;
     owen_offset[0] = 0;
     for(int64_t i = 1; i < C; i++){
         if(res > 0) {
-            sl_start += (ua_sl_size +1)*8;
+            sl_start += (ua_sl_size +1)*ALG;
             res--;
         }else{
-            sl_start += ua_sl_size*8;
+            sl_start += ua_sl_size*ALG;
         }
 
         packed_edge startEdge = {0,sl_start};
-        owen_offset[i] = std::lower_bound(input+owen_offset[i-1],input+numberOfEdges, startEdge , DistMatrix2d::comparePackedEdgeC) - input;       
+        owen_offset[i] = std::lower_bound(input+owen_offset[i-1],input+numberOfEdges, startEdge , DistMatrix2d::comparePackedEdgeC) - input;
     }
     owen_offset[C] = numberOfEdges;
 
@@ -689,7 +778,7 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, boo
             last_valid = input[j].v1;
             j++;
         }
-    }    
+    }
     #endif
 
     // prefix scan to compute row pointer
@@ -719,7 +808,11 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, boo
             while(j < numberOfEdges && input[j].v0-row_start == i ){
                 if(input[j].v0 != input[j].v1){
                     last_valid = input[j].v1;
-                    column_index[row_pointer[i]+inrow] = input[j].v1;
+                    if(WOLO){
+                        column_index[row_pointer[i]+inrow] = input[j].v1-column_start;
+                    } else {
+                        column_index[row_pointer[i]+inrow] = input[j].v1;
+                    }
                     inrow++;
                     j++;
                     break;
@@ -728,7 +821,11 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, boo
             }
             while(j < numberOfEdges && input[j].v0-row_start == i ){
                 if(input[j].v0 != input[j].v1 && last_valid != input[j].v1){
-                    column_index[row_pointer[i]+inrow] = input[j].v1;
+                    if(WOLO){
+                        column_index[row_pointer[i]+inrow] = input[j].v1-column_start;
+                    } else {
+                        column_index[row_pointer[i]+inrow] = input[j].v1;
+                    }
                     inrow++;
                 }
                 last_valid = input[j].v1;
@@ -744,7 +841,11 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, boo
         while(j < numberOfEdges && input[j].v0-row_start == i ){
             if(input[j].v0 != input[j].v1){
                 last_valid = input[j].v1;
-                column_index[row_pointer[i]+inrow] = input[j].v1;
+                if(WOLO){
+                    column_index[row_pointer[i]+inrow] = input[j].v1-column_start;
+                } else {
+                    column_index[row_pointer[i]+inrow] = input[j].v1;
+                }
                 inrow++;
                 j++;
                 break;
@@ -753,7 +854,11 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, boo
         }
         while(j < numberOfEdges && input[j].v0-row_start == i ){
             if(input[j].v0 != input[j].v1 && last_valid != input[j].v1){
-                column_index[row_pointer[i]+inrow] = input[j].v1;
+                if(WOLO){
+                    column_index[row_pointer[i]+inrow] = input[j].v1-column_start;
+                } else {
+                    column_index[row_pointer[i]+inrow] = input[j].v1;
+                }
                 inrow++;
             }
             last_valid = input[j].v1;
@@ -764,39 +869,39 @@ void DistMatrix2d::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, boo
 
 }
 
-
-std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties() const
+template<bool WOLO, int ALG>
+std::vector<typename DistMatrix2d<WOLO,ALG>::fold_prop> DistMatrix2d<WOLO,ALG>::getFoldProperties() const
 {
     // compute the properties of global folding
     struct fold_prop newprop;
     std::vector<struct fold_prop> fold_fq_props;
-    int64_t num8 = globalNumberOfVertex/8 + ((globalNumberOfVertex%8>0)? 1:0) ;
+    int64_t numAlg = globalNumberOfVertex/ALG + ((globalNumberOfVertex%ALG>0)? 1:0) ;
 
     // first fractions of first fq
-    vtxtype ua_col_size= num8 /C; // non adjusted coumn size
-    vtxtype col_size_res = num8 % C;
+    vtxtype ua_col_size= numAlg /C; // non adjusted coumn size
+    vtxtype col_size_res = numAlg % C;
 
-    vtxtype a_quot = row_start / ((ua_col_size+1)*8);
+    vtxtype a_quot = row_start / ((ua_col_size+1)*ALG);
 
     if(a_quot >=  col_size_res){
-        newprop.sendColSl = (row_start/8 - col_size_res) / ua_col_size;
+        newprop.sendColSl = (row_start/ALG - col_size_res) / ua_col_size;
         newprop.startvtx = row_start;
-        newprop.size = (ua_col_size-((row_start/8 - col_size_res) % ua_col_size ))*8;
+        newprop.size = (ua_col_size-((row_start/ALG - col_size_res) % ua_col_size ))*ALG;
         newprop.size = (newprop.size < row_length)? newprop.size :  row_length;
         col_size_res = 0;
         //column end
         vtxtype colnextstart = ((col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
-        (newprop.sendColSl+1)*ua_col_size+num8 % C)*8;
+        (newprop.sendColSl+1)*ua_col_size+numAlg % C)*ALG;
         newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
     } else {
         newprop.sendColSl = a_quot;
         newprop.startvtx = row_start;
-        newprop.size = (ua_col_size +1)*8;
+        newprop.size = (ua_col_size +1)*ALG;
         newprop.size = (newprop.size < row_length)? newprop.size :  row_length;
         col_size_res -= a_quot +1;
         //column end
         vtxtype colnextstart = ((col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
-        (newprop.sendColSl+1)*ua_col_size+num8 % C)*8;
+        (newprop.sendColSl+1)*ua_col_size+numAlg % C)*ALG;
         newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
 
     }
@@ -806,12 +911,12 @@ std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties() const
     while(newprop.startvtx+newprop.size<row_end){
         newprop.sendColSl++;
         newprop.startvtx+=newprop.size;
-        newprop.size = ((col_size_res > 0)? ua_col_size+1 : ua_col_size)*8;
+        newprop.size = ((col_size_res > 0)? ua_col_size+1 : ua_col_size)*ALG;
         col_size_res -= (col_size_res > 0)? 1 : 0;
         newprop.size = (newprop.startvtx+newprop.size < row_end )? newprop.size: row_end-newprop.startvtx;
         //column end
         vtxtype colnextstart = ((col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
-        (newprop.sendColSl+1)*ua_col_size+num8 % C)*8;
+        (newprop.sendColSl+1)*ua_col_size+numAlg % C)*ALG;
         newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
         fold_fq_props.push_back(newprop);
     }
@@ -822,20 +927,23 @@ std::vector<DistMatrix2d::fold_prop> DistMatrix2d::getFoldProperties() const
  * For Validator
  * Computes the column and the local pointer of the verteces in an array
 */
-void DistMatrix2d::get_vertex_distribution_for_pred(size_t count, const int64_t *vertex_p, int *owner_p, size_t *local_p) const
+template<bool WOLO, int ALG>
+void DistMatrix2d<WOLO,ALG>::get_vertex_distribution_for_pred(size_t count, const int64_t *vertex_p, int *owner_p, size_t *local_p) const
 {
-  int64_t num8 = globalNumberOfVertex/8 + ((globalNumberOfVertex%8>0)? 1:0 );
-  int64_t c_residuum = num8 % C;
-  int64_t c_SliceSize = num8 / C;
+  int64_t numAlg = globalNumberOfVertex/ALG + ((globalNumberOfVertex%ALG>0)? 1:0 );
+  int64_t c_residuum = numAlg % C;
+  int64_t c_SliceSize = numAlg / C;
 
   //#pragma omp parallel for
     for (int64_t i = 0; i < (ptrdiff_t)count; ++i) {
-        if( vertex_p[i]/((c_SliceSize+1)*8) >= c_residuum){
-            owner_p[i] = (vertex_p[i]-c_residuum*8)/(c_SliceSize*8);
-            local_p[i] = (vertex_p[i]-c_residuum*8)%(c_SliceSize*8);
+        if( vertex_p[i]/((c_SliceSize+1)*ALG) >= c_residuum){
+            owner_p[i] = (vertex_p[i]-c_residuum*ALG)/(c_SliceSize*ALG);
+            local_p[i] = (vertex_p[i]-c_residuum*ALG)%(c_SliceSize*ALG);
         } else {
-            owner_p[i] = vertex_p[i]/((c_SliceSize+1)*8);
-            local_p[i] = vertex_p[i]%((c_SliceSize+1)*8);
+            owner_p[i] = vertex_p[i]/((c_SliceSize+1)*ALG);
+            local_p[i] = vertex_p[i]%((c_SliceSize+1)*ALG);
         }
     }
 }
+
+#endif // DISTMATRIX2D_HH

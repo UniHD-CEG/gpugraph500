@@ -1,8 +1,54 @@
-#include "globalbfs.h"
+#include "distmatrix2d.hh"
+#include <vector>
 #include <cstdio>
 #include <assert.h>
 
-GlobalBFS::GlobalBFS(DistMatrix2d &_store): store(_store)
+#ifndef GLOBALBFS_HH
+#define GLOBALBFS_HH
+
+/*
+ * This classs implements a distributed level synchronus BFS on global scale.
+ */
+template<bool WOLO=false,int ALG=1>
+class GlobalBFS
+{
+    MPI_Comm row_comm, col_comm;
+
+    // sending node column slice, startvtx, size
+    std::vector<typename DistMatrix2d<WOLO,ALG>::fold_prop> fold_fq_props;
+
+protected:
+    const DistMatrix2d<WOLO,ALG>& store;
+    vtxtype* predessor;
+
+    MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
+    void*   recv_fq_buff;
+    long    recv_fq_buff_length;
+    virtual void reduce_fq_out(void* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
+    virtual void getOutgoingFQ(void* &startaddr, vtxtype& outsize)=0;
+    virtual void setModOutgoingFQ(void* startaddr, long insize)=0; //startaddr: 0, self modification
+    virtual void getOutgoingFQ(vtxtype globalstart, vtxtype size, void* &startaddr, vtxtype& outsize)=0;
+    virtual void setIncommingFQ(vtxtype globalstart, vtxtype size, void* startaddr, vtxtype& insize_max)=0;
+    virtual bool istheresomethingnew()=0;           //to detect if finished
+    virtual void setStartVertex(vtxtype start)=0;
+    virtual void runLocalBFS()=0;
+
+
+public:
+    GlobalBFS(DistMatrix2d<WOLO,ALG>& _store);
+
+    #ifdef INSTRUMENTED
+    void runBFS(vtxtype startVertex, double& lexp, double &lqueue);
+    #else
+    void runBFS(vtxtype startVertex);
+    #endif
+
+
+    vtxtype* getPredessor();
+};
+
+template<bool WOLO,int ALG>
+GlobalBFS<WOLO,ALG>::GlobalBFS(DistMatrix2d<WOLO,ALG>&_store): store(_store)
 {
      // Split communicator into row and column communicator
      // Split by row, rank by column
@@ -26,9 +72,11 @@ GlobalBFS::GlobalBFS(DistMatrix2d &_store): store(_store)
  * 5) global fold
 */
 #ifdef INSTRUMENTED
-void GlobalBFS::runBFS(vtxtype startVertex, double& lexp, double& lqueue)
+template<bool WOLO,int ALG>
+void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex, double& lexp, double& lqueue)
 #else
-void GlobalBFS::runBFS(vtxtype startVertex)
+template<bool WOLO,int ALG>
+void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
 #endif
 {
     #ifdef INSTRUMENTED
@@ -156,7 +204,7 @@ void GlobalBFS::runBFS(vtxtype startVertex)
         #endif
     }
 // 5
-    for(std::vector<DistMatrix2d::fold_prop>::iterator it = fold_fq_props.begin(); it  != fold_fq_props.end(); it++){
+    for(typename std::vector<typename DistMatrix2d<WOLO,ALG>::fold_prop>::iterator it = fold_fq_props.begin(); it  != fold_fq_props.end(); it++){
         if(it->sendColSl == store.getLocalColumnID() ){
             void*   startaddr;
             long     outsize;
@@ -196,8 +244,10 @@ void GlobalBFS::runBFS(vtxtype startVertex)
 }
 }
 
-
-vtxtype* GlobalBFS::getPredessor()
+template<bool WOLO,int ALG>
+vtxtype* GlobalBFS<WOLO,ALG>::getPredessor()
 {
     return  predessor;
 }
+
+#endif // GLOBALBFS_HH
