@@ -10,9 +10,9 @@
 #endif
 #include <algorithm>
 
-#include <generator/make_graph.h>
 #include <validate/validate.h>
-#include "distmatrix2d.h"
+#include <generator/make_graph.h>
+#include "distmatrix2d.hh"
 
 #ifdef _OPENCL
     #include "opencl/OCLrunner.hh"
@@ -223,7 +223,7 @@ int main(int argc, char** argv)
       // Matrix generation
       MPI_Barrier(MPI_COMM_WORLD);
       tstart = MPI_Wtime();
-      DistMatrix2d store(R, C);
+      DistMatrix2d<true,64> store(R, C);
       store.setupMatrix2(edgelist,number_of_edges);
 #ifdef _OPENCL
       OCLRunner oclrun;

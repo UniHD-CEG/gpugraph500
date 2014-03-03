@@ -1,7 +1,7 @@
 #include <algorithm>
 #include "simplecpubfs.h"
 
-SimpleCPUBFS::SimpleCPUBFS(DistMatrix2d &_store):GlobalBFS(_store)
+SimpleCPUBFS::SimpleCPUBFS(DistMatrix2d<false,1> &_store):GlobalBFS<false,1>(_store)
 {
     fq_tp_type = MPI_INT64_T; //Frontier Queue Transport Type
 
@@ -77,6 +77,8 @@ bool SimpleCPUBFS::istheresomethingnew()
 
 void SimpleCPUBFS::setIncommingFQ(vtxtype globalstart, vtxtype size, void *startaddr, vtxtype &insize_max)
 {
+    assert(store.isLocalRow(globalstart));
+    assert(insize_max >= size);
     long* buffer = static_cast<long *>(startaddr);
     for(long i=0; i < insize_max; i++){
         fq_in.push_back(buffer[i]);
