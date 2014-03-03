@@ -12,15 +12,11 @@
 
 ### End of PBS options ###
 
-#Set the number of processes here or in a script that calls this
-#job script
-num_procs=8
-
 
 # run the program
 
 which mpirun
-mpirun -machinefile $PBS_NODEFILE -np $num_procs test_bfs_4.2_x86_64 grid2d 10 --num-nodes=$num_procs
+mpirun -machinefile $PBS_NODEFILE -np 8 test_bfs_4.2_x86_64 grid2d 10 --num-nodes=8
 date
 
 # eof
