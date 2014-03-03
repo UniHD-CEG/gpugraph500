@@ -1,8 +1,0 @@
-
-test_bfs_4.2_x86_64:15375 terminated with signal 11 at PC=415fb8 SP=7fff83a31ca0.  Backtrace:
-test_bfs_4.2_x86_64[0x415fb8]
-test_bfs_4.2_x86_64[0x439e57]
-test_bfs_4.2_x86_64[0x442956]
-test_bfs_4.2_x86_64[0x40e1a2]
-/lib64/libc.so.6(__libc_start_main+0xfd)[0x2ac4d663ecdd]
-test_bfs_4.2_x86_64[0x403479]
