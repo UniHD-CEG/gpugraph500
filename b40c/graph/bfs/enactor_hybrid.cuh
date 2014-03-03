@@ -282,7 +282,6 @@ public:
 		typedef typename CsrProblem::VisitedMask 	VisitedMask;
 
 		cudaError_t retval = cudaSuccess;
-
 		do {
 
 			// Determine grid size(s)

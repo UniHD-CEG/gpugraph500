@@ -74,7 +74,7 @@ namespace bfs {
  * All GPUs must be of the same SM architectural version (e.g., SM2.0).
  */
 template <bool INSTRUMENT>							// Whether or not to collect per-CTA clock-count statistics
-class EnactorMultiGpu : public EnactorBase
+class EnactorMultiNode : public EnactorBase
 {
 public :
 
@@ -359,7 +359,7 @@ public:
 	/**
 	 * Constructor
 	 */
-	EnactorMultiGpu(bool DEBUG = false) :
+	EnactorMultiNode(bool DEBUG = false) :
 		EnactorBase(MULTI_GPU_FRONTIERS, DEBUG),
 		DEBUG2(false)
 	{}
@@ -385,7 +385,7 @@ public:
 	/**
 	 * Destructor
 	 */
-	virtual ~EnactorMultiGpu()
+	virtual ~EnactorMultiNode()
 	{
 		ResetControlBlocks();
 	}
@@ -437,7 +437,7 @@ public:
 
 					// Set device
 					if (retval = util::B40CPerror(cudaSetDevice(csr_problem.graph_slices[i]->gpu),
-						"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					control_blocks.push_back(
 						new GpuControlBlock(csr_problem.graph_slices[i]->gpu,
@@ -450,7 +450,7 @@ public:
 
 				// Set device
 				if (retval = util::B40CPerror(cudaSetDevice(csr_problem.graph_slices[i]->gpu),
-					"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+					"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 				if (retval = control_blocks[i]->template Setup<ContractPolicy, ExpandPolicy, PartitionPolicy, CopyPolicy>(
 					max_grid_size, csr_problem.num_gpus)) break;
@@ -464,7 +464,7 @@ public:
 						csr_problem.graph_slices[i]->d_visited_mask,
 						bitmask_desc,
 						bytes),
-					"EnactorMultiGpu cudaBindTexture bitmask_tex_ref failed", __FILE__, __LINE__)) break;
+					"EnactorMultiNode cudaBindTexture bitmask_tex_ref failed", __FILE__, __LINE__)) break;
 
 				// Bind row-offsets texture
 				cudaChannelFormatDesc row_offsets_desc = cudaCreateChannelDesc<SizeT>();
@@ -474,7 +474,7 @@ public:
 						csr_problem.graph_slices[i]->d_row_offsets,
 						row_offsets_desc,
 						(csr_problem.graph_slices[i]->nodes + 1) * sizeof(SizeT)),
-					"EnactorMultiGpu cudaBindTexture row_offset_tex_ref failed", __FILE__, __LINE__)) break;
+					"EnactorMultiNode cudaBindTexture row_offset_tex_ref failed", __FILE__, __LINE__)) break;
 
 			}
 			if (retval) break;
@@ -500,6 +500,7 @@ public:
 	cudaError_t EnactSearch(
 		CsrProblem 							&csr_problem,
 		typename CsrProblem::VertexId 		src,
+		int 								world_rank,
 		int 								max_grid_size = 0)
 	{
 		typedef typename CsrProblem::VertexId			VertexId;
@@ -514,8 +515,7 @@ public:
 		bool done;
 
 		do {
-			DEBUG=true;
-			DEBUG2=true;
+		printf("Hello\n");
 			// Number of partitioning bins per GPU (in case we over-partition)
 			int bins_per_gpu = (csr_problem.num_gpus == 1) ?
 				PartitionPolicy::Upsweep::BINS :
@@ -530,7 +530,7 @@ public:
 			VertexId src_owner = csr_problem.GpuIndex(src);
 			src |= (src_owner << CsrProblem::ProblemType::GPU_MASK_SHIFT);
 
-
+			printf("1\n");
 			//---------------------------------------------------------------------
 			// Contract work queues (first iteration)
 			//---------------------------------------------------------------------
@@ -542,11 +542,11 @@ public:
 
 				// Set device
 				if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-					"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+					"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
-				bool owns_source = (control->gpu == src_owner);
+				bool owns_source = (world_rank == src_owner);
 				if (owns_source) {
-					printf("GPU %d owns source 0x%llX\n", control->gpu, (long long) src);
+					printf("Node %d owns source 0x%llX\n", world_rank, (long long) src);
 				}
 
 				// Contraction
@@ -570,7 +570,7 @@ public:
 					control->expand_kernel_stats);
 
 				if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-					"EnactorMultiGpu expand_atomic::Kernel failed", __FILE__, __LINE__))) break;
+					"EnactorMultiNode expand_atomic::Kernel failed", __FILE__, __LINE__))) break;
 
 				control->queue_index++;
 				control->steal_index++;
@@ -599,7 +599,7 @@ public:
 
 					// Set device
 					if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-						"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					two_phase::expand_atomic::Kernel<ExpandPolicy>
 							<<<control->expand_grid_size, ExpandPolicy::THREADS, 0, slice->stream>>>(
@@ -618,7 +618,7 @@ public:
 						control->expand_kernel_stats);
 
 					if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-						"EnactorMultiGpu expand_atomic::Kernel failed", __FILE__, __LINE__))) break;
+						"EnactorMultiNode expand_atomic::Kernel failed", __FILE__, __LINE__))) break;
 
 					control->queue_index++;
 					control->steal_index++;
@@ -633,7 +633,6 @@ public:
 				}
 				if (retval) break;
 
-
 				//---------------------------------------------------------------------
 				// Partition/contract work queues
 				//---------------------------------------------------------------------
@@ -645,7 +644,7 @@ public:
 
 					// Set device
 					if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-						"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					// Upsweep
 					partition_contract::upsweep::Kernel<PartitionUpsweep>
@@ -661,7 +660,7 @@ public:
 						control->partition_kernel_stats);
 
 					if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-						"EnactorMultiGpu partition_contract::upsweep::Kernel failed", __FILE__, __LINE__))) break;
+						"EnactorMultiNode partition_contract::upsweep::Kernel failed", __FILE__, __LINE__))) break;
 
 					if (DEBUG2) {
 						printf("Presorted spine on gpu %d (%lld elements)\n",
@@ -677,7 +676,7 @@ public:
 						control->spine_elements);
 
 					if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-						"EnactorMultiGpu SpineKernel failed", __FILE__, __LINE__))) break;
+						"EnactorMultiNode SpineKernel failed", __FILE__, __LINE__))) break;
 
 					if (DEBUG2) {
 						printf("Postsorted spine on gpu %d (%lld elements)\n",
@@ -686,7 +685,7 @@ public:
 
 						DisplayDeviceResults((SizeT *) control->spine.d_spine, control->spine_elements);
 					}
-					printf("%d\n",(slice->frontier_queues.d_keys[2][0]));
+
 					// Downsweep
 					partition_contract::downsweep::Kernel<PartitionDownsweep>
 							<<<control->partition_grid_size, PartitionDownsweep::THREADS, 0, slice->stream>>>(
@@ -703,7 +702,7 @@ public:
 						control->partition_kernel_stats);
 
 					if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-						"EnactorMultiGpu DownsweepKernel failed", __FILE__, __LINE__))) break;
+						"EnactorMultiNode DownsweepKernel failed", __FILE__, __LINE__))) break;
 
 					control->queue_index++;
 				}
@@ -718,9 +717,8 @@ public:
 
 					GpuControlBlock *control 	= control_blocks[i];
 					GraphSlice *slice 			= csr_problem.graph_slices[i];
-
 					if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-						"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					// The memcopy for spine sync synchronizes this GPU
 					control->spine.Sync();
@@ -742,9 +740,9 @@ public:
 					}
 				}
 				if (retval) break;
-
 				// Check if all done in all GPUs
-				if (done) break;
+// todo fix this later across multinode
+//				if (done) break;
 
 				if (DEBUG2) printf("---------------------------------------------------------\n");
 
@@ -752,7 +750,8 @@ public:
 				//---------------------------------------------------------------------
 				// Stream-contract work queues
 				//---------------------------------------------------------------------
-
+				printf("Node %d synching...\n",world_rank);
+				MPI_Barrier(MPI_COMM_WORLD);
 				for (int i = 0; i < csr_problem.num_gpus; i++) {
 
 					GpuControlBlock *control 	= control_blocks[i];
@@ -760,14 +759,14 @@ public:
 
 					// Set device
 					if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-						"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					// Stream in and filter inputs from all gpus (including ourselves)
 					for (int j = 0; j < csr_problem.num_gpus; j++) {
 
 						// Starting with ourselves (must copy our own bin first), stream
 						// bins into our queue
-						int peer 							= (i + j) % csr_problem.num_gpus;
+						int peer =						j;//	= (i + j) % csr_problem.num_gpus;
 						GpuControlBlock *peer_control 		= control_blocks[peer];
 						GraphSlice *peer_slice 				= csr_problem.graph_slices[peer];
 						SizeT *peer_spine 			= (SizeT*) peer_control->spine.h_spine;
@@ -800,7 +799,7 @@ public:
 							util::CtaWorkDistribution<SizeT> work_decomposition;
 							work_decomposition.template Init<CopyPolicy::LOG_SCHEDULE_GRANULARITY>(
 								num_elements, control->copy_grid_size);
-
+							
 							// Simply copy from our own GPU
 							copy::Kernel<CopyPolicy>
 								<<<control->copy_grid_size, CopyPolicy::THREADS, 0, slice->stream>>>(
@@ -817,13 +816,46 @@ public:
 									control->copy_kernel_stats);
 
 							if (DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
-								"EnactorMultiGpu copy::Kernel failed ", __FILE__, __LINE__))) break;
+								"EnactorMultiNode copy::Kernel failed ", __FILE__, __LINE__))) break;
 
-						} else {
-
-							// Contraction from peer GPU
-							two_phase::contract_atomic::Kernel<ContractPolicy>
-								<<<control->contract_grid_size, ContractPolicy::THREADS, 0, slice->stream>>>(
+						}
+						int ind; 
+						 for (ind=0;ind<2;ind++){
+							//be sender
+							if(world_rank==ind){
+								int bufSize1= sizeof(slice->frontier_queues.d_keys[2]);
+								int bufSize2= sizeof(slice->frontier_queues.d_values[2]);
+								int sizebuf[3]={bufSize1, bufSize2,queue_offset};
+								int destrank = (world_rank+1)%2;
+								//send the size of buf first so remote node can allocate memory accordingly
+								MPI_Send(sizebuf,3, MPI_INT,destrank,0,MPI_COMM_WORLD);
+								printf("sending size from rank %d of d_key queue : %d, size of d_value queue: %d\n", world_rank,bufSize1,bufSize2);
+								
+								// sending to remote node
+								MPI_Send(slice->frontier_queues.d_keys[2], bufSize1,MPI_BYTE,destrank,0,MPI_COMM_WORLD);
+								MPI_Send(slice->frontier_queues.d_values[2], bufSize2,MPI_BYTE,destrank,0,MPI_COMM_WORLD);
+							}
+							//be receiver
+							else{
+								int sizebuf[3];
+								int srcrank = (world_rank+1)%2;
+								
+								//receive buf sizes and offset number
+								MPI_Recv(sizebuf,3,MPI_INT,srcrank,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+								int bufSize1= sizebuf[0];
+								int bufSize2= sizebuf[1];
+								SizeT q_offset = sizebuf[2];
+																
+								printf("receiving size from rank %d of d_key queue : %d, size of d_value queue: %d\n", world_rank,bufSize1,bufSize2);
+								VertexId remoteEdgeFrontier[bufSize1];
+								VertexId remotePredecessors[bufSize2];
+								MPI_Recv(remoteEdgeFrontier, bufSize1, MPI_BYTE, srcrank, 0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+								MPI_Recv(remotePredecessors, bufSize2, MPI_BYTE, srcrank, 0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+		
+								
+								// Contraction from peer GPU
+								two_phase::contract_atomic::Kernel<ContractPolicy>
+									<<<control->contract_grid_size, ContractPolicy::THREADS, 0, slice->stream>>>(
 									-1,															// source (not used)
 									control->iteration,
 									num_elements,
@@ -831,9 +863,9 @@ public:
 									control->steal_index,
 									csr_problem.num_gpus,
 									NULL,														// d_done (not used)
-									peer_slice->frontier_queues.d_keys[2] + queue_offset,		// in remote sorted, filtered edge frontier
+									remoteEdgeFrontier + q_offset,		// in remote sorted, filtered edge frontier
 									slice->frontier_queues.d_keys[0],							// out local vertex frontier
-									peer_slice->frontier_queues.d_values[2] + queue_offset,		// in remote sorted, filtered predecessors
+									remotePredecessors + q_offset,		// in remote sorted, filtered predecessors
 									slice->d_labels,
 									slice->d_visited_mask,
 									control->work_progress,
@@ -841,8 +873,12 @@ public:
 									slice->frontier_elements[0],								// max vertex frontier vertices
 									control->expand_kernel_stats);
 							if (DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
-								"EnactorMultiGpu contract_atomic::Kernel failed ", __FILE__, __LINE__))) break;
+								"EnactorMultiNode contract_atomic::Kernel failed ", __FILE__, __LINE__))) break;
+							}
 
+							
+
+						
 						}
 						control->steal_index++;
 					}
@@ -869,7 +905,7 @@ public:
 
 				// Set device
 				if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-					"EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
+					"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 				bool overflowed = false;
 				if (retval = control->work_progress.template CheckOverflow<SizeT>(overflowed)) break;
@@ -896,6 +932,7 @@ public:
 	cudaError_t EnactSearch(
 		CsrProblem 							&csr_problem,
 		typename CsrProblem::VertexId 		src,
+		int					world_rank,
 		int 								max_grid_size = 0)
 	{
 		typedef typename CsrProblem::VertexId			VertexId;
@@ -909,7 +946,7 @@ public:
 				typename CsrPolicy::ContractPolicy,
 				typename CsrPolicy::ExpandPolicy,
 				typename CsrPolicy::PartitionPolicy,
-				typename CsrPolicy::CopyPolicy>(csr_problem, src, max_grid_size);
+				typename CsrPolicy::CopyPolicy>(csr_problem, src, world_rank,max_grid_size);
 		}
 
 		printf("Not yet tuned for this architecture\n");

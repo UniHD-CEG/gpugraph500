@@ -39,7 +39,7 @@
 #include <deque>
 #include <vector>
 #include <iostream>
-
+#include <mpi.h>
 // Utilities and correctness-checking
 #include <b40c_test_util.h>
 
@@ -60,6 +60,7 @@
 #include <b40c/graph/bfs/enactor_two_phase.cuh>
 #include <b40c/graph/bfs/enactor_hybrid.cuh>
 #include <b40c/graph/bfs/enactor_multi_gpu.cuh>
+#include <b40c/graph/bfs/enactor_multi_node.cuh>
 
 using namespace b40c;
 using namespace graph;
@@ -75,7 +76,8 @@ enum Strategy {
 	CONTRACT_EXPAND,
 	TWO_PHASE,
 	HYBRID,
-	MULTI_GPU
+	MULTI_GPU,
+	MULTI_NODE
 };
 
 
@@ -504,7 +506,7 @@ template<
 	typename VertexId,
 	typename Value,
 	typename SizeT>
-bool SimpleReferenceBfs(
+void SimpleReferenceBfs(
 	int 									test_iteration,
 	const CsrGraph<VertexId, Value, SizeT> 	&csr_graph,
 	VertexId 								*source_path,
@@ -517,7 +519,6 @@ bool SimpleReferenceBfs(
 	}
 	source_path[src] = 0;
 	VertexId search_depth = 0;
-	int visitednodes = 0;
 
 	// Initialize queue for managing previously-discovered nodes
 	std::deque<VertexId> frontier;
@@ -530,7 +531,6 @@ bool SimpleReferenceBfs(
 	CpuTimer cpu_timer;
 	cpu_timer.Start();
 	while (!frontier.empty()) {
-		visitednodes++;
 		
 		// Dequeue node from frontier
 		VertexId dequeued_node = frontier.front();
@@ -557,9 +557,6 @@ bool SimpleReferenceBfs(
 	cpu_timer.Stop();
 	float elapsed = cpu_timer.ElapsedMillis();
 	search_depth++;
-	
-	if(visitednodes < 5)
-		return false;
 
 	if (g_verbose) {
 		Histogram(src, source_path, csr_graph, search_depth);
@@ -580,8 +577,6 @@ bool SimpleReferenceBfs(
 			0,							// No redundant queuing
 			0);							// No barrier duty
 	}
-	
-	return true;
 }
 
 
@@ -601,8 +596,10 @@ void RunTests(
 	int test_iterations,
 	int max_grid_size,
 	int num_gpus,
+	int num_nodes,
 	double max_queue_sizing,
-	std::vector<int> strategies)
+	std::vector<int> strategies,
+	int world_rank)
 {
 	typedef bfs::CsrProblem<VertexId, SizeT, MARK_PREDECESSORS> CsrProblem;
 
@@ -617,6 +614,7 @@ void RunTests(
 	bfs::EnactorTwoPhase<INSTRUMENT>		two_phase(g_verbose);
 	bfs::EnactorHybrid<INSTRUMENT>			hybrid(g_verbose);
 	bfs::EnactorMultiGpu<INSTRUMENT>		multi_gpu(g_verbose);
+	bfs::EnactorMultiNode<INSTRUMENT>		multi_node(g_verbose);
 
 	// Allocate Stats map
 	std::map<Strategy, Stats*> stats_map;
@@ -626,7 +624,7 @@ void RunTests(
 	stats_map[TWO_PHASE] 			= new Stats("Two-phase GPU BFS");
 	stats_map[HYBRID] 				= new Stats("Hybrid contract-expand + two-phase GPU BFS");
 	stats_map[MULTI_GPU] 			= new Stats("Multi-GPU BFS");
-	
+
 	// Allocate problem on GPU
 	CsrProblem csr_problem;
 	if (csr_problem.FromHostProblem(
@@ -635,44 +633,30 @@ void RunTests(
 		csr_graph.edges,
 		csr_graph.column_indices,
 		csr_graph.row_offsets,
-		num_gpus)) exit(1);
+		num_gpus,
+		num_nodes,
+		world_rank)) exit(1);
 
 	// Perform the specified number of test iterations
 	while (stats_map[HOST]->rate.count <= test_iterations) {
 	
 		// If randomized-src was specified, re-roll the src
+		if (randomized_src) src = builder::RandomNode(csr_graph.nodes);
+		
 		printf("---------------------------------------------------------------\n");
+
+		//
+		// Compute reference CPU BFS solution for source-distance
+		//
+
 		int test_iteration = stats_map[HOST]->rate.count;
-		if (randomized_src) { 
-		do {
-			src = builder::RandomNode(csr_graph.nodes);
-		
-		//
-		// Compute reference CPU BFS solution for source-distance
-		//
 
-		} while(
-			!SimpleReferenceBfs(
-				test_iteration,
-				csr_graph,
-				reference_labels,
-				src,
-				*stats_map[HOST])
-			);
-            
-        } else {
-		
-		//
-		// Compute reference CPU BFS solution for source-distance
-		//
-
-        	SimpleReferenceBfs(
-            	test_iteration,
-            	csr_graph,
-            	reference_labels,
-            	src,
-        	   	*stats_map[HOST]);
-        }
+        SimpleReferenceBfs(
+            test_iteration,
+            csr_graph,
+            reference_labels,
+            src,
+            *stats_map[HOST]);
         printf("\n");
 
         if (g_verbose2) {
@@ -687,6 +671,7 @@ void RunTests(
             // Didn't start within the main connected component
             continue;
         }
+
 		//
 		// Iterate over GPU strategies
 		//
@@ -705,7 +690,7 @@ void RunTests(
 
 			// Perform BFS
 			GpuTimer gpu_timer;
-			
+
 			switch (strategy) {
 
 			case EXPAND_CONTRACT:
@@ -747,7 +732,14 @@ void RunTests(
 				gpu_timer.Stop();
 				multi_gpu.GetStatistics(total_queued, search_depth, avg_duty);
 				break;
-
+			case MULTI_NODE:
+				printf("Running for rank %d\n", world_rank);
+				if (retval = csr_problem.Reset(multi_node.GetFrontierType(), max_queue_sizing)) break;
+                                gpu_timer.Start();
+                                if (retval = multi_node.EnactSearch(csr_problem, src, world_rank, max_grid_size)) break;
+                                gpu_timer.Stop();
+                                multi_node.GetStatistics(total_queued, search_depth, avg_duty);
+                                break;
 			}
 			if (retval && (retval != cudaErrorInvalidDeviceFunction)) {
 				exit(1);
@@ -757,12 +749,14 @@ void RunTests(
 
 			// Copy out results
 			if (csr_problem.ExtractResults(h_labels)) exit(1);
+
 			if ((test_iterations > 0) && (test_iteration == 0))
 			{
 				printf("Warmup iteration: %.3f ms\n", elapsed);
 			}
 			else
 			{
+				/*
 				DisplayStats<CsrProblem::ProblemType::MARK_PREDECESSORS>(
 					*stats,
 					src,
@@ -773,9 +767,10 @@ void RunTests(
 					search_depth,
 					total_queued,
 					avg_duty);
+				*/
 			}
 
-			printf("\n");
+			printf("AA\n");
 			if (g_verbose2) {
 				printf("Computed solution (%s): ", (MARK_PREDECESSORS) ? "predecessor" : "source dist");
 				DisplaySolution(h_labels, csr_graph.nodes);
@@ -809,7 +804,8 @@ template <
 	typename SizeT>
 void RunTests(
 	CsrGraph<VertexId, Value, SizeT> &csr_graph,
-	CommandLineArgs &args)
+	CommandLineArgs &args,
+	int world_rank)
 {
 	VertexId 	src 				= -1;			// Use whatever the specified graph-type's default is
 	std::string	src_str;
@@ -820,14 +816,14 @@ void RunTests(
 	int 		max_grid_size 		= 0;			// Maximum grid size (0: leave it up to the enactor)
 	int 		num_gpus			= 1;			// Number of GPUs for multi-gpu enactor to use
 	double 		max_queue_sizing	= 1.3;			// Maximum size scaling factor for work queues (e.g., 1.0 creates n and m-element vertex and edge frontiers).
+	int		num_nodes		= 1;
 	std::vector<int> strategies(1, HYBRID);			// Use "hybrid" strategy by default
 
 	instrumented = args.CheckCmdLineFlag("instrumented");
 	args.GetCmdLineArgument("src", src_str);
 	if (src_str.empty()) {
 		// Random source
-		//src = builder::RandomNode(csr_graph.nodes);
-		randomized_src = true;
+		src = builder::RandomNode(csr_graph.nodes);
 	} else if (src_str.compare("randomize") == 0) {
 		randomized_src = true;
 	} else {
@@ -840,12 +836,14 @@ void RunTests(
 	args.GetCmdLineArgument("max-ctas", max_grid_size);
 	args.GetCmdLineArgument("num-gpus", num_gpus);
 	args.GetCmdLineArgument("queue-sizing", max_queue_sizing);
+	args.GetCmdLineArgument("num-nodes", num_nodes);
 	if (g_verbose2 = args.CheckCmdLineFlag("v2")) {
 		g_verbose = true;
 	} else {
 		g_verbose = args.CheckCmdLineFlag("v");
 	}
 	args.GetCmdLineArguments("strategy", strategies);
+
 	if (num_gpus > 1) {
 		if (__B40C_LP64__ == 0) {
 			printf("Must be compiled in 64-bit to run multiple GPUs\n");
@@ -854,7 +852,10 @@ void RunTests(
 		strategies.clear();
 		strategies.push_back(MULTI_GPU);
 	}
-
+	if (num_nodes >1 ){
+		strategies.clear();
+		strategies.push_back(MULTI_NODE);
+	}
 	// Enable symmetric peer access between gpus
 	for (int gpu = 0; gpu < num_gpus; gpu++) {
 		for (int other_gpu = (gpu + 1) % num_gpus;
@@ -901,15 +902,16 @@ void RunTests(
 		}
 */
 	} else {
+
 		// Run regular kernel
 		if (mark_pred) {
 			// label predecessor
 			RunTests<VertexId, Value, SizeT, false, true>(
-				csr_graph, src, randomized_src, test_iterations, max_grid_size, num_gpus, max_queue_sizing, strategies);
+				csr_graph, src, randomized_src, test_iterations, max_grid_size, num_gpus, num_nodes, max_queue_sizing, strategies, world_rank);
 		} else {
 			// label distance
 			RunTests<VertexId, Value, SizeT, false, false>(
-				csr_graph, src, randomized_src, test_iterations, max_grid_size, num_gpus, max_queue_sizing, strategies);
+				csr_graph, src, randomized_src, test_iterations, max_grid_size, num_gpus, num_nodes, max_queue_sizing, strategies, world_rank);
 		}
 	}
 }
@@ -921,6 +923,15 @@ void RunTests(
 
 int main( int argc, char** argv)
 {
+        //Initialize the MPI environment
+        MPI_Init(NULL, NULL);
+        //Find out rank and size
+        int world_rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+        printf("rank is %d\n", world_rank);
+
+
+
 	CommandLineArgs args(argc, argv);
 
 	if ((argc < 2) || (args.CheckCmdLineFlag("help"))) {
@@ -969,7 +980,7 @@ int main( int argc, char** argv)
 		}
 
 		// Run tests
-		RunTests(csr_graph, args);
+		RunTests(csr_graph, args, world_rank);
 
 	} else if (graph_type == "grid3d") {
 
@@ -990,7 +1001,7 @@ int main( int argc, char** argv)
 		}
 
 		// Run tests
-		RunTests(csr_graph, args);
+		RunTests(csr_graph, args,world_rank);
 
 	} else if (graph_type == "dimacs") {
 
@@ -1015,7 +1026,7 @@ int main( int argc, char** argv)
 		}
 		
 		// Run tests
-		RunTests(csr_graph, args);
+		RunTests(csr_graph, args, world_rank);
 
 	} else if (graph_type == "metis") {
 
@@ -1033,7 +1044,7 @@ int main( int argc, char** argv)
 		}
 		
 		// Run tests
-		RunTests(csr_graph, args);
+		RunTests(csr_graph, args, world_rank);
 
 	} else if (graph_type == "market") {
 
@@ -1055,7 +1066,7 @@ int main( int argc, char** argv)
 		}
 
 		// Run tests
-		RunTests(csr_graph, args);
+		RunTests(csr_graph, args, world_rank);
 
 	} else if (graph_type == "rmat") {
 
@@ -1082,7 +1093,7 @@ int main( int argc, char** argv)
 		}
 
 		// Run tests
-		RunTests(csr_graph, args);
+		RunTests(csr_graph, args, world_rank);
 
 	} else if (graph_type == "g500") {
 
@@ -1109,7 +1120,7 @@ int main( int argc, char** argv)
 		}
 
 		// Run tests
-		RunTests(csr_graph, args);
+		RunTests(csr_graph, args, world_rank);
 
 	} else if (graph_type == "random") {
 
@@ -1133,7 +1144,7 @@ int main( int argc, char** argv)
 		}
 
 		// Run tests
-		RunTests(csr_graph, args);
+		RunTests(csr_graph, args, world_rank);
 
 	} else if (graph_type == "rr") {
 
@@ -1152,7 +1163,7 @@ int main( int argc, char** argv)
 		}
 
 		// Run tests
-		RunTests(csr_graph, args);
+		RunTests(csr_graph, args, world_rank);
 
 	} else {
 
@@ -1162,6 +1173,6 @@ int main( int argc, char** argv)
 
 	}
 	
-
+	MPI_Finalize();
 	return 0;
 }
