@@ -61,7 +61,7 @@ struct ProblemType : partition::ProblemType<
 	typedef typename radix_sort::KeyTraits<VertexId>::ConvertedKeyType		UnsignedBits;		// Unsigned type corresponding to VertexId
 
 	static const bool MARK_PREDECESSORS		= _MARK_PREDECESSORS;
-	static const _VertexId LOG_MAX_GPUS		= 8;										// The "problem type" currently only reserves space for 4 gpu identities in upper vertex identifier bits
+	static const _VertexId LOG_MAX_GPUS		= 3;										// The "problem type" currently only reserves space for 4 gpu identities in upper vertex identifier bits
 	static const _VertexId MAX_GPUS			= 1 << LOG_MAX_GPUS;
 
 	static const _VertexId GPU_MASK_SHIFT	= (sizeof(_VertexId) * 8) - LOG_MAX_GPUS;

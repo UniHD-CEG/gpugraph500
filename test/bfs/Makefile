@@ -202,10 +202,12 @@ bin/test_bfs_$(NVCC_VERSION)_$(ARCH_SUFFIX) : test_bfs.cu $(DEPS)
 # Clean
 #-------------------------------------------------------------------------------
 
+#Remove the executable and any output files like output files or .btr files before
+#committing to the repo
 clean :
 	rm -f bin/*_$(NVCC_VERSION)_$(ARCH_SUFFIX)* 
 	rm -f *.i* *.cubin *.cu.c *.cudafe* *.fatbin.c *.ptx *.hash *.cu.cpp *.o
-
+	rm -f bin/*
 
 
 
