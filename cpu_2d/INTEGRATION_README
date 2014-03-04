@@ -1,0 +1,34 @@
+//March 3rd, 2014
+//J. Young
+/*This document contains notes and comments on 
+  Matthias's 2D partitioning/exchange strategy and 
+  code files, to enable better understanding for integration
+  phase. */
+
+/*----generator and validate directories-------------*/
+The generator and validate directories are based on the
+Graph500 Kronecker generator code, specifically on the
+Git work-in-progress version, rather than on the stable
+version. The validation code can be found in the
+"/graph500/mpi/" directory.
+
+/*-----------main.cpp--------------------------------*/
+Main function that does graph generation, BFS, and validation
+
+
+/*-----------distmatrix2d.cpp/h----------------------*/
+CSR-format matrix. setupMatrix2 seems to be the newest
+implementation of the parallel graph generator
+
+
+
+/*-----------simplecpubfs.cpp/h------------------------*/
+Seems to be an earlier version of BFS - is not used in
+main.cpp like cpubfs_bin is. May not be needed currently.
+
+/*-----------cpubfs_bin.cpp/h------------------------*/
+Template-based version of BFS that uses 2D partitioned
+matrix.
+
+cpubfs_bin.h has the following functions
+

@@ -1,0 +1,32 @@
+//March 3rd, 2014
+//J. Young
+/*This document contains notes and comments on 
+  Sehoon's exchange strategy and code files, to 
+  enable better understanding for integration
+  phase. */
+
+/*-----------bfs/enactor_multi_node.cuh-----------------------------*/
+Sehoon's modifications can be found in the EnactSearch function from
+lines 506 to ~920. Most of his modifications are after line 752 and
+include exchanges for the neighbor queues.
+
+/*-----------bfs/problem_type.cuh-----------------------------*/
+Sehoon modified this file to scale up to 8 GPUs, but line 64
+limits the max number of GPU partitions to 8.
+//static const _VertexId LOG_MAX_GPUS   = 3;
+
+/*-----------csr_graph.cuh-----------------------------*/
+The sparse graph format has the following variables:
+
+template<typename VertexId, typename Value, typename SizeT>
+struct CsrGraph
+{
+ SizeT nodes;
+ SizeT edges;
+
+ SizeT     *row_offsets;
+ VertexId  *column_indices;
+ Value   *values;
+
+ bool    pinned;
+
