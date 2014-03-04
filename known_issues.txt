@@ -1,0 +1,3 @@
+cuda code
+- problems with kepler cards related to some node distributions
+- compilation problems with more than 8 nodes

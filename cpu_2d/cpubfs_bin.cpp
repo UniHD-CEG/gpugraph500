@@ -1,7 +1,7 @@
 #include <assert.h>
 #include "cpubfs_bin.h"
 
-CPUBFS_bin::CPUBFS_bin(DistMatrix2d<true,64>& _store):GlobalBFS<true,64>(_store)
+CPUBFS_bin::CPUBFS_bin(MatrixT& _store):GlobalBFS<true,64>(_store)
 {
     fq_tp_type = MPI_UINT64_T; //Frontier Queue Transport Type
 
@@ -13,6 +13,10 @@ CPUBFS_bin::CPUBFS_bin(DistMatrix2d<true,64>& _store):GlobalBFS<true,64>(_store)
     visited = new uint64_t[store.getLocColLength()/64];
     fq_out  = new uint64_t[store.getLocColLength()/64];
     fq_in   = new uint64_t[store.getLocRowLength()/64];
+}
+
+CPUBFS_bin::CPUBFS_bin(CPUBFS_bin::MatrixT &_store)
+{
 }
 
 CPUBFS_bin::~CPUBFS_bin()

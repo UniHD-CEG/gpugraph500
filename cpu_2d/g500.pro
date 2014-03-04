@@ -43,6 +43,8 @@ HEADERS += \
     globalbfs.hh
 
 opencl{
+QMAKE_CXXFLAGS += -D_OPENCL
+QMAKE_CFLAGS   += -D_OPENCL
 
 SOURCES +=  \
     opencl/opencl_bfs.cpp
@@ -55,11 +57,15 @@ LIBS += -lOpenCL
 
 }
 
-gunrock{
+cuda{
+QMAKE_CXXFLAGS += -D_CUDA
+QMAKE_CFLAGS   += -D_CUDA
 
-SOURCES +=
+SOURCES += \
+    cuda/cuda_bfs.cpp
 
-HEADERS +=
+HEADERS += \
+    cuda/cuda_bfs.h
 }
 
 # MPI Settings

@@ -223,11 +223,21 @@ int main(int argc, char** argv)
       // Matrix generation
       MPI_Barrier(MPI_COMM_WORLD);
       tstart = MPI_Wtime();
-      DistMatrix2d<true,64> store(R, C);
+#ifdef _OPENCL
+      OpenCL_BFS::MatrixT store(R, C);
+#elif _CUDA
+      CUDA_BFS::MatrixT store(R, C);
+#else
+      //SimpleCPUBFS::MatrixT store(R, C);
+      CPUBFS_bin::MatrixT store(R, C);
+#endif
       store.setupMatrix2(edgelist,number_of_edges);
+
 #ifdef _OPENCL
       OCLRunner oclrun;
       OpenCL_BFS runBfs(store, *oclrun);
+#elif _CUDA
+      CUDA_BFS runBfs(store);
 #else
       //SimpleCPUBFS runBfs(store);
       CPUBFS_bin runBfs(store);

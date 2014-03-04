@@ -11,7 +11,8 @@ class SimpleCPUBFS : public GlobalBFS<false,1>
     std::vector<vtxtype> fq_out;
     std::vector<vtxtype> fq_in;
 public:
-    SimpleCPUBFS(DistMatrix2d<false,1> &_store);
+    typedef DistMatrix2d<false, 1> MatrixT;
+    SimpleCPUBFS(MatrixT &_store);
     ~SimpleCPUBFS();
 
     void reduce_fq_out(void* startaddr, long insize);    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.

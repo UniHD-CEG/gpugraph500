@@ -1,7 +1,7 @@
 #include <algorithm>
 #include "simplecpubfs.h"
 
-SimpleCPUBFS::SimpleCPUBFS(DistMatrix2d<false,1> &_store):GlobalBFS<false,1>(_store)
+SimpleCPUBFS::SimpleCPUBFS(MatrixT &_store):GlobalBFS<false,1>(_store)
 {
     fq_tp_type = MPI_INT64_T; //Frontier Queue Transport Type
 

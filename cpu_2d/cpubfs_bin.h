@@ -10,7 +10,8 @@ class CPUBFS_bin : public GlobalBFS<true,64>
     uint64_t* fq_in;
 
 public:
-    CPUBFS_bin(DistMatrix2d<true,64> &_store);
+    typedef DistMatrix2d<true, 64> MatrixT;
+    CPUBFS_bin(MatrixT &_store);
     ~CPUBFS_bin();
 
     void reduce_fq_out(void* startaddr, long insize);    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
