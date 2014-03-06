@@ -1,5 +1,6 @@
 //March 3rd, 2014
 //J. Young
+//update Matthias Hauck, March 5th,2014 
 /*This document contains notes and comments on 
   Matthias's 2D partitioning/exchange strategy and 
   code files, to enable better understanding for integration
@@ -11,24 +12,47 @@ Graph500 Kronecker generator code, specifically on the
 Git work-in-progress version, rather than on the stable
 version. The validation code can be found in the
 "/graph500/mpi/" directory.
+The generator is not modified, but the validator is 
+modified to support 2d partitioning.
 
 /*-----------main.cpp--------------------------------*/
-Main function that does graph generation, BFS, and validation
+Main function that invokes graph generation, BFS, and validation.
 
 
-/*-----------distmatrix2d.cpp/h----------------------*/
-CSR-format matrix. setupMatrix2 seems to be the newest
-implementation of the parallel graph generator
+/*-----------distmatrix2d.hh----------------------*/
+CSR-format matrix. setupMatrix2 is the newest
+implementation of the parallel graph generator.
 
-
+/*-----------globalbfs.hh-------------------------*/
+Template-based version that does the global communication 
+of the BFS. 
 
 /*-----------simplecpubfs.cpp/h------------------------*/
-Seems to be an earlier version of BFS - is not used in
-main.cpp like cpubfs_bin is. May not be needed currently.
+Is an earlier version of BFS that uses a classic frontier queue. 
 
 /*-----------cpubfs_bin.cpp/h------------------------*/
-Template-based version of BFS that uses 2D partitioned
-matrix.
+Version of BFS that uses 2D partitioned matrix and a binary 
+frontier queue. Has lower overhead than simplecpubfs.cpp/h.
 
-cpubfs_bin.h has the following functions
+GlobalBFS, the parent class of the local Implementations, has 
+the following functions that need to be implemented by the children:
+//virtual void reduce_fq_out(void* startaddr, long insize)    
+Global Reducer of the local outgoing frontier queues.  
+//virtual void getOutgoingFQ(void* &startaddr, vtxtype& outsize)
+Get next queue for global reduction.
+//virtual void setModOutgoingFQ(void* startaddr, long insize)
+Sets next queue for global after reduction. 
+//virtual void getOutgoingFQ(vtxtype globalstart, vtxtype size, 
+	void* &startaddr, vtxtype& outsize)=0;
+Get a part of the next queue so that it can be transmitted to 
+the nodes that need this part for the next current queue.
+//virtual void setIncommingFQ(vtxtype globalstart, vtxtype size, 
+	void* startaddr, vtxtype& insize_max)=0;
+Sets a part of the new current queue. 
+//virtual bool istheresomethingnew()
+Test, if there are new vertex in the next queue.
+//virtual void setStartVertex(vtxtype start)
+Prepares a BFS run. Set the start vertex.
+//virtual void runLocalBFS()
+Invokes a local BFS expansion.
 
