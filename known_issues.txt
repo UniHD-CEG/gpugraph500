@@ -1,3 +1,18 @@
 cuda code
 - problems with kepler cards related to some node distributions
+
 - compilation problems with more than 8 nodes
+
+- How do we map Matthia's 2D queues to Duane's 1D queue?
+  Relevant files: cpu_2d/distmatrix2d.hh
+                  b40c/graph/csr_graph.cuh
+                  CsrProblem::FromHostProblem in
+                    b40c/graph/bfs/csr_problem.cuh:335
+                    does initial graph partitioning
+  
+-PeerAccess to GPUs may need to be modified since only 2 out of 3 Keeneland
+GPUs can truly use GPUDirect v2 (peer-to-peer). 
+  *Line 871 on test_bfs.cu
+  *Exchange code which uses peer-to-peer transfers and takes place from
+  lines 756 to ~line 880 of b40c/graph/bfs/enactor_multi_gpu.cuh
+
