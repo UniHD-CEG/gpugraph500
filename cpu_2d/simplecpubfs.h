@@ -5,7 +5,7 @@
 #ifndef SIMPLECPUBFS_H
 #define SIMPLECPUBFS_H
 
-class SimpleCPUBFS : public GlobalBFS<false,1>
+class SimpleCPUBFS : public GlobalBFS<void,false,1>
 {
     std::vector<bool> visited;
     std::vector<vtxtype> fq_out;
@@ -21,7 +21,7 @@ public:
     void getOutgoingFQ(vtxtype globalstart, vtxtype size, void* &startaddr, vtxtype& outsize);
     void setIncommingFQ(vtxtype globalstart, vtxtype size, void* startaddr, vtxtype& insize_max);
     bool istheresomethingnew();           //to detect if finished
-    void setStartVertex(vtxtype start);
+    void setStartVertex(const vtxtype start);
     void runLocalBFS();
 };
 

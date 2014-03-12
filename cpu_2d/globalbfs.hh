@@ -9,7 +9,7 @@
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template<bool WOLO=false,int ALG=1>
+template<class FQ_T=void, bool WOLO=false,int ALG=1>
 class GlobalBFS
 {
     MPI_Comm row_comm, col_comm;
@@ -22,15 +22,15 @@ protected:
     vtxtype* predessor;
 
     MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
-    void*   recv_fq_buff;
+    FQ_T*   recv_fq_buff;
     long    recv_fq_buff_length;
-    virtual void reduce_fq_out(void* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
-    virtual void getOutgoingFQ(void* &startaddr, vtxtype& outsize)=0;
-    virtual void setModOutgoingFQ(void* startaddr, long insize)=0; //startaddr: 0, self modification
-    virtual void getOutgoingFQ(vtxtype globalstart, vtxtype size, void* &startaddr, vtxtype& outsize)=0;
-    virtual void setIncommingFQ(vtxtype globalstart, vtxtype size, void* startaddr, vtxtype& insize_max)=0;
+    virtual void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
+    virtual void getOutgoingFQ(FQ_T* &startaddr, vtxtype& outsize)=0;
+    virtual void setModOutgoingFQ(FQ_T* startaddr, long insize)=0; //startaddr: 0, self modification
+    virtual void getOutgoingFQ(vtxtype globalstart, vtxtype size, FQ_T* &startaddr, vtxtype& outsize)=0;
+    virtual void setIncommingFQ(vtxtype globalstart, vtxtype size, FQ_T* startaddr, vtxtype& insize_max)=0;
     virtual bool istheresomethingnew()=0;           //to detect if finished
-    virtual void setStartVertex(vtxtype start)=0;
+    virtual void setStartVertex(const vtxtype start)=0;
     virtual void runLocalBFS()=0;
 
 
@@ -47,8 +47,8 @@ public:
     vtxtype* getPredessor();
 };
 
-template<bool WOLO,int ALG>
-GlobalBFS<WOLO,ALG>::GlobalBFS(DistMatrix2d<WOLO,ALG>&_store): store(_store)
+template<class FQ_T,bool WOLO,int ALG>
+GlobalBFS<FQ_T,WOLO,ALG>::GlobalBFS(DistMatrix2d<WOLO,ALG>&_store): store(_store)
 {
      // Split communicator into row and column communicator
      // Split by row, rank by column
@@ -58,7 +58,6 @@ GlobalBFS<WOLO,ALG>::GlobalBFS(DistMatrix2d<WOLO,ALG>&_store): store(_store)
 
      fold_fq_props = store.getFoldProperties();
 
-     predessor = new vtxtype[store.getLocColLength()];
 }
 
 /*
@@ -72,11 +71,11 @@ GlobalBFS<WOLO,ALG>::GlobalBFS(DistMatrix2d<WOLO,ALG>&_store): store(_store)
  * 5) global fold
 */
 #ifdef INSTRUMENTED
-template<bool WOLO,int ALG>
-void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex, double& lexp, double& lqueue)
+template<class FQ_T,bool WOLO,int ALG>
+void GlobalBFS<FQ_T,WOLO,ALG>::runBFS(vtxtype startVertex, double& lexp, double& lqueue)
 #else
-template<bool WOLO,int ALG>
-void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
+template<class FQ_T,bool WOLO,int ALG>
+void GlobalBFS<FQ_T,WOLO,ALG>::runBFS(vtxtype startVertex)
 #endif
 {
     #ifdef INSTRUMENTED
@@ -128,7 +127,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
     int rounds = 0;
     while((1 << rounds) < store.getNumRowSl() ){
         if((store.getLocalRowID() >> rounds)%2 == 1){
-            void* startaddr_fq;
+            FQ_T* startaddr_fq;
             long _outsize;
             //comute recv addr
             int recv_addr = (store.getLocalRowID() + store.getNumRowSl() - (1 << rounds)) % store.getNumRowSl();
@@ -168,7 +167,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
     //distribute solution
     if(0 == store.getLocalRowID())
     {
-        void* startaddr_fq;
+        FQ_T* startaddr_fq;
         long _outsize;
         //get fq to send
         #ifdef INSTRUMENTED
@@ -206,7 +205,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
 // 5
     for(typename std::vector<typename DistMatrix2d<WOLO,ALG>::fold_prop>::iterator it = fold_fq_props.begin(); it  != fold_fq_props.end(); it++){
         if(it->sendColSl == store.getLocalColumnID() ){
-            void*   startaddr;
+            FQ_T*   startaddr;
             long     outsize;
             #ifdef INSTRUMENTED
             tstart = MPI_Wtime();
@@ -244,8 +243,8 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
 }
 }
 
-template<bool WOLO,int ALG>
-vtxtype* GlobalBFS<WOLO,ALG>::getPredessor()
+template<class FQ_T,bool WOLO,int ALG>
+vtxtype* GlobalBFS<FQ_T,WOLO,ALG>::getPredessor()
 {
     return  predessor;
 }
