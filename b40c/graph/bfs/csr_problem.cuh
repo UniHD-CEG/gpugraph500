@@ -547,7 +547,6 @@ struct CsrProblem
 
 		//number of nodes greater than 1
 		else{
-			printf("More than one node\n");
 				// Create multiple GPU graph slices
 				for (int gpu = 0; gpu < num_gpus; gpu++) {
 
