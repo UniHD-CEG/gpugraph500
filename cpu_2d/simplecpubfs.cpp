@@ -1,9 +1,10 @@
 #include <algorithm>
 #include "simplecpubfs.h"
 
-SimpleCPUBFS::SimpleCPUBFS(MatrixT &_store):GlobalBFS<false,1>(_store)
+SimpleCPUBFS::SimpleCPUBFS(MatrixT &_store):GlobalBFS<SimpleCPUBFS,void,MatrixT>(_store)
 {
     fq_tp_type = MPI_INT64_T; //Frontier Queue Transport Type
+    predessor = new vtxtype[store.getLocColLength()];
 
     //allocate recive buffer
     recv_fq_buff_length = std::max(store.getLocRowLength(), store.getLocColLength());
@@ -14,6 +15,7 @@ SimpleCPUBFS::SimpleCPUBFS(MatrixT &_store):GlobalBFS<false,1>(_store)
 SimpleCPUBFS::~SimpleCPUBFS()
 {
     delete[] static_cast<vtxtype*>(recv_fq_buff);
+    delete[] predessor;
 }
 
 void SimpleCPUBFS::reduce_fq_out(void *startaddr, long insize)
@@ -49,7 +51,7 @@ void SimpleCPUBFS::runLocalBFS()
     std::sort(fq_out.begin(), fq_out.end());
 }
 
-void SimpleCPUBFS::setStartVertex(vtxtype start)
+void SimpleCPUBFS::setStartVertex(const vtxtype start)
 {
     //reset predessor list
     for(int i = 0; i < store.getLocColLength(); i++){

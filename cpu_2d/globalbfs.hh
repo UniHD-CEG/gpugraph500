@@ -9,33 +9,33 @@
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template<bool WOLO=false,int ALG=1>
+template<class Derived,class FQ_T=void, class STORE=DistMatrix2d<> >
 class GlobalBFS
 {
     MPI_Comm row_comm, col_comm;
 
     // sending node column slice, startvtx, size
-    std::vector<typename DistMatrix2d<WOLO,ALG>::fold_prop> fold_fq_props;
+    std::vector<typename STORE::fold_prop> fold_fq_props;
 
 protected:
-    const DistMatrix2d<WOLO,ALG>& store;
+    const STORE& store;
     vtxtype* predessor;
 
     MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
-    void*   recv_fq_buff;
+    FQ_T*   recv_fq_buff;
     long    recv_fq_buff_length;
-    virtual void reduce_fq_out(void* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
-    virtual void getOutgoingFQ(void* &startaddr, vtxtype& outsize)=0;
-    virtual void setModOutgoingFQ(void* startaddr, long insize)=0; //startaddr: 0, self modification
-    virtual void getOutgoingFQ(vtxtype globalstart, vtxtype size, void* &startaddr, vtxtype& outsize)=0;
-    virtual void setIncommingFQ(vtxtype globalstart, vtxtype size, void* startaddr, vtxtype& insize_max)=0;
-    virtual bool istheresomethingnew()=0;           //to detect if finished
-    virtual void setStartVertex(vtxtype start)=0;
-    virtual void runLocalBFS()=0;
+    //virtual void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
+    //virtual void getOutgoingFQ(FQ_T* &startaddr, vtxtype& outsize)=0;
+    //virtual void setModOutgoingFQ(FQ_T* startaddr, long insize)=0; //startaddr: 0, self modification
+    //virtual void getOutgoingFQ(vtxtype globalstart, vtxtype size, FQ_T* &startaddr, vtxtype& outsize)=0;
+    //virtual void setIncommingFQ(vtxtype globalstart, vtxtype size, FQ_T* startaddr, vtxtype& insize_max)=0;
+    //virtual bool istheresomethingnew()=0;           //to detect if finished
+    //virtual void setStartVertex(const vtxtype start)=0;
+    //virtual void runLocalBFS()=0;
 
 
 public:
-    GlobalBFS(DistMatrix2d<WOLO,ALG>& _store);
+    GlobalBFS(STORE& _store);
 
     #ifdef INSTRUMENTED
     void runBFS(vtxtype startVertex, double& lexp, double &lqueue);
@@ -47,8 +47,8 @@ public:
     vtxtype* getPredessor();
 };
 
-template<bool WOLO,int ALG>
-GlobalBFS<WOLO,ALG>::GlobalBFS(DistMatrix2d<WOLO,ALG>&_store): store(_store)
+template<class Derived,class FQ_T,class STORE>
+GlobalBFS<Derived,FQ_T,STORE>::GlobalBFS(STORE &_store): store(_store)
 {
      // Split communicator into row and column communicator
      // Split by row, rank by column
@@ -58,7 +58,6 @@ GlobalBFS<WOLO,ALG>::GlobalBFS(DistMatrix2d<WOLO,ALG>&_store): store(_store)
 
      fold_fq_props = store.getFoldProperties();
 
-     predessor = new vtxtype[store.getLocColLength()];
 }
 
 /*
@@ -72,11 +71,11 @@ GlobalBFS<WOLO,ALG>::GlobalBFS(DistMatrix2d<WOLO,ALG>&_store): store(_store)
  * 5) global fold
 */
 #ifdef INSTRUMENTED
-template<bool WOLO,int ALG>
-void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex, double& lexp, double& lqueue)
+template<class Derived,class FQ_T,class STORE>
+void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex, double& lexp, double& lqueue)
 #else
-template<bool WOLO,int ALG>
-void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
+template<class Derived,class FQ_T,class STORE>
+void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
 #endif
 {
     #ifdef INSTRUMENTED
@@ -91,7 +90,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
     #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
     #endif
-    setStartVertex(startVertex);
+    static_cast<Derived*>(this)->setStartVertex(startVertex);
     #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     lqueue +=tend-tstart;
@@ -101,7 +100,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
     #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
     #endif
-    runLocalBFS();
+    static_cast<Derived*>(this)->runLocalBFS();
     #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     lexp +=tend-tstart;
@@ -111,7 +110,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
     #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
     #endif
-    anynewnodes = istheresomethingnew();
+    anynewnodes = static_cast<Derived*>(this)->istheresomethingnew();
     #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     lqueue +=tend-tstart;
@@ -128,7 +127,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
     int rounds = 0;
     while((1 << rounds) < store.getNumRowSl() ){
         if((store.getLocalRowID() >> rounds)%2 == 1){
-            void* startaddr_fq;
+            FQ_T* startaddr_fq;
             long _outsize;
             //comute recv addr
             int recv_addr = (store.getLocalRowID() + store.getNumRowSl() - (1 << rounds)) % store.getNumRowSl();
@@ -136,7 +135,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
             #ifdef INSTRUMENTED
             tstart = MPI_Wtime();
             #endif
-            getOutgoingFQ(startaddr_fq, _outsize);
+            static_cast<Derived*>(this)->getOutgoingFQ(startaddr_fq, _outsize);
             #ifdef INSTRUMENTED
             tend = MPI_Wtime();
             lqueue +=tend-tstart;
@@ -156,7 +155,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
             #ifdef INSTRUMENTED
             tstart = MPI_Wtime();
             #endif
-            reduce_fq_out(recv_fq_buff,static_cast<long>(count));
+            static_cast<Derived*>(this)->reduce_fq_out(recv_fq_buff,static_cast<long>(count));
             #ifdef INSTRUMENTED
             tend = MPI_Wtime();
             lqueue +=tend-tstart;
@@ -168,13 +167,13 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
     //distribute solution
     if(0 == store.getLocalRowID())
     {
-        void* startaddr_fq;
+        FQ_T* startaddr_fq;
         long _outsize;
         //get fq to send
         #ifdef INSTRUMENTED
         tstart = MPI_Wtime();
         #endif
-        getOutgoingFQ(startaddr_fq, _outsize);
+        static_cast<Derived*>(this)->getOutgoingFQ(startaddr_fq, _outsize);
         #ifdef INSTRUMENTED
         tend = MPI_Wtime();
         lqueue +=tend-tstart;
@@ -184,7 +183,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
         #ifdef INSTRUMENTED
         tstart = MPI_Wtime();
         #endif
-        setModOutgoingFQ(0,_outsize);
+        static_cast<Derived*>(this)->setModOutgoingFQ(0,_outsize);
         #ifdef INSTRUMENTED
         tend = MPI_Wtime();
         lqueue +=tend-tstart;
@@ -197,21 +196,21 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
         #ifdef INSTRUMENTED
         tstart = MPI_Wtime();
         #endif
-        setModOutgoingFQ(recv_fq_buff,_outsize);
+        static_cast<Derived*>(this)->setModOutgoingFQ(recv_fq_buff,_outsize);
         #ifdef INSTRUMENTED
         tend = MPI_Wtime();
         lqueue +=tend-tstart;
         #endif
     }
 // 5
-    for(typename std::vector<typename DistMatrix2d<WOLO,ALG>::fold_prop>::iterator it = fold_fq_props.begin(); it  != fold_fq_props.end(); it++){
+    for(typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin(); it  != fold_fq_props.end(); it++){
         if(it->sendColSl == store.getLocalColumnID() ){
-            void*   startaddr;
+            FQ_T*   startaddr;
             long     outsize;
             #ifdef INSTRUMENTED
             tstart = MPI_Wtime();
             #endif
-            getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
+            static_cast<Derived*>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
             #ifdef INSTRUMENTED
             tend = MPI_Wtime();
             lqueue +=tend-tstart;
@@ -221,7 +220,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
             #ifdef INSTRUMENTED
             tstart = MPI_Wtime();
             #endif
-            setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
+            static_cast<Derived*>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
             #ifdef INSTRUMENTED
             tend = MPI_Wtime();
             lqueue +=tend-tstart;
@@ -234,7 +233,7 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
             #ifdef INSTRUMENTED
             tstart = MPI_Wtime();
             #endif
-            setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
+            static_cast<Derived*>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
             #ifdef INSTRUMENTED
             tend = MPI_Wtime();
             lqueue +=tend-tstart;
@@ -244,8 +243,8 @@ void GlobalBFS<WOLO,ALG>::runBFS(vtxtype startVertex)
 }
 }
 
-template<bool WOLO,int ALG>
-vtxtype* GlobalBFS<WOLO,ALG>::getPredessor()
+template<class Derived,class FQ_T,class STORE>
+vtxtype* GlobalBFS<Derived,FQ_T,STORE>::getPredessor()
 {
     return  predessor;
 }

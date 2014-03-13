@@ -4,23 +4,23 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store):GlobalBFS<false,1>(_store)
 {
 }
 
-void CUDA_BFS::reduce_fq_out(void *startaddr, long insize)
+void CUDA_BFS::reduce_fq_out(uint64_t *startaddr, long insize)
 {
 }
 
-void CUDA_BFS::getOutgoingFQ(void *&startaddr, vtxtype &outsize)
+void CUDA_BFS::getOutgoingFQ(uint64_t *&startaddr, vtxtype &outsize)
 {
 }
 
-void CUDA_BFS::setModOutgoingFQ(void *startaddr, long insize)
+void CUDA_BFS::setModOutgoingFQ(uint64_t *startaddr, long insize)
 {
 }
 
-void CUDA_BFS::getOutgoingFQ(vtxtype globalstart, vtxtype size, void *&startaddr, vtxtype &outsize)
+void CUDA_BFS::getOutgoingFQ(vtxtype globalstart, vtxtype size, uint64_t *&startaddr, vtxtype &outsize)
 {
 }
 
-void CUDA_BFS::setIncommingFQ(vtxtype globalstart, vtxtype size, void *startaddr, vtxtype &insize_max)
+void CUDA_BFS::setIncommingFQ(vtxtype globalstart, vtxtype size, uint64_t *startaddr, vtxtype &insize_max)
 {
 }
 
