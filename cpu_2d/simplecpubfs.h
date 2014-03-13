@@ -5,7 +5,7 @@
 #ifndef SIMPLECPUBFS_H
 #define SIMPLECPUBFS_H
 
-class SimpleCPUBFS : public GlobalBFS<void,false,1>
+class SimpleCPUBFS : public GlobalBFS<SimpleCPUBFS,void,DistMatrix2d<false, 1> >
 {
     std::vector<bool> visited;
     std::vector<vtxtype> fq_out;

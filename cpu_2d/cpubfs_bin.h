@@ -3,7 +3,7 @@
 #ifndef CPUBFS_BIN_H
 #define CPUBFS_BIN_H
 
-class CPUBFS_bin : public GlobalBFS<uint64_t,true,64>
+class CPUBFS_bin : public GlobalBFS<CPUBFS_bin,uint64_t,DistMatrix2d<true, 64> >
 {
     const int64_t col64;
     const int64_t row64;

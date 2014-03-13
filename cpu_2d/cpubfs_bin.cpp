@@ -3,16 +3,16 @@
 #include <assert.h>
 #include "cpubfs_bin.h"
 
-#ifdef __INTEL_COMPILER
-    #define assume_aligned(var, alg) __assume_aligned(var, alg)
-#elif __GNUC__
-    #define assume_aligned(var, alg) var = __builtin_assume_aligned(var, alg)
-#elif
-    #define assume_aligned(var, alg)
+#if defined( __INTEL_COMPILER )
+    #define assume_aligned(typ, var, alg) __assume_aligned(var, alg)
+#elif defined( __GNUC__ )
+    #define assume_aligned(typ, var, alg) var = (typ) __builtin_assume_aligned(var, alg)
+#else
+    #define assume_aligned(typ, var, alg)
 #endif
 
 
-CPUBFS_bin::CPUBFS_bin(MatrixT& _store):GlobalBFS<uint64_t,true,64>(_store),col64(_store.getLocColLength()/64),row64(_store.getLocRowLength()/64)
+CPUBFS_bin::CPUBFS_bin(MatrixT& _store):GlobalBFS<CPUBFS_bin,uint64_t,MatrixT>(_store),col64(_store.getLocColLength()/64),row64(_store.getLocRowLength()/64)
 {
     fq_tp_type = MPI_UINT64_T; //Frontier Queue Transport Type
     if(posix_memalign((void**)&predessor,64,sizeof(vtxtype)*store.getLocColLength()))predessor=0;// new vtxtype[store.getLocColLength()];;
@@ -40,8 +40,8 @@ CPUBFS_bin::~CPUBFS_bin()
 
 void CPUBFS_bin::reduce_fq_out(uint64_t* __restrict__ startaddr, long insize)
 {
-    assume_aligned(startaddr,64);
-    assume_aligned(fq_out,64);
+    assume_aligned(uint64_t*,startaddr,64);
+    assume_aligned(uint64_t*,fq_out,64);
 
     assert(insize == col64);    
     for(long i = 0; i < col64; i++){
@@ -58,9 +58,9 @@ void CPUBFS_bin::getOutgoingFQ(uint64_t *&startaddr, vtxtype &outsize)
 
 void CPUBFS_bin::setModOutgoingFQ(uint64_t* __restrict__ startaddr, long insize)
 {
-   assume_aligned(startaddr,64);
-   assume_aligned(fq_out,64);
-   assume_aligned(visited,64);
+   assume_aligned(uint64_t*,startaddr,64);
+   assume_aligned(uint64_t*,fq_out,64);
+   assume_aligned(uint64_t*,visited,64);
 
    assert(insize==col64);
    if(startaddr != 0)
@@ -78,14 +78,14 @@ void CPUBFS_bin::getOutgoingFQ(vtxtype globalstart, vtxtype size, uint64_t *&sta
 
 void CPUBFS_bin::setIncommingFQ(vtxtype globalstart, vtxtype size, uint64_t* __restrict__ startaddr, vtxtype &insize_max)
 {
-    assume_aligned(startaddr,64);
+    assume_aligned(uint64_t*,startaddr,64);
     assert(insize_max >= size/64);
     std::copy(startaddr, startaddr+size/64, &fq_in[store.globaltolocalRow(globalstart)/64]);
 }
 
 bool CPUBFS_bin::istheresomethingnew()
 {
-    assume_aligned(fq_out,64);
+    assume_aligned(uint64_t*,fq_out,64);
 
     for(long i = 0; i < col64; i++){
         if(fq_out[i] > 0){
@@ -97,8 +97,8 @@ bool CPUBFS_bin::istheresomethingnew()
 
 void CPUBFS_bin::setStartVertex(const vtxtype start)
 {
-    assume_aligned(fq_in,64);
-    assume_aligned(visited,64);
+    assume_aligned(uint64_t*,fq_in,64);
+    assume_aligned(uint64_t*,visited,64);
     std::fill_n( fq_in,   row64, 0);
     std::fill_n( visited, col64, 0);
 
@@ -111,7 +111,7 @@ void CPUBFS_bin::setStartVertex(const vtxtype start)
          visited[lstart/64] = 1ul << (lstart&0x3F);
     }
     //reset predessor list
-   assume_aligned(predessor, 64);
+   assume_aligned(vtxtype*,predessor, 64);
    std::fill_n( predessor,   store.getLocColLength(), -1);
 
    if(store.isLocalColumn(start)){
@@ -121,7 +121,7 @@ void CPUBFS_bin::setStartVertex(const vtxtype start)
 
 void CPUBFS_bin::runLocalBFS()
 {
-    assume_aligned(fq_out,64);
+    assume_aligned(uint64_t*,fq_out,64);
     std::fill_n(fq_out, col64, 0);
     #pragma omp parallel for
     for(int64_t i = 0; i < row64 ; i++){
