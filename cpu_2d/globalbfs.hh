@@ -38,7 +38,7 @@ public:
     GlobalBFS(STORE& _store);
 
     #ifdef INSTRUMENTED
-    void runBFS(vtxtype startVertex, double& lexp, double &lqueue);
+    void runBFS(vtxtype startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred);
     #else
     void runBFS(vtxtype startVertex);
     #endif
@@ -72,7 +72,7 @@ GlobalBFS<Derived,FQ_T,STORE>::GlobalBFS(STORE &_store): store(_store)
 */
 #ifdef INSTRUMENTED
 template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex, double& lexp, double& lqueue)
+void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
 #else
 template<class Derived,class FQ_T,class STORE>
 void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
@@ -82,6 +82,9 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
     double tstart, tend;
     lexp =0;
     lqueue =0;
+    double comtstart, comtend;
+    rowcom = 0;
+    colcom = 0;
     #endif
 
 // 0
@@ -118,10 +121,20 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
 
     MPI_Allreduce(&anynewnodes, &anynewnodes_global,1,MPI_INT,MPI_LOR,MPI_COMM_WORLD);
     if(!anynewnodes_global){
+        #ifdef INSTRUMENTED
+        tstart = MPI_Wtime();
+        #endif
         MPI_Allreduce(MPI_IN_PLACE, predessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
+        #ifdef INSTRUMENTED
+        tend = MPI_Wtime();
+        predlistred = tend-tstart;
+        #endif
         return; //There is nothing too do. Finish iteration.
     }
 // 4
+    #ifdef INSTRUMENTED
+    comtstart = MPI_Wtime();
+    #endif
     // tree based reduce operation with messages of variable size
     // root 0
     int rounds = 0;
@@ -202,7 +215,15 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
         lqueue +=tend-tstart;
         #endif
     }
+    #ifdef INSTRUMENTED
+    comtend = MPI_Wtime();
+    rowcom += comtend-comtstart;
+    #endif
+
 // 5
+    #ifdef INSTRUMENTED
+    comtstart = MPI_Wtime();
+    #endif
     for(typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin(); it  != fold_fq_props.end(); it++){
         if(it->sendColSl == store.getLocalColumnID() ){
             FQ_T*   startaddr;
@@ -240,6 +261,10 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
             #endif
         }
     }
+    #ifdef INSTRUMENTED
+    comtend = MPI_Wtime();
+    colcom += comtend - comtstart;
+    #endif
 }
 }
 

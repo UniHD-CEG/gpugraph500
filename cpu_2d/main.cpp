@@ -364,11 +364,11 @@ int main(int argc, char** argv)
           MPI_Barrier(MPI_COMM_WORLD);
           rtstart = MPI_Wtime();
           #ifdef INSTRUMENTED
-          double lexp, lqueue;
+          double lexp, lqueue, rowcom, colcom, predlistred;
           if(rank == 0){
-              runBfs.runBFS(tries[i],lexp,lqueue);
+              runBfs.runBFS(tries[i],lexp,lqueue, rowcom, colcom, predlistred);
           }else{
-            runBfs.runBFS(-1,lexp,lqueue);
+            runBfs.runBFS(-1,lexp,lqueue, rowcom, colcom, predlistred);
           }
           #else
           if(rank == 0){
@@ -380,9 +380,12 @@ int main(int argc, char** argv)
           rtstop = MPI_Wtime();
 
           #ifdef INSTRUMENTED
-          double gmax_lexp,gmax_lqueue;
+          double gmax_lexp,gmax_lqueue, gmax_rowcom, gmax_colcom, gmax_predlistred;
           MPI_Reduce(&lexp, &gmax_lexp, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
           MPI_Reduce(&lqueue, &gmax_lqueue, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+          MPI_Reduce(&rowcom, &gmax_rowcom, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+          MPI_Reduce(&colcom, &gmax_colcom, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+          MPI_Reduce(&predlistred, &gmax_predlistred, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
           #endif
 
 
@@ -392,6 +395,9 @@ int main(int argc, char** argv)
               printf("max. local exp.:     %fs(%f%%)\n", gmax_lexp,  100.*gmax_lexp/(rtstop-rtstart));
               printf("max. queue handling: %fs(%f%%)\n", gmax_lqueue,100.*gmax_lqueue/(rtstop-rtstart));
               printf("est. rest:           %fs(%f%%)\n",(rtstop-rtstart)-gmax_lexp-gmax_lqueue, 100.*(1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart)));
+              printf("max. row com.:       %fs(%f%%)\n", gmax_rowcom,  100.*gmax_rowcom/(rtstop-rtstart));
+              printf("max. col com.:       %fs(%f%%)\n", gmax_colcom,  100.*gmax_colcom/(rtstop-rtstart));
+              printf("max. pred. list. red:%fs(%f%%)\n", gmax_predlistred,  100.*gmax_predlistred/(rtstop-rtstart));
 
               bfs_local.push_back(gmax_lexp);
               bfs_local_share.push_back(gmax_lexp/(rtstop-rtstart));
