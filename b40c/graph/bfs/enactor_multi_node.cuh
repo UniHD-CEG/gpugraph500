@@ -364,7 +364,6 @@ public:
 		DEBUG2(false)
 	{}
 
-
 	/**
 	 * Resets control blocks
 	 */
@@ -531,10 +530,10 @@ public:
 	}
 
     template <
-    	typename PartitionPolicy,
     	typename CopyPolicy,
+	typename ContractPolicy,
     	typename CsrProblem>
-	void nodeExchange(std::vector <GpuControlBlock *> control_blocks, CsrProblem &csr_problem, cudaError_t retval, int num_nodes, int world_rank, int bins_per_gpu){
+	cudaError_t nodeExchange(std::vector <GpuControlBlock*> control_blocks, CsrProblem &csr_problem,cudaError_t retval, int num_nodes, int world_rank, int bins_per_gpu){
 		typedef typename CsrProblem::VertexId			VertexId;
 		typedef typename CsrProblem::SizeT				SizeT;
 		typedef typename CsrProblem::GraphSlice			GraphSlice;
@@ -618,6 +617,7 @@ public:
 								MPI_Send(&num_elements,1, MPI_INT, l,0,MPI_COMM_WORLD);
 								VertexId *hostd_keys= (VertexId*)malloc(num_elements*sizeof(VertexId));
 								VertexId *hostd_values= (VertexId*)malloc(num_elements*sizeof(VertexId));
+								//need to copy to the host before sending to other nodes
 								cudaMemcpy(hostd_keys,slice->frontier_queues.d_keys[2]+queue_offset,sizeof(VertexId)*num_elements,cudaMemcpyDeviceToHost);
 								cudaMemcpy(hostd_values,slice->frontier_queues.d_values[2]+queue_offset,sizeof(VertexId)*num_elements,cudaMemcpyDeviceToHost);
 								MPI_Send(hostd_keys, num_elements ,MPI_INT,l,0,MPI_COMM_WORLD);
@@ -678,7 +678,8 @@ public:
 				fflush(stdout);
 			}
 		}
-		if (retval) break;
+		return retval;
+		//if (retval) break;
 	}
 
 	/**
@@ -706,6 +707,8 @@ public:
 		typedef typename PartitionPolicy::Upsweep		PartitionUpsweep;
 		typedef typename PartitionPolicy::Spine			PartitionSpine;
 		typedef typename PartitionPolicy::Downsweep		PartitionDownsweep;
+
+		typedef Policy<CsrProblem, 200> CsrPolicy;
 
 		cudaError_t retval = cudaSuccess;
 		bool done;
@@ -946,8 +949,12 @@ public:
 				//Check if BFS is done
 				if(isBFSDone(done, world_rank, num_nodes))
 					break;
-				nodeExchange(control_blocks, csr_problem, retval,num_nodes, world_rank, bins_per_gpu);
+				//nodeExchange(control_blocks, csr_problem, retval,num_nodes, world_rank, bins_per_gpu);
+				
 
+				retval = nodeExchange<typename CsrPolicy::CopyPolicy, typename CsrPolicy::ContractPolicy,CsrProblem>(control_blocks,csr_problem, retval,num_nodes, world_rank, bins_per_gpu);
+				if(retval)
+					break;
 			
 
 			}
