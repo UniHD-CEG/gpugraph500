@@ -1,10 +1,17 @@
+#include "../b40c/graph/bfs/csr_problem.cuh"
+#include "../b40c/graph/bfs/enactor_multi_gpu.cuh"
 #include "../globalbfs.hh"
 
 #ifndef CUDA_BFS_H
 #define CUDA_BFS_H
 
+using namespace b40c::graph::bfs;
+
 class CUDA_BFS : public GlobalBFS<CUDA_BFS,uint64_T, DistMatrix2d<false, 1> >
 {
+    CsrProblem csr_problem;
+    EnactorMultiGpu<INSTRUMENT> bfsGPU;
+
 public:
     typedef DistMatrix2d<false, 1> MatrixT;
     CUDA_BFS(MatrixT &_store);
