@@ -364,7 +364,6 @@ public:
 		DEBUG2(false)
 	{}
 
-
 	/**
 	 * Resets control blocks
 	 */
@@ -484,7 +483,196 @@ public:
     	return retval;
     }
 
+	/**
+	 * Check if BFS is done
+	*/
+	bool isBFSDone(bool done, int world_rank, int num_nodes){
 
+		int doneInt=0;
+		if(done)
+			doneInt = 1;
+			
+						
+		//rank 0 receives all the status and broadcast the result back to all the other nodes
+		//if rank 0, receives
+		int *receiveBuf = (int *)malloc(num_nodes*sizeof(int));
+	
+		//MPI_Gather - rank 0 gathers all status from other nodes	
+		MPI_Gather(&doneInt, 1, MPI_INT, receiveBuf, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	
+		int ind = 0;
+		bool isAllDone = true;
+		//if world_rank is done, check for others
+		if(done&&world_rank==0){
+			for (ind = 1; ind<num_nodes; ind++){
+				if(receiveBuf[ind]==0){
+					isAllDone = false;
+					break;
+				}
+			}	
+		}
+		else{
+			isAllDone = false;
+		}
+		
+		if(isAllDone){
+			doneInt = 1;		
+		}			
+
+		//MPI_Bcast - rank 0 broadcast the results to others
+		MPI_Bcast(&doneInt, 1, MPI_INT, 0, MPI_COMM_WORLD);
+		
+		//check for done
+		if(doneInt == 1)
+			return true;
+		else
+			return false;
+	}
+
+    template <
+    	typename CopyPolicy,
+	typename ContractPolicy,
+    	typename CsrProblem>
+	cudaError_t nodeExchange(std::vector <GpuControlBlock*> control_blocks, CsrProblem &csr_problem,cudaError_t retval, int num_nodes, int world_rank, int bins_per_gpu){
+		typedef typename CsrProblem::VertexId			VertexId;
+		typedef typename CsrProblem::SizeT				SizeT;
+		typedef typename CsrProblem::GraphSlice			GraphSlice;
+
+		SizeT offsetArray[num_nodes];
+
+		//For MPI_Alltoall and MPI_Alltoallv
+		int *sendArray,  *recvArray;
+		int *sendArray2, *recvArray2;
+		int *sendDisp, *recvDisp;
+		int *sendCounts, *recvCounts;	
+		int sendBufferSize=0, recvBufferSize=0;
+
+		sendCounts = (int*)malloc(sizeof(int)*num_nodes);
+		recvCounts = (int*)malloc(sizeof(int)*num_nodes);
+		sendDisp   = (int*)malloc(sizeof(int)*num_nodes);
+		recvDisp   = (int*)malloc(sizeof(int)*num_nodes);
+
+		//only one gpu per node for now
+		int peer =						0;
+		GpuControlBlock *peer_control 		= control_blocks[peer];
+		GraphSlice *peer_slice 				= csr_problem.graph_slices[peer];
+		SizeT *peer_spine 			= (SizeT*) peer_control->spine.h_spine;
+
+		//iterate through all nodes
+		for(int i=0; i<num_nodes; i++){					
+
+			SizeT queue_offset 	= peer_spine[bins_per_gpu * i * peer_control->partition_grid_size];
+			SizeT queue_oob 	= peer_spine[bins_per_gpu * (i + 1) * peer_control->partition_grid_size];
+			SizeT num_elements	= queue_oob - queue_offset;
+			// Check for vertex frontier overflow
+			if (num_elements > peer_slice->frontier_elements[0]) {
+				retval = util::B40CPerror(cudaErrorInvalidConfiguration, "Frontier queue overflow.  Please increase queue-sizing factor. ", __FILE__, __LINE__);
+			}
+			sendCounts[i] = num_elements;
+			offsetArray[i]= queue_offset;
+		}
+		
+		// exchange num_elements using MPI_Alltoall
+		MPI_Alltoall(sendCounts, 1, MPI_INT, recvCounts, 1, MPI_INT, MPI_COMM_WORLD);
+			
+		// calculate displacements
+		sendDisp[0] = 0;
+		for(int i=1; i<num_nodes; i++){
+			sendDisp[i] = sendCounts[i-1] + sendDisp[i-1];
+		}		
+		recvDisp[0] = 0;
+		for(int i=1; i<num_nodes; i++){
+			recvDisp[i] = recvCounts[i-1] + recvDisp[i-1];
+		}		
+		
+		// calculate size of arrays
+		for(int i=0; i<num_nodes; i++){
+			sendBufferSize+=sendCounts[i];
+			recvBufferSize+=recvCounts[i];
+		}
+			
+		// allocate for send and receive total array		
+		sendArray =  (int*)malloc(sizeof(int)*sendBufferSize);
+		recvArray =  (int*)malloc(sizeof(int)*recvBufferSize);
+		sendArray2 = (int*)malloc(sizeof(int)*sendBufferSize);
+		recvArray2 = (int*)malloc(sizeof(int)*recvBufferSize);
+
+		for(int i=0; i<num_nodes; i++){	
+			VertexId *hostd_keys= (VertexId*)malloc(sendCounts[i]*sizeof(VertexId));
+			VertexId *hostd_values= (VertexId*)malloc(sendCounts[i]*sizeof(VertexId));
+			//need to copy to the host before sending to other nodes
+			cudaMemcpy(hostd_keys,peer_slice->frontier_queues.d_keys[2]+offsetArray[i],sizeof(VertexId)*sendCounts[i],cudaMemcpyDeviceToHost);
+			cudaMemcpy(hostd_values,peer_slice->frontier_queues.d_values[2]+offsetArray[i],sizeof(VertexId)*sendCounts[i],cudaMemcpyDeviceToHost);
+			memcpy(sendArray+sendDisp[i],hostd_keys,sizeof(int)*sendCounts[i]);		
+			memcpy(sendArray2+sendDisp[i],hostd_values,sizeof(int)*sendCounts[i]);		
+		}	
+	
+		// exchange using MPI_Alltoallv
+		MPI_Alltoallv(sendArray, sendCounts, sendDisp, MPI_INT, recvArray, recvCounts, recvDisp, MPI_INT, MPI_COMM_WORLD);
+		MPI_Alltoallv(sendArray2, sendCounts, sendDisp, MPI_INT, recvArray2, recvCounts, recvDisp, MPI_INT, MPI_COMM_WORLD);
+
+		for(int i=0; i<num_nodes; i++){
+			// its own 
+			if(i == world_rank){
+				util::CtaWorkDistribution<SizeT> work_decomposition;
+				work_decomposition.template Init<CopyPolicy::LOG_SCHEDULE_GRANULARITY>(
+					recvCounts[i], peer_control->copy_grid_size);
+				// Simply copy from our own GPU
+				copy::Kernel<CopyPolicy>
+					<<<peer_control->copy_grid_size, CopyPolicy::THREADS, 0, peer_slice->stream>>>(
+						peer_control->iteration,
+						sendCounts[i],
+						peer_control->queue_index,
+						peer_control->steal_index,
+						num_nodes,//2,//csr_problem.num_gpus,
+						peer_slice->frontier_queues.d_keys[2] + offsetArray[i],			// in local sorted, filtered edge frontier
+						peer_slice->frontier_queues.d_keys[0],							// out local vertex frontier
+						peer_slice->frontier_queues.d_values[2] + offsetArray[i],			// in local sorted, filtered predecessors
+						peer_slice->d_labels,
+						peer_control->work_progress,
+						peer_control->copy_kernel_stats);
+
+				if (DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
+					"EnactorMultiNode copy::Kernel failed ", __FILE__, __LINE__))) break;	
+			}
+			// from other nodes
+			else{
+						VertexId *deviced_keys;
+						VertexId *deviced_values;
+						if (retval = util::B40CPerror(cudaMalloc((void**) &deviced_keys,recvCounts[i]*sizeof(VertexId)),
+				"device cudaMalloc edge frontier failed", __FILE__, __LINE__)) break;
+						if (retval = util::B40CPerror(cudaMalloc((void**) &deviced_values,recvCounts[i]*sizeof(VertexId)),
+				"device cudaMalloc predecessor failed", __FILE__, __LINE__)) break;
+
+						cudaMemcpy(deviced_keys, recvArray+recvDisp[i],sizeof(VertexId)*recvCounts[i], cudaMemcpyHostToDevice);	
+						cudaMemcpy(deviced_values, recvArray+recvDisp[i],sizeof(VertexId)*recvCounts[i], cudaMemcpyHostToDevice);
+						// Contraction from peer GPU
+						two_phase::contract_atomic::Kernel<ContractPolicy>
+							<<<peer_control->contract_grid_size, ContractPolicy::THREADS, 0, peer_slice->stream>>>(
+							-1,															// source (not used)
+							peer_control->iteration,
+							sendCounts[i],
+							peer_control->queue_index,
+							peer_control->steal_index,
+							num_nodes,//2,//csr_problem.num_gpus,
+							NULL,														// d_done (not used)
+							deviced_keys,		// in remote sorted, filtered edge frontier
+							peer_slice->frontier_queues.d_keys[0],							// out local vertex frontier
+							deviced_values,		// in remote sorted, filtered predecessors
+							peer_slice->d_labels,
+							peer_slice->d_visited_mask,
+							peer_control->work_progress,
+							peer_slice->frontier_elements[2],								// max edge frontier vertices
+							peer_slice->frontier_elements[0],								// max vertex frontier vertices
+							peer_control->expand_kernel_stats);
+					if (DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
+						"EnactorMultiNode contract_atomic::Kernel failed ", __FILE__, __LINE__))) break;
+			}
+			peer_control->steal_index++;
+		}		
+		peer_control->queue_index++;
+		return retval;
+	}
 
 	/**
 	 * Enacts a breadth-first-search on the specified graph problem.
@@ -511,6 +699,8 @@ public:
 		typedef typename PartitionPolicy::Upsweep		PartitionUpsweep;
 		typedef typename PartitionPolicy::Spine			PartitionSpine;
 		typedef typename PartitionPolicy::Downsweep		PartitionDownsweep;
+
+		typedef Policy<CsrProblem, 200> CsrPolicy;
 
 		cudaError_t retval = cudaSuccess;
 		bool done;
@@ -739,9 +929,6 @@ public:
 					}
 				}
 				if (retval) break;
-				// Check if all done in all GPUs
-// todo fix this later across multinode
-//				if (done) break;
 
 				if (DEBUG2) printf("---------------------------------------------------------\n");
 
@@ -749,220 +936,18 @@ public:
 				//---------------------------------------------------------------------
 				// Stream-contract work queues
 				//---------------------------------------------------------------------
-				MPI_Barrier(MPI_COMM_WORLD);
-				int doneNeighbor;
-				int doneInt=0;
-				if(done){
-					doneInt = 1;
-					}
-				/*
-				for(int i =0; i<2; i++){
-					//be sender
-					if(world_rank==i){
-						int destrank = (world_rank+1)%2;
-						MPI_Send(&doneInt,1,MPI_INT, destrank,0, MPI_COMM_WORLD);
-					}	
-					else{
-						int srcrank = (world_rank+1)%2;
-						MPI_Recv(&doneNeighbor,1,MPI_INT,srcrank,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-					}
+//				MPI_Barrier(MPI_COMM_WORLD);
 
-				}*/
-						
-				//rank 0 receives all the status and broadcast the result back to all the other nodes
-				//if rank 0, receives
-				if(world_rank==0){
-					int ind = 0;
-					int isDone;
-					int countForDone;
-					countForDone = done ? 1:0;
-					for (ind =1 ;ind<num_nodes;ind++){
-						MPI_Recv(&isDone,1,MPI_INT,ind,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-						countForDone+=isDone;
-					}	
-					int isAllDone;
-					isAllDone = countForDone==num_nodes ? 1:0;
-
-					for (ind=1; ind<num_nodes;ind++){
-						MPI_Send(&isAllDone,1,MPI_INT,ind,0,MPI_COMM_WORLD);
-					}
-					if(isAllDone==1){
-						break;
-					}
-				}
-				//if rank other than 0, send to rank 0
-				
-				else{
-					MPI_Send(&doneInt,1,MPI_INT,0,0,MPI_COMM_WORLD);
-					int isAllDone;
-					//receive the status of all
-					MPI_Recv(&isAllDone,1,MPI_INT,0,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-				
-					if(isAllDone==1){
-                                                break;
-                                        }
-				}
-				printf("node %d done for checking DONE \n", world_rank);
-				/*
-				for(int i =0; i<num_nodes; i++){
-					//be sender
-					if(world_rank==i){
-						int destrank = (world_rank+1)%2;
-						MPI_Send(&doneInt,1,MPI_INT, destrank,0, MPI_COMM_WORLD);
-					}	
-					else{
-						int srcrank = (world_rank+1)%2;
-						MPI_Recv(&doneNeighbor,1,MPI_INT,srcrank,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-					}
-				
-				}
-				
-			        if(done&&doneNeighbor==1){
+				//Check if BFS is done
+				if(isBFSDone(done, world_rank, num_nodes))
 					break;
-				}
-				*/
-				for (int i = 0; i < csr_problem.num_gpus; i++) {
+				//nodeExchange(control_blocks, csr_problem, retval,num_nodes, world_rank, bins_per_gpu);
+				
 
-					GpuControlBlock *control 	= control_blocks[i];
-					GraphSlice *slice 			= csr_problem.graph_slices[i];
-
-					// Set device
-					if (retval = util::B40CPerror(cudaSetDevice(control->gpu),
-						"EnactorMultiNode cudaSetDevice failed", __FILE__, __LINE__)) break;
-
-					// Stream in and filter inputs from all gpus (including ourselves)
-					for (int j = 0; j < csr_problem.num_gpus; j++) {
-
-						// Starting with ourselves (must copy our own bin first), stream
-						// bins into our queue
-						int peer =						j;//	= (i + j) % csr_problem.num_gpus;
-						GpuControlBlock *peer_control 		= control_blocks[peer];
-						GraphSlice *peer_slice 				= csr_problem.graph_slices[peer];
-						SizeT *peer_spine 			= (SizeT*) peer_control->spine.h_spine;
-
-						SizeT queue_offset 	= peer_spine[bins_per_gpu * world_rank * peer_control->partition_grid_size];
-						SizeT queue_oob 	= peer_spine[bins_per_gpu * (world_rank + 1) * peer_control->partition_grid_size];
-						SizeT num_elements	= queue_oob - queue_offset;
-
-						if (DEBUG2) {
-							printf("Node %d getting %d from node %d selector %d, queue_offset: %d @ %d, queue_oob: %d @ %d\n",
-								world_rank,
-								num_elements,
-								world_rank,
-								0,
-								queue_offset,
-								bins_per_gpu * world_rank * peer_control->partition_grid_size,
-								queue_oob,
-								bins_per_gpu * (world_rank + 1) * peer_control->partition_grid_size);
-							fflush(stdout);
-						}
-
-						// Copy / copy+contract from peer
-						if (0==0) {
-
-							// Check for vertex frontier overflow
-							if (num_elements > slice->frontier_elements[0]) {
-								retval = util::B40CPerror(cudaErrorInvalidConfiguration, "Frontier queue overflow.  Please increase queue-sizing factor. ", __FILE__, __LINE__);
-							}
-
-							util::CtaWorkDistribution<SizeT> work_decomposition;
-							work_decomposition.template Init<CopyPolicy::LOG_SCHEDULE_GRANULARITY>(
-								num_elements, control->copy_grid_size);
-							// Simply copy from our own GPU
-							copy::Kernel<CopyPolicy>
-								<<<control->copy_grid_size, CopyPolicy::THREADS, 0, slice->stream>>>(
-									control->iteration,
-									num_elements,
-									control->queue_index,
-									control->steal_index,
-									num_nodes,//2,//csr_problem.num_gpus,
-									slice->frontier_queues.d_keys[2] + queue_offset,			// in local sorted, filtered edge frontier
-									slice->frontier_queues.d_keys[0],							// out local vertex frontier
-									slice->frontier_queues.d_values[2] + queue_offset,			// in local sorted, filtered predecessors
-									slice->d_labels,
-									control->work_progress,
-									control->copy_kernel_stats);
-
-							if (DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
-								"EnactorMultiNode copy::Kernel failed ", __FILE__, __LINE__))) break;
-
-						control->steal_index++;
-						}
-						int ind; 
-						for (int k=0 ; k<num_nodes; k++){
-							//if k is current node's index (rank)
-							//send it to every other node
-							if(k==world_rank){
-								for(int l=0; l<num_nodes;l++){
-									//don't send it to its own
-									if(l!=k){
-										queue_offset    = peer_spine[bins_per_gpu * l * peer_control->partition_grid_size];
-                                                				queue_oob       = peer_spine[bins_per_gpu * (l + 1) * peer_control->partition_grid_size];
-                                                				num_elements    = queue_oob - queue_offset;
-										MPI_Send(&num_elements,1, MPI_INT, l,0,MPI_COMM_WORLD);
-									 	VertexId *hostd_keys= (VertexId*)malloc(num_elements*sizeof(VertexId));
-                                                 		                VertexId *hostd_values= (VertexId*)malloc(num_elements*sizeof(VertexId));
-                                                              		        cudaMemcpy(hostd_keys,slice->frontier_queues.d_keys[2]+queue_offset,sizeof(VertexId)*num_elements,cudaMemcpyDeviceToHost);
-                                                       	                        cudaMemcpy(hostd_values,slice->frontier_queues.d_values[2]+queue_offset,sizeof(VertexId)*num_elements,cudaMemcpyDeviceToHost);
-                                                                		MPI_Send(hostd_keys, num_elements ,MPI_INT,l,0,MPI_COMM_WORLD);
-                                                                		MPI_Send(hostd_values, num_elements,MPI_INT,l,0,MPI_COMM_WORLD);
-									}
-								}
-							}
-							//receive from other node
-							else{
-								int num_elem;
-							    	MPI_Recv(&num_elem,1,MPI_INT,k,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-								VertexId *hostd_keys= (VertexId*)malloc(num_elem*sizeof(VertexId));
-                                                                VertexId *hostd_values= (VertexId*)malloc(num_elem*sizeof(VertexId));							
-								MPI_Recv(hostd_keys, num_elem, MPI_INT, k, 0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-								MPI_Recv(hostd_values, num_elem, MPI_INT, k, 0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-										
-								VertexId *deviced_keys;
-								VertexId *deviced_values;
-								if (retval = util::B40CPerror(cudaMalloc((void**) &deviced_keys,num_elem*sizeof(VertexId)),
-                                                "device cudaMalloc edge frontier failed", __FILE__, __LINE__)) break;
-								if (retval = util::B40CPerror(cudaMalloc((void**) &deviced_values,num_elem*sizeof(VertexId)),
-                                                "device cudaMalloc predecessor failed", __FILE__, __LINE__)) break;
-
-								cudaMemcpy(deviced_keys, hostd_keys,sizeof(VertexId)*num_elem, cudaMemcpyHostToDevice);	
-								cudaMemcpy(deviced_values, hostd_values,sizeof(VertexId)*num_elem, cudaMemcpyHostToDevice);
-								// Contraction from peer GPU
-								two_phase::contract_atomic::Kernel<ContractPolicy>
-									<<<control->contract_grid_size, ContractPolicy::THREADS, 0, slice->stream>>>(
-									-1,															// source (not used)
-									control->iteration,
-									num_elem,
-									control->queue_index,
-									control->steal_index,
-									num_nodes,//2,//csr_problem.num_gpus,
-									NULL,														// d_done (not used)
-									deviced_keys,		// in remote sorted, filtered edge frontier
-									slice->frontier_queues.d_keys[0],							// out local vertex frontier
-									deviced_values,		// in remote sorted, filtered predecessors
-									slice->d_labels,
-									slice->d_visited_mask,
-									control->work_progress,
-									slice->frontier_elements[2],								// max edge frontier vertices
-									slice->frontier_elements[0],								// max vertex frontier vertices
-									control->expand_kernel_stats);
-							if (DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
-								"EnactorMultiNode contract_atomic::Kernel failed ", __FILE__, __LINE__))) break;
-							}
-						control->steal_index++;
-						}
-					control->queue_index++;
-					}
-
-
-					if (DEBUG){
-						// Get contraction queue length
-						if (retval = control->template UpdateQueueLength<SizeT>()) break;
-						printf("Node %d contracted queue length: %lld\n", world_rank, (long long) control->queue_length);
-						fflush(stdout);
-					}
-				}
-				if (retval) break;
+				retval = nodeExchange<typename CsrPolicy::CopyPolicy, typename CsrPolicy::ContractPolicy,CsrProblem>(control_blocks,csr_problem, retval,num_nodes, world_rank, bins_per_gpu);
+				if(retval)
+					break;
+			
 
 			}
 			if (retval) break;
