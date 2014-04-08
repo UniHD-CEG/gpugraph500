@@ -31,6 +31,7 @@
  ******************************************************************************/
 
 #pragma once
+#include <b40c/util/scan/cooperative_scan.cuh>
 
 #include <b40c/util/io/modified_load.cuh>
 #include <b40c/util/io/modified_store.cuh>
@@ -50,7 +51,7 @@ namespace bfs {
 namespace two_phase {
 namespace contract_atomic {
 
-
+using namespace b40c;
 /**
  * Templated texture reference for visited mask
  */

@@ -17,6 +17,8 @@
 #ifdef _OPENCL
     #include "opencl/OCLrunner.hh"
     #include "opencl/opencl_bfs.h"
+#elif _CUDA
+#include "cuda/cuda_bfs.h"
 #else
   //  #include "simplecpubfs.h"
     #include "cpubfs_bin.h"
@@ -88,12 +90,33 @@ statistic getStatistics(std::vector<T>& input){
     return out;
 }
 
+void printStat(statistic& input, const char* name, bool harmonic){
+    printf ("min_%s: %2.3e\n", name, input.min);
+    printf ("firstquartile_%s: %2.3e\n", name, input.firstquartile);
+    printf ("median_%s: %2.3e\n", name, input.median);
+    printf ("thirdquartile_%s: %2.3e\n", name, input.thirdquartile);
+    printf ("max_%s: %2.3e\n", name, input.max);
+
+    if(harmonic){
+        printf ("harmonic_mean_%s: %2.3e\n", name, input.hmean);
+        printf ("harmonic_stddev_%s: %2.3e\n", name, input.hstddev);
+    }else {
+        printf ("mean_rest_%s: %2.3e\n", name, input.mean);
+        printf ("stddev_rest_%s: %2.3e\n", name, input.stddev);
+    }
+}
+
 int main(int argc, char** argv)
 {
 
       int64_t scale =  21;
       int64_t edgefactor = 16;
       int64_t num_of_iterations = 64;
+
+#ifdef _CUDA
+      int gpus = 1;
+      double queue_sizing = 1.20;
+#endif
 
       MPI_Init(&argc, &argv);
       int   R,C;
@@ -160,9 +183,31 @@ int main(int argc, char** argv)
                         C = C_tmp;
                         i++;
                     }
+                 } 
+#ifdef _CUDA
+            }else if(!strcmp(argv[i], "-gpus")){
+                if(i+1 < argc){
+                    int gpus_tmp = atoi(argv[i+1]);
+                    if(gpus_tmp < 1 || gpus_tmp > 8){
+                         printf("Invalid column slice number: %s\n", argv[i+1]);
+                    } else{
+                        gpus = gpus_tmp;
+                        i++;
+                    }
                  }
-             }
-             i++;
+            }else if(!strcmp(argv[i], "-qs")){
+                if(i+1 < argc){
+                    double qs_tmp = atof(argv[i+1]);
+                    if(qs_tmp < 1.){
+                         printf("Invalid column slice number: %s\n", argv[i+1]);
+                    } else{
+                        queue_sizing = qs_tmp;
+                        i++;
+                    }
+                 }
+#endif
+            }
+            i++;
         }
 
         if(R_set &&  !C_set ){
@@ -190,7 +235,10 @@ int main(int argc, char** argv)
       MPI_Bcast(&num_of_iterations,1,MPI_INT64_T,0,MPI_COMM_WORLD);
       MPI_Bcast(&R         ,1,MPI_INT,0,MPI_COMM_WORLD);
       MPI_Bcast(&C         ,1,MPI_INT,0,MPI_COMM_WORLD);
-
+      #ifdef _CUDA
+      MPI_Bcast(&gpus      ,1,MPI_INT,0,MPI_COMM_WORLD);
+      MPI_Bcast(&queue_sizing,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+      #endif
       // Close unnessecary nodes
       if(R*C != size){
           printf("Number of nodes and size of grid do not match.\n");
@@ -224,12 +272,12 @@ int main(int argc, char** argv)
       MPI_Barrier(MPI_COMM_WORLD);
       tstart = MPI_Wtime();
 #ifdef _OPENCL
-      OpenCL_BFS::MatrixT store(R, C);
+      typename OpenCL_BFS::MatrixT store(R, C);
 #elif _CUDA
-      CUDA_BFS::MatrixT store(R, C);
+      typename CUDA_BFS::MatrixT store(R, C);
 #else
-      //SimpleCPUBFS::MatrixT store(R, C);
-      CPUBFS_bin::MatrixT store(R, C);
+      //typename SimpleCPUBFS::MatrixT store(R, C);
+      typename CPUBFS_bin::MatrixT store(R, C);
 #endif
       store.setupMatrix2(edgelist,number_of_edges);
 
@@ -237,7 +285,7 @@ int main(int argc, char** argv)
       OCLRunner oclrun;
       OpenCL_BFS runBfs(store, *oclrun);
 #elif _CUDA
-      CUDA_BFS runBfs(store);
+      CUDA_BFS runBfs(store,gpus,queue_sizing);
 #else
       //SimpleCPUBFS runBfs(store);
       CPUBFS_bin runBfs(store);
@@ -259,8 +307,8 @@ int main(int argc, char** argv)
 */
 /*
      // print matrix
-     const vtxtype* rowp = store.getRowPointer();
-     const vtxtype* columnp = store.getColumnIndex();
+     const vtxtyp* rowp = store.getRowPointer();
+     const vtxtyp* columnp = store.getColumnIndex();
      for(int i = 0; i < store.getLocRowLength(); i++){
           printf("%ld: ",  store.localtoglobalRow(i));
           for(int j = rowp[i]; j < rowp[i+1]; j++){
@@ -273,14 +321,14 @@ int main(int argc, char** argv)
       // random number generator
       #if __cplusplus > 199711L
       std::knuth_b generator;
-      std::uniform_int_distribution<vtxtype> distribution(0,vertices-1);
+      std::uniform_int_distribution<vtxtyp> distribution(0,vertices-1);
       #else
       //fallback if c++11 is not avible
       srand(1);
       #endif
       // variables to control iterations
       int maxgenvtx = 32; // relativ number of maximum attempts to find a valid start vertix per posible attempt
-      std::vector<vtxtype> tries;
+      std::vector<vtxtyp> tries;
       int iterations =  0;
       bool valid = true;
 
@@ -297,6 +345,13 @@ int main(int argc, char** argv)
       std::vector<double> queue_local_share;
       std::vector<double> rest;
       std::vector<double> rest_share;
+
+      std::vector<double> lrowcom;
+      std::vector<double> lrowcom_share;
+      std::vector<double> lcolcom;
+      std::vector<double> lcolcom_share;
+      std::vector<double> lpredlistred;
+      std::vector<double> lpredlistred_share;
       #endif
 
 
@@ -306,7 +361,7 @@ int main(int argc, char** argv)
             giteration++;
 
             // generate start node
-            vtxtype start;
+            vtxtyp start;
             #if __cplusplus > 199711L
             start = distribution(generator);
             #else
@@ -324,7 +379,7 @@ int main(int argc, char** argv)
             long elem = 0;
             MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
             if(store.isLocalRow(start)){
-                vtxtype locstart = store.globaltolocalRow(start);
+                vtxtyp locstart = store.globaltolocalRow(start);
                 elem = store.getRowPointer()[locstart+1]- store.getRowPointer()[locstart];
             }
             MPI_Reduce(MPI_IN_PLACE, &elem, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -344,11 +399,11 @@ int main(int argc, char** argv)
             if(next == 0)
                 break;
 
-            vtxtype start;
+            vtxtyp start;
             long elem = 0;
             MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
             if(store.isLocalRow(start)){
-                vtxtype locstart = store.globaltolocalRow(start);
+                vtxtyp locstart = store.globaltolocalRow(start);
                 elem = store.getRowPointer()[locstart+1]- store.getRowPointer()[locstart];
             }
             MPI_Reduce(&elem, &elem, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -405,15 +460,22 @@ int main(int argc, char** argv)
               queue_local_share.push_back(gmax_lqueue/(rtstop-rtstart));
               rest.push_back((rtstop-rtstart)-gmax_lexp-gmax_lqueue);
               rest_share.push_back(1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart));
+
+              lrowcom.push_back(gmax_rowcom);
+              lrowcom_share.push_back(gmax_rowcom/(rtstop-rtstart));
+              lcolcom.push_back(gmax_colcom);
+              lcolcom_share.push_back(gmax_colcom/(rtstop-rtstart));
+              lpredlistred.push_back(gmax_predlistred);
+              lpredlistred_share.push_back(gmax_predlistred/(rtstop-rtstart));
               #endif
           }
           // Validation
           int level;
           int this_valid;
-          vtxtype num_edges;
+          vtxtyp num_edges;
 
           tstart = MPI_Wtime();
-          vtxtype start;
+          vtxtyp start;
           if(rank==0){
               start = tries[i];
               MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
@@ -421,7 +483,7 @@ int main(int argc, char** argv)
               MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
           }
           this_valid = validate_bfs_result(store, edgelist, number_of_edges,
-                                           vertices, start, runBfs.getPredessor(), &num_edges, &level);
+                                           vertices, start, runBfs.getPredecessor(), &num_edges, &level);
           tstop = MPI_Wtime();
           if (rank == 0) {
               printf("Validation of iteration %d finished in %fs\n", i,(tstop-tstart));
@@ -453,95 +515,48 @@ int main(int argc, char** argv)
         printf ("construction_time: %2.3e\n", constr_time);
 
         statistic bfs_time_s = getStatistics (bfs_time);
-        printf ("min_time: %2.3e\n", bfs_time_s.min);
-        printf ("firstquartile_time: %2.3e\n", bfs_time_s.firstquartile);
-        printf ("median_time: %2.3e\n",bfs_time_s.median);
-        printf ("thirdquartile_time: %2.3e\n", bfs_time_s.thirdquartile);
-        printf ("max_time: %2.3e\n", bfs_time_s.max);
-        printf ("mean_time: %2.3e\n", bfs_time_s.mean);
-        printf ("stddev_time: %2.3e\n", bfs_time_s.stddev);
+        printStat(bfs_time_s, "time", false);
 
         statistic nedge_s = getStatistics (nedge);
-        printf ("min_nedge: %2.3e\n", nedge_s.min);
-        printf ("firstquartile_nedge: %2.3e\n", nedge_s.firstquartile);
-        printf ("median_nedge: %2.3e\n", nedge_s.median);
-        printf ("thirdquartile_nedge: %2.3e\n", nedge_s.thirdquartile);
-        printf ("max_nedge: %2.3e\n", nedge_s.max);
-        printf ("mean_nedge: %2.3e\n", nedge_s.mean);
-        printf ("stddev_nedge: %2.3e\n", nedge_s.stddev);
+        printStat(nedge_s, "nedge", false);
 
         statistic teps_s = getStatistics (teps);
-        printf ("min_TEPS: %2.3e\n", teps_s.min);
-        printf ("firstquartile_TEPS: %2.3e\n",  teps_s.firstquartile);
-        printf ("median_TEPS: %2.3e\n",  teps_s.median);
-        printf ("thirdquartile_TEPS: %2.3e\n",  teps_s.thirdquartile);
-        printf ("max_TEPS: %2.3e\n",  teps_s.max);
-        printf ("harmonic_mean_TEPS: %2.3e\n",  teps_s.hmean);
-        printf ("harmonic_stddev_TEPS: %2.3e\n",  teps_s.hstddev);
+        printStat(teps_s, "TEPS", true);
 
         #ifdef INSTRUMENTED
         statistic valid_time_s = getStatistics (valid_time);
-        printf ("min_validation_time: %2.3e\n", valid_time_s.min);
-        printf ("firstquartile_validation_time: %2.3e\n", valid_time_s.firstquartile);
-        printf ("median_validation_time: %2.3e\n",valid_time_s.median);
-        printf ("thirdquartile_validation_time: %2.3e\n", valid_time_s.thirdquartile);
-        printf ("max_validation_time: %2.3e\n", valid_time_s.max);
-        printf ("mean_validation_time: %2.3e\n", valid_time_s.mean);
-        printf ("stddev_validation_time: %2.3e\n", valid_time_s.stddev);
+        printStat(valid_time_s, "validation_time", false);
 
         statistic lbfs_time_s = getStatistics (bfs_local);
-        printf ("min_local_bfs_time: %2.3e\n", lbfs_time_s.min);
-        printf ("firstquartile_local_bfs_time: %2.3e\n", lbfs_time_s.firstquartile);
-        printf ("median_local_bfs_time: %2.3e\n",lbfs_time_s.median);
-        printf ("thirdquartile_local_bfs_time: %2.3e\n", lbfs_time_s.thirdquartile);
-        printf ("max_local_bfs_time: %2.3e\n", lbfs_time_s.max);
-        printf ("mean_local_bfs_time: %2.3e\n", lbfs_time_s.mean);
-        printf ("stddev_local_bfs_time: %2.3e\n", lbfs_time_s.stddev);
-
+        printStat(lbfs_time_s, "local_bfs_time", false);
         statistic lbfs_share_s = getStatistics (bfs_local_share);
-        printf ("min_bfs_local_share: %2.3e\n", lbfs_share_s .min);
-        printf ("firstquartile_bfs_local_share: %2.3e\n",  lbfs_share_s .firstquartile);
-        printf ("median_bfs_local_share: %2.3e\n",  lbfs_share_s .median);
-        printf ("thirdquartile_bfs_local_share: %2.3e\n",  lbfs_share_s .thirdquartile);
-        printf ("max_bfs_local_share: %2.3e\n",  lbfs_share_s .max);
-        printf ("harmonic_mean_bfs_local_share: %2.3e\n",  lbfs_share_s .hmean);
-        printf ("harmonic_stddev_bfs_local_share: %2.3e\n",  lbfs_share_s .hstddev);
+        printStat(lbfs_share_s, "bfs_local_share", true);
 
         statistic lqueue_time_s = getStatistics (queue_local);
-        printf ("min_local_queue_time: %2.3e\n", lqueue_time_s.min);
-        printf ("firstquartile_local_queue_time: %2.3e\n", lqueue_time_s.firstquartile);
-        printf ("median_local_queue_time: %2.3e\n",lqueue_time_s.median);
-        printf ("thirdquartile_local_queue_time: %2.3e\n", lqueue_time_s.thirdquartile);
-        printf ("max_local_queue_time: %2.3e\n", lqueue_time_s.max);
-        printf ("mean_local_queue_time: %2.3e\n", lqueue_time_s.mean);
-        printf ("stddev_local_queue_time: %2.3e\n", lqueue_time_s.stddev);
-
+        printStat(lqueue_time_s, "local_queue_time", false);
         statistic lqueue_share_s = getStatistics (queue_local_share);
-        printf ("min_queue_local_share: %2.3e\n", lqueue_share_s .min);
-        printf ("firstquartile_queue_local_share: %2.3e\n",  lqueue_share_s .firstquartile);
-        printf ("median_queue_local_share: %2.3e\n",  lqueue_share_s .median);
-        printf ("thirdquartile_queue_local_share: %2.3e\n",  lqueue_share_s .thirdquartile);
-        printf ("max_queue_local_share: %2.3e\n",  lqueue_share_s .max);
-        printf ("harmonic_mean_queue_local_share: %2.3e\n",  lqueue_share_s .hmean);
-        printf ("harmonic_stddev_queue_local_share: %2.3e\n",  lqueue_share_s .hstddev);
+        printStat(lqueue_share_s, "queue_local_share", true);
 
         statistic rest_time_s = getStatistics (rest);
-        printf ("min_rest_time: %2.3e\n", rest_time_s.min);
-        printf ("firstquartile_rest_time: %2.3e\n", rest_time_s.firstquartile);
-        printf ("median_rest_time: %2.3e\n",rest_time_s.median);
-        printf ("thirdquartile_rest_time: %2.3e\n", rest_time_s.thirdquartile);
-        printf ("max_rest_time: %2.3e\n", rest_time_s.max);
-        printf ("mean_rest_time: %2.3e\n", rest_time_s.mean);
-        printf ("stddev_rest_time: %2.3e\n", rest_time_s.stddev);
-
+        printStat(rest_time_s, "rest_time", false);
         statistic rest_share_s = getStatistics (rest_share);
-        printf ("min_rest_share: %2.3e\n", rest_share_s .min);
-        printf ("firstquartile_rest_share: %2.3e\n",  rest_share_s .firstquartile);
-        printf ("median_rest_share: %2.3e\n",  rest_share_s .median);
-        printf ("thirdquartile_rest_share: %2.3e\n",  rest_share_s .thirdquartile);
-        printf ("max_rest_share: %2.3e\n",  rest_share_s .max);
-        printf ("harmonic_mean_rest_share: %2.3e\n",  rest_share_s .hmean);
-        printf ("harmonic_stddev_rest_share: %2.3e\n",  rest_share_s .hstddev);
+        printStat(rest_share_s, "rest_share", true);
+
+        statistic lrowcom_s = getStatistics (lrowcom);
+        printStat(lrowcom_s, "row_com_time", false);
+        statistic lrowcom_share_s = getStatistics (lrowcom_share);
+        printStat(lrowcom_share_s, "row_com_share", true);
+
+        statistic lcolcom_s = getStatistics (lcolcom);
+        printStat(lcolcom_s, "column_com_time", false);
+        statistic lcolcom_share_s = getStatistics (lcolcom_share);
+        printStat(lcolcom_share_s, "column_com_share", true);
+
+        statistic lpredlistred_s = getStatistics (lpredlistred);
+        printStat(lpredlistred_s, "predecessor_list_reduction_time", false);
+        statistic lpredlistred_share_s = getStatistics (lpredlistred_share);
+        printStat(lpredlistred_share_s, "predecessor_list_reduction_share", true);
+
         #endif
       }
       MPI_Finalize();

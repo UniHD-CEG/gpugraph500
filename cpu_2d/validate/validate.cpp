@@ -33,9 +33,6 @@ uint16_t get_depth_from_pred_entry(int64_t val) {
   return (val >> 48) & 0xFFFF;
 }
 
-void write_pred_entry_depth(int64_t* loc, uint16_t depth) {
-  *loc = (*loc & static_cast<int64_t>(0xFFFFFFFFFFFF)) | ((int64_t)(depth & 0xFFFF) << 48);
-}
 
 
 

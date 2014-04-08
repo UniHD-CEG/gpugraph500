@@ -24,8 +24,8 @@
 #ifndef VALIDATE_H
 #define VALIDATE_H
 
-template<bool WOLO, int ALG>
-int validate_bfs_result(const DistMatrix2d<WOLO,ALG>& store, packed_edge *edgelist, int64_t number_of_edges,
+template<class MatrixT>
+int validate_bfs_result(const MatrixT& store, packed_edge *edgelist, int64_t number_of_edges,
                         const int64_t nglobalverts, const int64_t root, int64_t* const pred, int64_t* const edge_visit_count_ptr, int *level);
 
 static inline size_t size_min(size_t a, size_t b) {
@@ -50,11 +50,18 @@ int64_t get_pred_from_pred_entry(int64_t val);
 
 uint16_t get_depth_from_pred_entry(int64_t val);
 
-void write_pred_entry_depth(int64_t* loc, uint16_t depth);
+//void write_pred_entry_depth(int64_t* loc, uint16_t depth);
+
+template<class T>
+void write_pred_entry_depth(T* loc, uint16_t depth) {
+   assert(sizeof(T)==8);
+  *loc = (*loc & static_cast<T>(0xFFFFFFFFFFFF)) | ((T)(depth & 0xFFFF) << 48);
+}
+
 
 /* Returns true if all values are in range. */
-template<bool WOLO, int ALG>
-static int check_value_ranges(const DistMatrix2d<WOLO,ALG>& store, const int64_t nglobalverts, const int64_t* const pred) {
+template<class MatrixT>
+static int check_value_ranges(const MatrixT& store, const int64_t nglobalverts, const typename MatrixT::vtxtyp* const pred) {
   int any_range_errors = 0;
   {
     for (size_t ii = 0; ii < static_cast<size_t>(store.getLocColLength()); ii += CHUNKSIZE) {
@@ -80,8 +87,8 @@ static int check_value_ranges(const DistMatrix2d<WOLO,ALG>& store, const int64_t
 /* Use the predecessors in the given map to write the BFS levels to the high 16
  * bits of each element in pred; this also catches some problems in pred
  * itself.  Returns true if the predecessor map is valid. */
-template<bool WOLO, int ALG>
-static int build_bfs_depth_map(const DistMatrix2d<WOLO,ALG>& store, const int64_t nglobalverts, const size_t nlocalverts, const size_t maxlocalverts, const int64_t root, int64_t* const pred, int* level) {
+template<class MatrixT>
+static int build_bfs_depth_map(const MatrixT& store, const int64_t nglobalverts, const typename MatrixT::vtxtyp nlocalverts, const size_t maxlocalverts, const typename MatrixT::vtxtyp root, typename MatrixT::vtxtyp* const pred, int* level) {
   (void)nglobalverts;
   int validation_passed = 1;
   int root_owner;
@@ -102,7 +109,7 @@ static int build_bfs_depth_map(const DistMatrix2d<WOLO,ALG>& store, const int64_
 
   int64_t* pred_pred = (int64_t*)xMPI_Alloc_mem(size_min(CHUNKSIZE, nlocalverts) * sizeof(int64_t)); /* Predecessor info of predecessor vertex for each local vertex */
   gather* pred_win = init_gather((void*)pred, nlocalverts, sizeof(int64_t), pred_pred, size_min(CHUNKSIZE, nlocalverts), size_min(CHUNKSIZE, nlocalverts), MPI_INT64_T, row_comm);
-  int64_t* pred_vtx = (int64_t*)xmalloc(size_min(CHUNKSIZE, nlocalverts) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
+  typename MatrixT::vtxtyp* pred_vtx = (typename MatrixT::vtxtyp*)xmalloc(size_min(CHUNKSIZE, nlocalverts) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
   int* pred_owner = (int*)xmalloc(size_min(CHUNKSIZE, nlocalverts) * sizeof(int));
   size_t* pred_local = (size_t*)xmalloc(size_min(CHUNKSIZE, nlocalverts) * sizeof(size_t));
   int iter_number = 0;
@@ -169,9 +176,9 @@ static int build_bfs_depth_map(const DistMatrix2d<WOLO,ALG>& store, const int64_
  * of pred to contain the BFS level number (or -1 if not visited) of each
  * vertex; this is based on the predecessor map if the user didn't provide it.
  * */
-template<bool WOLO, int ALG>
-int validate_bfs_result(const DistMatrix2d<WOLO,ALG>& store, packed_edge* edgelist, int64_t number_of_edges,
-                        const int64_t nglobalverts, const int64_t root, int64_t* const pred, int64_t* const edge_visit_count_ptr, int* level) {
+template<class MatrixT>
+int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t number_of_edges,
+                        const int64_t nglobalverts, const typename MatrixT::vtxtyp root,typename MatrixT::vtxtyp* const pred, typename MatrixT::vtxtyp* const edge_visit_count_ptr, int* level) {
 
   assert (pred);
   *edge_visit_count_ptr = 0; /* Ensure it is a valid pointer */
@@ -212,7 +219,7 @@ int validate_bfs_result(const DistMatrix2d<WOLO,ALG>& store, packed_edge* edgeli
   {
     int* pred_owner = (int*)xmalloc(size_min(CHUNKSIZE,store.getLocColLength()) * sizeof(int));
     size_t* pred_local = (size_t*)xmalloc(size_min(CHUNKSIZE, store.getLocColLength()) * sizeof(size_t));
-    int64_t* pred_vtx = (int64_t*)xmalloc(size_min(CHUNKSIZE, store.getLocColLength()) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
+    typename MatrixT::vtxtyp* pred_vtx = (typename MatrixT::vtxtyp*)xmalloc(size_min(CHUNKSIZE, store.getLocColLength()) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
     for (ptrdiff_t ii = 0; ii < (ptrdiff_t)store.getLocColLength(); ii += CHUNKSIZE) {
       ptrdiff_t i_start = ii;
       ptrdiff_t i_end = ptrdiff_min(ii + CHUNKSIZE, store.getLocColLength());
@@ -265,12 +272,12 @@ int validate_bfs_result(const DistMatrix2d<WOLO,ALG>& store, packed_edge* edgeli
       uint64_t* pred_visited = (uint64_t*) malloc(pred_visited_size* sizeof(uint64_t));
       memset(pred_visited, 0, pred_visited_size * sizeof(uint64_t));
       int64_t* rowPred = (int64_t*) malloc(store.getLocRowLength()*sizeof(int64_t));
-      const std::vector<typename DistMatrix2d<WOLO,ALG>::fold_prop> rowFractions = store.getFoldProperties();
+      const std::vector<typename MatrixT::fold_prop> rowFractions = store.getFoldProperties();
       int64_t edge_visit_count = 0;
       int    valid_level = 1;
       int    all_visited = 1;
 
-      for(typename std::vector<typename DistMatrix2d<WOLO,ALG>::fold_prop>::const_iterator it = rowFractions.begin(); it  != rowFractions.end(); it++){
+      for(typename std::vector<typename MatrixT::fold_prop>::const_iterator it = rowFractions.begin(); it  != rowFractions.end(); it++){
           if(it->sendColSl == store.getLocalColumnID() ){
               MPI_Bcast(&pred[store.globaltolocalCol(it->startvtx)],it->size,MPI_INT64_T,it->sendColSl,row_comm);
               memcpy(&rowPred[store.globaltolocalRow(it->startvtx)],&pred[store.globaltolocalCol(it->startvtx)],it->size*sizeof(int64_t));

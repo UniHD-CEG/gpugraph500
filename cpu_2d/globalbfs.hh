@@ -9,7 +9,7 @@
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template<class Derived,class FQ_T=void, class STORE=DistMatrix2d<> >
+template<class Derived,class FQ_T, class STORE >
 class GlobalBFS
 {
     MPI_Comm row_comm, col_comm;
@@ -19,33 +19,47 @@ class GlobalBFS
 
 protected:
     const STORE& store;
-    vtxtype* predessor;
+    typename STORE::vtxtyp* predessor;
 
     MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
-    FQ_T*   recv_fq_buff;
+    FQ_T*  __restrict__ recv_fq_buff;
     long    recv_fq_buff_length;
-    //virtual void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
-    //virtual void getOutgoingFQ(FQ_T* &startaddr, vtxtype& outsize)=0;
-    //virtual void setModOutgoingFQ(FQ_T* startaddr, long insize)=0; //startaddr: 0, self modification
-    //virtual void getOutgoingFQ(vtxtype globalstart, vtxtype size, FQ_T* &startaddr, vtxtype& outsize)=0;
-    //virtual void setIncommingFQ(vtxtype globalstart, vtxtype size, FQ_T* startaddr, vtxtype& insize_max)=0;
-    //virtual bool istheresomethingnew()=0;           //to detect if finished
-    //virtual void setStartVertex(const vtxtype start)=0;
-    //virtual void runLocalBFS()=0;
-
+    // Functions that have to be implemented by the children
+    //void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
+    //void getOutgoingFQ(FQ_T* &startaddr, vtxtype& outsize)=0;
+    //void setModOutgoingFQ(FQ_T* startaddr, long insize)=0; //startaddr: 0, self modification
+    //void getOutgoingFQ(vtxtype globalstart, vtxtype size, FQ_T* &startaddr, vtxtype& outsize)=0;
+    //void setIncommingFQ(vtxtype globalstart, vtxtype size, FQ_T* startaddr, vtxtype& insize_max)=0;
+    //bool istheresomethingnew()=0;           //to detect if finished
+    //void setStartVertex(const vtxtype start)=0;
+    //void runLocalBFS()=0;
+    //For accelerators with owen memory
+    void getBackPredecessor(); // expected to be used afet the application finished
+    void getBackOutqueue();
+    void setBackInqueue();
 
 public:
     GlobalBFS(STORE& _store);
 
     #ifdef INSTRUMENTED
-    void runBFS(vtxtype startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred);
+    void runBFS(typename STORE::vtxtyp startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred);
     #else
-    void runBFS(vtxtype startVertex);
+    void runBFS(typename STORE::vtxtyp startVertex);
     #endif
 
 
-    vtxtype* getPredessor();
+    typename STORE::vtxtyp* getPredecessor();
 };
+
+
+template<class Derived,class FQ_T,class STORE>
+void GlobalBFS<Derived,FQ_T,STORE>::getBackPredecessor(){}
+
+template<class Derived,class FQ_T,class STORE>
+void GlobalBFS<Derived,FQ_T,STORE>::getBackOutqueue(){}
+
+template<class Derived,class FQ_T,class STORE>
+void GlobalBFS<Derived,FQ_T,STORE>::setBackInqueue(){}
 
 template<class Derived,class FQ_T,class STORE>
 GlobalBFS<Derived,FQ_T,STORE>::GlobalBFS(STORE &_store): store(_store)
@@ -72,10 +86,10 @@ GlobalBFS<Derived,FQ_T,STORE>::GlobalBFS(STORE &_store): store(_store)
 */
 #ifdef INSTRUMENTED
 template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
+void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
 #else
 template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
+void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
 #endif
 {
     #ifdef INSTRUMENTED
@@ -124,6 +138,7 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
         #ifdef INSTRUMENTED
         tstart = MPI_Wtime();
         #endif
+        static_cast<Derived*>(this)->getBackPredecessor();
         MPI_Allreduce(MPI_IN_PLACE, predessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
         #ifdef INSTRUMENTED
         tend = MPI_Wtime();
@@ -134,6 +149,14 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
 // 4
     #ifdef INSTRUMENTED
     comtstart = MPI_Wtime();
+    #endif
+    #ifdef INSTRUMENTED
+    tstart = MPI_Wtime();
+    #endif
+    static_cast<Derived*>(this)->getBackOutqueue();
+    #ifdef INSTRUMENTED
+    tend = MPI_Wtime();
+    lqueue +=tend-tstart;
     #endif
     // tree based reduce operation with messages of variable size
     // root 0
@@ -217,7 +240,7 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
     }
     #ifdef INSTRUMENTED
     comtend = MPI_Wtime();
-    rowcom += comtend-comtstart;
+    colcom += comtend-comtstart;
     #endif
 
 // 5
@@ -262,14 +285,23 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(vtxtype startVertex)
         }
     }
     #ifdef INSTRUMENTED
+    tstart = MPI_Wtime();
+    #endif
+    static_cast<Derived*>(this)->setBackInqueue();
+    #ifdef INSTRUMENTED
+    tend = MPI_Wtime();
+    lqueue +=tend-tstart;
+    #endif
+
+    #ifdef INSTRUMENTED
     comtend = MPI_Wtime();
-    colcom += comtend - comtstart;
+    rowcom += comtend - comtstart;
     #endif
 }
 }
 
 template<class Derived,class FQ_T,class STORE>
-vtxtype* GlobalBFS<Derived,FQ_T,STORE>::getPredessor()
+typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, STORE>::getPredecessor()
 {
     return  predessor;
 }

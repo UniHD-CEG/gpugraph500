@@ -36,7 +36,7 @@
 #include <b40c/util/cta_work_progress.cuh>
 #include <b40c/util/error_utils.cuh>
 
-#include <b40c/graph/bfs/csr_problem.cuh>
+#include <b40c/graph/bfs/csr_problem_2d.cuh>
 
 namespace b40c {
 namespace graph {
