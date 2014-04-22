@@ -208,7 +208,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
   if (root_is_mine) {
     assert (root_local < static_cast<size_t>(store.getLocColLength()));
     if (get_pred_from_pred_entry(pred[root_local]) != root) {
-      fprintf(stderr, "(%ld:%ld): Validation error: parent of root vertex %" PRId64 " is %" PRId64 ", not the root itself.\n", store.getLocalRowID(), store.getLocalColumnID(), root, get_pred_from_pred_entry(pred[root_local]));
+      fprintf(stderr, "(%ld:%ld): Validation error: parent of root vertex %" PRId64 " is %" PRId64 " and not itself as it should be as root.\n", store.getLocalRowID(), store.getLocalColumnID(), root, get_pred_from_pred_entry(pred[root_local]));
       validation_passed = 0;
     }
   }
@@ -249,14 +249,14 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
 
   assert (pred);
   if(validation_passed == 0)
-      printf("other f\n");
+      printf("other tests faild\n");
   {
     /* Create a vertex depth map to use for later validation. */
     int pred_ok = build_bfs_depth_map(store, nglobalverts, store.getLocColLength(), maxlocalverts, root, pred, level);
     if (!pred_ok) validation_passed = 0;
   }
   if(validation_passed == 0)
-      printf("dmap faild\n");
+      printf("depth map creation faild\n");
   {
       MPI_Comm row_comm, col_comm;
       MPI_Comm_split(MPI_COMM_WORLD, store.getLocalRowID(), store.getLocalColumnID(), &row_comm);
@@ -331,7 +331,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
                //execept if there is no predecessor
                if(get_pred_from_pred_entry(pred[i])!= -1 &&
                   get_pred_from_pred_entry(pred[i])!= store.localtoglobalCol(i)){
-                   fprintf(stderr,"Predessor(%ld) of Vertex %ld is invalid!\n", get_pred_from_pred_entry(pred[i]), store.localtoglobalCol(i));
+                   fprintf(stderr,"predecessor(%ld) of Vertex %ld is invalid!\n", get_pred_from_pred_entry(pred[i]), store.localtoglobalCol(i));
                    all_visited = 0;
                 }
            }
@@ -343,7 +343,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
        MPI_Comm_free(&col_comm);
 
        if(all_visited==0)
-           fprintf(stderr,"Not for every vertex with a claimed \n");
+           fprintf(stderr,"Not all vertexes with an edge are visited.\n");
 
        validation_passed = validation_passed && valid_level && all_visited;
 

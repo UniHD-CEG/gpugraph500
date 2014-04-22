@@ -4,7 +4,7 @@
 SimpleCPUBFS::SimpleCPUBFS(MatrixT &_store):GlobalBFS<SimpleCPUBFS,void,MatrixT>(_store)
 {
     fq_tp_type = MPI_INT64_T; //Frontier Queue Transport Type
-    predessor = new vtxtyp[store.getLocColLength()];
+    predecessor = new vtxtyp[store.getLocColLength()];
 
     //allocate recive buffer
     recv_fq_buff_length = std::max(store.getLocRowLength(), store.getLocColLength());
@@ -15,7 +15,7 @@ SimpleCPUBFS::SimpleCPUBFS(MatrixT &_store):GlobalBFS<SimpleCPUBFS,void,MatrixT>
 SimpleCPUBFS::~SimpleCPUBFS()
 {
     delete[] static_cast<vtxtyp*>(recv_fq_buff);
-    delete[] predessor;
+    delete[] predecessor;
 }
 
 void SimpleCPUBFS::reduce_fq_out(void *startaddr, long insize)
@@ -44,7 +44,7 @@ void SimpleCPUBFS::runLocalBFS()
             if(!visited[visit_vtx_loc]){
                 fq_out.push_back(visit_vtx);
                 visited[visit_vtx_loc] = true;
-                predessor[visit_vtx_loc] = actual_vtx;
+                predecessor[visit_vtx_loc] = actual_vtx;
             }
         }
     }
@@ -53,9 +53,9 @@ void SimpleCPUBFS::runLocalBFS()
 
 void SimpleCPUBFS::setStartVertex(const vtxtyp start)
 {
-    //reset predessor list
+    //reset predecessor list
     for(int i = 0; i < store.getLocColLength(); i++){
-        predessor[i] = -1;
+        predecessor[i] = -1;
     }
 
     visited.assign(store.getLocColLength(),false);
@@ -64,7 +64,7 @@ void SimpleCPUBFS::setStartVertex(const vtxtyp start)
 
     if(store.isLocalColumn(start)){
         visited[store.globaltolocalCol(start)]   = true;
-        predessor[store.globaltolocalCol(start)] = start;
+        predecessor[store.globaltolocalCol(start)] = start;
     }
 
     if(store.isLocalRow(start)){

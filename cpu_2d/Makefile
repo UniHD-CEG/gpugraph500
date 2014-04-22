@@ -13,11 +13,11 @@ MAKEFILE      = Makefile
 CC            = mpicc
 CXX           = mpicxx
 DEFINES       = 
-CFLAGS        = -m64 -pipe -D_CUDA -std=c99 -fopenmp -O2 -fast -Wall -W -fPIE $(DEFINES)
-CXXFLAGS      = -m64 -pipe -D_CUDA -fopenmp -DINSTRUMENTED -O2 -fast -Wall -W -fPIE $(DEFINES)
+CFLAGS        = -m64 -pipe -D_CUDA -std=c99 -fopenmp -g -Wall -W -fPIE $(DEFINES)
+CXXFLAGS      = -m64 -pipe -D_CUDA -fopenmp -DINSTRUMENTED -g -Wall -W -fPIE $(DEFINES)
 INCPATH       = -I/usr/share/qt5/mkspecs/linux-g++-64 -I. -I\"`which nvcc | sed 's,/bin/nvcc$$,,'`\"/include -I..
 LINK          = mpicxx
-LFLAGS        = -m64 -fopenmp -Wl,-O1 -Wl,-O3 
+LFLAGS        = -m64 -fopenmp -Wl,-g 
 LIBS          = $(SUBLIBS) -L"`which nvcc | sed 's,/bin/nvcc$$,,'`"/lib64 -L"`which nvcc | sed 's,/bin/nvcc$$,,'`"/lib -lcudart -lcuda 
 AR            = ar cqs
 RANLIB        = 
@@ -171,7 +171,7 @@ compiler_cuda_make_all: ${OBJECTS_DIR}cuda_bfs_cuda.o
 compiler_cuda_clean:
 	-$(DEL_FILE) ${OBJECTS_DIR}cuda_bfs_cuda.o
 ${OBJECTS_DIR}cuda_bfs_cuda.o: cuda/cuda_bfs.cu
-	nvcc -c -ccbin icc -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-fopenmp,"`mpicxx --showme:compile`" -gencode=arch=compute_20,code=\"sm_20,compute_20\"  --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
+	nvcc -c -ccbin icc -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-g,-fopenmp,"`mpicxx --showme:compile`" -gencode=arch=compute_20,code=\"sm_20,compute_20\"  --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v -m64 -g -G -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
 
 compiler_wayland-server-header_make_all:
 compiler_wayland-server-header_clean:
@@ -200,8 +200,6 @@ main.o: main.cpp validate/validate.h \
 		generator/make_graph.h \
 		opencl/OCLrunner.hh \
 		opencl/opencl_bfs.h \
-		globalbfs.h \
-		distmatrix2d.h \
 		cuda/cuda_bfs.h \
 		cuda/cuda_support.hh \
 		../b40c/util/basic_utils.cuh \

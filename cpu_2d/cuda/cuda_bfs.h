@@ -1,3 +1,4 @@
+#define __restrict__
 #ifdef __CUDACC__
 #include "cuda_support.hh" //for enactor_base.cuh
 
@@ -31,7 +32,7 @@ typedef int       rowtyp;
 
 class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
                                     vtxtyp,
-                                    DistMatrix2d<vtxtyp, rowtyp, true, 1>  // use local ids
+                                    DistMatrix2d<vtxtyp, rowtyp, true, 1, true>  // use local ids
                                   >
 {
     typedef CsrProblem<vtxtyp,
@@ -44,9 +45,9 @@ class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
     vtxtyp* __restrict__ redbuff;
 
     //Csr::VisitedMask** __restrict__ vmask;
-    unsigned char** __restrict__ vmask;
+    unsigned char* __restrict__ vmask;
 
-    bool newElements;
+    bool done;
 
     Csr* csr_problem;
 #ifdef INSTRUMENTED
@@ -56,7 +57,7 @@ class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
 #endif
 
 public:
-    typedef DistMatrix2d<vtxtyp, rowtyp, true, 1> MatrixT;
+    typedef DistMatrix2d<vtxtyp, rowtyp, true, 1, true> MatrixT;
     CUDA_BFS(MatrixT &_store, int num_gpus, double _queue_sizing);
     ~CUDA_BFS();
 

@@ -333,7 +333,8 @@ struct CsrProblem
 		SizeT 		edges,
         const VertexId 	*h_column_indices,
         const SizeT 	*h_row_offsets,
-		int 		num_gpus)
+        int 		num_gpus,
+        int         verbose = 0)
 	{
 		cudaError_t retval 				= cudaSuccess;
 		this->nodes						= nodes;
@@ -366,7 +367,7 @@ struct CsrProblem
 				} else {
 
 					// Allocate and initialize d_column_indices
-
+                    if(verbose >=1 )
 					printf("GPU %d column_indices: %lld elements (%lld bytes)\n",
 						graph_slices[0]->gpu,
 						(unsigned long long) (graph_slices[0]->edges),
@@ -375,7 +376,7 @@ struct CsrProblem
 					if (retval = util::B40CPerror(cudaMalloc(
 							(void**) &graph_slices[0]->d_column_indices,
 							graph_slices[0]->edges * sizeof(VertexId)),
-						"CsrProblem cudaMalloc d_column_indices failed", __FILE__, __LINE__)) break;
+                        "CsrProblem cudaMalloc d_column_indices failed", __FILE__, __LINE__)) break;
 
 					if (retval = util::B40CPerror(cudaMemcpy(
 							graph_slices[0]->d_column_indices,
@@ -385,7 +386,7 @@ struct CsrProblem
 						"CsrProblem cudaMemcpy d_column_indices failed", __FILE__, __LINE__)) break;
 
 					// Allocate and initialize d_row_offsets
-
+                    if(verbose >=1 )
 					printf("GPU %d row_offsets: %lld elements (%lld bytes)\n",
 						graph_slices[0]->gpu,
 						(unsigned long long) (graph_slices[0]->nodes + 1),
@@ -403,7 +404,7 @@ struct CsrProblem
 							cudaMemcpyHostToDevice),
 						"CsrProblem cudaMemcpy d_row_offsets failed", __FILE__, __LINE__)) break;
 				}
-
+                if(verbose >=2 )
 				printf("Pointer start:  %p %p %p %p",graph_slices[0]->d_column_indices, graph_slices[0]->d_column_indices, graph_slices[0]->d_row_offsets, graph_slices[0]->d_row_offsets);
 
 			} else {
@@ -436,7 +437,7 @@ struct CsrProblem
 				SizeT **slice_row_offsets 			= new SizeT*[num_gpus];
 				VertexId **slice_column_indices 	= new VertexId*[num_gpus];
 				for (int gpu = 0; gpu < num_gpus; gpu++) {
-
+                    if(verbose >=1 )
 					printf("GPU %d gets %lld vertices and %lld edges\n",
 						gpu, (long long) graph_slices[gpu]->nodes, (long long) graph_slices[gpu]->edges);
 					fflush(stdout);
@@ -449,7 +450,7 @@ struct CsrProblem
 					// Reset for construction
 					graph_slices[gpu]->edges = 0;
 				}
-
+                if(verbose >=1 )
 				printf("Done allocating gpu data structures on host\n");
 				fflush(stdout);
 
@@ -476,7 +477,7 @@ struct CsrProblem
 						(*ptr) |= (owner << ProblemType::GPU_MASK_SHIFT);
 					}
 				}
-
+                if(verbose >=1 )
 				printf("Done constructing gpu data structures on host\n");
 				fflush(stdout);
 
@@ -488,7 +489,7 @@ struct CsrProblem
 						"CsrProblem cudaSetDevice failed", __FILE__, __LINE__)) break;
 
 					// Allocate and initialize d_row_offsets: copy and adjust by gpu offset
-
+                    if(verbose >=1 )
 					printf("GPU %d row_offsets: %lld elements (%lld bytes)\n",
 						graph_slices[gpu]->gpu,
 						(unsigned long long) (graph_slices[gpu]->nodes + 1),
@@ -507,7 +508,7 @@ struct CsrProblem
 						"CsrProblem cudaMemcpy d_row_offsets failed", __FILE__, __LINE__)) break;
 
 					// Allocate and initialize d_column_indices
-
+                    if(verbose >=1 )
 					printf("GPU %d column_indices: %lld elements (%lld bytes)\n",
 						graph_slices[gpu]->gpu,
 						(unsigned long long) (graph_slices[gpu]->edges),
@@ -530,7 +531,7 @@ struct CsrProblem
 					if (slice_column_indices[gpu]) delete slice_column_indices[gpu];
 				}
 				if (retval) break;
-
+                if(verbose >=1 )
 				printf("Done initializing gpu data structures on gpus\n");
 				fflush(stdout);
 
@@ -551,8 +552,9 @@ struct CsrProblem
 	 */
 	cudaError_t Reset(
 		FrontierType frontier_type,			// The frontier type (i.e., edge/vertex/mixed)
-		double queue_sizing)			// Size scaling factor for work queue allocation (e.g., 1.0 creates n-element and m-element vertex and edge frontiers, respectively).  0.0 is unspecified.
-	{
+        double  queue_sizing,			// Size scaling factor for work queue allocation (e.g., 1.0 creates n-element and m-element vertex and edge frontiers, respectively).  0.0 is unspecified.
+        int     verbose = 0)
+    {
 		cudaError_t retval = cudaSuccess;
 
 		for (int gpu = 0; gpu < num_gpus; gpu++) {
@@ -566,7 +568,7 @@ struct CsrProblem
 			//
 
 			if (!graph_slices[gpu]->d_labels) {
-
+                if(verbose >=1 )
 				printf("GPU %d labels: %lld elements (%lld bytes)\n",
 					graph_slices[gpu]->gpu,
 					(unsigned long long) graph_slices[gpu]->nodes,
@@ -576,8 +578,9 @@ struct CsrProblem
 						(void**) &graph_slices[gpu]->d_labels,
 						graph_slices[gpu]->nodes * sizeof(VertexId)),
 					"CsrProblem cudaMalloc d_labels failed", __FILE__, __LINE__)) return retval;
-				printf("pointer: %p",graph_slices[gpu]->d_labels);
-			}
+                if(verbose >=2 )
+                printf("pointer: %p",graph_slices[gpu]->d_labels);
+            }
 
 
 			//
@@ -587,7 +590,7 @@ struct CsrProblem
 			int visited_mask_bytes 			= ((nodes * sizeof(VisitedMask)) + 8 - 1) / 8;					// round up to the nearest VisitedMask
 			int visited_mask_elements		= visited_mask_bytes * sizeof(VisitedMask);
 			if (!graph_slices[gpu]->d_visited_mask) {
-
+                if(verbose >=1 )
 				printf("GPU %d visited mask: %lld elements (%lld bytes)\n",
 					graph_slices[gpu]->gpu,
 					(unsigned long long) visited_mask_elements,
@@ -596,8 +599,10 @@ struct CsrProblem
 				if (retval = util::B40CPerror(cudaMalloc(
 						(void**) &graph_slices[gpu]->d_visited_mask,
 						visited_mask_bytes),
-					"CsrProblem cudaMalloc d_visited_mask failed", __FILE__, __LINE__)) return retval;
-				printf("pointer: %p",graph_slices[gpu]->d_visited_mask);
+                        "CsrProblem cudaMalloc d_visited_mask failed", __FILE__, __LINE__)) return retval;
+                if(verbose >=2 )
+                printf("pointer: %p",graph_slices[gpu]->d_visited_mask);
+
 			}
 
 
@@ -661,7 +666,7 @@ struct CsrProblem
 					}
 
 					graph_slices[gpu]->frontier_elements[i] = new_frontier_elements[i];
-
+                    if(verbose >=1 )
 					printf("GPU %d frontier queue[%d] (queue-sizing factor %.2fx): %lld elements (%lld bytes)\n",
 						graph_slices[gpu]->gpu,
 						i,
@@ -674,7 +679,9 @@ struct CsrProblem
 						(void**) &graph_slices[gpu]->frontier_queues.d_keys[i],
 						graph_slices[gpu]->frontier_elements[i] * sizeof(VertexId)),
 							"CsrProblem cudaMalloc frontier_queues.d_keys failed", __FILE__, __LINE__)) return retval;
-					printf("pointer: %p",graph_slices[gpu]->frontier_queues.d_keys[i]);
+                    if(verbose >=2 )
+                    printf("pointer: %p",graph_slices[gpu]->frontier_queues.d_keys[i]);
+
 				}
 
 
@@ -689,7 +696,7 @@ struct CsrProblem
 					}
 
 					graph_slices[gpu]->predecessor_elements[i] = new_predecessor_elements[i];
-
+                    if(verbose >=1 )
 					printf("GPU %d predecessor queue[%d] (queue-sizing factor %.2fx): %lld elements (%lld bytes)\n",
 						graph_slices[gpu]->gpu,
 						i,
@@ -702,6 +709,7 @@ struct CsrProblem
 						(void**) &graph_slices[gpu]->frontier_queues.d_values[i],
 						graph_slices[gpu]->predecessor_elements[i] * sizeof(VertexId)),
 							"CsrProblem cudaMalloc frontier_queues.d_values failed", __FILE__, __LINE__)) return retval;
+                    if(verbose >=2 )
 					printf("pointer: %p\n",graph_slices[gpu]->frontier_queues.d_values[i]);
 				}
 			}
@@ -712,8 +720,8 @@ struct CsrProblem
 			//
 
 			if ((frontier_type == MULTI_GPU_FRONTIERS) && (!graph_slices[gpu]->d_filter_mask)) {
-
-				printf("GPU %d_filter_mask flags: %lld elements (%lld bytes)\n",
+                if(verbose >=1 )
+                printf("GPU %d d_filter_mask flags: %lld elements (%lld bytes)\n",
 					graph_slices[gpu]->gpu,
 					(unsigned long long) graph_slices[gpu]->frontier_elements[1],
 					(unsigned long long) graph_slices[gpu]->frontier_elements[1] * sizeof(ValidFlag));

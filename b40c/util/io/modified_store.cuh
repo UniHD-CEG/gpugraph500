@@ -111,8 +111,9 @@ struct ModifiedStore
 	 * Singleton store op
 	 */
 	#define B40C_STORE(base_type, ptx_type, reg_mod, cast_type, modifier)																	\
-		template<> template<> void ModifiedStore<st::modifier>::St(base_type val, base_type* ptr) {											\
-			asm volatile ("st.global."#modifier"."#ptx_type" [%0], %1;" : : _B40C_ASM_PTR_(ptr), #reg_mod(reinterpret_cast<cast_type&>(val)));			\
+        template<> template<> void ModifiedStore<st::modifier>::St(base_type val, base_type* ptr) {                                         \
+            cast_type c = static_cast<cast_type>(val);                                                                                       \
+            asm volatile ("st.global."#modifier"."#ptx_type" [%0], %1;" : : _B40C_ASM_PTR_(ptr), #reg_mod(reinterpret_cast<cast_type&>(c))); \
 		}
 
 	/**

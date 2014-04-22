@@ -15,12 +15,12 @@ void PrintValue(T& val){
 
 template<>
 void PrintValue<uint64_t>(uint64_t& val){
-    printf("%lu",val);
+    printf("%luX",val);
 }
 
 template<>
 void PrintValue<int64_t>(int64_t& val){
-    printf("%ld",val);
+    printf("%lX",val);
 }
 
 //template<>
@@ -30,12 +30,12 @@ void PrintValue<int64_t>(int64_t& val){
 
 template<>
 void PrintValue<long long>(long long& val){
-    printf("%lld",val);
+    printf("%llX",val);
 }
 
 template<>
 void PrintValue<int>(int& val){
-    printf("%d",val);
+    printf("%X",val);
 }
 
 #endif // CUDA_SUPPORT_HH

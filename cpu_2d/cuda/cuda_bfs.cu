@@ -7,46 +7,37 @@
 #include <functional>
 
 
-CUDA_BFS::CUDA_BFS(MatrixT &_store,int num_gpus,double _queue_sizing):GlobalBFS< CUDA_BFS,vtxtyp,MatrixT>(_store), queue_sizing(_queue_sizing)
+CUDA_BFS::CUDA_BFS(MatrixT &_store,int num_gpus,double _queue_sizing):
+    GlobalBFS< CUDA_BFS,vtxtyp,MatrixT>(_store),
+    queue_sizing(_queue_sizing),
+    vmask(0)
 {
+
+    b40c::util::B40CPerror(cudaSetDeviceFlags(cudaDeviceMapHost),
+                           "Enabling of the allocation of pinned host memory faild",__FILE__, __LINE__);
+
+    if(num_gpus==0){
+        b40c::util::B40CPerror(cudaGetDeviceCount(&num_gpus),
+                    "Can't get number of devices!",__FILE__, __LINE__);
+    }
+
     //expect symetrie
     if(store.getNumRowSl() != store.getNumColumnSl()){
         fprintf(stderr,"Currently the partitioning has to be symetric.");
         exit(1);
     }
-    predessor    = new vtxtyp[store.getLocColLength()];
+    predecessor    = new vtxtyp[store.getLocColLength()];
 
     fq_tp_type = MPI_INT64_T;
-    recv_fq_buff_length = std::max(store.getLocRowLength(), store.getLocColLength())+num_gpus;
-    recv_fq_buff = new vtxtyp[recv_fq_buff_length];
+    recv_fq_buff_length = static_cast<vtxtyp>
+            (std::max(store.getLocRowLength(), store.getLocColLength())*_queue_sizing)+num_gpus;
+    //recv_fq_buff = new vtxtyp[recv_fq_buff_length];
+    cudaHostAlloc(&recv_fq_buff, recv_fq_buff_length*sizeof(vtxtyp) , NULL );
     //multipurpose buffer
     qb_length    = 0;
-    queuebuff    = new vtxtyp[recv_fq_buff_length];
+    cudaHostAlloc(&queuebuff, recv_fq_buff_length*sizeof(vtxtyp) , NULL );
     rb_length    = 0;
-    redbuff      = new vtxtyp[recv_fq_buff_length];
-
-    newElements = false;
-
-
-    // Enable symmetric peer access between gpus
-    // from test_bfs.cu
-    for (int gpu = 0; gpu < num_gpus; gpu++) {
-        for (int other_gpu = (gpu + 1) % num_gpus;
-             other_gpu != gpu;
-             other_gpu = (other_gpu + 1) % num_gpus)
-        {
-                // Set device
-                if (b40c::util::B40CPerror(cudaSetDevice(gpu),
-                    "MultiGpuBfsEnactor cudaSetDevice failed", __FILE__, __LINE__)) exit(1);
-
-                printf("Enabling peer access to GPU %d from GPU %d\n", other_gpu, gpu);
-
-                cudaError_t error = cudaDeviceEnablePeerAccess(other_gpu, 0);
-                if ((error != cudaSuccess) && (error != cudaErrorPeerAccessAlreadyEnabled)) {
-                    fprintf(stderr, "MultiGpuBfsEnactor cudaDeviceEnablePeerAccess failed", __FILE__, __LINE__);
-                }
-        }
-    }
+    cudaHostAlloc(&redbuff , recv_fq_buff_length*sizeof(vtxtyp) , NULL );
 
    csr_problem = new Csr;
 #ifdef INSTRUMENTED
@@ -55,42 +46,75 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int num_gpus,double _queue_sizing):GlobalBFS<
    bfsGPU = new EnactorMultiGpu<false>;
 #endif
 
-
-    csr_problem->FromHostProblem(
+     b40c::util::B40CPerror(csr_problem->FromHostProblem(
                 false,                  //bool          stream_from_host,
                 store.getLocRowLength(),//SizeT 		nodes,
                 store.getEdgeCount(),   //SizeT 		edges,
                 store.getColumnIndex(), //VertexId 	    *h_column_indices,
                 store.getRowPointer(),  //SizeT 		*h_row_offsets,
-                num_gpus                //int 		num_gpus,
-                );
+                num_gpus,               //int 		num_gpus,
+                0                       //verbosity
+         ), "FromHostProblem failed!" ,__FILE__, __LINE__);
 
-    //vmask = new Csr::VisitedMask*[csr_problem->num_gpus];
-    vmask = new unsigned char*[csr_problem->num_gpus];
+     //Test if peer comunication is possible
+     bool peerPossible = true;
+     for (int gpu = 0; gpu < num_gpus; gpu++) {
+         for (int other_gpu = (gpu + 1) % num_gpus;
+              other_gpu != gpu;
+              other_gpu = (other_gpu + 1) % num_gpus)
+         {
+             int canAccessPeer;
+             // Set device
+             b40c::util::B40CPerror(cudaDeviceCanAccessPeer(&canAccessPeer,gpu,other_gpu)
+                                    ,"Can not activate peer access!" ,__FILE__, __LINE__);
+             if( !canAccessPeer  ){
+                peerPossible = false;
+                break;
+             }
+         }
+     }
+     // Enable symmetric peer access between gpus
+     // from test_bfs.cu
+     if(peerPossible)
+     for (int gpu = 0; gpu < num_gpus; gpu++) {
+         for (int other_gpu = (gpu + 1) % num_gpus;
+              other_gpu != gpu;
+              other_gpu = (other_gpu + 1) % num_gpus)
+         {
+                 // Set device
+                 if (b40c::util::B40CPerror(cudaSetDevice(gpu),
+                     "MultiGpuBfsEnactor cudaSetDevice failed", __FILE__, __LINE__)) exit(1);
 
-    for(int i=0; i < csr_problem->num_gpus; i++){
-        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
+                 //printf("Enabling peer access to GPU %d from GPU %d\n", other_gpu, gpu);
 
-        //vmask[i]= new typename Csr::VisitedMask[gs->frontier_elements[1]];
-        vmask[i]= new unsigned char[gs->frontier_elements[1]];
-    }
+                 cudaError_t error = cudaDeviceEnablePeerAccess(other_gpu, 0);
+                 if ((error != cudaSuccess) && (error != cudaErrorPeerAccessAlreadyEnabled)) {
+                     b40c::util::B40CPerror(error,"MultiGpuBfsEnactor cudaDeviceEnablePeerAccess failed", __FILE__, __LINE__);
+                     int canAccessPeer;
+                     b40c::util::B40CPerror(cudaDeviceCanAccessPeer(&canAccessPeer,gpu,other_gpu)
+                                            ,"Can not access device!" ,__FILE__, __LINE__);
+                     if(canAccessPeer)
+                         fprintf(stderr, "Can access peer %d from %d!\n",other_gpu,gpu);
+                     else
+                         fprintf(stderr, "Can't access peer %d from %d!\n",other_gpu,gpu);
+                 }
+         }
+     }
 
 }
 
 CUDA_BFS::~CUDA_BFS(){
 
-    for(int i=0; i < csr_problem->num_gpus; i++)
-        delete[] vmask[i];
-    delete[] vmask;
+    if(vmask!=0) cudaFree(vmask);
 
     delete bfsGPU;
     delete csr_problem;
 
-    delete[] redbuff;
-    delete[] queuebuff;
-    delete[] recv_fq_buff;
+    cudaFree(redbuff);
+    cudaFree(queuebuff);
+    cudaFree(recv_fq_buff);
 
-    delete[] predessor;
+    delete[] predecessor;
 }
 
 void CUDA_BFS::reduce_fq_out(vtxtyp *startaddr, long insize)
@@ -125,9 +149,9 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, long insize)
 {
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
-        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-        cudaSetDevice(gs->gpu);
-        cudaDeviceSynchronize();
+        Csr::GraphSlice* gs = csr_problem->graph_slices[i];
+        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
+                    "Can't synchronize Stream." , __FILE__, __LINE__);
     }
 
     if(startaddr!= 0){
@@ -136,30 +160,21 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, long insize)
     }
     //update visited
     #pragma omp parallel for
-    for(int i=0; i < csr_problem->num_gpus; i++){
-        typename MatrixT::vtxtyp *qb_nxt  = queuebuff + csr_problem->num_gpus;
-        const int64_t end   = queuebuff[i];
-
-        for(int j=0; j < i; j++){
-            qb_nxt += queuebuff[j];
-        }
-
-        for(int j=0; j < end;j++){
-            typename Csr::ProblemType::VertexId vtxID = qb_nxt[j] & Csr::ProblemType::VERTEX_ID_MASK;
-            vmask[i][vtxID] = 1;
-        }
-        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-        cudaSetDevice(gs->gpu);
-
-        cudaMemcpyAsync( gs->d_filter_mask,
-                         vmask[i],
-                         gs->frontier_elements[1]*sizeof(typename Csr::VisitedMask),
-                         cudaMemcpyHostToDevice,
-                         gs->stream
-            );
+    for(int i=csr_problem->num_gpus; i < qb_length; i++){
+        typename Csr::ProblemType::VertexId vtxID = queuebuff[i] & Csr::ProblemType::VERTEX_ID_MASK;
+        #pragma omp atomic
+        vmask[vtxID>>3] |= 1<< (vtxID&0x7 );
     }
-
-
+    for(int i=0; i < csr_problem->num_gpus; i++){
+        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
+        int visited_mask_bytes 	 = ((gs->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
+        b40c::util::B40CPerror(cudaMemcpyAsync( gs->d_visited_mask,
+                     vmask,
+                     visited_mask_bytes,
+                     cudaMemcpyHostToDevice,
+                     gs->stream
+               ), "Copy of d_filer_mask from device failed" , __FILE__, __LINE__);
+    }
 }
 /*
  *  Expect symetric partitioning, so all parameters are ignored.
@@ -167,7 +182,7 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, long insize)
 void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, long &outsize)
 {
     startaddr = queuebuff;
-    outsize   = queue_sizing;
+    outsize   = qb_length;
 }
 
 /*  Sets the incoming FQ.
@@ -182,15 +197,26 @@ void CUDA_BFS::setIncommingFQ(vtxtyp globalstart, long size, vtxtyp *startaddr, 
 
 bool CUDA_BFS::istheresomethingnew()
 {
-    return newElements;
+    return !done;
 }
 
 void CUDA_BFS::getBackPredecessor(){
+    //terminate all operations
+    #pragma omp parallel for
+    for(int i=0; i < csr_problem->num_gpus; i++){
+        Csr::GraphSlice* gs = csr_problem->graph_slices[i];
+        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
+                    "Can't synchronize device." , __FILE__, __LINE__);
+    }
     bfsGPU->testOverflow(*csr_problem);
-    csr_problem->ExtractResults(predessor);
+    b40c::util::B40CPerror(csr_problem->ExtractResults(predecessor),
+                            "Extraction of result failed" , __FILE__, __LINE__);
     for(uint64_t i=0; i < store.getLocColLength(); i++){
-        if(predessor[i]!=-1)
-            predessor[i]=store.localtoglobalCol(predessor[i]);
+        if(predecessor[i]>-1 )
+            predecessor[i]=store.localtoglobalRow(predecessor[i]);
+        if(predecessor[i]==-2){
+            predecessor[i]=store.localtoglobalCol(i);
+        }
     }
 }
 
@@ -199,22 +225,21 @@ void CUDA_BFS::getBackOutqueue()
     //get length of next queues
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
-        queuebuff[i] = bfsGPU->getQueueSize(i);
+        queuebuff[i] = bfsGPU->getQueueSize<typename Csr::SizeT>(csr_problem->graph_slices[i]->gpu);
     }
 
-    qb_length = 0;
+    qb_length = csr_problem->num_gpus;
     typename MatrixT::vtxtyp *qb_nxt  = queuebuff + csr_problem->num_gpus;
     // copy next queue to host
     for(int i=0; i < csr_problem->num_gpus; i++){
         typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-        cudaSetDevice(gs->gpu);
 
-        cudaMemcpyAsync( qb_nxt,
+        b40c::util::B40CPerror(cudaMemcpyAsync( qb_nxt,
                          gs->frontier_queues.d_keys[0],
-                         queuebuff[i],
+                         queuebuff[i]*sizeof(typename Csr::VertexId),
                          cudaMemcpyDeviceToHost,
                          gs->stream
-            );
+            ), "Copy of d_keys[0] failed" , __FILE__, __LINE__);
         qb_nxt += queuebuff[i];
         qb_length += queuebuff[i];
     }
@@ -222,21 +247,35 @@ void CUDA_BFS::getBackOutqueue()
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
         Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-        cudaSetDevice(gs->gpu);
-        cudaDeviceSynchronize();
+        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
+                    "Can't synchronize Stream." , __FILE__, __LINE__);
     }
 
+    // Queue preprocessing
+    // Sorting
+    #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
-        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-        cudaSetDevice(gs->gpu);
+        typename MatrixT::vtxtyp *qb_nxt  = queuebuff + csr_problem->num_gpus;
+        const int64_t end   = queuebuff[i];
 
-        cudaMemcpyAsync( vmask[i],
-                         gs->d_filter_mask,
-                         gs->frontier_elements[1]*sizeof(typename Csr::VisitedMask),
-                         cudaMemcpyDeviceToHost,
-                         gs->stream
-            );
+        for(int j=0; j < i; j++){
+            qb_nxt += queuebuff[j];
+        }
+
+        std::sort(qb_nxt, qb_nxt+end);
     }
+    //Uniqueness
+    typename MatrixT::vtxtyp *qb_nxt_in  = queuebuff + csr_problem->num_gpus;
+    typename MatrixT::vtxtyp *qb_nxt_out = redbuff   + csr_problem->num_gpus;
+    for(int i=0; i < csr_problem->num_gpus; i++){
+        typename MatrixT::vtxtyp* start_in = std::upper_bound(qb_nxt_in, qb_nxt_in+queuebuff[i], -1);
+        typename MatrixT::vtxtyp* end_out = std::unique_copy(start_in, qb_nxt_in+queuebuff[i], qb_nxt_out);
+        qb_nxt_in+=queuebuff[i];
+        redbuff[i] = end_out - qb_nxt_out;
+        qb_nxt_out = end_out;
+    }
+    qb_length = qb_nxt_out - redbuff ;
+    std::swap(queuebuff, redbuff);
 }
 
 void CUDA_BFS::setBackInqueue()
@@ -244,52 +283,98 @@ void CUDA_BFS::setBackInqueue()
     typename MatrixT::vtxtyp *qb_nxt  = queuebuff + csr_problem->num_gpus;
     // copy next queue to device
     for(int i=0; i < csr_problem->num_gpus; i++){
-        cudaSetDevice(i);
         typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
 
-        cudaMemcpyAsync( gs->frontier_queues.d_keys[0],
+        b40c::util::B40CPerror(cudaMemcpyAsync( gs->frontier_queues.d_keys[0],
                          qb_nxt,
-                         queuebuff[i]*sizeof(vtxtyp),
+                         queuebuff[i]*sizeof(typename Csr::VertexId),
                          cudaMemcpyHostToDevice,
                          gs->stream
-            );
+            ), "Copy of d_keys[0] from device failed" , __FILE__, __LINE__);
         qb_nxt += queuebuff[i];
     }
 
     //set length of current queue
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
-        bfsGPU->setQueueSize(i,queuebuff[i]);
+        bfsGPU->setQueueSize<typename Csr::SizeT>(i,static_cast<typename Csr::SizeT>(queuebuff[i]));
     }
 
 }
 
 void CUDA_BFS::setStartVertex(vtxtyp start)
 {
-    if(csr_problem->Reset(
+    done = false;
+    vtxtyp lstart = -1;
+
+    if(b40c::util::B40CPerror(csr_problem->Reset(
                 bfsGPU->GetFrontierType(),
                 queue_sizing
-                )!=cudaSuccess){
-        fprintf(stderr,"Reset error.\n");
+       ), "Reset error.", __FILE__, __LINE__)!=cudaSuccess){
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+    // Alloc and reset visited mask on host
+    typename Csr::GraphSlice* gs = csr_problem->graph_slices[0];
+    int visited_mask_bytes 	 = ((gs->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
+    if(vmask == 0)
+        cudaHostAlloc(&vmask, visited_mask_bytes, NULL);
+    std::fill_n(vmask, visited_mask_bytes, 0);
+
+    if(store.isLocalColumn(start)){
+        lstart = store.globaltolocalCol(start);
+        vmask[lstart >> 3] = 1 << (lstart & 0x7);
+    }
+
+    //new next queue
+    std::fill_n(queuebuff, csr_problem->num_gpus, 0);
+    qb_length =  csr_problem->num_gpus;
+
+    if(store.isLocalRow(start)){
+        vtxtyp rstart = store.globaltolocalRow(start);
+        vtxtyp src_owner = csr_problem->GpuIndex(rstart);
+        rstart |= (src_owner <<  Csr::ProblemType::GPU_MASK_SHIFT);
+
+        queuebuff[src_owner] = 1;
+        queuebuff[csr_problem->num_gpus] = rstart;
+        qb_length = csr_problem->num_gpus+1;
+    }
+
+    if(b40c::util::B40CPerror(bfsGPU->EnactSearch(
+                *csr_problem,
+                lstart
+      ), "Start error.", __FILE__, __LINE__)!=cudaSuccess){
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    if(bfsGPU->EnactSearch(
-                *csr_problem,
-                start
-                )!=cudaSuccess){
-        fprintf(stderr,"Start error.\n");
-        MPI_Abort(MPI_COMM_WORLD, 1);
+    for(int i=0; i < csr_problem->num_gpus; i++){
+        //set new visited map
+        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
+        b40c::util::B40CPerror(cudaMemcpyAsync( gs->d_visited_mask,
+                     vmask,
+                     visited_mask_bytes,
+                     cudaMemcpyHostToDevice,
+                     gs->stream
+               ), "Copy of d_filer_mask from device failed" , __FILE__, __LINE__);
+        // set new current queue
+        if(queuebuff[i]){
+            b40c::util::B40CPerror(cudaMemcpyAsync( gs->frontier_queues.d_keys[0],
+                             &queuebuff[csr_problem->num_gpus],
+                             sizeof(typename Csr::VertexId),
+                             cudaMemcpyHostToDevice,
+                             gs->stream
+                ), "Copy of d_keys[0] from device failed" , __FILE__, __LINE__);
+        }
+        bfsGPU->setQueueSize<typename Csr::SizeT>(i,static_cast<typename Csr::SizeT>(queuebuff[i]));
     }
+
 }
 
 void CUDA_BFS::runLocalBFS()
 {
-    if(bfsGPU->EnactIteration(
+    if(b40c::util::B40CPerror(bfsGPU->EnactIteration(
                 *csr_problem,
-                newElements
-                )!=cudaSuccess){
-        fprintf(stderr,"Iteration error.\n");
+                done
+      ), "Iteration error.", __FILE__, __LINE__)!=cudaSuccess){
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 }

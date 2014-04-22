@@ -17,8 +17,8 @@
 *
 */
 
-// WOLO: without local offset; ALG: vertex alligment
-template<class vertextyp, class rowoffsettyp, bool WOLO=false, int ALG=1>
+// WOLO: without local offset; ALG: vertex alligment; PAD: pad the row slices, so that they are equal
+template<class vertextyp, class rowoffsettyp, bool WOLO=false, int ALG=1, bool PAD=false>
 class DistMatrix2d
 {
 public:
@@ -92,8 +92,8 @@ public:
 /*
  *Computes the owener node of a specific edge
 */
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG>
-int DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::computeOwner(int64_t row, int64_t column)
+template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+int DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::computeOwner(int64_t row, int64_t column)
 {
     int64_t rowSlice, columnSlice;
     int64_t r_residuum, c_residuum;
@@ -116,8 +116,8 @@ int DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::computeOwner(int64_t row, int
     }
     return rowSlice*C+columnSlice;
 }
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG>
-bool DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::comparePackedEdgeR(packed_edge i, packed_edge j){
+template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+bool DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::comparePackedEdgeR(packed_edge i, packed_edge j){
     if(i.v0<j.v0){
         return true;
     }else if(i.v0>j.v0 ){
@@ -125,8 +125,8 @@ bool DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::comparePackedEdgeR(packed_ed
     } else
         return (i.v1<j.v1);
 }
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG>
-bool DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::comparePackedEdgeC(packed_edge i, packed_edge j){
+template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+bool DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::comparePackedEdgeC(packed_edge i, packed_edge j){
     if(i.v1<j.v1){
         return true;
     }else if(i.v1>j.v1 ){
@@ -135,8 +135,8 @@ bool DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::comparePackedEdgeC(packed_ed
         return (i.v0<j.v0);
 }
 
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG>
-DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::DistMatrix2d(int64_t _R, int64_t _C):R(_R),C(_C),row_pointer(NULL),column_index(NULL)
+template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::DistMatrix2d(int64_t _R, int64_t _C):R(_R),C(_C),row_pointer(NULL),column_index(NULL)
 {
     int rank;
 
@@ -147,8 +147,8 @@ DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::DistMatrix2d(int64_t _R, int64_t 
     c = rank%C;
 }
 
-template<class vertextyp, class rowoffsettyp,bool WOLO, int ALG>
-DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::~DistMatrix2d()
+template<class vertextyp, class rowoffsettyp,bool WOLO, int ALG, bool PAD>
+DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::~DistMatrix2d()
 {
    if(row_pointer!=NULL)    delete[] row_pointer;
    row_pointer=NULL;
@@ -167,8 +167,8 @@ DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::~DistMatrix2d()
  *
  * Should be optimised.
 */
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG>
-void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::setupMatrix(packed_edge *input, int64_t numberOfEdges, bool undirected)
+template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix(packed_edge *input, int64_t numberOfEdges, bool undirected)
 {
     //get max vtx
     vtxtyp maxVertex = -1;
@@ -183,7 +183,12 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::setupMatrix(packed_edge *inp
 
     MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
     //because start at 0
-    globalNumberOfVertex = globalNumberOfVertex+1;
+    globalNumberOfVertex += 1;
+    //row slice padding
+    if(PAD){
+        globalNumberOfVertex +=
+                (globalNumberOfVertex%R>0)?R-globalNumberOfVertex%R : 0;
+    }
     int64_t numAlg = globalNumberOfVertex/ALG + ((globalNumberOfVertex%ALG>0)? 1:0) ;
     row_start       = (r*(numAlg/R) + ((r < numAlg%R)? r : numAlg%R))*ALG;
     row_length      = (numAlg/R + ((r < numAlg%R)? 1 : 0))*ALG;
@@ -207,7 +212,7 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::setupMatrix(packed_edge *inp
 
     //reset outgoing send status
     for(int i=0; i < outstanding_sends; i++){
-    iqueue[i]= MPI_REQUEST_NULL;
+        iqueue[i]= MPI_REQUEST_NULL;
     }
 
     count_elementssend = 0;
@@ -551,8 +556,8 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::setupMatrix(packed_edge *inp
     column_index = tmp_column_index;
  }
 
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG>
-void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, bool undirected){
+template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, bool undirected){
 
     vtxtyp maxVertex = -1;
     if(undirected == true){
@@ -580,10 +585,14 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::setupMatrix2(packed_edge *&i
             maxVertex  = (maxVertex > read.v1)? maxVertex :  read.v1;
         }
     }
-
     MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
     //because start at 0
-    globalNumberOfVertex = globalNumberOfVertex+1;
+    globalNumberOfVertex += 1;
+    //row slice padding
+    if(PAD){
+        globalNumberOfVertex +=
+                (globalNumberOfVertex%R>0)?R-globalNumberOfVertex%R : 0;
+    }
     int64_t numAlg = globalNumberOfVertex/ALG + ((globalNumberOfVertex%ALG>0)? 1:0) ;
     row_start       = (r*(numAlg/R) + ((r < numAlg%R)? r : numAlg%R))*ALG;
     row_length      = (numAlg/R + ((r < numAlg%R)? 1 : 0))*ALG;
@@ -873,8 +882,8 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::setupMatrix2(packed_edge *&i
 
 }
 
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG>
-std::vector<typename DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::fold_prop> DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::getFoldProperties() const
+template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+std::vector<typename DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::fold_prop> DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::getFoldProperties() const
 {
     // compute the properties of global folding
     struct fold_prop newprop;
@@ -931,8 +940,8 @@ std::vector<typename DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::fold_prop> D
  * For Validator
  * Computes the column and the local pointer of the verteces in an array
 */
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG>
-void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG>::get_vertex_distribution_for_pred(size_t count, const vtxtyp *vertex_p, int *owner_p, size_t *local_p) const
+template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::get_vertex_distribution_for_pred(size_t count, const vtxtyp *vertex_p, int *owner_p, size_t *local_p) const
 {
   int64_t numAlg = globalNumberOfVertex/ALG + ((globalNumberOfVertex%ALG>0)? 1:0 );
   int64_t c_residuum = numAlg % C;

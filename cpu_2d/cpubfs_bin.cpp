@@ -5,8 +5,8 @@
 
 #if defined( __INTEL_COMPILER )
     #define assume_aligned(typ, var, alg) __assume_aligned(var, alg)
-#elif defined( __GNUC__ )
-    #define assume_aligned(typ, var, alg) var = (typ) __builtin_assume_aligned(var, alg)
+//#elif defined( __GNUC__ )
+//    #define assume_aligned(typ, var, alg) var = (typ) __builtin_assume_aligned(var, alg)
 #else
     #define assume_aligned(typ, var, alg)
 #endif
@@ -15,8 +15,8 @@
 CPUBFS_bin::CPUBFS_bin(MatrixT& _store):GlobalBFS<CPUBFS_bin,uint64_t,MatrixT>(_store),col64(_store.getLocColLength()/64),row64(_store.getLocRowLength()/64)
 {
     fq_tp_type = MPI_UINT64_T; //Frontier Queue Transport Type
-    //if(posix_memalign((void**)&predessor,64,sizeof(vtxtyp)*store.getLocColLength()))predessor=0;// new vtxtyp[store.getLocColLength()];;
-    MPI_Alloc_mem(sizeof(vtxtyp)*store.getLocColLength(), MPI_INFO_NULL, (void*)(void*)&predessor);
+    //if(posix_memalign((void**)&predecessor,64,sizeof(vtxtyp)*store.getLocColLength()))predecessor=0;// new vtxtyp[store.getLocColLength()];;
+    MPI_Alloc_mem(sizeof(vtxtyp)*store.getLocColLength(), MPI_INFO_NULL, (void*)(void*)&predecessor);
     //allocate recive buffer
     long recv_fq_buff_length_tmp = std::max(store.getLocRowLength(), store.getLocColLength());
     recv_fq_buff_length = recv_fq_buff_length_tmp/64 + ((recv_fq_buff_length_tmp%64 >0)? 1:0);
@@ -30,8 +30,8 @@ CPUBFS_bin::CPUBFS_bin(MatrixT& _store):GlobalBFS<CPUBFS_bin,uint64_t,MatrixT>(_
 
 CPUBFS_bin::~CPUBFS_bin()
 {
-    //free(predessor);
-    MPI_Free_mem(predessor);
+    //free(predecessor);
+    MPI_Free_mem(predecessor);
 
     //free(recv_fq_buff);
     MPI_Free_mem(recv_fq_buff);
@@ -114,12 +114,12 @@ void CPUBFS_bin::setStartVertex(const vtxtyp start)
          vtxtyp lstart = store.globaltolocalCol(start);
          visited[lstart/64] = 1ul << (lstart&0x3F);
     }
-    //reset predessor list
-   //assume_aligned(vtxtyp*,predessor, 64);
-   std::fill_n( predessor,   store.getLocColLength(), -1);
+    //reset predecessor list
+   //assume_aligned(vtxtyp*,predecessor, 64);
+   std::fill_n( predecessor,   store.getLocColLength(), -1);
 
    if(store.isLocalColumn(start)){
-        predessor[store.globaltolocalCol(start)] = start;
+        predecessor[store.globaltolocalCol(start)] = start;
     }
 }
 
@@ -141,7 +141,7 @@ void CPUBFS_bin::runLocalBFS()
                             uint64_t  setnext = 1ul << (visit_vtx_loc & 0x3F);
                             #pragma omp atomic
                             fqn_ext |= setnext;
-                            predessor[visit_vtx_loc] = store.localtoglobalRow(i*64+ii);
+                            predecessor[visit_vtx_loc] = store.localtoglobalRow(i*64+ii);
                         }
                     }
                 }

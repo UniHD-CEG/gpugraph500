@@ -346,7 +346,7 @@ protected:
          * (SizeT may be different for each graph search)
          */
         template <typename SizeT>
-        cudaError_t SetQueueLength(SizeT length)
+        cudaError_t SetQueueLength(SizeT& length)
         {
             cudaError_t retval = work_progress.SetQueueLength(queue_index, length);
             queue_length = length;
@@ -471,7 +471,6 @@ public:
 
             // Bind bitmask textures
             int bytes = (csr_problem.nodes + 8 - 1) / 8;
-            printf("d_visited_mask: %p\n", csr_problem.graph_slices[i]->d_visited_mask);
             cudaChannelFormatDesc bitmask_desc = cudaCreateChannelDesc<char>();
             if (retval = util::B40CPerror(cudaBindTexture(
                     0,
@@ -495,8 +494,6 @@ public:
     	return retval;
     }
 
-
-
 	/**
 	 * Enacts a breadth-first-search on the specified graph problem.
 	 *
@@ -519,21 +516,29 @@ public:
 
 		cudaError_t retval = cudaSuccess;
 
+#ifdef _DEBUG
         DEBUG=true;
         DEBUG2=true;
+#else
+        DEBUG=false;
+        DEBUG2=false;
+#endif
         // Number of partitioning bins per GPU (in case we over-partition)
         int bins_per_gpu = (csr_problem.num_gpus == 1) ?
             PartitionPolicy::Upsweep::BINS :
             1;
-        printf("Partition bins per GPU: %d\n", bins_per_gpu);
+        if(DEBUG) printf("Partition bins per GPU: %d\n", bins_per_gpu);
 
         // Search setup / lazy initialization
         if (retval = Setup<ContractPolicy, ExpandPolicy, PartitionPolicy, CopyPolicy>(
             csr_problem, max_grid_size)) return retval;
 
         // Mask in owner gpu of source;
-        VertexId src_owner = csr_problem.GpuIndex(src);
-        src |= (src_owner << CsrProblem::ProblemType::GPU_MASK_SHIFT);
+        VertexId src_owner = -1;
+        if(src != -1){
+            src_owner = csr_problem.GpuIndex(src);
+            src |= (src_owner << CsrProblem::ProblemType::GPU_MASK_SHIFT);
+        }
 
 
         //---------------------------------------------------------------------
@@ -551,7 +556,7 @@ public:
 
 				bool owns_source = (control->gpu == src_owner);
 				if (owns_source) {
-					printf("GPU %d owns source 0x%llX\n", control->gpu, (long long) src);
+                    if(DEBUG)printf("GPU %d owns source 0x%llX\n", control->gpu, (long long) src);
 				}
 
 				// Contraction
@@ -575,7 +580,7 @@ public:
 					control->expand_kernel_stats);
 
 				if (DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-					"EnactorMultiGpu expand_atomic::Kernel failed", __FILE__, __LINE__))) break;
+                    "EnactorMultiGpu contract_atomic::Kernel failed", __FILE__, __LINE__))) break;
 
 				control->queue_index++;
 				control->steal_index++;
@@ -657,6 +662,21 @@ public:
         int bins_per_gpu = (csr_problem.num_gpus == 1) ?
             PartitionPolicy::Upsweep::BINS :
             1;
+
+        if (DEBUG) {
+            for(int i = 0; i < csr_problem.num_gpus; i++){
+            printf("Iteration %lld new current queue on gpu %d (%lld elements)\n",
+                (long long) control_blocks[i]->iteration,
+                control_blocks[i]->gpu,
+                (long long) control_blocks[i]->queue_length);
+
+                if (DEBUG2) {
+                    DisplayDeviceResults(
+                        csr_problem.graph_slices[i]->frontier_queues.d_keys[0],
+                        control_blocks[i]->queue_length);
+                }
+            }
+        }
 
         //---------------------------------------------------------------------
         // Expand work queues
@@ -761,7 +781,7 @@ public:
 
                 DisplayDeviceResults((SizeT *) control->spine.d_spine, control->spine_elements);
             }
-            printf("%d\n",(slice->frontier_queues.d_keys[2][0]));
+
             // Downsweep
             partition_contract::downsweep::Kernel<PartitionDownsweep>
                     <<<control->partition_grid_size, PartitionDownsweep::THREADS, 0, slice->stream>>>(
@@ -815,7 +835,7 @@ public:
                     (long long) spine[control->spine_elements - 1]);
 
                 if (DEBUG2) {
-                    DisplayDeviceResults(slice->frontier_queues.d_keys[0], spine[control->spine_elements - 1]);
+                    DisplayDeviceResults(slice->frontier_queues.d_keys[2], spine[control->spine_elements - 1]);
                     printf("Source distance vector on gpu %d\n", control->gpu);
                     DisplayDeviceResults(slice->d_labels, slice->nodes);
                 }
@@ -886,6 +906,7 @@ public:
                     work_decomposition.template Init<CopyPolicy::LOG_SCHEDULE_GRANULARITY>(
                         num_elements, control->copy_grid_size);
 
+
                     // Simply copy from our own GPU
                     copy::Kernel<CopyPolicy>
                         <<<control->copy_grid_size, CopyPolicy::THREADS, 0, slice->stream>>>(
@@ -946,6 +967,7 @@ public:
             if(retval2 = testOverflow(csr_problem))
                 retval = retval2;
         }
+
         return retval;
     }
 
@@ -1009,13 +1031,16 @@ public:
         return cudaErrorInvalidDeviceFunction;
     }
 
-
-    long long getQueueSize(int gpu){
+    template<class SizeT>
+    SizeT getQueueSize(int gpu){
+       util::B40CPerror(control_blocks[gpu]->template UpdateQueueLength<SizeT>(),
+         "Update length queue failed", __FILE__, __LINE__);
        return control_blocks[gpu]->queue_length;
     }
 
-    void setQueueSize(int gpu, long long length){
-        control_blocks[gpu]->SetQueueLength(length);
+    template<class SizeT>
+    void setQueueSize(int gpu, SizeT length){
+        control_blocks[gpu]->template SetQueueLength<SizeT>(length);
     }
 
 };

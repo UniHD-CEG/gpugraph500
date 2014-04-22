@@ -19,7 +19,7 @@ class GlobalBFS
 
 protected:
     const STORE& store;
-    typename STORE::vtxtyp* predessor;
+    typename STORE::vtxtyp* predecessor;
 
     MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
     FQ_T*  __restrict__ recv_fq_buff;
@@ -139,7 +139,7 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
         tstart = MPI_Wtime();
         #endif
         static_cast<Derived*>(this)->getBackPredecessor();
-        MPI_Allreduce(MPI_IN_PLACE, predessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
+        MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
         #ifdef INSTRUMENTED
         tend = MPI_Wtime();
         predlistred = tend-tstart;
@@ -303,7 +303,7 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
 template<class Derived,class FQ_T,class STORE>
 typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, STORE>::getPredecessor()
 {
-    return  predessor;
+    return  predecessor;
 }
 
 #endif // GLOBALBFS_HH

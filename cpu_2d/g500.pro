@@ -74,8 +74,17 @@ HEADERS += \
     ../b40c/util/error_utils.cuh \
     ../b40c/util/spine.cuh \
     ../b40c/util/kernel_runtime_stats.cuh \
+    ../b40c/util/cta_work_distribution.cuh \
     ../b40c/util/cta_work_progress.cuh \
     ../b40c/util/operators.cuh \
+    ../b40c/util/basic_utils.cuh \
+    ../b40c/util/device_intrinsics.cuh \
+    ../b40c/util/reduction/serial_reduce.cuh \
+    ../b40c/util/vector_types.cuh \
+    ../b40c/util/io/modified_load.cuh \
+    ../b40c/util/io/modified_store.cuh \
+    ../b40c/util/io/load_tile.cuh \
+    ../b40c/util/scan/cooperative_scan.cuh \
     ../b40c/graph/bfs/csr_problem.cuh \
     ../b40c/graph/bfs/enactor_base.cuh \
     ../b40c/graph/bfs/problem_type.cuh \
@@ -83,13 +92,21 @@ HEADERS += \
     ../b40c/graph/bfs/two_phase/contract_atomic/kernel_policy.cuh \
     ../b40c/graph/bfs/two_phase/expand_atomic/kernel.cuh \
     ../b40c/graph/bfs/two_phase/expand_atomic/kernel_policy.cuh \
+    ../b40c/graph/bfs/two_phase/expand_atomic/cta.cuh \
     ../b40c/graph/bfs/partition_contract/policy.cuh \
     ../b40c/graph/bfs/partition_contract/upsweep/kernel.cuh \
     ../b40c/graph/bfs/partition_contract/upsweep/kernel_policy.cuh \
+    ../b40c/graph/bfs/partition_contract/upsweep/cta.cuh \
+    ../b40c/graph/bfs/partition_contract/upsweep/tile.cuh \
     ../b40c/graph/bfs/partition_contract/downsweep/kernel.cuh \
     ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh \
     ../b40c/graph/bfs/copy/kernel.cuh \
     ../b40c/graph/bfs/copy/kernel_policy.cuh \
+    ../b40c/partition/upsweep/cta.cuh \
+    ../b40c/partition/upsweep/aggregate_counters.cuh \
+    ../b40c/partition/upsweep/composite_counters.cuh \
+    ../b40c/partition/upsweep/tile.cuh \
+    ../b40c/radix_sort/sort_utils.cuh \
     cuda/cuda_bfs.h
 
 # GPU architecture
@@ -127,7 +144,7 @@ unix {
 
  # auto-detect CUDA path
 
- CUDA_DIR = "`which nvcc | sed 's,/bin/nvcc$$$$,,'`"
+ CUDA_DIR = "\"`which nvcc | sed 's,/bin/nvcc$$$$,,'`\""
 
  QMAKE_CCXXFLAGS = $$QMAKE_CXXFLAGS
  QMAKE_CCXXFLAGS +="\"`mpicxx --showme:compile`\""
@@ -141,7 +158,7 @@ unix {
 
  cuda.output = ${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
 
- cuda.commands = nvcc -c -ccbin=icc -Xcompiler $$join(QMAKE_CCXXFLAGS,",") -arch=-gencode=arch=compute_$$CUDA_ARCH,code=\"sm_$$CUDA_ARCH,compute_$$CUDA_ARCH\"  $$NVCCFLAGS $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT}
+ cuda.commands = nvcc -c -ccbin=icc -Xcompiler $$join(QMAKE_CCXXFLAGS,",") -gencode=arch=compute_$$CUDA_ARCH,code=\"sm_$$CUDA_ARCH,compute_$$CUDA_ARCH\"  $$NVCCFLAGS $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT}
  cuda.dependcy_type = TYPE_C
  cuda.depend_command  = nvcc -M -ccbin icc -Xcompiler $$join(QMAKE_CCXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') `mpicxx --showme:compile` $$NVCCFLAGS ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
 

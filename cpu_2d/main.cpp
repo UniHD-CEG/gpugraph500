@@ -114,7 +114,7 @@ int main(int argc, char** argv)
       int64_t num_of_iterations = 64;
 
 #ifdef _CUDA
-      int gpus = 1;
+      int gpus = 0;
       double queue_sizing = 1.20;
 #endif
 
@@ -307,7 +307,7 @@ int main(int argc, char** argv)
 */
 /*
      // print matrix
-     const vtxtyp* rowp = store.getRowPointer();
+     const rowtyp* rowp = store.getRowPointer();
      const vtxtyp* columnp = store.getColumnIndex();
      for(int i = 0; i < store.getLocRowLength(); i++){
           printf("%ld: ",  store.localtoglobalRow(i));
@@ -512,6 +512,10 @@ int main(int argc, char** argv)
         printf ("NBFS: %d\n", iterations);
         printf ("graph_generation: %2.3e\n", make_graph_time);
         printf ("num_mpi_processes: %d\n", size);
+        #ifdef _CUDA
+        printf ("gpus_per_process: %d\n", gpus);
+        printf ("total_gpus: %d\n", gpus*size);
+        #endif
         printf ("construction_time: %2.3e\n", constr_time);
 
         statistic bfs_time_s = getStatistics (bfs_time);
