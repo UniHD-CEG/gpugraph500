@@ -219,7 +219,7 @@ struct KernelPolicy : _ProblemType
 
 			// Shared memory channels for intra-warp communication
 			volatile WarpComm					warp_comm;
-			int 								cta_comm;
+            unsigned int						cta_comm;
 
 			// Storage for scanning local contract-expand ranks
 			SizeT 								coarse_warpscan[2][B40C_WARP_THREADS(CUDA_ARCH)];

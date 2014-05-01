@@ -93,7 +93,7 @@ void Kernel(
 	typename KernelPolicy::ValidFlag		*d_out_flag,				// Outgoing validity flags
 	typename KernelPolicy::SizeT			*d_spine,					// Partitioning spine (histograms)
 	typename KernelPolicy::VisitedMask 		*d_visited_mask,			// Mask for detecting visited status
-	util::CtaWorkProgress 					work_progress,				// Atomic workstealing and queueing counters
+    util::CtaWorkProgress<typename KernelPolicy::SizeT>	work_progress,				// Atomic workstealing and queueing counters
 	typename KernelPolicy::SizeT			max_edge_frontier, 			// Maximum number of elements we can place into the outgoing edge frontier
 	util::KernelRuntimeStats				kernel_stats)				// Per-CTA clock timing statistics (used when KernelPolicy::INSTRUMENT)
 {

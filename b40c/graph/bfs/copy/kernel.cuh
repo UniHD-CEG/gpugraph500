@@ -58,7 +58,7 @@ struct SweepPass
 		typename KernelPolicy::VertexId 		*&d_out,
 		typename KernelPolicy::VertexId 		*&d_predecessor_in,
 		typename KernelPolicy::VertexId			*&d_labels,
-		util::CtaWorkProgress 					&work_progress,
+        util::CtaWorkProgress<typename KernelPolicy::SizeT>		&work_progress,
 		util::CtaWorkDistribution<typename KernelPolicy::SizeT> &work_decomposition)
 	{
 		typedef Cta<KernelPolicy> 					Cta;
@@ -103,7 +103,7 @@ struct SweepPass
 
 template <typename SizeT, typename StealIndex>
 __device__ __forceinline__ SizeT StealWork(
-	util::CtaWorkProgress &work_progress,
+    util::CtaWorkProgress<SizeT> &work_progress,
 	int count,
 	StealIndex steal_index)
 {
@@ -111,7 +111,7 @@ __device__ __forceinline__ SizeT StealWork(
 
 	// Thread zero atomically steals work from the progress counter
 	if (threadIdx.x == 0) {
-		s_offset = work_progress.Steal<SizeT>(count, steal_index);
+        s_offset = work_progress.Steal(count, steal_index);
 	}
 
 	__syncthreads();		// Protect offset
@@ -135,7 +135,7 @@ struct SweepPass <KernelPolicy, true>
 		typename KernelPolicy::VertexId 		*&d_out,
 		typename KernelPolicy::VertexId 		*&d_predecessor_in,
 		typename KernelPolicy::VertexId			*&d_labels,
-		util::CtaWorkProgress 					&work_progress,
+        util::CtaWorkProgress<typename KernelPolicy::SizeT>		&work_progress,
 		util::CtaWorkDistribution<typename KernelPolicy::SizeT> &work_decomposition)
 	{
 		typedef Cta<KernelPolicy> 					Cta;
@@ -188,7 +188,7 @@ void Kernel(
 	typename KernelPolicy::VertexId 		*d_out,
 	typename KernelPolicy::VertexId 		*d_predecessor_in,
 	typename KernelPolicy::VertexId			*d_labels,
-	util::CtaWorkProgress 					work_progress,
+    util::CtaWorkProgress<typename KernelPolicy::SizeT>	work_progress,
 	util::KernelRuntimeStats				kernel_stats)
 {
 #if __B40C_CUDA_ARCH__ >= 200

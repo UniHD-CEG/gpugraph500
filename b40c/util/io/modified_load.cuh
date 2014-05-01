@@ -123,9 +123,11 @@ struct ModifiedLoad
 	 * Singleton store op
 	 */
 	#define B40C_LOAD(base_type, ptx_type, reg_mod, cast_type, modifier)																	\
-		template<> template<> void ModifiedLoad<ld::modifier>::Ld(base_type &val, base_type* ptr) {												\
-			asm volatile ("ld.global."#modifier"."#ptx_type" %0, [%1];" : "="#reg_mod(reinterpret_cast<cast_type&>(val)) : _B40C_ASM_PTR_(ptr));			\
-		}																																		\
+        template<> template<> void ModifiedLoad<ld::modifier>::Ld(base_type &val, base_type* ptr) { \
+            cast_type c;                   \
+            asm volatile ("ld.global."#modifier"."#ptx_type" %0, [%1];" : "="#reg_mod(c) : _B40C_ASM_PTR_(ptr)); \
+            val =  static_cast<cast_type>(c); \
+    }																																		\
 
 	/**
 	 * Vector load ops

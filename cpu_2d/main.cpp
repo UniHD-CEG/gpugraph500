@@ -17,8 +17,8 @@
 #ifdef _OPENCL
     #include "opencl/OCLrunner.hh"
     #include "opencl/opencl_bfs.h"
-#elif _CUDA
-#include "cuda/cuda_bfs.h"
+#elif defined _CUDA
+    #include "cuda/cuda_bfs.h"
 #else
   //  #include "simplecpubfs.h"
     #include "cpubfs_bin.h"
@@ -272,19 +272,20 @@ int main(int argc, char** argv)
       MPI_Barrier(MPI_COMM_WORLD);
       tstart = MPI_Wtime();
 #ifdef _OPENCL
-      typename OpenCL_BFS::MatrixT store(R, C);
-#elif _CUDA
-      typename CUDA_BFS::MatrixT store(R, C);
+      typedef OpenCL_BFS::MatrixT MatrixT;
+#elif defined _CUDA
+      typedef CUDA_BFS::MatrixT MatrixT;
 #else
-      //typename SimpleCPUBFS::MatrixT store(R, C);
-      typename CPUBFS_bin::MatrixT store(R, C);
+      //typedef SimpleCPUBFS::MatrixT MatrixT;
+      typedef CPUBFS_bin::MatrixT MatrixT;
 #endif
+      MatrixT store(R,C);
       store.setupMatrix2(edgelist,number_of_edges);
 
 #ifdef _OPENCL
       OCLRunner oclrun;
       OpenCL_BFS runBfs(store, *oclrun);
-#elif _CUDA
+#elif defined _CUDA
       CUDA_BFS runBfs(store,gpus,queue_sizing);
 #else
       //SimpleCPUBFS runBfs(store);
@@ -482,7 +483,7 @@ int main(int argc, char** argv)
           }else{
               MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
           }
-          this_valid = validate_bfs_result(store, edgelist, number_of_edges,
+          this_valid = validate_bfs_result<MatrixT>(store, edgelist, number_of_edges,
                                            vertices, start, runBfs.getPredecessor(), &num_edges, &level);
           tstop = MPI_Wtime();
           if (rank == 0) {

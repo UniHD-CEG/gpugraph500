@@ -24,10 +24,6 @@
 #ifndef VALIDATE_H
 #define VALIDATE_H
 
-template<class MatrixT>
-int validate_bfs_result(const MatrixT& store, packed_edge *edgelist, int64_t number_of_edges,
-                        const int64_t nglobalverts, const int64_t root, int64_t* const pred, int64_t* const edge_visit_count_ptr, int *level);
-
 static inline size_t size_min(size_t a, size_t b) {
   return a < b ? a : b;
 }
@@ -46,9 +42,13 @@ static inline ptrdiff_t ptrdiff_min(ptrdiff_t a, ptrdiff_t b) {
 
 /* This code assumes signed shifts are arithmetic, which they are on
  * practically all modern systems but is not guaranteed by C. */
-int64_t get_pred_from_pred_entry(int64_t val);
+static inline int64_t get_pred_from_pred_entry(int64_t val){
+    return (val << 16) >> 16;
+ }
 
-uint16_t get_depth_from_pred_entry(int64_t val);
+static inline uint16_t get_depth_from_pred_entry(int64_t val){
+    return (val >> 48) & 0xFFFF;
+ }
 
 //void write_pred_entry_depth(int64_t* loc, uint16_t depth);
 
@@ -95,7 +95,7 @@ static int build_bfs_depth_map(const MatrixT& store, const int64_t nglobalverts,
   size_t root_local;
   store.get_vertex_distribution_for_pred(1, &root, &root_owner, &root_local);
   int root_is_mine = (root_owner == store.getLocalColumnID());
-  if (root_is_mine) assert (root_local < nlocalverts);
+  if (root_is_mine) assert (root_local < static_cast<typename MatrixT::vtxtyp>(nlocalverts));
 
   {
 #pragma omp parallel for

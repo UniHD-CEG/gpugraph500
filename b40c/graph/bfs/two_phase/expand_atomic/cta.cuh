@@ -99,7 +99,7 @@ struct Cta
 
 	// Work progress
 	VertexId 				queue_index;				// Current frontier queue counter index
-	util::CtaWorkProgress	&work_progress;				// Atomic workstealing and queueing counters
+    util::CtaWorkProgress<SizeT>&work_progress;				// Atomic workstealing and queueing counters
 	SizeT					max_edge_frontier;			// Maximum size (in elements) of outgoing edge frontier
 	int 					num_gpus;					// Number of GPUs
 
@@ -225,7 +225,7 @@ struct Cta
 					__syncthreads();
 
 					// Check
-					int owner = cta->smem_storage.state.cta_comm;
+                    unsigned int owner = cta->smem_storage.state.cta_comm;
 					if (owner == KernelPolicy::THREADS) {
 						// No contenders
 						break;
@@ -324,7 +324,7 @@ struct Cta
 							cta->smem_storage.state.warp_comm[warp_id][0] = lane_id;
 						}
 
-						if (lane_id == cta->smem_storage.state.warp_comm[warp_id][0]) {
+                        if (lane_id == cta->smem_storage.state.warp_comm[warp_id][0]) {
 
 							// Got control of the warp
 							cta->smem_storage.state.warp_comm[warp_id][0] = tile->row_offset[LOAD][VEC];									// start
@@ -569,7 +569,7 @@ struct Cta
 		VertexId 				*d_predecessor_out,
 		VertexId 				*d_column_indices,
 		SizeT 					*d_row_offsets,
-		util::CtaWorkProgress	&work_progress,
+        util::CtaWorkProgress<SizeT>&work_progress,
 		SizeT					max_edge_frontier) :
 
 			queue_index(queue_index),
@@ -644,13 +644,13 @@ struct Cta
 			SizeT enqueue_amt = coarse_count + tile.fine_count;
 			SizeT enqueue_offset = work_progress.Enqueue(enqueue_amt, queue_index + 1);
 
-			smem_storage.state.coarse_enqueue_offset = enqueue_offset;
+            smem_storage.state.coarse_enqueue_offset = enqueue_offset;
 			smem_storage.state.fine_enqueue_offset = enqueue_offset + coarse_count;
 
 			// Check for queue overflow due to redundant expansion
 			if (enqueue_offset + enqueue_amt >= max_edge_frontier) {
 				smem_storage.state.overflowed = true;
-				work_progress.SetOverflow<SizeT>();
+                work_progress.SetOverflow();
 			}
 		}
 

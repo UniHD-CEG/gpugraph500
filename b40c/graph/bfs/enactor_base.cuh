@@ -52,6 +52,7 @@ namespace bfs {
  * to the nodes discovered by the previous iteration.  The first iteration 
  * discovers the source node. 
  */
+template <typename CsrProblem>
 class EnactorBase
 {
 protected:	
@@ -60,7 +61,7 @@ protected:
 	util::CudaProperties cuda_props;
 	
 	// Queue size counters and accompanying functionality
-	util::CtaWorkProgressLifetime work_progress;
+    util::CtaWorkProgressLifetime<typename CsrProblem::SizeT> work_progress;
 
 	FrontierType frontier_type;
 

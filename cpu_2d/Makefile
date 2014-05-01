@@ -53,7 +53,6 @@ SOURCES       = main.cpp \
 		simplecpubfs.cpp \
 		validate/onesided.c \
 		validate/onesided_emul.c \
-		validate/validate.cpp \
 		cpubfs_bin.cpp 
 OBJECTS       = ${OBJECTS_DIR}cuda_bfs_cuda.o \
 		main.o \
@@ -64,7 +63,6 @@ OBJECTS       = ${OBJECTS_DIR}cuda_bfs_cuda.o \
 		simplecpubfs.o \
 		onesided.o \
 		onesided_emul.o \
-		validate.o \
 		cpubfs_bin.o
 DIST          = /usr/share/qt5/mkspecs/features/spec_pre.prf \
 		/usr/share/qt5/mkspecs/common/shell-unix.conf \
@@ -171,7 +169,7 @@ compiler_cuda_make_all: ${OBJECTS_DIR}cuda_bfs_cuda.o
 compiler_cuda_clean:
 	-$(DEL_FILE) ${OBJECTS_DIR}cuda_bfs_cuda.o
 ${OBJECTS_DIR}cuda_bfs_cuda.o: cuda/cuda_bfs.cu
-	nvcc -c -ccbin icc -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-g,-fopenmp,"`mpicxx --showme:compile`" -gencode=arch=compute_20,code=\"sm_20,compute_20\"  --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v -m64 -g -G -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
+	nvcc -c -ccbin icc -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-g,-fopenmp,"`mpicxx --showme:compile`" -gencode=arch=compute_20,code=\"sm_20,compute_20\"  --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v -m64 -g -G -allow-expensive-optimizations -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
 
 compiler_wayland-server-header_make_all:
 compiler_wayland-server-header_clean:
@@ -326,16 +324,6 @@ onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h \
 		generator/utils.h \
 		generator/splittable_mrg.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o onesided_emul.o validate/onesided_emul.c
-
-validate.o: validate/validate.cpp distmatrix2d.hh \
-		generator/graph_generator.h \
-		generator/user_settings.h \
-		validate/validate.h \
-		validate/mpi_workarounds.h \
-		generator/utils.h \
-		generator/splittable_mrg.h \
-		validate/onesided.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o validate.o validate/validate.cpp
 
 cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h \
 		globalbfs.hh \

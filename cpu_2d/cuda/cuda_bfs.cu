@@ -7,7 +7,7 @@
 #include <functional>
 
 
-CUDA_BFS::CUDA_BFS(MatrixT &_store,int num_gpus,double _queue_sizing):
+CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing):
     GlobalBFS< CUDA_BFS,vtxtyp,MatrixT>(_store),
     queue_sizing(_queue_sizing),
     vmask(0)
@@ -41,9 +41,9 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int num_gpus,double _queue_sizing):
 
    csr_problem = new Csr;
 #ifdef INSTRUMENTED
-   bfsGPU = new EnactorMultiGpu<true>;
+   bfsGPU = new EnactorMultiGpu<Csr, true>;
 #else
-   bfsGPU = new EnactorMultiGpu<false>;
+   bfsGPU = new EnactorMultiGpu<Csr, false>;
 #endif
 
      b40c::util::B40CPerror(csr_problem->FromHostProblem(
@@ -53,19 +53,21 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int num_gpus,double _queue_sizing):
                 store.getColumnIndex(), //VertexId 	    *h_column_indices,
                 store.getRowPointer(),  //SizeT 		*h_row_offsets,
                 num_gpus,               //int 		num_gpus,
-                0                       //verbosity
+                2                       //verbosity
          ), "FromHostProblem failed!" ,__FILE__, __LINE__);
-
+     /*
      //Test if peer comunication is possible
      bool peerPossible = true;
      for (int gpu = 0; gpu < num_gpus; gpu++) {
+         Csr::GraphSlice* gs = csr_problem->graph_slices[gpu];
          for (int other_gpu = (gpu + 1) % num_gpus;
               other_gpu != gpu;
               other_gpu = (other_gpu + 1) % num_gpus)
          {
+             Csr::GraphSlice* gs_other = csr_problem->graph_slices[other_gpu];
              int canAccessPeer;
              // Set device
-             b40c::util::B40CPerror(cudaDeviceCanAccessPeer(&canAccessPeer,gpu,other_gpu)
+             b40c::util::B40CPerror(cudaDeviceCanAccessPeer(&canAccessPeer,gs->gpu,gs_other->gpu)
                                     ,"Can not activate peer access!" ,__FILE__, __LINE__);
              if( !canAccessPeer  ){
                 peerPossible = false;
@@ -73,31 +75,34 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int num_gpus,double _queue_sizing):
              }
          }
      }
+     */
      // Enable symmetric peer access between gpus
      // from test_bfs.cu
-     if(peerPossible)
+    // if(peerPossible)
      for (int gpu = 0; gpu < num_gpus; gpu++) {
+         Csr::GraphSlice* gs = csr_problem->graph_slices[gpu];
          for (int other_gpu = (gpu + 1) % num_gpus;
               other_gpu != gpu;
               other_gpu = (other_gpu + 1) % num_gpus)
          {
-                 // Set device
-                 if (b40c::util::B40CPerror(cudaSetDevice(gpu),
+             Csr::GraphSlice* gs_other = csr_problem->graph_slices[other_gpu];
+             // Set device
+             if (b40c::util::B40CPerror(cudaSetDevice(gs->gpu),
                      "MultiGpuBfsEnactor cudaSetDevice failed", __FILE__, __LINE__)) exit(1);
 
-                 //printf("Enabling peer access to GPU %d from GPU %d\n", other_gpu, gpu);
+             //printf("Enabling peer access to GPU %d from GPU %d\n", other_gpu, gpu);
 
-                 cudaError_t error = cudaDeviceEnablePeerAccess(other_gpu, 0);
-                 if ((error != cudaSuccess) && (error != cudaErrorPeerAccessAlreadyEnabled)) {
-                     b40c::util::B40CPerror(error,"MultiGpuBfsEnactor cudaDeviceEnablePeerAccess failed", __FILE__, __LINE__);
-                     int canAccessPeer;
-                     b40c::util::B40CPerror(cudaDeviceCanAccessPeer(&canAccessPeer,gpu,other_gpu)
+             cudaError_t error = cudaDeviceEnablePeerAccess(gs_other->gpu, 0);
+             if ((error != cudaSuccess) && (error != cudaErrorPeerAccessAlreadyEnabled)) {
+                 b40c::util::B40CPerror(error,"MultiGpuBfsEnactor cudaDeviceEnablePeerAccess failed", __FILE__, __LINE__);
+                 int canAccessPeer;
+                 b40c::util::B40CPerror(cudaDeviceCanAccessPeer(&canAccessPeer,gs->gpu,gs_other->gpu)
                                             ,"Can not access device!" ,__FILE__, __LINE__);
-                     if(canAccessPeer)
-                         fprintf(stderr, "Can access peer %d from %d!\n",other_gpu,gpu);
-                     else
-                         fprintf(stderr, "Can't access peer %d from %d!\n",other_gpu,gpu);
-                 }
+                 if(canAccessPeer)
+                     fprintf(stderr, "Can access peer %d from %d!\n",gs_other->gpu,gs->gpu);
+                 else
+                     fprintf(stderr, "Can't access peer %d from %d!\n",gs_other->gpu,gs->gpu);
+             }
          }
      }
 
@@ -105,14 +110,14 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int num_gpus,double _queue_sizing):
 
 CUDA_BFS::~CUDA_BFS(){
 
-    if(vmask!=0) cudaFree(vmask);
+    if(vmask!=0) cudaFreeHost(vmask);
 
     delete bfsGPU;
     delete csr_problem;
 
-    cudaFree(redbuff);
-    cudaFree(queuebuff);
-    cudaFree(recv_fq_buff);
+    cudaFreeHost(redbuff);
+    cudaFreeHost(queuebuff);
+    cudaFreeHost(recv_fq_buff);
 
     delete[] predecessor;
 }
@@ -173,7 +178,7 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, long insize)
                      visited_mask_bytes,
                      cudaMemcpyHostToDevice,
                      gs->stream
-               ), "Copy of d_filer_mask from device failed" , __FILE__, __LINE__);
+               ), "Copy of d_filer_mask to device failed" , __FILE__, __LINE__);
     }
 }
 /*
@@ -211,6 +216,7 @@ void CUDA_BFS::getBackPredecessor(){
     bfsGPU->testOverflow(*csr_problem);
     b40c::util::B40CPerror(csr_problem->ExtractResults(predecessor),
                             "Extraction of result failed" , __FILE__, __LINE__);
+    bfsGPU->finalize();
     for(uint64_t i=0; i < store.getLocColLength(); i++){
         if(predecessor[i]>-1 )
             predecessor[i]=store.localtoglobalRow(predecessor[i]);
@@ -225,7 +231,10 @@ void CUDA_BFS::getBackOutqueue()
     //get length of next queues
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
-        queuebuff[i] = bfsGPU->getQueueSize<typename Csr::SizeT>(csr_problem->graph_slices[i]->gpu);
+        Csr::GraphSlice* gs = csr_problem->graph_slices[i];
+        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
+                    "Can't synchronize device." , __FILE__, __LINE__);
+        queuebuff[i] = bfsGPU->getQueueSize(gs->gpu);
     }
 
     qb_length = csr_problem->num_gpus;
@@ -297,7 +306,7 @@ void CUDA_BFS::setBackInqueue()
     //set length of current queue
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
-        bfsGPU->setQueueSize<typename Csr::SizeT>(i,static_cast<typename Csr::SizeT>(queuebuff[i]));
+        bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(queuebuff[i]));
     }
 
 }
@@ -309,7 +318,8 @@ void CUDA_BFS::setStartVertex(vtxtyp start)
 
     if(b40c::util::B40CPerror(csr_problem->Reset(
                 bfsGPU->GetFrontierType(),
-                queue_sizing
+                queue_sizing,
+                2
        ), "Reset error.", __FILE__, __LINE__)!=cudaSuccess){
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -364,13 +374,18 @@ void CUDA_BFS::setStartVertex(vtxtyp start)
                              gs->stream
                 ), "Copy of d_keys[0] from device failed" , __FILE__, __LINE__);
         }
-        bfsGPU->setQueueSize<typename Csr::SizeT>(i,static_cast<typename Csr::SizeT>(queuebuff[i]));
+        bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(queuebuff[i]));
     }
 
 }
 
 void CUDA_BFS::runLocalBFS()
 {
+    //finish outstanding copys
+    for(int i=0; i < csr_problem->num_gpus; i++){
+        cudaStreamSynchronize(csr_problem->graph_slices[i] -> stream);
+    }
+    //enact expansion kernel
     if(b40c::util::B40CPerror(bfsGPU->EnactIteration(
                 *csr_problem,
                 done

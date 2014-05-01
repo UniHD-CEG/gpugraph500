@@ -62,7 +62,7 @@ struct SweepPass
 		typename KernelPolicy::VertexId 		*&d_predecessor,
 		typename KernelPolicy::VertexId			*&d_labels,
 		typename KernelPolicy::VisitedMask 		*&d_visited_mask,
-		util::CtaWorkProgress 					&work_progress,
+        util::CtaWorkProgress<typename KernelPolicy::SizeT> 	&work_progress,
 		util::CtaWorkDistribution<typename KernelPolicy::SizeT> &work_decomposition,
 		typename KernelPolicy::SizeT			&max_vertex_frontier,
 		typename KernelPolicy::SmemStorage		&smem_storage)
@@ -117,7 +117,7 @@ struct SweepPass
  */
 template <typename SizeT, typename StealIndex>
 __device__ __forceinline__ SizeT StealWork(
-	util::CtaWorkProgress &work_progress,
+    util::CtaWorkProgress<SizeT> &work_progress,
 	int count,
 	StealIndex steal_index)
 {
@@ -125,7 +125,7 @@ __device__ __forceinline__ SizeT StealWork(
 
 	// Thread zero atomically steals work from the progress counter
 	if (threadIdx.x == 0) {
-		s_offset = work_progress.Steal<SizeT>(count, steal_index);
+        s_offset = work_progress.Steal(count, steal_index);
 	}
 
 	__syncthreads();		// Protect offset
@@ -150,7 +150,7 @@ struct SweepPass <KernelPolicy, true>
 		typename KernelPolicy::VertexId 		*&d_predecessor,
 		typename KernelPolicy::VertexId			*&d_labels,
 		typename KernelPolicy::VisitedMask 		*&d_visited_mask,
-		util::CtaWorkProgress 					&work_progress,
+        util::CtaWorkProgress<typename KernelPolicy::SizeT>		&work_progress,
 		util::CtaWorkDistribution<typename KernelPolicy::SizeT> &work_decomposition,
 		typename KernelPolicy::SizeT			&max_vertex_frontier,
 		typename KernelPolicy::SmemStorage		&smem_storage)
@@ -219,7 +219,7 @@ struct Dispatch
 		VertexId 					*&d_predecessor,
 		VertexId					*&d_labels,
 		VisitedMask 				*&d_visited_mask,
-		util::CtaWorkProgress 		&work_progress,
+        util::CtaWorkProgress<SizeT> &work_progress,
 		SizeT						&max_edge_frontier,
 		SizeT						&max_vertex_frontier,
 		util::KernelRuntimeStats	&kernel_stats)
@@ -252,7 +252,7 @@ struct Dispatch<KernelPolicy, true>
 		VertexId 					*&d_predecessor,
 		VertexId					*&d_labels,
 		VisitedMask 				*&d_visited_mask,
-		util::CtaWorkProgress 		&work_progress,
+        util::CtaWorkProgress<SizeT>&work_progress,
 		SizeT						&max_edge_frontier,
 		SizeT						&max_vertex_frontier,
 		util::KernelRuntimeStats	&kernel_stats)
@@ -267,10 +267,10 @@ struct Dispatch<KernelPolicy, true>
 
 		if (iteration == 0) {
 
-			if (threadIdx.x < util::CtaWorkProgress::COUNTERS) {
+            if (threadIdx.x < util::CtaWorkProgress<SizeT>::COUNTERS) {
 
 				// Reset all counters
-				work_progress.template Reset<SizeT>();
+                work_progress.Reset();
 
 				// Determine work decomposition for first iteration
 				if (threadIdx.x == 0) {
@@ -406,7 +406,7 @@ void Kernel(
 	typename KernelPolicy::VertexId 		*d_predecessor,				// Incoming predecessor edge frontier (used when KernelPolicy::MARK_PREDECESSORS)
 	typename KernelPolicy::VertexId			*d_labels,					// BFS labels to set
 	typename KernelPolicy::VisitedMask 		*d_visited_mask,			// Mask for detecting visited status
-	util::CtaWorkProgress 					work_progress,				// Atomic workstealing and queueing counters
+    util::CtaWorkProgress<typename KernelPolicy::SizeT>	work_progress,	// Atomic workstealing and queueing counters
 	typename KernelPolicy::SizeT			max_edge_frontier, 			// Maximum number of elements we can place into the outgoing edge frontier
 	typename KernelPolicy::SizeT			max_vertex_frontier, 		// Maximum number of elements we can place into the outgoing vertex frontier
 	util::KernelRuntimeStats				kernel_stats)				// Per-CTA clock timing statistics (used when KernelPolicy::INSTRUMENT)

@@ -12,7 +12,6 @@ SOURCES += main.cpp \
     simplecpubfs.cpp \
     validate/onesided.c \
     validate/onesided_emul.c \
-    validate/validate.cpp \
     cpubfs_bin.cpp
 
 OTHER_FILES += \
@@ -42,7 +41,8 @@ HEADERS += \
     cpubfs_bin.h \
     distmatrix2d.hh \
     globalbfs.hh \
-    cuda/cuda_support.hh
+    cuda/cuda_support.hh \
+    comp_opt.h
 
 opencl{
 QMAKE_CXXFLAGS += -D_OPENCL
@@ -60,8 +60,8 @@ LIBS += -lOpenCL
 }
 
 cuda{
-QMAKE_CXXFLAGS += -D_CUDA
-QMAKE_CFLAGS   += -D_CUDA
+#QMAKE_CXXFLAGS += -D_CUDA
+#QMAKE_CFLAGS   += -D_CUDA
 
 CUDA_SOURCES += \
     cuda/cuda_bfs.cu
@@ -80,14 +80,20 @@ HEADERS += \
     ../b40c/util/basic_utils.cuh \
     ../b40c/util/device_intrinsics.cuh \
     ../b40c/util/reduction/serial_reduce.cuh \
+    ../b40c/util/reduction/tree_reduce.cuh \
     ../b40c/util/vector_types.cuh \
     ../b40c/util/io/modified_load.cuh \
     ../b40c/util/io/modified_store.cuh \
     ../b40c/util/io/load_tile.cuh \
     ../b40c/util/scan/cooperative_scan.cuh \
+    ../b40c/util/scan/soa/cooperative_soa_scan.cuh \
+    ../b40c/util/soa_tuple.cuh \
+    ../b40c/util/srts_soa_details.cuh \
+    ../b40c/graph/bfs/copy/cta.cuh \
     ../b40c/graph/bfs/csr_problem.cuh \
     ../b40c/graph/bfs/enactor_base.cuh \
     ../b40c/graph/bfs/problem_type.cuh \
+    ../b40c/graph/bfs/two_phase/contract_atomic/cta.cuh \
     ../b40c/graph/bfs/two_phase/contract_atomic/kernel.cuh \
     ../b40c/graph/bfs/two_phase/contract_atomic/kernel_policy.cuh \
     ../b40c/graph/bfs/two_phase/expand_atomic/kernel.cuh \

@@ -5,7 +5,7 @@
 typedef int64_t vtxtyp;
 typedef int64_t rowtyp;
 
-class CPUBFS_bin : public GlobalBFS<CPUBFS_bin,uint64_t,DistMatrix2d<vtxtyp,rowtyp,true, 64> >
+class CPUBFS_bin : public GlobalBFS<CPUBFS_bin,uint64_t,DistMatrix2d<vtxtyp,rowtyp,true, 64, false> >
 {
     const int64_t col64;
     const int64_t row64;
@@ -15,7 +15,7 @@ class CPUBFS_bin : public GlobalBFS<CPUBFS_bin,uint64_t,DistMatrix2d<vtxtyp,rowt
     uint64_t*  __restrict__ fq_in;
 
 public:
-    typedef DistMatrix2d<vtxtyp,rowtyp,true, 64> MatrixT;
+    typedef DistMatrix2d<vtxtyp,rowtyp,true, 64, false> MatrixT;
     CPUBFS_bin(MatrixT &_store);
     ~CPUBFS_bin();
 

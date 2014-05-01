@@ -60,7 +60,7 @@ __device__ __forceinline__ void DownsweepPass(
 	typename KernelPolicy::VertexId 			*&d_predecessor_out,
 	typename KernelPolicy::ValidFlag			*&d_flags_in,
 	typename KernelPolicy::SizeT 				*&d_spine,
-	util::CtaWorkProgress 						&work_progress,
+    util::CtaWorkProgress<typename KernelPolicy::SizeT>	&work_progress,
 	SmemStorage									&smem_storage,
 	int											*raking_segment)
 {
@@ -115,7 +115,7 @@ void Kernel(
 	typename KernelPolicy::VertexId 		*d_predecessor_out,			// Outgoing predecessor edge frontier (used when KernelPolicy::MARK_PREDECESSORS)
 	typename KernelPolicy::ValidFlag		*d_flags_in,				// Incoming validity flags
 	typename KernelPolicy::SizeT			*d_spine,					// Partitioning spine (histograms)
-	util::CtaWorkProgress 					work_progress,				// Atomic workstealing and queueing counters
+    util::CtaWorkProgress<typename KernelPolicy::SizeT> work_progress,				// Atomic workstealing and queueing counters
 	typename KernelPolicy::SizeT			max_edge_frontier, 			// Maximum number of elements we can place into the outgoing edge frontier
 	util::KernelRuntimeStats				kernel_stats)				// Per-CTA clock timing statistics (used when KernelPolicy::INSTRUMENT)
 {

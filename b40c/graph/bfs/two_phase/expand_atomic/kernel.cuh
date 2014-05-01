@@ -61,7 +61,7 @@ struct SweepPass
 		typename KernelPolicy::VertexId 		*&d_predecessor,
 		typename KernelPolicy::VertexId			*&d_column_indices,
 		typename KernelPolicy::SizeT			*&d_row_offsets,
-		util::CtaWorkProgress 					&work_progress,
+        util::CtaWorkProgress<typename KernelPolicy::SizeT>		&work_progress,
 		util::CtaWorkDistribution<typename KernelPolicy::SizeT> &work_decomposition,
 		typename KernelPolicy::SizeT			&max_edge_frontier,
 		SmemStorage								&smem_storage)
@@ -115,7 +115,7 @@ struct SweepPass
  */
 template <typename SizeT, typename StealIndex>
 __device__ __forceinline__ SizeT StealWork(
-	util::CtaWorkProgress &work_progress,
+    util::CtaWorkProgress<SizeT> &work_progress,
 	int count,
 	StealIndex steal_index)
 {
@@ -123,7 +123,7 @@ __device__ __forceinline__ SizeT StealWork(
 
 	// Thread zero atomically steals work from the progress counter
 	if (threadIdx.x == 0) {
-		s_offset = work_progress.Steal<SizeT>(count, steal_index);
+        s_offset = work_progress.Steal(count, steal_index);
 	}
 
 	__syncthreads();		// Protect offset
@@ -148,7 +148,7 @@ struct SweepPass <KernelPolicy, true>
 		typename KernelPolicy::VertexId 		*&d_predecessor,
 		typename KernelPolicy::VertexId			*&d_column_indices,
 		typename KernelPolicy::SizeT			*&d_row_offsets,
-		util::CtaWorkProgress 					&work_progress,
+        util::CtaWorkProgress<typename KernelPolicy::SizeT>		&work_progress,
 		util::CtaWorkDistribution<typename KernelPolicy::SizeT> &work_decomposition,
 		typename KernelPolicy::SizeT			&max_edge_frontier,
 		SmemStorage								&smem_storage)
@@ -213,7 +213,7 @@ struct Dispatch
 		VertexId 					*&d_predecessor,
 		VertexId					*&d_column_indices,
 		SizeT						*&d_row_offsets,
-		util::CtaWorkProgress 		&work_progress,
+        util::CtaWorkProgress<SizeT>&work_progress,
 		SizeT						&max_vertex_frontier,
 		SizeT						&max_edge_frontier,
 		util::KernelRuntimeStats	&kernel_stats)
@@ -243,7 +243,7 @@ struct Dispatch<KernelPolicy, true>
 		VertexId 					*&d_predecessor,
 		VertexId					*&d_column_indices,
 		SizeT						*&d_row_offsets,
-		util::CtaWorkProgress 		&work_progress,
+        util::CtaWorkProgress<SizeT> &work_progress,
 		SizeT						&max_vertex_frontier,
 		SizeT						&max_edge_frontier,
 		util::KernelRuntimeStats	&kernel_stats)
@@ -329,7 +329,7 @@ void Kernel(
 	typename KernelPolicy::VertexId 		*d_predecessor,				// Outgoing predecessor edge frontier (used when KernelPolicy::MARK_PREDECESSORS)
 	typename KernelPolicy::VertexId			*d_column_indices,			// CSR column-indices array
 	typename KernelPolicy::SizeT			*d_row_offsets,				// CSR row-offsets array
-	util::CtaWorkProgress 					work_progress,				// Atomic workstealing and queueing counters
+    util::CtaWorkProgress<typename KernelPolicy::SizeT> work_progress,	// Atomic workstealing and queueing counters
 	typename KernelPolicy::SizeT			max_vertex_frontier, 		// Maximum number of elements we can place into the outgoing vertex frontier
 	typename KernelPolicy::SizeT			max_edge_frontier, 			// Maximum number of elements we can place into the outgoing edge frontier
 	util::KernelRuntimeStats				kernel_stats)				// Per-CTA clock timing statistics (used when KernelPolicy::INSTRUMENT)

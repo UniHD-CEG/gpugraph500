@@ -66,6 +66,7 @@ namespace util {
  * the counter for the next.
  *
  */
+template <class SizeT>
 class CtaWorkProgress
 {
 protected :
@@ -78,7 +79,7 @@ protected :
 
 	// Seven pointer-sized counters in global device memory (we may not use
 	// all of them, or may only use 32-bit versions of them)
-	size_t *d_counters;
+    SizeT *d_counters;
 
 	// Host-controlled selector for indexing into d_counters.
 	int progress_selector;
@@ -100,12 +101,11 @@ public:
 	 * Resets all counters.  Must be called by thread-0 through
 	 * thread-(COUNTERS - 1)
 	 */
-	template <typename SizeT>
-	__device__ __forceinline__ void Reset()
+    __device__ __forceinline__ void Reset()
 	{
 		SizeT reset_val = 0;
 		util::io::ModifiedStore<util::io::st::cg>::St(
-			reset_val, ((SizeT *) d_counters) + threadIdx.x);
+            reset_val, d_counters + threadIdx.x);
 	}
 
 	//---------------------------------------------------------------------
@@ -116,11 +116,10 @@ public:
 	 * Steals work from the host-indexed progress counter, returning
 	 * the offset of that work (from zero) and incrementing it by count.
 	 * Typically called by thread-0
-	 */
-	template <typename SizeT>
+     */
 	__device__ __forceinline__ SizeT Steal(int count)
 	{
-		SizeT* d_steal_counters = ((SizeT*) d_counters) + QUEUE_COUNTERS;
+        SizeT* d_steal_counters = d_counters + QUEUE_COUNTERS;
 		return util::AtomicInt<SizeT>::Add(d_steal_counters + progress_selector, count);
 	}
 
@@ -129,22 +128,21 @@ public:
 	 * offset of that work (from zero) and incrementing it by count.
 	 * Typically called by thread-0
 	 */
-	template <typename SizeT, typename IterationT>
+    template <typename IterationT>
 	__device__ __forceinline__ SizeT Steal(int count, IterationT iteration)
 	{
-		SizeT* d_steal_counters = ((SizeT*) d_counters) + QUEUE_COUNTERS;
+        SizeT* d_steal_counters = d_counters + QUEUE_COUNTERS;
 		return util::AtomicInt<SizeT>::Add(d_steal_counters + (iteration & 1), count);
 	}
 
 	/**
 	 * Resets the work progress for the next host-indexed work-stealing
 	 * pass.  Typically called by thread-0 in block-0.
-	 */
-	template <typename SizeT>
+     */
 	__device__ __forceinline__ void PrepResetSteal()
 	{
 		SizeT 	reset_val = 0;
-		SizeT* 	d_steal_counters = ((SizeT*) d_counters) + QUEUE_COUNTERS;
+        SizeT* 	d_steal_counters = d_counters + QUEUE_COUNTERS;
 		util::io::ModifiedStore<util::io::st::cg>::St(
 				reset_val, d_steal_counters + (progress_selector ^ 1));
 	}
@@ -153,11 +151,11 @@ public:
 	 * Resets the work progress for the specified work-stealing iteration.
 	 * Typically called by thread-0 in block-0.
 	 */
-	template <typename SizeT, typename IterationT>
+    template <typename IterationT>
 	__device__ __forceinline__ void PrepResetSteal(IterationT iteration)
 	{
 		SizeT 	reset_val = 0;
-		SizeT* 	d_steal_counters = ((SizeT*) d_counters) + QUEUE_COUNTERS;
+        SizeT* 	d_steal_counters = d_counters + QUEUE_COUNTERS;
 		util::io::ModifiedStore<util::io::st::cg>::St(
 			reset_val, d_steal_counters + (iteration & 1));
 	}
@@ -170,16 +168,16 @@ public:
 	/**
 	 * Get counter for specified iteration
 	 */
-	template <typename SizeT, typename IterationT>
+    template <typename IterationT>
 	__device__ __forceinline__ SizeT* GetQueueCounter(IterationT iteration)
 	{
-		return ((SizeT*) d_counters) + (iteration & 3);
+        return d_counters + (iteration & 0x2);
 	}
 
 	/**
 	 * Load work queue length for specified iteration
 	 */
-	template <typename SizeT, typename IterationT>
+    template <typename IterationT>
 	__device__ __forceinline__ SizeT LoadQueueLength(IterationT iteration)
 	{
 		SizeT queue_length;
@@ -191,7 +189,7 @@ public:
 	/**
 	 * Store work queue length for specified iteration
 	 */
-	template <typename SizeT, typename IterationT>
+    template <typename IterationT>
 	__device__ __forceinline__ void StoreQueueLength(SizeT queue_length, IterationT iteration)
 	{
 		util::io::ModifiedStore<util::io::st::cg>::St(
@@ -203,7 +201,7 @@ public:
 	 * offset of that work (from zero) and incrementing it by count.
 	 * Typically called by thread-0
 	 */
-	template <typename SizeT, typename IterationT>
+    template <typename IterationT>
 	__device__ __forceinline__ SizeT Enqueue(SizeT count, IterationT iteration)
 	{
 		return util::AtomicInt<SizeT>::Add(
@@ -214,10 +212,9 @@ public:
 	/**
 	 * Sets the overflow counter to non-zero
 	 */
-	template <typename SizeT>
-	__device__ __forceinline__ void SetOverflow ()
+    __device__ __forceinline__ void SetOverflow ()
 	{
-		((SizeT*) d_counters)[QUEUE_COUNTERS + STEAL_COUNTERS] = 1;
+        d_counters[QUEUE_COUNTERS + STEAL_COUNTERS] = 1;
 	}
 
 };
@@ -229,7 +226,8 @@ public:
  * We can use this in host enactors, and pass the base CtaWorkProgress
  * as parameters to kernels.
  */
-class CtaWorkProgressLifetime : public CtaWorkProgress
+template <class SizeT>
+class CtaWorkProgressLifetime : public CtaWorkProgress< SizeT >
 {
 protected:
 
@@ -242,7 +240,7 @@ public:
 	 * Constructor
 	 */
 	CtaWorkProgressLifetime() :
-		CtaWorkProgress(),
+        CtaWorkProgress< SizeT >(),
 		gpu(B40C_INVALID_DEVICE) {}
 
 
@@ -264,10 +262,10 @@ public:
 				// Deallocate
 				if (retval = util::B40CPerror(cudaSetDevice(gpu),
 					"CtaWorkProgress cudaSetDevice failed: ", __FILE__, __LINE__)) break;
-				if (retval = util::B40CPerror(cudaFree(d_counters),
+                if (retval = util::B40CPerror(cudaFree(this->d_counters),
 					"CtaWorkProgress cudaFree d_counters failed: ", __FILE__, __LINE__)) break;
 
-				d_counters = NULL;
+                this->d_counters = NULL;
 				gpu = B40C_INVALID_DEVICE;
 
 				// Restore current gpu
@@ -275,7 +273,7 @@ public:
 					"CtaWorkProgress cudaSetDevice failed: ", __FILE__, __LINE__)) break;
 			}
 
-			progress_selector = 0;
+            this->progress_selector = 0;
 
 		} while (0);
 
@@ -302,24 +300,24 @@ public:
 		do {
 
 			// Make sure that our progress counters are allocated
-			if (!d_counters) {
+            if (!this->d_counters) {
 
-				size_t h_counters[COUNTERS];
-				for (int i = 0; i < COUNTERS; i++) {
+                SizeT h_counters[this->COUNTERS];
+                for (int i = 0; i < this->COUNTERS; i++) {
 					h_counters[i] = 0;
 				}
 
 				// Allocate and initialize
 				if (retval = util::B40CPerror(cudaGetDevice(&gpu),
 					"CtaWorkProgress cudaGetDevice failed: ", __FILE__, __LINE__)) break;
-				if (retval = util::B40CPerror(cudaMalloc((void**) &d_counters, sizeof(h_counters)),
+                if (retval = util::B40CPerror(cudaMalloc((void**) &(this->d_counters), sizeof(h_counters)),
 					"CtaWorkProgress cudaMalloc d_counters failed", __FILE__, __LINE__)) break;
-				if (retval = util::B40CPerror(cudaMemcpy(d_counters, h_counters, sizeof(h_counters), cudaMemcpyHostToDevice),
+                if (retval = util::B40CPerror(cudaMemcpy(this->d_counters, h_counters, sizeof(h_counters), cudaMemcpyHostToDevice),
 					"CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__)) break;
 			}
 
 			// Update our progress counter selector to index the next progress counter
-			progress_selector ^= 1;
+            this->progress_selector ^= 1;
 
 		} while (0);
 
@@ -329,8 +327,7 @@ public:
 
 	/**
 	 * Checks if overflow counter is set
-	 */
-	template <typename SizeT>
+     */
 	cudaError_t CheckOverflow(bool &overflow)	// out param
 	{
 		cudaError_t retval = cudaSuccess;
@@ -340,7 +337,7 @@ public:
 
 			if (retval = util::B40CPerror(cudaMemcpy(
 					&counter,
-					((SizeT*) d_counters) + QUEUE_COUNTERS + STEAL_COUNTERS,
+                    this->d_counters + this->QUEUE_COUNTERS + this->STEAL_COUNTERS,
 					1 * sizeof(SizeT),
 					cudaMemcpyDeviceToHost),
 				"CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__)) break;
@@ -356,7 +353,7 @@ public:
 	/**
 	 * Acquire work queue length
 	 */
-	template <typename IterationT, typename SizeT>
+    template <typename IterationT>
 	cudaError_t GetQueueLength(
 		IterationT iteration,
 		SizeT &queue_length)		// out param
@@ -364,11 +361,11 @@ public:
 		cudaError_t retval = cudaSuccess;
 
 		do {
-			int queue_length_idx = iteration & 0x3;
+            int queue_length_idx = iteration & 0x2;
 
 			if (retval = util::B40CPerror(cudaMemcpy(
 					&queue_length,
-					((SizeT*) d_counters) + queue_length_idx,
+                    this->d_counters + queue_length_idx,
 					1 * sizeof(SizeT),
 					cudaMemcpyDeviceToHost),
 				"CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__)) break;
@@ -382,7 +379,7 @@ public:
 	/**
 	 * Set work queue length
 	 */
-	template <typename IterationT, typename SizeT>
+    template <typename IterationT>
 	cudaError_t SetQueueLength(
 		IterationT iteration,
 		SizeT queue_length)
@@ -390,10 +387,10 @@ public:
 		cudaError_t retval = cudaSuccess;
 
 		do {
-			int queue_length_idx = iteration & 0x3;
+            int queue_length_idx = iteration & 0x2;
 
 			if (retval = util::B40CPerror(cudaMemcpy(
-					((SizeT*) d_counters) + queue_length_idx,
+                     this->d_counters + queue_length_idx,
 					&queue_length,
 					1 * sizeof(SizeT),
 					cudaMemcpyHostToDevice),

@@ -432,7 +432,7 @@ struct LoadTile
 		SizeT cta_offset,
 		const SizeT &guarded_elements)
 	{
-		LoadValid<T, Operators<T>::NopTransform, int>(
+        LoadValid<T, Operators<T>::NopTransform, SizeT>(
 			data, d_in, cta_offset, guarded_elements);
 	}
 };

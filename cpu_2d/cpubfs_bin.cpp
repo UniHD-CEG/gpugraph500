@@ -1,16 +1,8 @@
 #include <cstdlib>
 #include <algorithm>
 #include <assert.h>
+#include "comp_opt.h"
 #include "cpubfs_bin.h"
-
-#if defined( __INTEL_COMPILER )
-    #define assume_aligned(typ, var, alg) __assume_aligned(var, alg)
-//#elif defined( __GNUC__ )
-//    #define assume_aligned(typ, var, alg) var = (typ) __builtin_assume_aligned(var, alg)
-#else
-    #define assume_aligned(typ, var, alg)
-#endif
-
 
 CPUBFS_bin::CPUBFS_bin(MatrixT& _store):GlobalBFS<CPUBFS_bin,uint64_t,MatrixT>(_store),col64(_store.getLocColLength()/64),row64(_store.getLocRowLength()/64)
 {

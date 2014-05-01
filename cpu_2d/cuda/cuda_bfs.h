@@ -12,7 +12,7 @@ namespace bfs {
 template < typename _VertexId, typename _SizeT,bool MARK_PREDECESSORS>
 struct CsrProblem;
 
-template <bool INSTRUMENT>
+template <typename Csr, bool INSTRUMENT>
 class EnactorMultiGpu;
 }
 }
@@ -27,8 +27,8 @@ class EnactorMultiGpu;
 using namespace b40c::graph::bfs;
 
 //cuda types have to be chosen, what might be a problem
-typedef long long vtxtyp;
-typedef int       rowtyp;
+typedef long long          vtxtyp;
+typedef unsigned int       rowtyp;
 
 class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
                                     vtxtyp,
@@ -51,14 +51,14 @@ class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
 
     Csr* csr_problem;
 #ifdef INSTRUMENTED
-    EnactorMultiGpu<true>* bfsGPU;
+    EnactorMultiGpu<Csr, true>* bfsGPU;
 #else
-    EnactorMultiGpu<false>* bfsGPU;
+    EnactorMultiGpu<Csr, false>* bfsGPU;
 #endif
 
 public:
     typedef DistMatrix2d<vtxtyp, rowtyp, true, 1, true> MatrixT;
-    CUDA_BFS(MatrixT &_store, int num_gpus, double _queue_sizing);
+    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing);
     ~CUDA_BFS();
 
     void getBackPredecessor();

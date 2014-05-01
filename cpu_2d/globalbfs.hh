@@ -1,4 +1,5 @@
 #include "distmatrix2d.hh"
+#include "comp_opt.h"
 #include <vector>
 #include <cstdio>
 #include <assert.h>

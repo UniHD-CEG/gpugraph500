@@ -405,7 +405,7 @@ struct CsrProblem
 						"CsrProblem cudaMemcpy d_row_offsets failed", __FILE__, __LINE__)) break;
 				}
                 if(verbose >=2 )
-				printf("Pointer start:  %p %p %p %p",graph_slices[0]->d_column_indices, graph_slices[0]->d_column_indices, graph_slices[0]->d_row_offsets, graph_slices[0]->d_row_offsets);
+                printf("Pointer start:  %p %p %p %p\n",graph_slices[0]->d_column_indices, graph_slices[0]->d_column_indices, graph_slices[0]->d_row_offsets, graph_slices[0]->d_row_offsets);
 
 			} else {
 
@@ -579,7 +579,7 @@ struct CsrProblem
 						graph_slices[gpu]->nodes * sizeof(VertexId)),
 					"CsrProblem cudaMalloc d_labels failed", __FILE__, __LINE__)) return retval;
                 if(verbose >=2 )
-                printf("pointer: %p",graph_slices[gpu]->d_labels);
+                printf("pointer: %p\n",graph_slices[gpu]->d_labels);
             }
 
 
@@ -601,7 +601,7 @@ struct CsrProblem
 						visited_mask_bytes),
                         "CsrProblem cudaMalloc d_visited_mask failed", __FILE__, __LINE__)) return retval;
                 if(verbose >=2 )
-                printf("pointer: %p",graph_slices[gpu]->d_visited_mask);
+                printf("pointer: %p\n",graph_slices[gpu]->d_visited_mask);
 
 			}
 
@@ -680,7 +680,7 @@ struct CsrProblem
 						graph_slices[gpu]->frontier_elements[i] * sizeof(VertexId)),
 							"CsrProblem cudaMalloc frontier_queues.d_keys failed", __FILE__, __LINE__)) return retval;
                     if(verbose >=2 )
-                    printf("pointer: %p",graph_slices[gpu]->frontier_queues.d_keys[i]);
+                    printf("pointer: %p\n",graph_slices[gpu]->frontier_queues.d_keys[i]);
 
 				}
 

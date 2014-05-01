@@ -96,7 +96,7 @@ struct Cta
 	// Work progress
 	VertexId 				iteration;					// Current BFS iteration
 	VertexId 				queue_index;				// Current frontier queue counter index
-	util::CtaWorkProgress	&work_progress;				// Atomic workstealing and queueing counters
+    util::CtaWorkProgress<SizeT> &work_progress;				// Atomic workstealing and queueing counters
 	SizeT					max_vertex_frontier;		// Maximum size (in elements) of outgoing vertex frontier
 	int 					num_gpus;					// Number of GPUs
 
@@ -457,7 +457,7 @@ struct Cta
 		VertexId 				*d_predecessor_in,
 		VertexId 				*d_labels,
 		VisitedMask 			*d_visited_mask,
-		util::CtaWorkProgress	&work_progress,
+        util::CtaWorkProgress<SizeT>&work_progress,
 		SizeT					max_vertex_frontier) :
 
 			iteration(iteration),
@@ -550,12 +550,12 @@ struct Cta
 		SizeT new_queue_offset = util::scan::CooperativeTileScan<KernelPolicy::LOAD_VEC_SIZE>::ScanTileWithEnqueue(
 			raking_details,
 			tile.ranks,
-			work_progress.GetQueueCounter<SizeT>(queue_index + 1),
+            work_progress.GetQueueCounter(queue_index + 1),
 			scan_op);
 
 		// Check updated queue offset for overflow due to redundant expansion
 		if (new_queue_offset >= max_vertex_frontier) {
-			work_progress.SetOverflow<SizeT>();
+            work_progress.SetOverflow();
 			util::ThreadExit();
 		}
 
