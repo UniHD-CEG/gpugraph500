@@ -373,7 +373,16 @@ public:
 	EnactorMultiGpu(bool DEBUG = false) :
         EnactorBase<Csr>(MULTI_GPU_FRONTIERS, DEBUG),
 		DEBUG2(false)
-	{}
+    {
+#ifdef _DEBUG
+        this->DEBUG=true;
+        DEBUG2=true;
+#else
+        this->DEBUG=false;
+        DEBUG2=false;
+#endif
+
+    }
 
 
 	/**
@@ -465,8 +474,8 @@ public:
                 max_grid_size, csr_problem.num_gpus)) break;
 
             // Bind bitmask textures
-            int bytes = (csr_problem.nodes + 8 - 1) / 8;
-            cudaChannelFormatDesc bitmask_desc = cudaCreateChannelDesc<char>();
+            int bytes = (csr_problem.nodes + sizeof(VisitedMask) - 1) / sizeof(VisitedMask);
+            cudaChannelFormatDesc bitmask_desc = cudaCreateChannelDesc<VisitedMask>();
             if (retval = util::B40CPerror(cudaBindTexture(
                     0,
                     two_phase::contract_atomic::BitmaskTex<VisitedMask>::ref,
@@ -477,6 +486,7 @@ public:
 
             // Bind row-offsets texture
             cudaChannelFormatDesc row_offsets_desc = cudaCreateChannelDesc<SizeT>();
+
             if (retval = util::B40CPerror(cudaBindTexture(
                     0,
                     two_phase::expand_atomic::RowOffsetTex<SizeT>::ref,
@@ -510,13 +520,7 @@ public:
 
 		cudaError_t retval = cudaSuccess;
 
-#ifdef _DEBUG
-        this->DEBUG=true;
-        DEBUG2=true;
-#else
-        this->DEBUG=false;
-        DEBUG2=false;
-#endif
+
         // Number of partitioning bins per GPU (in case we over-partition)
         int bins_per_gpu = (csr_problem.num_gpus == 1) ?
             PartitionPolicy::Upsweep::BINS :
