@@ -221,7 +221,7 @@ struct Cta
 		aggregate_counters.ResetCounters(dispatch);
 		composite_counters.ResetCompositeCounters(dispatch);
 
-
+        __syncthreads();
 #if 1	// Use deep unrolling for better instruction efficiency
 
 		// Unroll batches of full tiles

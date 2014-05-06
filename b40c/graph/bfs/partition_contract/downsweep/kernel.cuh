@@ -69,7 +69,7 @@ __device__ __forceinline__ void DownsweepPass(
 	typedef typename KernelPolicy::Grid::LanePartial	LanePartial;
 
 	// Determine our threadblock's work range
-	util::CtaWorkLimits<SizeT> work_limits;
+    util::CtaWorkLimits<SizeT> work_limits;
 	smem_storage.work_decomposition.template GetCtaWorkLimits<
 		KernelPolicy::LOG_TILE_ELEMENTS,
 		KernelPolicy::LOG_SCHEDULE_GRANULARITY>(work_limits);
@@ -150,13 +150,13 @@ void Kernel(
 			// Initialize bin_warpscan
 			smem_storage.bin_warpscan[0][threadIdx.x] = 0;
 
-			// Determine our threadblock's work range
-			smem_storage.work_decomposition.template GetCtaWorkLimits<
-				KernelPolicy::LOG_TILE_ELEMENTS,
-				KernelPolicy::LOG_SCHEDULE_GRANULARITY>(smem_storage.work_limits);
-
-			// Determine work decomposition
+            // Determine work decomposition
 			if (threadIdx.x == 0) {
+
+                // Determine our threadblock's work range
+                smem_storage.work_decomposition.template GetCtaWorkLimits<
+                    KernelPolicy::LOG_TILE_ELEMENTS,
+                    KernelPolicy::LOG_SCHEDULE_GRANULARITY>(smem_storage.work_limits);
 
 				// Obtain problem size
 				SizeT num_elements = work_progress.template LoadQueueLength<SizeT>(queue_index);

@@ -163,10 +163,14 @@ struct Tile :
 			Cta *cta,
 			Tile *tile)
 		{
+            //Are all threads of the whole block in use in this function?
+            // TODO: Better implementation of this function
 			if (tile->valid[LOAD][VEC]) {
 
 				int hash = ((typename KernelPolicy::UnsignedBits) tile->keys[LOAD][VEC]) % Cta::SmemStorage::HISTORY_HASH_ELEMENTS;
 				VertexId retrieved = cta->history[hash];
+
+               // __syncthreads();
 
 				if (retrieved == tile->keys[LOAD][VEC]) {
 					// Seen it
@@ -194,7 +198,7 @@ struct Tile :
 
 				int warp_id 		= threadIdx.x >> 5;
 				int hash 			= tile->keys[LOAD][VEC] & (Cta::SmemStorage::WARP_HASH_ELEMENTS - 1);
-
+                // TODO: Pause unnecesary threads
 				cta->vid_hashtable[warp_id][hash] = tile->keys[LOAD][VEC];
 				VertexId retrieved = cta->vid_hashtable[warp_id][hash];
 

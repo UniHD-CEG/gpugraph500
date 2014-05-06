@@ -94,7 +94,7 @@ struct SweepPass
 			d_visited_mask,
 			work_progress,
 			max_vertex_frontier);
-
+        __syncthreads();
 		// Process full tiles
 		while (work_limits.offset < work_limits.guarded_offset) {
 

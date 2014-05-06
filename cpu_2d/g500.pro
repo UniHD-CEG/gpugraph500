@@ -87,8 +87,16 @@ HEADERS += \
     ../b40c/util/io/load_tile.cuh \
     ../b40c/util/scan/cooperative_scan.cuh \
     ../b40c/util/scan/soa/cooperative_soa_scan.cuh \
+    ../b40c/util/reduction/cooperative_reduction.cuh \
+    ../b40c/util/scan/serial_scan.cuh \
+    ../b40c/util/scan/warp_scan.cuh \
     ../b40c/util/soa_tuple.cuh \
     ../b40c/util/srts_soa_details.cuh \
+    ../b40c/util/srts_grid.cuh \
+    ../b40c/util/srts_details.cuh \
+    ../b40c/util/reduction/soa/cooperative_soa_reduction.cuh \
+    ../b40c/util/scan/soa/serial_soa_scan.cuh \
+    ../b40c/util/scan/soa/warp_soa_scan.cuh \
     ../b40c/graph/bfs/copy/cta.cuh \
     ../b40c/graph/bfs/csr_problem.cuh \
     ../b40c/graph/bfs/enactor_base.cuh \
@@ -96,14 +104,17 @@ HEADERS += \
     ../b40c/graph/bfs/two_phase/contract_atomic/cta.cuh \
     ../b40c/graph/bfs/two_phase/contract_atomic/kernel.cuh \
     ../b40c/graph/bfs/two_phase/contract_atomic/kernel_policy.cuh \
+    ../b40c/graph/bfs/two_phase/expand_atomic/cta.cuh \
     ../b40c/graph/bfs/two_phase/expand_atomic/kernel.cuh \
     ../b40c/graph/bfs/two_phase/expand_atomic/kernel_policy.cuh \
-    ../b40c/graph/bfs/two_phase/expand_atomic/cta.cuh \
+    ../b40c/graph/bfs/two_phase/filter_atomic/cta.cuh \
+    ../b40c/graph/bfs/two_phase/filter_atomic/kernel.cuh \
     ../b40c/graph/bfs/partition_contract/policy.cuh \
     ../b40c/graph/bfs/partition_contract/upsweep/kernel.cuh \
     ../b40c/graph/bfs/partition_contract/upsweep/kernel_policy.cuh \
     ../b40c/graph/bfs/partition_contract/upsweep/cta.cuh \
     ../b40c/graph/bfs/partition_contract/upsweep/tile.cuh \
+    ../b40c/graph/bfs/partition_contract/downsweep/cta.cuh \
     ../b40c/graph/bfs/partition_contract/downsweep/kernel.cuh \
     ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh \
     ../b40c/graph/bfs/copy/kernel.cuh \
@@ -113,6 +124,10 @@ HEADERS += \
     ../b40c/partition/upsweep/composite_counters.cuh \
     ../b40c/partition/upsweep/tile.cuh \
     ../b40c/radix_sort/sort_utils.cuh \
+    ../b40c/scan/downsweep/cta.cuh \
+    ../b40c/scan/downsweep/kernel.cuh \
+    ../b40c/scan/upsweep/cta.cuh \
+    ../b40c/scan/upsweep/kernel.cuh \
     cuda/cuda_bfs.h
 
 # GPU architecture

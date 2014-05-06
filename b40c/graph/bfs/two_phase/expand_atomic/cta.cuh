@@ -190,8 +190,8 @@ struct Cta
 
 					// Load neighbor row range from d_row_offsets
 					Vec2SizeT row_range;
-					row_range.x = tex1Dfetch(RowOffsetTex<SizeT>::ref, row_id);
-					row_range.y = tex1Dfetch(RowOffsetTex<SizeT>::ref, row_id + 1);
+                    row_range.x = tex1Dfetch(RowOffsetTex<SizeT>::ref, row_id);
+                    row_range.y = tex1Dfetch(RowOffsetTex<SizeT>::ref, row_id + 1);
 
 					// Node is previously unvisited: compute row offset and length
 					tile->row_offset[LOAD][VEC] = row_range.x;
@@ -243,12 +243,14 @@ struct Cta
 
 						// Unset row length
 						tile->row_length[LOAD][VEC] = 0;
+                    }
 
+                    __syncthreads();
+
+                    if (owner == threadIdx.x) {
 						// Unset my command
 						cta->smem_storage.state.cta_comm = KernelPolicy::THREADS;	// invalid
 					}
-
-					__syncthreads();
 
 					// Read commands
 					SizeT coop_offset 	= cta->smem_storage.state.warp_comm[0][0];
