@@ -117,8 +117,11 @@ HEADERS += \
     ../b40c/graph/bfs/partition_contract/downsweep/cta.cuh \
     ../b40c/graph/bfs/partition_contract/downsweep/kernel.cuh \
     ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh \
+    ../b40c/graph/bfs/partition_contract/downsweep/tile.cuh \
     ../b40c/graph/bfs/copy/kernel.cuh \
     ../b40c/graph/bfs/copy/kernel_policy.cuh \
+    ../b40c/partition/downsweep/cta.cuh \
+    ../b40c/partition/downsweep/tile.cuh \
     ../b40c/partition/upsweep/cta.cuh \
     ../b40c/partition/upsweep/aggregate_counters.cuh \
     ../b40c/partition/upsweep/composite_counters.cuh \

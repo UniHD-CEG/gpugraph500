@@ -235,9 +235,8 @@ void Kernel(
 		work_decomposition);
 
 	// Enqueue copied amount
-	if ((blockIdx.x == 0) && (threadIdx.x == 0)) {
-		SizeT outgoing_length = work_progress.template LoadQueueLength<SizeT>(queue_index + 1);
-		work_progress.template StoreQueueLength<SizeT>(outgoing_length + num_elements, queue_index + 1);
+    if ((blockIdx.x == 0) && (threadIdx.x == 0)) {
+        work_progress.template Enqueue<SizeT>( num_elements, queue_index + 1);
 	}
 
 	if (KernelPolicy::INSTRUMENT && (threadIdx.x == 0)) {

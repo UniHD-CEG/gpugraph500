@@ -101,8 +101,8 @@ void printStat(statistic& input, const char* name, bool harmonic){
         printf ("harmonic_mean_%s: %2.3e\n", name, input.hmean);
         printf ("harmonic_stddev_%s: %2.3e\n", name, input.hstddev);
     }else {
-        printf ("mean_rest_%s: %2.3e\n", name, input.mean);
-        printf ("stddev_rest_%s: %2.3e\n", name, input.stddev);
+        printf ("mean_%s: %2.3e\n", name, input.mean);
+        printf ("stddev_%s: %2.3e\n", name, input.stddev);
     }
 }
 
@@ -112,6 +112,8 @@ int main(int argc, char** argv)
       int64_t scale =  21;
       int64_t edgefactor = 16;
       int64_t num_of_iterations = 64;
+
+      int64_t verbosity = 1;
 
 #ifdef _CUDA
       int gpus = 0;
@@ -189,7 +191,7 @@ int main(int argc, char** argv)
                 if(i+1 < argc){
                     int gpus_tmp = atoi(argv[i+1]);
                     if(gpus_tmp < 1 || gpus_tmp > 8){
-                         printf("Invalid column slice number: %s\n", argv[i+1]);
+                         printf("Invalid gpu number: %s\n", argv[i+1]);
                     } else{
                         gpus = gpus_tmp;
                         i++;
@@ -199,13 +201,30 @@ int main(int argc, char** argv)
                 if(i+1 < argc){
                     double qs_tmp = atof(argv[i+1]);
                     if(qs_tmp < 1.){
-                         printf("Invalid column slice number: %s\n", argv[i+1]);
+                         printf("Invalid queue sizing: %s\n", argv[i+1]);
                     } else{
                         queue_sizing = qs_tmp;
                         i++;
                     }
                  }
 #endif
+            }else if(!strcmp(argv[i], "-v")){
+                /* Verbosity level:
+                 * 0: Suppress all unnessesary output
+                 * 1: Level infos
+                 * 8: problem info
+                 * 16: Output Matrix
+                 * 24: problem pointer
+                 */
+                if(i+1 < argc){
+                    long verbosity_tmp = atol(argv[i+1]);
+                    if(verbosity_tmp < 0){
+                         printf("Invalid verbosity: %s\n", argv[i+1]);
+                    } else{
+                        verbosity = verbosity_tmp;
+                        i++;
+                    }
+                 }
             }
             i++;
         }
@@ -239,6 +258,7 @@ int main(int argc, char** argv)
       MPI_Bcast(&gpus      ,1,MPI_INT,0,MPI_COMM_WORLD);
       MPI_Bcast(&queue_sizing,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
       #endif
+      MPI_Bcast(&verbosity ,1,MPI_INT64_T,0,MPI_COMM_WORLD);
       // Close unnessecary nodes
       if(R*C != size){
           printf("Number of nodes and size of grid do not match.\n");
@@ -286,10 +306,10 @@ int main(int argc, char** argv)
       OCLRunner oclrun;
       OpenCL_BFS runBfs(store, *oclrun);
 #elif defined _CUDA
-      CUDA_BFS runBfs(store,gpus,queue_sizing);
+      CUDA_BFS runBfs(store,gpus,queue_sizing, verbosity);
 #else
-      //SimpleCPUBFS runBfs(store);
-      CPUBFS_bin runBfs(store);
+      //SimpleCPUBFS runBfs(store, verbosity);
+      CPUBFS_bin runBfs(store, verbosity);
 #endif
       tstop = MPI_Wtime();
 
@@ -306,18 +326,18 @@ int main(int argc, char** argv)
           printf("(%ld:%ld) %ld:%ld\n", store.getLocalRowID(), store.getLocalColumnID(),edgelist[i].v0, edgelist[i].v1 );
       }
 */
-/*
-     // print matrix
-     const rowtyp* rowp = store.getRowPointer();
-     const vtxtyp* columnp = store.getColumnIndex();
-     for(int i = 0; i < store.getLocRowLength(); i++){
-          printf("%ld: ",  store.localtoglobalRow(i));
-          for(int j = rowp[i]; j < rowp[i+1]; j++){
-              printf("%ld ",  columnp[j]);
-          }
-          printf("\n");
-     }
-*/
+      if(verbosity >= 16){
+        // print matrix
+        const rowtyp* rowp = store.getRowPointer();
+        const vtxtyp* columnp = store.getColumnIndex();
+        for(int i = 0; i < store.getLocRowLength(); i++){
+            printf("%lX: ",  static_cast<int64_t>(store.localtoglobalRow(i)));
+            for(rowtyp j = rowp[i]; j < rowp[i+1]; j++){
+              printf("%lX ",  static_cast<int64_t>(columnp[j]));
+            }
+            printf("\n");
+        }
+      }
       // init
       // random number generator
       #if __cplusplus > 199711L
@@ -446,14 +466,17 @@ int main(int argc, char** argv)
 
 
           if (rank == 0) {
+              if(verbosity >= 1)
               printf("BFS Iteration %d: Finished in %fs\n", i,(rtstop-rtstart));
               #ifdef INSTRUMENTED
+              if(verbosity >= 1){
               printf("max. local exp.:     %fs(%f%%)\n", gmax_lexp,  100.*gmax_lexp/(rtstop-rtstart));
               printf("max. queue handling: %fs(%f%%)\n", gmax_lqueue,100.*gmax_lqueue/(rtstop-rtstart));
               printf("est. rest:           %fs(%f%%)\n",(rtstop-rtstart)-gmax_lexp-gmax_lqueue, 100.*(1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart)));
               printf("max. row com.:       %fs(%f%%)\n", gmax_rowcom,  100.*gmax_rowcom/(rtstop-rtstart));
               printf("max. col com.:       %fs(%f%%)\n", gmax_colcom,  100.*gmax_colcom/(rtstop-rtstart));
               printf("max. pred. list. red:%fs(%f%%)\n", gmax_predlistred,  100.*gmax_predlistred/(rtstop-rtstart));
+              }
 
               bfs_local.push_back(gmax_lexp);
               bfs_local_share.push_back(gmax_lexp/(rtstop-rtstart));
@@ -484,7 +507,7 @@ int main(int argc, char** argv)
               MPI_Bcast(&start,1,MPI_LONG,0,MPI_COMM_WORLD);
           }
           this_valid = validate_bfs_result<MatrixT>(store, edgelist, number_of_edges,
-                                           vertices, start, runBfs.getPredecessor(), &num_edges, &level);
+                                           vertices, static_cast<int64_t>(start), runBfs.getPredecessor(), &num_edges, &level);
           tstop = MPI_Wtime();
           if (rank == 0) {
               printf("Validation of iteration %d finished in %fs\n", i,(tstop-tstart));
@@ -493,7 +516,7 @@ int main(int argc, char** argv)
 
           //print and save statistic
           if(rank==0){
-              printf("Result: %s %ld Edge(s) processed, %f MTeps\n", (this_valid)? "Valid":"Invalid", num_edges, num_edges/(rtstop-rtstart) * 1E-6 );
+              printf("Result: %s %ld Edge(s) processed, %f MTeps\n", (this_valid)? "Valid":"Invalid", static_cast<long>(num_edges), num_edges/(rtstop-rtstart) * 1E-6 );
               //for statistic
               bfs_time.push_back(rtstop-rtstart);
               nedge.push_back(num_edges);

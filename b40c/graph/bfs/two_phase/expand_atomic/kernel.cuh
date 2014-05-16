@@ -140,8 +140,8 @@ struct SweepPass <KernelPolicy, true>
 {
 	template <typename SmemStorage>
 	static __device__ __forceinline__ void Invoke(
-		typename KernelPolicy::VertexId 		&queue_index,
-		typename KernelPolicy::VertexId 		&steal_index,
+        const typename KernelPolicy::VertexId 	&queue_index,
+        const typename KernelPolicy::VertexId 	&steal_index,
 		int 									&num_gpus,
 		typename KernelPolicy::VertexId 		*&d_vertex_frontier,
 		typename KernelPolicy::VertexId 		*&d_edge_frontier,
@@ -234,8 +234,8 @@ struct Dispatch<KernelPolicy, true>
 	typedef typename KernelPolicy::VisitedMask VisitedMask;
 
 	static __device__ __forceinline__ void Kernel(
-		VertexId 					&queue_index,
-		VertexId 					&steal_index,
+        const VertexId 				&queue_index,
+        const VertexId 				&steal_index,
 		int							&num_gpus,
 		volatile int 				*&d_done,
 		VertexId 					*&d_vertex_frontier,
@@ -320,8 +320,8 @@ template <typename KernelPolicy>
 __launch_bounds__ (KernelPolicy::THREADS, KernelPolicy::CTA_OCCUPANCY)
 __global__
 void Kernel(
-	typename KernelPolicy::VertexId 		queue_index,				// Current frontier queue counter index
-	typename KernelPolicy::VertexId 		steal_index,				// Current workstealing counter index
+    const typename KernelPolicy::VertexId 	queue_index,				// Current frontier queue counter index
+    const typename KernelPolicy::VertexId 	steal_index,				// Current workstealing counter index
 	int										num_gpus,					// Number of GPUs
 	volatile int 							*d_done,					// Flag to set when we detect incoming edge frontier is empty
 	typename KernelPolicy::VertexId 		*d_vertex_frontier,			// Incoming vertex frontier

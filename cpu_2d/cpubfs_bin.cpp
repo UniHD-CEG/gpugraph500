@@ -4,11 +4,11 @@
 #include "comp_opt.h"
 #include "cpubfs_bin.h"
 
-CPUBFS_bin::CPUBFS_bin(MatrixT& _store):GlobalBFS<CPUBFS_bin,uint64_t,MatrixT>(_store),col64(_store.getLocColLength()/64),row64(_store.getLocRowLength()/64)
+CPUBFS_bin::CPUBFS_bin(MatrixT& _store, int64_t verbosity):GlobalBFS<CPUBFS_bin,uint64_t,MatrixT>(_store),col64(_store.getLocColLength()/64),row64(_store.getLocRowLength()/64)
 {
     fq_tp_type = MPI_UINT64_T; //Frontier Queue Transport Type
     //if(posix_memalign((void**)&predecessor,64,sizeof(vtxtyp)*store.getLocColLength()))predecessor=0;// new vtxtyp[store.getLocColLength()];;
-    MPI_Alloc_mem(sizeof(vtxtyp)*store.getLocColLength(), MPI_INFO_NULL, (void*)(void*)&predecessor);
+    MPI_Alloc_mem(sizeof(vtxtyp)*store.getLocColLength(), MPI_INFO_NULL, (void*)&predecessor);
     //allocate recive buffer
     long recv_fq_buff_length_tmp = std::max(store.getLocRowLength(), store.getLocColLength());
     recv_fq_buff_length = recv_fq_buff_length_tmp/64 + ((recv_fq_buff_length_tmp%64 >0)? 1:0);
@@ -18,19 +18,33 @@ CPUBFS_bin::CPUBFS_bin(MatrixT& _store):GlobalBFS<CPUBFS_bin,uint64_t,MatrixT>(_
     //if(posix_memalign((void**)&fq_out,64,sizeof(uint64_t)*col64))fq_out=0; //new uint64_t[col64];
     MPI_Alloc_mem(sizeof(uint64_t)*col64, MPI_INFO_NULL, (void*)&fq_out);
     if(posix_memalign((void**)&fq_in,64,sizeof(uint64_t)*row64)) fq_in =0; //new uint64_t[row64];
+
+    if(predecessor  == 0 ||
+       recv_fq_buff == 0 ||
+       visited      == 0 ||
+       fq_out       == 0 ||
+       fq_in        == 0) {
+        fprintf(cerr,"Unable to allocate memory.\n");
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    }
 }
+
 
 CPUBFS_bin::~CPUBFS_bin()
 {
     //free(predecessor);
     MPI_Free_mem(predecessor);
-
+    predecessor=0;
     //free(recv_fq_buff);
     MPI_Free_mem(recv_fq_buff);
+    recv_fq_buff = 0;
     free(visited);
+    visited = 0;
     //free(fq_out);
     MPI_Free_mem(fq_out);
+    fq_out = 0;
     free(fq_in);
+    fq_in = 0;
 }
 
 

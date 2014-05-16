@@ -735,7 +735,7 @@ public:
 							(long long) spine[control->spine_elements - 1]);
 
 						if (DEBUG2) {
-							DisplayDeviceResults(slice->frontier_queues.d_keys[0], spine[control->spine_elements - 1]);
+                            DisplayDeviceResults(slice->frontier_queues.d_keys[2], spine[control->spine_elements - 1]);
 							printf("Source distance vector on gpu %d\n", control->gpu);
 							DisplayDeviceResults(slice->d_labels, slice->nodes);
 						}

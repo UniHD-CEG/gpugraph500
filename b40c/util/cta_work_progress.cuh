@@ -72,7 +72,7 @@ class CtaWorkProgress
 protected :
 
 	enum {
-		QUEUE_COUNTERS 		= 4,
+        QUEUE_COUNTERS 		= 4,
 		STEAL_COUNTERS 		= 2,
 		OVERFLOW_COUNTERS 	= 1,
 	};
@@ -117,7 +117,7 @@ public:
 	 * the offset of that work (from zero) and incrementing it by count.
 	 * Typically called by thread-0
      */
-	__device__ __forceinline__ SizeT Steal(int count)
+    __device__ __forceinline__ SizeT Steal(SizeT count)
 	{
         SizeT* d_steal_counters = d_counters + QUEUE_COUNTERS;
 		return util::AtomicInt<SizeT>::Add(d_steal_counters + progress_selector, count);
@@ -129,7 +129,7 @@ public:
 	 * Typically called by thread-0
 	 */
     template <typename IterationT>
-	__device__ __forceinline__ SizeT Steal(int count, IterationT iteration)
+    __device__ __forceinline__ SizeT Steal(SizeT count, IterationT iteration)
 	{
         SizeT* d_steal_counters = d_counters + QUEUE_COUNTERS;
 		return util::AtomicInt<SizeT>::Add(d_steal_counters + (iteration & 1), count);
@@ -171,7 +171,7 @@ public:
     template <typename IterationT>
 	__device__ __forceinline__ SizeT* GetQueueCounter(IterationT iteration)
 	{
-        return d_counters + (iteration & 0x2);
+        return d_counters + (iteration & 0x3);
 	}
 
 	/**
@@ -330,23 +330,19 @@ public:
      */
 	cudaError_t CheckOverflow(bool &overflow)	// out param
 	{
-		cudaError_t retval = cudaSuccess;
+        cudaError_t retval;
+        SizeT       counter;
 
-		do {
-			SizeT counter;
+        retval = util::B40CPerror(cudaMemcpy(
+                &counter,
+                this->d_counters + this->QUEUE_COUNTERS + this->STEAL_COUNTERS,
+                1 * sizeof(SizeT),
+                cudaMemcpyDeviceToHost),
+                "CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__);
 
-			if (retval = util::B40CPerror(cudaMemcpy(
-					&counter,
-                    this->d_counters + this->QUEUE_COUNTERS + this->STEAL_COUNTERS,
-					1 * sizeof(SizeT),
-					cudaMemcpyDeviceToHost),
-				"CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__)) break;
+        overflow = counter;
 
-			overflow = counter;
-
-		} while (0);
-
-		return retval;
+        return retval;
 	}
 
 
@@ -361,7 +357,7 @@ public:
 		cudaError_t retval = cudaSuccess;
 
 		do {
-            int queue_length_idx = iteration & 0x2;
+            int queue_length_idx = iteration & 0x3;
 
 			if (retval = util::B40CPerror(cudaMemcpy(
 					&queue_length,
@@ -382,12 +378,12 @@ public:
     template <typename IterationT>
 	cudaError_t SetQueueLength(
 		IterationT iteration,
-		SizeT queue_length)
+        SizeT& queue_length)
 	{
 		cudaError_t retval = cudaSuccess;
 
 		do {
-            int queue_length_idx = iteration & 0x2;
+            int queue_length_idx = iteration & 0x3;
 
 			if (retval = util::B40CPerror(cudaMemcpy(
                      this->d_counters + queue_length_idx,

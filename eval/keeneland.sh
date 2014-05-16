@@ -10,4 +10,4 @@
 
 cd $PBS_O_WORKDIR
 
-mpirun -np ${p} ./../cpu_2d/g500 -s ${scale} -C ${srp} > result/p`printf "%04d" ${p}`_c`printf "%03d" ${srp}`_s`printf "%02d" ${scale}`.log
+mpirun -np ${p} ./../cpu_2d/g500 -s ${scale} -C ${srp} -gpus ${gpus} > result/p`printf "%04d" ${p}`_c`printf "%03d" ${srp}`_s`printf "%02d" ${scale}`_gpus${gpus}.log

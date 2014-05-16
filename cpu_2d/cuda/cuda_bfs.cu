@@ -7,8 +7,9 @@
 #include <functional>
 
 
-CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing):
+CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing, int64_t _verbosity):
     GlobalBFS< CUDA_BFS,vtxtyp,MatrixT>(_store),
+    verbosity(_verbosity),
     queue_sizing(_queue_sizing),
     vmask(0)
 {
@@ -32,12 +33,12 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing):
     recv_fq_buff_length = static_cast<vtxtyp>
             (std::max(store.getLocRowLength(), store.getLocColLength())*_queue_sizing)+num_gpus;
     //recv_fq_buff = new vtxtyp[recv_fq_buff_length];
-    cudaHostAlloc(&recv_fq_buff, recv_fq_buff_length*sizeof(vtxtyp) , NULL );
+    cudaHostAlloc(&recv_fq_buff, recv_fq_buff_length*sizeof(vtxtyp), cudaHostAllocDefault );
     //multipurpose buffer
     qb_length    = 0;
-    cudaHostAlloc(&queuebuff, recv_fq_buff_length*sizeof(vtxtyp) , NULL );
+    cudaHostAlloc(&queuebuff,    recv_fq_buff_length*sizeof(vtxtyp), cudaHostAllocDefault );
     rb_length    = 0;
-    cudaHostAlloc(&redbuff , recv_fq_buff_length*sizeof(vtxtyp) , NULL );
+    cudaHostAlloc(&redbuff ,     recv_fq_buff_length*sizeof(vtxtyp), cudaHostAllocDefault );
 
    csr_problem = new Csr;
 #ifdef INSTRUMENTED
@@ -45,7 +46,12 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing):
 #else
    bfsGPU = new EnactorMultiGpu<Csr, false>;
 #endif
-
+     int cpro_verbosity = 0;
+     if(verbosity >= 24){
+         cpro_verbosity = 2;
+     } else if(verbosity >= 8){
+         cpro_verbosity = 1;
+     }
      b40c::util::B40CPerror(csr_problem->FromHostProblem(
                 false,                  //bool          stream_from_host,
                 store.getLocRowLength(),//SizeT 		nodes,
@@ -53,7 +59,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing):
                 store.getColumnIndex(), //VertexId 	    *h_column_indices,
                 store.getRowPointer(),  //SizeT 		*h_row_offsets,
                 num_gpus,               //int 		num_gpus,
-                2                       //verbosity
+                cpro_verbosity          //verbosity
          ), "FromHostProblem failed!" ,__FILE__, __LINE__);
      /*
      //Test if peer comunication is possible
@@ -170,9 +176,10 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, long insize)
         #pragma omp atomic
         vmask[vtxID>>3] |= 1<< (vtxID&0x7 );
     }
+
     for(int i=0; i < csr_problem->num_gpus; i++){
         typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-        int visited_mask_bytes 	 = ((gs->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
+        int visited_mask_bytes 	 = ((csr_problem->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
         b40c::util::B40CPerror(cudaMemcpyAsync( gs->d_visited_mask,
                      vmask,
                      visited_mask_bytes,
@@ -207,12 +214,7 @@ bool CUDA_BFS::istheresomethingnew()
 
 void CUDA_BFS::getBackPredecessor(){
     //terminate all operations
-    #pragma omp parallel for
-    for(int i=0; i < csr_problem->num_gpus; i++){
-        Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
-                    "Can't synchronize device." , __FILE__, __LINE__);
-    }
+
     bfsGPU->testOverflow(*csr_problem);
     b40c::util::B40CPerror(csr_problem->ExtractResults(predecessor),
                             "Extraction of result failed" , __FILE__, __LINE__);
@@ -316,18 +318,24 @@ void CUDA_BFS::setStartVertex(vtxtyp start)
     done = false;
     vtxtyp lstart = -1;
 
+    int cpro_verbosity = 0;
+    if(verbosity >= 24){
+        cpro_verbosity = 2;
+    } else if(verbosity >= 8){
+        cpro_verbosity = 1;
+    }
     if(b40c::util::B40CPerror(csr_problem->Reset(
                 bfsGPU->GetFrontierType(),
                 queue_sizing,
-                2
+                cpro_verbosity
        ), "Reset error.", __FILE__, __LINE__)!=cudaSuccess){
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     // Alloc and reset visited mask on host
     typename Csr::GraphSlice* gs = csr_problem->graph_slices[0];
-    int visited_mask_bytes 	 = ((gs->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
+    int visited_mask_bytes 	 = ((csr_problem->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
     if(vmask == 0)
-        cudaHostAlloc(&vmask, visited_mask_bytes, NULL);
+        cudaHostAlloc(&vmask, visited_mask_bytes, cudaHostAllocDefault);
     std::fill_n(vmask, visited_mask_bytes, 0);
 
     if(store.isLocalColumn(start)){

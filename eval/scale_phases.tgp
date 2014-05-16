@@ -1,0 +1,19 @@
+unset key
+set xtics rotate by -45
+set ylabel "time in s"	  
+set key outside
+set grid y
+set style fill solid 0.50 border lt -1
+set style histogram rowstacked 
+set style data histograms
+
+set title "Runtime share of several G500 phases\n Scalefactor $SCALE"
+set key autotitle columnhead
+set terminal jpeg size 1024,576
+set output "rs_phases_s$SCALE.jpg"
+plot '$datpath/scale_$SCALE.dat' using 5:xtic(stringcolumn(2) eq "-"?  sprintf("%d Nodes", $1): sprintf("%d Nodes, %d GPU(s)", $1, $2) ), \
+				'' using 9, \
+				'' using 10, \
+				'' using 11, \
+				'' using 4 t "total time" w histeps					
+				

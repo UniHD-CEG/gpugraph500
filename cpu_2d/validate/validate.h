@@ -74,7 +74,7 @@ static int check_value_ranges(const MatrixT& store, const int64_t nglobalverts, 
       for (i = i_start; i < i_end; ++i) {
         int64_t p = get_pred_from_pred_entry(pred[i]);
         if (p < -1 || p >= nglobalverts) {
-          fprintf(stderr, "(%ld:%ld): Validation error: parent of vertex %" PRId64 " is out-of-range value %" PRId64 ".\n", store.getLocalRowID(), store.getLocalColumnID() , store.localtoglobalCol(i), p);
+          fprintf(stderr, "(%ld:%ld): Validation error: parent of vertex %" PRId64 " is out-of-range value %" PRId64 ".\n", store.getLocalRowID(), store.getLocalColumnID() , static_cast<int64_t>(store.localtoglobalCol(i)), static_cast<int64_t>(p));
           any_range_errors = 1;
         }
       }
@@ -95,7 +95,7 @@ static int build_bfs_depth_map(const MatrixT& store, const int64_t nglobalverts,
   size_t root_local;
   store.get_vertex_distribution_for_pred(1, &root, &root_owner, &root_local);
   int root_is_mine = (root_owner == store.getLocalColumnID());
-  if (root_is_mine) assert (root_local < static_cast<typename MatrixT::vtxtyp>(nlocalverts));
+  if (root_is_mine) assert (root_local < static_cast<size_t>(nlocalverts));
 
   {
 #pragma omp parallel for
@@ -184,7 +184,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
   *edge_visit_count_ptr = 0; /* Ensure it is a valid pointer */
   int ranges_ok = check_value_ranges(store,nglobalverts, pred);
   if (root < 0 || root >= nglobalverts) {
-    fprintf(stderr, "(%ld:%ld): Validation error: root vertex %" PRId64 " is invalid.\n", store.getLocalRowID(), store.getLocalColumnID(), root);
+    fprintf(stderr, "(%ld:%ld): Validation error: root vertex %" PRId64 " is invalid.\n", store.getLocalRowID(), store.getLocalColumnID(), static_cast<int64_t>(root));
     ranges_ok = 0;
   }
   if (!ranges_ok) return 0; /* Fail */
@@ -208,7 +208,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
   if (root_is_mine) {
     assert (root_local < static_cast<size_t>(store.getLocColLength()));
     if (get_pred_from_pred_entry(pred[root_local]) != root) {
-      fprintf(stderr, "(%ld:%ld): Validation error: parent of root vertex %" PRId64 " is %" PRId64 " and not itself as it should be as root.\n", store.getLocalRowID(), store.getLocalColumnID(), root, get_pred_from_pred_entry(pred[root_local]));
+      fprintf(stderr, "(%ld:%ld): Validation error: parent of root vertex %" PRId64 " is %" PRId64 " and not itself as it should be as root.\n", store.getLocalRowID(), store.getLocalColumnID(), static_cast<int64_t>(root), get_pred_from_pred_entry(pred[root_local]));
       validation_passed = 0;
     }
   }
@@ -237,7 +237,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
             get_pred_from_pred_entry(pred[i]) != -1 &&
             pred_owner[i - i_start] == store.getLocalColumnID() &&
             pred_local[i - i_start] == (size_t)i) {
-                 fprintf(stderr, "(%ld:%ld): Validation error: parent of non-root vertex %" PRId64 " is itself.\n", store.getLocalRowID(), store.getLocalColumnID(), store.localtoglobalCol(i));
+                 fprintf(stderr, "(%ld:%ld): Validation error: parent of non-root vertex %" PRId64 " is itself.\n", store.getLocalRowID(), store.getLocalColumnID(), static_cast<int64_t>(store.localtoglobalCol(i)));
                  validation_passed = 0;
         }
       }
@@ -298,8 +298,12 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
           // test if level diverenz is max. 1
           if((d0 - d1 > 1 || d1 - d0 > 1) ){
               valid_level = 0;
-              fprintf(stderr,"(%ld:%ld) Edge [%ld(%ld):%ld(%ld)] with wrong levels: %d %d\n",store.getLocalRowID(),
-                      store.getLocalColumnID(),edge.v0,store.globaltolocalRow(edge.v0),edge.v1,store.globaltolocalCol(edge.v1),d0,d1);
+              fprintf(stderr,"(%ld:%ld) Edge [%ld(%ld):%ld(%ld)] with wrong levels: %hd %hd\n",
+                      store.getLocalRowID(),
+                      store.getLocalColumnID(),
+                      edge.v0,static_cast<long>(store.globaltolocalRow(edge.v0)),
+                      edge.v1,static_cast<long>(store.globaltolocalCol(edge.v1)),
+                      d0,d1);
           }
 
           // mark if there is an edge from each vertex to its claimed
@@ -331,7 +335,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
                //execept if there is no predecessor
                if(get_pred_from_pred_entry(pred[i])!= -1 &&
                   get_pred_from_pred_entry(pred[i])!= store.localtoglobalCol(i)){
-                   fprintf(stderr,"predecessor(%ld) of Vertex %ld is invalid!\n", get_pred_from_pred_entry(pred[i]), store.localtoglobalCol(i));
+                   fprintf(stderr,"predecessor(%ld) of Vertex %ld is invalid!\n", get_pred_from_pred_entry(pred[i]), static_cast<long>(store.localtoglobalCol(i)));
                    all_visited = 0;
                 }
            }

@@ -220,10 +220,11 @@ struct CooperativeTileScan
 
 		__syncthreads();
 
+        //if (threadIdx.x < RakingDetails::SCAN_LANES) {
 		// Scan each vector-load, seeded with the resulting partial from its raking grid lane,
 		ScanLane<0, RakingDetails::SCAN_LANES>::Invoke(
 			raking_details, data, scan_op);
-
+        //}
 		// Return last thread's inclusive partial
 		return raking_details.CumulativePartial();
 	}

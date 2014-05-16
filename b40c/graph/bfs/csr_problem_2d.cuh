@@ -224,7 +224,7 @@ struct CsrProblem
 	 * the specified vertex
 	 */
 	template <typename VertexId>
-	int GpuIndex(VertexId vertex)
+    int GpuIndex(VertexId vertex) const
 	{
 		if (graph_slices.size() == 1) {
 
@@ -244,7 +244,7 @@ struct CsrProblem
 	 * for the specified vertex
 	 */
 	template <typename VertexId>
-	VertexId GraphSliceRow(VertexId vertex)
+    VertexId GraphSliceRow(VertexId vertex) const
 	{
 		return vertex / num_gpus;
 	}
@@ -258,67 +258,68 @@ struct CsrProblem
 	{
 		cudaError_t retval = cudaSuccess;
 
-		do {
-			if (graph_slices.size() == 1) {
+        if (graph_slices.size() == 1) {
 
-				// Set device
-				if (util::B40CPerror(cudaSetDevice(graph_slices[0]->gpu),
-					"CsrProblem cudaSetDevice failed", __FILE__, __LINE__)) break;;
+            // Set device
+            if (retval = util::B40CPerror(cudaSetDevice(graph_slices[0]->gpu),
+                "CsrProblem cudaSetDevice failed", __FILE__, __LINE__)) return retval;
 
-				// Special case for only one GPU, which may be set as with
-				// an ordinal other than 0.
-				if (retval = util::B40CPerror(cudaMemcpy(
-						h_label,
-						graph_slices[0]->d_labels,
-						sizeof(VertexId) * graph_slices[0]->nodes,
-						cudaMemcpyDeviceToHost),
-					"CsrProblem cudaMemcpy d_labels failed", __FILE__, __LINE__)) break;
+            // Special case for only one GPU, which may be set as with
+            // an ordinal other than 0.
+            if (retval = util::B40CPerror(cudaMemcpy(
+                    h_label,
+                    graph_slices[0]->d_labels,
+                    sizeof(VertexId) * graph_slices[0]->nodes,
+                    cudaMemcpyDeviceToHost),
+                "CsrProblem cudaMemcpy d_labels failed", __FILE__, __LINE__)) return retval;
 
-			} else {
+        } else {
 
-				VertexId **gpu_labels = new VertexId*[num_gpus];
+            VertexId **gpu_labels = new VertexId*[num_gpus];
 
-				// Copy out
-				for (int gpu = 0; gpu < num_gpus; gpu++) {
+            // Copy out
+            #pragma omp parallel for
+            for (int gpu = 0; gpu < num_gpus; gpu++) {
 
-					// Set device
-					if (util::B40CPerror(cudaSetDevice(graph_slices[gpu]->gpu),
-						"CsrProblem cudaSetDevice failed", __FILE__, __LINE__)) break;;
+                // Set device
+                if (retval = util::B40CPerror(cudaSetDevice(graph_slices[gpu]->gpu),
+                    "CsrProblem cudaSetDevice failed", __FILE__, __LINE__)) continue;
 
-					// Allocate and copy out
-					gpu_labels[gpu] = new VertexId[graph_slices[gpu]->nodes];
+                // Allocate and copy out
+                //gpu_labels[gpu] = new VertexId[graph_slices[gpu]->nodes];
+                 cudaHostAlloc(gpu_labels+gpu, graph_slices[gpu]->nodes*sizeof(VertexId), cudaHostAllocDefault );
 
-					if (retval = util::B40CPerror(cudaMemcpy(
-							gpu_labels[gpu],
-							graph_slices[gpu]->d_labels,
-							sizeof(VertexId) * graph_slices[gpu]->nodes,
-							cudaMemcpyDeviceToHost),
-						"CsrProblem cudaMemcpy d_labels failed", __FILE__, __LINE__)) break;
-				}
-				if (retval) break;
+                if (retval = util::B40CPerror(cudaMemcpy(
+                        gpu_labels[gpu],
+                        graph_slices[gpu]->d_labels,
+                        sizeof(VertexId) * graph_slices[gpu]->nodes,
+                        cudaMemcpyDeviceToHost),
+                    "CsrProblem cudaMemcpy d_labels failed", __FILE__, __LINE__)) continue;
+            }
+            if (retval) return retval;
 
-				// Combine
-				for (VertexId node = 0; node < nodes; node++) {
-					int gpu = GpuIndex(node);
-					VertexId slice_row = GraphSliceRow(node);
-					h_label[node] = gpu_labels[gpu][slice_row];
+            // Combine
+            #pragma omp parallel for schedule(static)
+            for (VertexId node = 0; node < nodes; node++) {
+                int gpu = GpuIndex(node);
+                VertexId slice_row = GraphSliceRow(node);
+                h_label[node] = gpu_labels[gpu][slice_row];
 
-					switch (h_label[node]) {
-					case -1:
-					case -2:
-						break;
-					default:
-						h_label[node] &= ProblemType::VERTEX_ID_MASK;
-					};
-				}
+                switch (h_label[node]) {
+                case -1:
+                case -2:
+                    break;
+                default:
+                    h_label[node] &= ProblemType::VERTEX_ID_MASK;
+                };
+            }
 
-				// Clean up
-				for (int gpu = 0; gpu < num_gpus; gpu++) {
-					if (gpu_labels[gpu]) delete gpu_labels[gpu];
-				}
-				delete gpu_labels;
-			}
-		} while(0);
+            // Clean up
+            for (int gpu = 0; gpu < num_gpus; gpu++) {
+                if (gpu_labels[gpu]) cudaFreeHost( gpu_labels[gpu]);
+            }
+            delete gpu_labels;
+        }
 
 		return retval;
 	}

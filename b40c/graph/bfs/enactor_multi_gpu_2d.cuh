@@ -377,9 +377,6 @@ public:
 #ifdef _DEBUG
         this->DEBUG=true;
         DEBUG2=true;
-#else
-        this->DEBUG=false;
-        DEBUG2=false;
 #endif
 
     }
@@ -470,7 +467,7 @@ public:
             if (retval = util::B40CPerror(cudaSetDevice(csr_problem.graph_slices[i]->gpu),
                 "EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
 
-            if (retval = control_blocks[i]->template Setup<ContractPolicy, ExpandPolicy, PartitionPolicy, CopyPolicy>(
+            if (retval = control_blocks[i]->GpuControlBlock::template Setup<ContractPolicy, ExpandPolicy, PartitionPolicy, CopyPolicy>(
                 max_grid_size, csr_problem.num_gpus)) break;
 
             // Bind bitmask textures
@@ -577,20 +574,19 @@ public:
 					slice->frontier_elements[0],				// max vertex frontier vertices
 					control->expand_kernel_stats);
 
-                if (this->DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-                    "EnactorMultiGpu contract_atomic::Kernel failed", __FILE__, __LINE__))) break;
-
 				control->queue_index++;
 				control->steal_index++;
 
                 if (this->DEBUG){
+                    if (retval = util::B40CPerror(cudaDeviceSynchronize(),
+                        "EnactorMultiGpu contract_atomic::Kernel failed", __FILE__, __LINE__)) break;
+
 					// Get contraction queue length
                     if (retval = control->UpdateQueueLength()) break;
 					printf("Gpu %d contracted queue length: %lld\n", i, (long long) control->queue_length);
 					fflush(stdout);
 				}
-
-			}
+        }
         if (retval){
             cudaError_t retval2 = cudaSuccess;
             if(retval2 = testOverflow(csr_problem))
@@ -702,14 +698,14 @@ public:
                 slice->frontier_elements[1],				// max edge frontier vertices
                 control->expand_kernel_stats);
 
-            if (this->DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
-                "EnactorMultiGpu expand_atomic::Kernel failed", __FILE__, __LINE__))) break;
-
             control->queue_index++;
             control->steal_index++;
             control->iteration++;
 
             if (this->DEBUG) {
+                if (retval = util::B40CPerror(cudaDeviceSynchronize(),
+                    "EnactorMultiGpu expand_atomic::Kernel failed", __FILE__, __LINE__)) break;
+
                 // Get expansion queue length
                 if (retval = control->UpdateQueueLength()) break;
                 printf("Gpu %d expansion queue length: %lld\n", i, (long long) control->queue_length);
@@ -945,10 +941,21 @@ public:
                         "EnactorMultiGpu contract_atomic::Kernel failed ", __FILE__, __LINE__))) break;
 
                 }
+
                 control->steal_index++;
             }
 
             control->queue_index++;
+
+            if (this->DEBUG) {
+                if (retval = control->UpdateQueueLength()) break;
+                printf("Iteration %lld(%d) queue on gpu %d (%lld elements)\n",
+                       static_cast<long long>(control->iteration), i,
+                       control->gpu,
+                       static_cast<long long>(control->queue_length)
+                    );
+                DisplayDeviceResults(slice->frontier_queues.d_keys[0], control->queue_length);
+            }
 
             if (this->DEBUG){
                 // Get contraction queue length

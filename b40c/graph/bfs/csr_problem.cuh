@@ -247,7 +247,7 @@ struct CsrProblem
 	 * for the specified vertex
 	 */
 	template <typename VertexId>
-	VertexId GraphSliceRow(VertexId vertex)
+	VertexId GraphSliceRow(VertexId vertex) const
 	{
 	//	return vertex / num_gpus;
 	//	for two machine nodes

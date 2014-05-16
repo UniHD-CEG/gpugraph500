@@ -38,7 +38,7 @@ class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
     typedef CsrProblem<vtxtyp,
                        rowtyp,
                        true> Csr;
-
+    int64_t verbosity;
     double queue_sizing;
     uint64_t qb_length, rb_length;
     vtxtyp* __restrict__ queuebuff;
@@ -58,7 +58,7 @@ class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
 
 public:
     typedef DistMatrix2d<vtxtyp, rowtyp, true, 1, true> MatrixT;
-    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing);
+    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity);
     ~CUDA_BFS();
 
     void getBackPredecessor();

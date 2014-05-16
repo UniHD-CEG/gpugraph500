@@ -10,12 +10,12 @@
 
 template<class T>
 void PrintValue(T& val){
-    fprintf(stderr,"Unable to print value of type %s.\n", typeid(val).name());
+    fprintf(stderr,"Unable to print value of type %s.\n", typeid(T).name());
 }
 
 template<>
 void PrintValue<uint64_t>(uint64_t& val){
-    printf("%luX",val);
+    printf("%lX",val);
 }
 
 template<>
@@ -34,7 +34,17 @@ void PrintValue<long long>(long long& val){
 }
 
 template<>
+void PrintValue<unsigned long long>(unsigned long long& val){
+    printf("%llX",val);
+}
+
+template<>
 void PrintValue<int>(int& val){
+    printf("%X",val);
+}
+
+template<>
+void PrintValue<unsigned int>(unsigned int& val){
     printf("%X",val);
 }
 
