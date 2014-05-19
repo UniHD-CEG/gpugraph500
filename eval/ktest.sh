@@ -12,4 +12,4 @@
 cd $PBS_O_WORKDIR
 module swap cuda/4.2 cuda/5.5
 
-mpirun -np 4 cuda-memcheck ./../cpu_2d/g500 -s 18 -C 2 -gpus 1 -qs 4
+mpirun -np 4 cuda-memcheck ./../cpu_2d/g500 -s 18 -C 2 -gpus 1 -qs 1

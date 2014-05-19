@@ -1,6 +1,6 @@
 #!/bin/bash
 
-datpath="summery"
+datpath="summary"
 
 rm ${datpath}/*.dat
 logs=`find result -name '*.log' | sort`
@@ -82,13 +82,13 @@ then
 	if [ ! -f "$mproc_out" ];
 	then
 		echo \# G500 runs with ${mpi_proc} mpi processes with ${gpus} gpu\(s\) each `date` > "$mproc_out"
-		echo \"scale\" \"mean TEPS\" \"mean time\" \"mean expansion\" \"mean queue handling\" \"mean rest\" \"mean validation\" \"mean row com.\"  \"mean column com.\" \"pred. list red.\" >> "$mproc_out"
+		echo \"scale\" \"TEPS\" \"time\" \"expansion\" \"queue handling\" \"rest\" \"validation\" \"row com.\"  \"column com.\" \"pred. list red.\" >> "$mproc_out"
 	fi
 
 	if [ ! -f "$scale_out" ];
 	then
 		echo \# G500 runs with scalefactor ${scale} `date` > "$scale_out"
-		echo \"mpi processes\" \"gpus\" \"mean TEPS\" \"mean time\" \"mean expansion\" \"mean queue handling\" \"mean rest\" \"mean validation\" \"mean row com.\"  \"mean column com.\" \"pred. list red.\" >> "$scale_out"
+		echo \"mpi processes\" \"gpus\" \"TEPS\" \"time\" \"expansion\" \"queue handling\" \"rest\" \"validation\" \"row com.\"  \"column com.\" \"pred. list red.\" >> "$scale_out"
 	fi
 
 	echo ${scale} ${mean_teps} ${mean_time} ${mean_exp} ${mean_queue} ${mean_rest} ${mean_validation} ${mean_row_com} ${mean_col_com} ${mean_predlistred} >> "$mproc_out"
