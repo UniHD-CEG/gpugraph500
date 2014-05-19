@@ -23,7 +23,8 @@ protected:
     typename STORE::vtxtyp* predecessor;
 
     MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
-    FQ_T*  __restrict__ recv_fq_buff;
+    //FQ_T*  __restrict__ recv_fq_buff; - conflicts with void* ref
+    FQ_T*  recv_fq_buff;
     long    recv_fq_buff_length;
     // Functions that have to be implemented by the children
     //void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
