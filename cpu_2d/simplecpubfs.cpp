@@ -80,7 +80,7 @@ bool SimpleCPUBFS::istheresomethingnew()
 void SimpleCPUBFS::setIncommingFQ(vtxtyp globalstart, long size, void *startaddr, long &insize_max)
 {
     assert(store.isLocalRow(globalstart));
-    assert(insize_max >= size);
+    assert(insize_max <= size);
     long* buffer = static_cast<long *>(startaddr);
     for(long i=0; i < insize_max; i++){
         fq_in.push_back(buffer[i]);

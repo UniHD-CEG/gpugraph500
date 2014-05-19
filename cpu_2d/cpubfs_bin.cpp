@@ -24,7 +24,7 @@ CPUBFS_bin::CPUBFS_bin(MatrixT& _store, int64_t verbosity):GlobalBFS<CPUBFS_bin,
        visited      == 0 ||
        fq_out       == 0 ||
        fq_in        == 0) {
-        fprintf(cerr,"Unable to allocate memory.\n");
+        fprintf(stderr,"Unable to allocate memory.\n");
         MPI_Abort(MPI_COMM_WORLD, -1);
     }
 }

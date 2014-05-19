@@ -140,6 +140,10 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
         tstart = MPI_Wtime();
         #endif
         static_cast<Derived*>(this)->getBackPredecessor();
+        #ifdef INSTRUMENTED
+        tend = MPI_Wtime();
+        lqueue += tend-tstart;
+        #endif
         MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
         #ifdef INSTRUMENTED
         tend = MPI_Wtime();
