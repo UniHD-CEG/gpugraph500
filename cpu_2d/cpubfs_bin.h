@@ -11,7 +11,7 @@ class CPUBFS_bin : public GlobalBFS<CPUBFS_bin,uint64_t,DistMatrix2d<vtxtyp,rowt
     const int64_t row64;
 
     uint64_t*  __restrict__ visited;
-    uint64_t*  __restrict__ fq_out;
+    uint64_t*  fq_out;
     uint64_t*  __restrict__ fq_in;
 
 public:

@@ -173,7 +173,9 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix(packed_edge 
     //get max vtx
     vtxtyp maxVertex = -1;
 
+    #ifdef OPENMP
     #pragma omp parallel for reduction(max: maxVertex)
+    #endif
     for(vtxtyp i = 0; i < numberOfEdges; i++){
         packed_edge read = input[i];
 
@@ -488,7 +490,9 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix(packed_edge 
 
 
     //sanity check
+    #ifdef _OPENMP
     #pragma omp parallel for
+    #endif
     for(vtxtyp i=0; i< row_length; i++){
         if(row_elem[i]!=row_pointer[i+1]-row_pointer[i]){
             fprintf(stderr,"Number of nz-column mismatch in row %ld on node (%d:%d). Annonced: %ld Recived: %ld\n",
@@ -497,14 +501,18 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix(packed_edge 
     }
 //4.
     //sort edge list
+    #ifdef _OPENMP
     #pragma omp parallel for
+    #endif
     for(vtxtyp i=0; i< row_length; i++){
         std::sort(column_index+row_pointer[i],column_index+row_pointer[i+1]);
     }
 //5.
     // remove duplicates
     // The next section is very bad, because it use too much memory.
+    #ifdef _OPENMP
     #pragma omp parallel for
+    #endif
     for(vtxtyp i=0; i< row_length; i++){
        rowtyp tmp_row_num = row_elem[i];
         //Search for duplicates in every row
@@ -525,7 +533,9 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix(packed_edge 
 
     tmp_column_index = new vtxtyp[tmp_row_pointer[row_length]];
     //Copy unique entries in every row
+    #ifdef _OPENMP
     #pragma omp parallel for
+    #endif
     for(vtxtyp i=0; i< row_length; i++){
        rowtyp next_elem = tmp_row_pointer[i];
        //skip empty row
@@ -564,7 +574,9 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
         //generate other direction to be undirected
         input=(packed_edge *)realloc(input, 2*numberOfEdges*sizeof(packed_edge));
 
+        #ifdef _OPENMP
         #pragma omp parallel for reduction(max: maxVertex)
+        #endif
         for(int64_t i = 0; i < numberOfEdges; i++){
             packed_edge read = input[i];
 
@@ -577,7 +589,9 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
 
         numberOfEdges= 2*numberOfEdges;
     } else {
+        #ifdef _OPENMP
         #pragma omp parallel for reduction(max: maxVertex)
+        #endif
         for(int64_t i = 0; i < numberOfEdges; i++){
             packed_edge read = input[i];
 
@@ -733,7 +747,9 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
     rowtyp* row_elm = new rowtyp[row_length];
          row_pointer = new rowtyp[row_length+1];
 
+    #ifdef _OPENMP
     #pragma omp parallel for
+    #endif
     for(int64_t i=0; i < row_length; i++){
         row_elm[i]=0;
     }

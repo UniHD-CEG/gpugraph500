@@ -16,7 +16,7 @@ CPUBFS_bin::CPUBFS_bin(MatrixT& _store, int64_t verbosity):GlobalBFS<CPUBFS_bin,
     MPI_Alloc_mem(sizeof(uint64_t)*recv_fq_buff_length, MPI_INFO_NULL, (void*)&recv_fq_buff);
     if(posix_memalign((void**)&visited,64,sizeof(uint64_t)*col64))visited=0;//new uint64_t[col64];
     //if(posix_memalign((void**)&fq_out,64,sizeof(uint64_t)*col64))fq_out=0; //new uint64_t[col64];
-    MPI_Alloc_mem(sizeof(uint64_t)*col64, MPI_INFO_NULL, (void*)&fq_out);
+    MPI_Alloc_mem(sizeof(uint64_t)*col64, MPI_INFO_NULL, (uint64_t*)&fq_out);
     if(posix_memalign((void**)&fq_in,64,sizeof(uint64_t)*row64)) fq_in =0; //new uint64_t[row64];
 
     if(predecessor  == 0 ||
@@ -24,8 +24,10 @@ CPUBFS_bin::CPUBFS_bin(MatrixT& _store, int64_t verbosity):GlobalBFS<CPUBFS_bin,
        visited      == 0 ||
        fq_out       == 0 ||
        fq_in        == 0) {
-        fprintf(stderr,"Unable to allocate memory.\n");
-        MPI_Abort(MPI_COMM_WORLD, -1);
+      if(verbosity != 0) 
+         fprintf(stderr,"Unable to allocate memory.\n");
+       MPI_Abort(MPI_COMM_WORLD, -1);
+
     }
 }
 

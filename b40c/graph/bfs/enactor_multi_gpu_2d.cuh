@@ -662,7 +662,7 @@ public:
                 (long long) control_blocks[i]->queue_length);
 
                 if (DEBUG2) {
-                    DisplayDeviceResults(
+                    this->DisplayDeviceResults(
                         csr_problem.graph_slices[i]->frontier_queues.d_keys[0],
                         control_blocks[i]->queue_length);
                 }
@@ -753,7 +753,7 @@ public:
                 printf("Presorted spine on gpu %d (%lld elements)\n",
                     control->gpu,
                     (long long) control->spine_elements);
-                DisplayDeviceResults((SizeT *) control->spine.d_spine, control->spine_elements);
+                this->DisplayDeviceResults((SizeT *) control->spine.d_spine, control->spine_elements);
             }
 
             // Spine
@@ -770,7 +770,7 @@ public:
                     control->gpu,
                     (long long) control->spine_elements);
 
-                DisplayDeviceResults((SizeT *) control->spine.d_spine, control->spine_elements);
+                this->DisplayDeviceResults((SizeT *) control->spine.d_spine, control->spine_elements);
             }
 
             // Downsweep
@@ -826,9 +826,9 @@ public:
                     (long long) spine[control->spine_elements - 1]);
 
                 if (DEBUG2) {
-                    DisplayDeviceResults(slice->frontier_queues.d_keys[2], spine[control->spine_elements - 1]);
+                    this->DisplayDeviceResults(slice->frontier_queues.d_keys[2], spine[control->spine_elements - 1]);
                     printf("Source distance vector on gpu %d\n", control->gpu);
-                    DisplayDeviceResults(slice->d_labels, slice->nodes);
+                    this->DisplayDeviceResults(slice->d_labels, slice->nodes);
                 }
             }
         }
@@ -954,7 +954,7 @@ public:
                        control->gpu,
                        static_cast<long long>(control->queue_length)
                     );
-                DisplayDeviceResults(slice->frontier_queues.d_keys[0], control->queue_length);
+                this->DisplayDeviceResults(slice->frontier_queues.d_keys[0], control->queue_length);
             }
 
             if (this->DEBUG){
