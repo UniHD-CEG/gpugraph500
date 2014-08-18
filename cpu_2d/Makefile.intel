@@ -196,8 +196,8 @@ main.o: main.cpp validate/validate.h \
 		generator/splittable_mrg.h \
 		validate/onesided.h \
 		generator/make_graph.h \
-		opencl/OCLrunner.hh \
-		opencl/opencl_bfs.h \
+		#opencl/OCLrunner.hh \
+		#opencl/opencl_bfs.h \
 		cuda/cuda_bfs.h \
 		cuda/cuda_support.hh \
 		../b40c/util/basic_utils.cuh \

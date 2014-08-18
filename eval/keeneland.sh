@@ -14,4 +14,7 @@ cd $PBS_O_WORKDIR
 #Loads experiment-specific paths
 . ~/env_vars/intel_cuda6.sh
 
-mpirun -np ${p} ./../cpu_2d/g500 -s ${scale} -C ${srp} -gpus ${gpus} > result/p`printf "%04d" ${p}`_c`printf "%03d" ${srp}`_s`printf "%02d" ${scale}`_gpus${gpus}.log
+#mpirun -np ${p} ./../cpu_2d/g500 -s ${scale} -C ${srp} -gpus ${gpus} > result/p`printf "%04d" ${p}`_c`printf "%03d" ${srp}`_s`printf "%02d" ${scale}`_gpus${gpus}.log#Just expose 2 GPUs per node, so that peer-to-peer can be used
+cudavisible="CUDA_VISIBLE_DEVICES=1,2"
+
+mpirun -x $cudavisible -np ${p} ./../cpu_2d/g500 -s ${scale} -C ${srp} -gpus ${gpus} > result/p`printf "%04d" ${p}`_c`printf "%03d" ${srp}`_s`printf "%02d" ${scale}`_gpus${gpus}.log
