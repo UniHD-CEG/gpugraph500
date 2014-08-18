@@ -27,8 +27,8 @@
 struct statistic {
     double min;
     double firstquartile;
-    double median;
     double thirdquartile;
+    double median;
     double max;
 
     double mean;

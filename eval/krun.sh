@@ -11,8 +11,11 @@ then
 fi
 
 gpus=(1)
+#scale factors
 msize=(20 21 22 23 24 25 26)
+#square root of nodes
 snodes=(1  2  3	 4  5  6  7)
+#maximum scale factor
 nmax=( 23 23 25 26 26 26 26)
 
 for msc in ${msize[@]}

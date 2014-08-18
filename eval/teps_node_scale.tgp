@@ -5,7 +5,8 @@ set grid y
 
 set title "Influence of the scale factor to the TEPS rate at different cluser sizes"
 
-set ylabel "TEPS"	
+set ylabel "TEPS"
+set xlabel "Nodes"
 
 set key autotitle columnhead
 set terminal jpeg size 1024,576

@@ -12,6 +12,8 @@ fi
 
 for log in $logs
 do
+echo $log
+
 scale=$(sed -n 's/SCALE: //p' < $log)
 mpi_proc=$(sed -n 's/num_mpi_processes: //p' < $log)
 gpus=$(sed -n 's/gpus_per_process: //p' < $log)
@@ -24,6 +26,8 @@ mean_validation=$(sed -n 's/mean_validation_time: //p' <$log)
 mean_row_com=$(sed -n 's/mean_row_com_time: //p' <$log)
 mean_col_com=$(sed -n 's/mean_column_com_time: //p' <$log)
 mean_predlistred=$(sed -n 's/mean_predecessor_list_reduction_time: //p' <$log)
+construction=$(sed -n 's/construction_time: //p' <$log)
+graph_generation=$(sed -n 's/graph_generation: //p' <$log)
 
 #echo $log $scale $mpi_proc
 
@@ -78,21 +82,30 @@ then
 	then 
 		mean_predlistred="-"
 	fi 
+	if [ -z "$construction" ];
+	then 
+		construction="-"
+	fi 
+	if [ -z "$mean_predlistred" ];
+	then 
+		mean_predlistred="-"
+	fi 
+
 
 	if [ ! -f "$mproc_out" ];
 	then
 		echo \# G500 runs with ${mpi_proc} mpi processes with ${gpus} gpu\(s\) each `date` > "$mproc_out"
-		echo \"scale\" \"TEPS\" \"time\" \"expansion\" \"queue handling\" \"rest\" \"validation\" \"row com.\"  \"column com.\" \"pred. list red.\" >> "$mproc_out"
+		echo \"scale\" \"TEPS\" \"time\" \"expansion\" \"queue handling\" \"rest\" \"validation\" \"row com.\"  \"column com.\" \"pred. list red.\" \"construction\" \"graph_generation\" >> "$mproc_out"
 	fi
 
 	if [ ! -f "$scale_out" ];
 	then
 		echo \# G500 runs with scalefactor ${scale} `date` > "$scale_out"
-		echo \"mpi processes\" \"gpus\" \"TEPS\" \"time\" \"expansion\" \"queue handling\" \"rest\" \"validation\" \"row com.\"  \"column com.\" \"pred. list red.\" >> "$scale_out"
+		echo \"mpi processes\" \"gpus\" \"TEPS\" \"time\" \"expansion\" \"queue handling\" \"rest\" \"validation\" \"row com.\"  \"column com.\" \"pred. list red.\" \"construction\" \"graph_generation\" >> "$scale_out"
 	fi
 
-	echo ${scale} ${mean_teps} ${mean_time} ${mean_exp} ${mean_queue} ${mean_rest} ${mean_validation} ${mean_row_com} ${mean_col_com} ${mean_predlistred} >> "$mproc_out"
-	echo ${mpi_proc} ${gpus} ${mean_teps} ${mean_time} ${mean_exp} ${mean_queue} ${mean_rest} ${mean_validation} ${mean_row_com} ${mean_col_com} ${mean_predlistred} >> "$scale_out"
+	echo ${scale} ${mean_teps} ${mean_time} ${mean_exp} ${mean_queue} ${mean_rest} ${mean_validation} ${mean_row_com} ${mean_col_com} ${mean_predlistred} ${construction} ${graph_generation} >> "$mproc_out"
+	echo ${mpi_proc} ${gpus} ${mean_teps} ${mean_time} ${mean_exp} ${mean_queue} ${mean_rest} ${mean_validation} ${mean_row_com} ${mean_col_com} ${mean_predlistred} ${construction} ${graph_generation} >> "$scale_out"
 
 else
 	echo No valid entrie in file $log.

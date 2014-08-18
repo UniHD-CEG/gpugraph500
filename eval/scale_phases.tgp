@@ -11,9 +11,19 @@ set title "Runtime share of several G500 phases\n Scalefactor $SCALE"
 set key autotitle columnhead
 set terminal jpeg size 1024,576
 set output "rs_phases_s$SCALE.jpg"
+
+mpi=0
+gpu=0
+exp=0
+total=0
+stats '$datpath/scale_$SCALE.dat' u (mpi=$1):(stringcolumn(2) eq '-' ? gpu=0 : gpu=$2)  every ::0::0 noout
+stats '$datpath/scale_$SCALE.dat' u (total=$4):(exp=$5) every ::0::0 noout
+
 plot '$datpath/scale_$SCALE.dat' using 5:xtic(stringcolumn(2) eq "-"?  sprintf("%d Nodes", $1): sprintf("%d Nodes, %d GPU(s)", $1, $2) ), \
 				'' using 9, \
 				'' using 10, \
 				'' using 11, \
-				'' using 4 t "total time" w histeps					
+				'' using 4 t "total time" w histeps lw 3, \
+				'' using (stringcolumn(2) eq '-' ? (mpi*exp)/$1 : (gpu*mpi*exp)/($1*$2) ) t "expansion - perfect scaling" w lp lw 3,\
+				'' using (stringcolumn(2) eq '-' ? (mpi*total)/$1 : (gpu*mpi*total)/($1*$2) ) t "total time - perfect scaling" w lp lw 3					
 				

@@ -1,6 +1,7 @@
 #include "cuda_bfs.h"
 
 #include "b40c/util/error_utils.cuh"
+#include <thrust/sort.h>
 
 #include <cstdlib>
 #include <algorithm>
@@ -234,17 +235,23 @@ void CUDA_BFS::getBackOutqueue()
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
         Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
-                    "Can't synchronize device." , __FILE__, __LINE__);
         queuebuff[i] = bfsGPU->getQueueSize(gs->gpu);
+    }
+    //sort values on the gpu
+    for(int i=0; i < csr_problem->num_gpus; i++){
+        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
+        b40c::util::B40CPerror(cudaSetDevice(gs->gpu) );
+        thrust::device_ptr<typename MatrixT::vtxtyp> multigpu(gs->frontier_queues.d_keys[0]);
+        thrust::sort(multigpu,multigpu+queuebuff[i]);
     }
 
     qb_length = csr_problem->num_gpus;
     typename MatrixT::vtxtyp *qb_nxt  = queuebuff + csr_problem->num_gpus;
     // copy next queue to host
     for(int i=0; i < csr_problem->num_gpus; i++){
-        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-
+        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];        
+        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
+                    "Can't synchronize device." , __FILE__, __LINE__);
         b40c::util::B40CPerror(cudaMemcpyAsync( qb_nxt,
                          gs->frontier_queues.d_keys[0],
                          queuebuff[i]*sizeof(typename Csr::VertexId),
@@ -254,8 +261,8 @@ void CUDA_BFS::getBackOutqueue()
         qb_nxt += queuebuff[i];
         qb_length += queuebuff[i];
     }
-    //
-    #pragma omp parallel for
+
+    //#pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
         Csr::GraphSlice* gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
@@ -263,18 +270,6 @@ void CUDA_BFS::getBackOutqueue()
     }
 
     // Queue preprocessing
-    // Sorting
-    #pragma omp parallel for
-    for(int i=0; i < csr_problem->num_gpus; i++){
-        typename MatrixT::vtxtyp *qb_nxt  = queuebuff + csr_problem->num_gpus;
-        const int64_t end   = queuebuff[i];
-
-        for(int j=0; j < i; j++){
-            qb_nxt += queuebuff[j];
-        }
-
-        std::sort(qb_nxt, qb_nxt+end);
-    }
     //Uniqueness
     typename MatrixT::vtxtyp *qb_nxt_in  = queuebuff + csr_problem->num_gpus;
     typename MatrixT::vtxtyp *qb_nxt_out = redbuff   + csr_problem->num_gpus;
