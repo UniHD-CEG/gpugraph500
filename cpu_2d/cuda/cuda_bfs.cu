@@ -2,6 +2,7 @@
 
 #include "b40c/util/error_utils.cuh"
 #include <thrust/sort.h>
+#include <thrust/device_vector.h>
 
 #include <cstdlib>
 #include <algorithm>

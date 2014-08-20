@@ -171,7 +171,7 @@ unix {
  CUDA_DIR = "\"`which nvcc | sed 's,/bin/nvcc$$$$,,'`\""
 
  QMAKE_CCXXFLAGS = $$QMAKE_CXXFLAGS
- QMAKE_CCXXFLAGS +="\"`mpicxx --showme:compile`\""
+ QMAKE_CCXXFLAGS +="\"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-L[[:alnum:]\/,\.-\_]* ,,g' -e 's,-l[[:alnum:]]*,,g' -e 's,-Wl[[:alnum:]\/,\.\_-]* ,,g'`\""
  INCLUDEPATH += $$CUDA_DIR/include ..
 
  QMAKE_LIBDIR += $$CUDA_DIR/lib64
@@ -184,7 +184,7 @@ unix {
 
  cuda.commands = nvcc -c -ccbin=icc -Xcompiler $$join(QMAKE_CCXXFLAGS,",") -gencode=arch=compute_$$CUDA_ARCH,code=\"sm_$$CUDA_ARCH,compute_$$CUDA_ARCH\"  $$NVCCFLAGS $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT}
  cuda.dependcy_type = TYPE_C
- cuda.depend_command  = nvcc -M -ccbin icc -Xcompiler $$join(QMAKE_CCXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') `mpicxx --showme:compile` $$NVCCFLAGS ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
+ cuda.depend_command  = nvcc -M -ccbin icc -Xcompiler $$join(QMAKE_CCXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') `mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-L[[:alnum:]\/,\.\_-]* ,,g' -e 's,-l[[:alnum:]]*,,g' -e 's,-Wl[[:alnum:]\/,\.\_-]* ,,g'`,-gcc,-no-icc $$NVCCFLAGS ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
 
 }
 

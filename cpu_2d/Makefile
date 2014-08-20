@@ -169,7 +169,7 @@ compiler_cuda_make_all: ${OBJECTS_DIR}cuda_bfs_cuda.o
 compiler_cuda_clean:
 	-$(DEL_FILE) ${OBJECTS_DIR}cuda_bfs_cuda.o
 ${OBJECTS_DIR}cuda_bfs_cuda.o: cuda/cuda_bfs.cu
-	nvcc -c -ccbin icc -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-O3,-fopenmp,"`mpicxx --showme:compile`" -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
+	nvcc -c -ccbin icc -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-O3,-fopenmp,"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-L[[:alnum:]\/,\.\_-]* ,,g' -e 's,-l[[:alnum:]]*,,g' -e 's,-Wl[[:alnum:]\/,\.\_-]* ,,g'`",-gcc,-no-icc -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
 
 compiler_wayland-server-header_make_all:
 compiler_wayland-server-header_clean:
