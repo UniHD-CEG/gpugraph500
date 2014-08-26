@@ -14,4 +14,4 @@ cd $PBS_O_WORKDIR
 #Loads experiment-specific paths
 . ~/env_vars/intel_cuda6.sh
 
-mpirun -np 4 cuda-memcheck ./../cpu_2d/g500 -s 18 -C 2 -gpus 1 -qs 1
+mpiexec -np 4 ./../cpu_2d/g500 -s 18 -C 2 -gpus 1 -qs 1
