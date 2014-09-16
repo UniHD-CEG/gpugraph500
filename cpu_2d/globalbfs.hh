@@ -10,7 +10,10 @@
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template<class Derived,class FQ_T, class STORE >
+template<class Derived,
+         class FQ_T,  // Queue Type
+         class MType, // Bitmap mask
+         class STORE > //Storage of Matrix
 class GlobalBFS
 {
     MPI_Comm row_comm, col_comm;
@@ -18,14 +21,23 @@ class GlobalBFS
     // sending node column slice, startvtx, size
     std::vector<typename STORE::fold_prop> fold_fq_props;
 
+    void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
+                                MType *&owenmap, MType *&tmpmap);
+
 protected:
     const STORE& store;
     typename STORE::vtxtyp* predecessor;
 
     MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
+    MPI_Datatype bm_type;    // Bitmap Type
     //FQ_T*  __restrict__ recv_fq_buff; - conflicts with void* ref
     FQ_T*  recv_fq_buff;
+
     long    recv_fq_buff_length;
+
+    MType* owenmask;
+    MType* tmpmask;
+    int64_t mask_size;
     // Functions that have to be implemented by the children
     //void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
     //void getOutgoingFQ(FQ_T* &startaddr, vtxtype& outsize)=0;
@@ -40,8 +52,11 @@ protected:
     void getBackOutqueue();
     void setBackInqueue();
 
+    void generatOwenMask();
+
 public:
     GlobalBFS(STORE& _store);
+    ~GlobalBFS();
 
     #ifdef INSTRUMENTED
     void runBFS(typename STORE::vtxtyp startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred);
@@ -53,18 +68,100 @@ public:
     typename STORE::vtxtyp* getPredecessor();
 };
 
+/*
+ * Bitmap compression on predecessor reduction
+ *
+ */
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp, MType *&owenmap, MType *&tmpmap)
+{
+    MPI_Status    status;
+    const int outsizebm = mask_size;
+    // root 0
+    int rounds = 0;
+    while((1 << rounds) < store.getNumRowSl() ){
+        //comute recv addr
+        int recv_addr = (store.getLocalRowID() + store.getNumRowSl() - (1 << rounds)) % store.getNumRowSl();
+        //compute send addr
+        int sender_addr = (store.getLocalRowID() +  (1 << rounds)) % store.getNumRowSl();
 
-template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::getBackPredecessor(){}
+        if((store.getLocalRowID() >> rounds)%2 == 1){
+            MPI_Sendrecv(owenmap, outsizebm, bm_type, recv_addr  , rounds<<1,
+                         tmpmap,  outsizebm, bm_type, sender_addr, rounds<<1,
+                         col_comm, &status );
+            for(int i = 0; i < outsizebm; i++){
+                tmpmap[i] = tmpmap[i] & ~ owenmap[i];
+            }
+            int p= 0;
+            for(int i = 0; i < outsizebm; i++){
+                MType tmpm = tmpmap[i];
+                while( tmpm != 0){
+                     int last = __builtin_ctz(tmpm);
+                     tmp[p] = owen[i*8*sizeof(MType)+last];
+                     p++;
+                     tmpm ^= (1 << last);
+                }
+            }
 
-template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::getBackOutqueue(){}
+            //send fq
+            MPI_Ssend(tmp, p ,fq_tp_type,recv_addr,(rounds<<1)+1,col_comm);
+            break;
+        } else if ( store.getLocalRowID() + (1 << rounds) < store.getNumRowSl() ){
+            MPI_Sendrecv(owenmap, outsizebm, bm_type, sender_addr, rounds<<1,
+                         tmpmap,  outsizebm, bm_type, recv_addr  , rounds<<1,
+                         col_comm, &status );
+            for(int i = 0; i < outsizebm; i++){
+                tmpmap[i]  = tmpmap[i]  & ~owenmap[i];
+                owenmap[i] = owenmap[i] | tmpmap[i];
+            }
+            //recv fq
+            MPI_Recv(tmp, recv_fq_buff_length, fq_tp_type,sender_addr,(rounds<<1)+1, col_comm, &status);
+            int p= 0;
+            for(int i = 0; i < outsizebm; i++){
+                MType tmpm = tmpmap[i];
+                while( tmpm != 0){
+                     int last = __builtin_ctz(tmpm);
+                     owen[i*8*sizeof(MType)+last]=tmp[p];
+                     p++;
+                     tmpm ^= (1 << last);
+                }
+            }
+        }
+        rounds++;
+    }
 
-template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::setBackInqueue(){}
+    //distribute solution
+    MPI_Bcast(owen,store.getLocColLength(),fq_tp_type,0,col_comm);
+}
 
-template<class Derived,class FQ_T,class STORE>
-GlobalBFS<Derived,FQ_T,STORE>::GlobalBFS(STORE &_store): store(_store)
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::getBackPredecessor(){}
+
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::getBackOutqueue(){}
+
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::setBackInqueue(){}
+
+/*
+ * Generates a map of the vertex with predecessor
+ */
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::generatOwenMask()
+{
+    #pragma omp parallel for
+    for(long i=0; i < mask_size ; i++){
+        MType tmp = 0;
+        for(long j=0; j < 8*sizeof(MType); j++){
+            if( predecessor[ i*8*sizeof(MType) + j] != -1 )
+                tmp |= 1 << j;
+        }
+        owenmask[i] = tmp;
+    }
+}
+
+template<class Derived,class FQ_T,class MType,class STORE>
+GlobalBFS<Derived,FQ_T,MType,STORE>::GlobalBFS(STORE &_store): store(_store)
 {
      // Split communicator into row and column communicator
      // Split by row, rank by column
@@ -74,6 +171,14 @@ GlobalBFS<Derived,FQ_T,STORE>::GlobalBFS(STORE &_store): store(_store)
 
      fold_fq_props = store.getFoldProperties();
 
+     mask_size = mask_size+((store.getLocColLength()%(8*sizeof(MType))>0)? 1 : 0);
+     owenmask = new MType[mask_size];
+     tmpmask = new MType[mask_size];
+}
+template<class Derived,class FQ_T,class MType,class STORE>
+GlobalBFS<Derived,FQ_T,MType,STORE>::~GlobalBFS(){
+    delete[] owenmask;
+    delete[] tmpmask;
 }
 
 /*
@@ -87,11 +192,11 @@ GlobalBFS<Derived,FQ_T,STORE>::GlobalBFS(STORE &_store): store(_store)
  * 5) global fold
 */
 #ifdef INSTRUMENTED
-template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
 #else
-template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::runBFS(typename STORE::vtxtyp startVertex)
 #endif
 {
     #ifdef INSTRUMENTED
@@ -145,7 +250,11 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
         tend = MPI_Wtime();
         lqueue += tend-tstart;
         #endif
-        MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
+        //MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
+        generatOwenMask();
+        allReduceBitCompressed(predecessor,
+                               recv_fq_buff, // have to be changed for bitmap queue
+                                        owenmask, tmpmask);
         #ifdef INSTRUMENTED
         tend = MPI_Wtime();
         predlistred = tend-tstart;
@@ -306,8 +415,8 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
 }
 }
 
-template<class Derived,class FQ_T,class STORE>
-typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, STORE>::getPredecessor()
+template<class Derived,class FQ_T,class MType,class STORE>
+typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 {
     return  predecessor;
 }

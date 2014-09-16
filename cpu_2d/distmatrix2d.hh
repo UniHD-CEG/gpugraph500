@@ -1,3 +1,4 @@
+#include "comp_opt.h"
 #include "generator/graph_generator.h"
 #include <mpi.h>
 #include <vector>
@@ -6,6 +7,10 @@
 #include <cstdlib> // only for values of packed_edge typ!!!
 #ifdef _OPENMP
     #include <omp.h>
+#endif
+
+#if defined( __PMODE__)
+    #include <parallel/algorithm>
 #endif
 
 #ifndef DISTMATRIX2D_HH
@@ -173,7 +178,7 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix(packed_edge 
     //get max vtx
     vtxtyp maxVertex = -1;
 
-    #ifdef OPENMP
+    #ifdef _OPENMP
     #pragma omp parallel for reduction(max: maxVertex)
     #endif
     for(vtxtyp i = 0; i < numberOfEdges; i++){
@@ -628,7 +633,11 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
     MPI_Type_commit(&packedEdgeMPI);
 
     //column comunication
+#if  defined(__PMODE__)
+    __gnu_parallel::sort(input,input+numberOfEdges,DistMatrix2d::comparePackedEdgeR);
+#else
     std::sort(input,input+numberOfEdges,DistMatrix2d::comparePackedEdgeR);
+#endif
 
     int* owen_send_size = new int[R];
     int* owen_offset = new int[R+1];
@@ -684,7 +693,11 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
 
     //row comunication
     //sort
+#if  defined(__PMODE__)
+    __gnu_parallel::sort(input,input+numberOfEdges,DistMatrix2d::comparePackedEdgeC);
+#else
     std::sort(input,input+numberOfEdges,DistMatrix2d::comparePackedEdgeC);
+#endif
 
     owen_send_size = new int[C];
     owen_offset = new int[C+1];
@@ -742,8 +755,11 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
     MPI_Comm_free(&row_comm);
     MPI_Comm_free(&col_comm);
 
+#if  defined(__PMODE__)
+    __gnu_parallel::sort(input,input+numberOfEdges,DistMatrix2d::comparePackedEdgeR);
+#else
     std::sort(input,input+numberOfEdges,DistMatrix2d::comparePackedEdgeR);
-
+#endif
     rowtyp* row_elm = new rowtyp[row_length];
          row_pointer = new rowtyp[row_length+1];
 

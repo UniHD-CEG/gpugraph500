@@ -8,7 +8,7 @@
 typedef long long vtxtyp;
 typedef int       rowtyp;
 
-class SimpleCPUBFS : public GlobalBFS<SimpleCPUBFS,void,DistMatrix2d<vtxtyp,rowtyp,false, 1> >
+class SimpleCPUBFS : public GlobalBFS<SimpleCPUBFS,void,unsigned char,DistMatrix2d<vtxtyp,rowtyp,false, 1> >
 {
     std::vector<bool> visited;
     std::vector<vtxtyp> fq_out;
