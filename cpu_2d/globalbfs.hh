@@ -75,6 +75,9 @@ public:
 template<class Derived,class FQ_T,class MType,class STORE>
 void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp, MType *&owenmap, MType *&tmpmap)
 {
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Status    status;
     const int outsizebm = mask_size;
     // root 0
@@ -86,11 +89,11 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE:
         int sender_addr = (store.getLocalRowID() +  (1 << rounds)) % store.getNumRowSl();
 
         if((store.getLocalRowID() >> rounds)%2 == 1){
-            MPI_Sendrecv(owenmap, outsizebm, bm_type, recv_addr  , rounds<<1,
-                         tmpmap,  outsizebm, bm_type, sender_addr, rounds<<1,
+            MPI_Sendrecv(owenmap, outsizebm, bm_type, recv_addr, rounds<<1,
+                         tmpmap,  outsizebm, bm_type, recv_addr, rounds<<1,
                          col_comm, &status );
             for(int i = 0; i < outsizebm; i++){
-                tmpmap[i] = tmpmap[i] & ~ owenmap[i];
+                tmpmap[i] = ~tmpmap[i] & owenmap[i];
             }
             int p= 0;
             for(int i = 0; i < outsizebm; i++){
@@ -102,20 +105,18 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE:
                      tmpm ^= (1 << last);
                 }
             }
-
             //send fq
             MPI_Ssend(tmp, p ,fq_tp_type,recv_addr,(rounds<<1)+1,col_comm);
-            break;
         } else if ( store.getLocalRowID() + (1 << rounds) < store.getNumRowSl() ){
             MPI_Sendrecv(owenmap, outsizebm, bm_type, sender_addr, rounds<<1,
-                         tmpmap,  outsizebm, bm_type, recv_addr  , rounds<<1,
+                         tmpmap,  outsizebm, bm_type, sender_addr, rounds<<1,
                          col_comm, &status );
             for(int i = 0; i < outsizebm; i++){
                 tmpmap[i]  = tmpmap[i]  & ~owenmap[i];
                 owenmap[i] = owenmap[i] | tmpmap[i];
             }
             //recv fq
-            MPI_Recv(tmp, recv_fq_buff_length, fq_tp_type,sender_addr,(rounds<<1)+1, col_comm, &status);
+            MPI_Recv(tmp, store.getLocColLength() ,fq_tp_type,sender_addr,(rounds<<1)+1,col_comm,&status);
             int p= 0;
             for(int i = 0; i < outsizebm; i++){
                 MType tmpm = tmpmap[i];
@@ -126,6 +127,7 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE:
                      tmpm ^= (1 << last);
                 }
             }
+
         }
         rounds++;
     }
@@ -158,6 +160,7 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::generatOwenMask()
         }
         owenmask[i] = tmp;
     }
+
 }
 
 template<class Derived,class FQ_T,class MType,class STORE>
@@ -171,7 +174,7 @@ GlobalBFS<Derived,FQ_T,MType,STORE>::GlobalBFS(STORE &_store): store(_store)
 
      fold_fq_props = store.getFoldProperties();
 
-     mask_size = mask_size+((store.getLocColLength()%(8*sizeof(MType))>0)? 1 : 0);
+     mask_size = (store.getLocColLength()/(8*sizeof(MType)))+((store.getLocColLength()%(8*sizeof(MType))>0)? 1 : 0);
      owenmask = new MType[mask_size];
      tmpmask = new MType[mask_size];
 }
