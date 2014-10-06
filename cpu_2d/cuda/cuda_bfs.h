@@ -65,11 +65,11 @@ public:
     void getBackOutqueue();
     void setBackInqueue();
 
-    void reduce_fq_out(vtxtyp* startaddr, long insize);    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
-    void getOutgoingFQ(vtxtyp* &startaddr, long& outsize);
-    void setModOutgoingFQ(vtxtyp* startaddr, long insize); //startaddr: 0, self modification
-    void getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp* &startaddr, long& outsize);
-    void setIncommingFQ(vtxtyp globalstart, long size, vtxtyp* startaddr, long& insize_max);
+    void reduce_fq_out(vtxtyp globalstart, long size, vtxtyp* startaddr, int insize);    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
+    void getOutgoingFQ(vtxtyp* &startaddr, int& outsize);
+    void setModOutgoingFQ(vtxtyp* startaddr,int insize); //startaddr: 0, self modification
+    void getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp* &startaddr, int& outsize);
+    void setIncommingFQ(vtxtyp globalstart, long size, vtxtyp* startaddr, int& insize_max);
     bool istheresomethingnew();           //to detect if finished
     void setStartVertex(vtxtyp start);
     void runLocalBFS();

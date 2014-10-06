@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdio>
 #include <assert.h>
+#include "vreduce.hpp"
 
 #ifndef GLOBALBFS_HH
 #define GLOBALBFS_HH
@@ -164,6 +165,7 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
     tend = MPI_Wtime();
     lqueue +=tend-tstart;
     #endif
+    /*
     // tree based reduce operation with messages of variable size
     // root 0
     int rounds = 0;
@@ -244,6 +246,26 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
         lqueue +=tend-tstart;
         #endif
     }
+    */
+    int _outsize; //really int, because mpi supports no long message sizes :(
+    using namespace std::placeholders;
+    std::function<void(FQ_T, long, FQ_T*, int )> reduce =
+            std::bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T*, int )>(&Derived::reduce_fq_out),static_cast<Derived*>(this), _1, _2, _3, _4);
+    std::function<void(FQ_T, long, FQ_T*&, int& )> get =
+            std::bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T*&, int& )>(&Derived::getOutgoingFQ),static_cast<Derived*>(this), _1, _2, _3, _4);
+
+    vreduce( reduce, get,
+                 recv_fq_buff,
+                 _outsize,
+                 store.getLocColLength(),
+                 fq_tp_type,
+                 col_comm
+                 #ifdef INSTRUMENTED
+                 ,lqueue
+                 #endif
+                 );
+    static_cast<Derived*>(this)->setModOutgoingFQ(recv_fq_buff,_outsize);
+
     #ifdef INSTRUMENTED
     comtend = MPI_Wtime();
     colcom += comtend-comtstart;
@@ -256,7 +278,7 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
     for(typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin(); it  != fold_fq_props.end(); it++){
         if(it->sendColSl == store.getLocalColumnID() ){
             FQ_T*   startaddr;
-            long     outsize;
+            int     outsize;
             #ifdef INSTRUMENTED
             tstart = MPI_Wtime();
             #endif
@@ -276,7 +298,7 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
             lqueue +=tend-tstart;
             #endif
         }else{
-            long     outsize;
+            int     outsize;
             MPI_Bcast(&outsize,1,MPI_LONG,it->sendColSl,row_comm);
             assert(outsize <= recv_fq_buff_length);
             MPI_Bcast(recv_fq_buff,outsize,fq_tp_type,it->sendColSl,row_comm);

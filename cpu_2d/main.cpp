@@ -112,7 +112,11 @@ int main(int argc, char** argv)
       int64_t scale =  21;
       int64_t edgefactor = 16;
       int64_t num_of_iterations = 64;
-
+      enum GGen {
+          G500 = 0,
+          OLD_G500
+      };
+      int graph_gen= G500;
       int64_t verbosity = 1;
 
 #ifdef _CUDA
@@ -225,6 +229,20 @@ int main(int argc, char** argv)
                         i++;
                     }
                  }
+            } else if(!strcmp(argv[i], "-g")){
+                // graph genarator
+                if(i+1 < argc){
+                    if(!strcmp(argv[i+1], "g500")){
+                         graph_gen = G500;
+                         i++;
+                    } else if(!strcmp(argv[i+1], "old_g500")){
+                        graph_gen = OLD_G500;
+                        i++;
+                   } else{
+                        printf("Generator %s unknown!\n", argv[i+1]);
+                        i++;
+                    }
+                 }
             }
             i++;
         }
@@ -275,7 +293,7 @@ int main(int argc, char** argv)
       MPI_Barrier(MPI_COMM_WORLD);
       tstart = MPI_Wtime();
       int64_t number_of_edges;
-      packed_edge* edgelist;
+      packed_edge* edgelist=0;
       make_graph(scale, edgefactor << scale, 1, 2, &number_of_edges, &edgelist);
       MPI_Barrier(MPI_COMM_WORLD);
       tstop = MPI_Wtime();

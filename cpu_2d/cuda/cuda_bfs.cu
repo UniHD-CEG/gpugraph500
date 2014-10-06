@@ -33,7 +33,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing, int64_t _
 
     fq_tp_type = MPI_INT64_T;
     recv_fq_buff_length = static_cast<vtxtyp>
-            (std::max(store.getLocRowLength(), store.getLocColLength())*_queue_sizing)+num_gpus;
+            (std::max(store.getLocRowLength(), store.getLocColLength())*_queue_sizing);
     //recv_fq_buff = new vtxtyp[recv_fq_buff_length];
     cudaHostAlloc(&recv_fq_buff, recv_fq_buff_length*sizeof(vtxtyp), cudaHostAllocDefault );
     //multipurpose buffer
@@ -130,35 +130,39 @@ CUDA_BFS::~CUDA_BFS(){
     delete[] predecessor;
 }
 
-void CUDA_BFS::reduce_fq_out(vtxtyp *startaddr, long insize)
+
+/*
+ * Function for reduction of the current and incomming frontier queue
+ * Supports now only one gpu, because the vertexranges are not continuous
+ */
+void CUDA_BFS::reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr, int insize)
 {
-    typename MatrixT::vtxtyp *sta_nxt = startaddr + csr_problem->num_gpus;
-    typename MatrixT::vtxtyp *qb_nxt  = queuebuff + csr_problem->num_gpus;
-    typename MatrixT::vtxtyp *rb_nxt  = redbuff + csr_problem->num_gpus;
-    typename MatrixT::vtxtyp *endp;
+    typename MatrixT::vtxtyp* start_local;
+    typename MatrixT::vtxtyp* end_local;
+    typename MatrixT::vtxtyp *endofresult;
 
-    for(int i=0; i < csr_problem->num_gpus; i++){
-        endp = std::set_union( qb_nxt,  qb_nxt+queuebuff[i],
-                                     sta_nxt, sta_nxt+startaddr[i],
-                                     rb_nxt );
-        qb_nxt+=queuebuff[i];
-        sta_nxt+=startaddr[i];
-        redbuff[i]= endp - rb_nxt;
-        rb_nxt = endp;
+    // deterimine the local range for the reduction
+    start_local = std::lower_bound(queuebuff, queuebuff+qb_length, globalstart,
+                                   [](vtxtyp a ,vtxtyp b){ return a < (b& Csr::ProblemType::VERTEX_ID_MASK );} );
+    end_local   = std::upper_bound(queuebuff, queuebuff+qb_length, globalstart,
+                                   [](vtxtyp a ,vtxtyp b){ return b > (a& Csr::ProblemType::VERTEX_ID_MASK );} );
+    //reduction
+    endofresult = std::set_union( start_local, end_local, startaddr, startaddr+insize, redbuff );
 
-    }
-
-    qb_length =  endp - redbuff;
+    qb_length = endofresult - redbuff;
     std::swap( queuebuff, redbuff);
 }
 
-void CUDA_BFS::getOutgoingFQ(vtxtyp *&startaddr, long &outsize)
+void CUDA_BFS::getOutgoingFQ(vtxtyp *&startaddr, int &outsize)
 {
     startaddr = queuebuff;
     outsize   = qb_length;
 }
-
-void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, long insize)
+/*
+ * -set the Outgoing queue after the column reduktion
+ * -recompute the visited mask
+ */
+void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize)
 {
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
@@ -173,7 +177,7 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, long insize)
     }
     //update visited
     #pragma omp parallel for
-    for(int i=csr_problem->num_gpus; i < qb_length; i++){
+    for(int i=0; i < qb_length; i++){
         typename Csr::ProblemType::VertexId vtxID = queuebuff[i] & Csr::ProblemType::VERTEX_ID_MASK;
         #pragma omp atomic
         vmask[vtxID>>3] |= 1<< (vtxID&0x7 );
@@ -191,18 +195,26 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, long insize)
     }
 }
 /*
- *  Expect symetric partitioning, so all parameters are ignored.
+ *  Expect symetric partitioning
  */
-void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, long &outsize)
+void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, int &outsize)
 {
-    startaddr = queuebuff;
-    outsize   = qb_length;
+    typename MatrixT::vtxtyp* start_local;
+    typename MatrixT::vtxtyp* end_local;
+
+    // deterimine the local range for the reduction
+    start_local = std::lower_bound(queuebuff, queuebuff+qb_length, globalstart,
+                                   [](vtxtyp a ,vtxtyp b){ return a < (b& Csr::ProblemType::VERTEX_ID_MASK );} );
+    end_local   = std::upper_bound(queuebuff, queuebuff+qb_length, globalstart,
+                                   [](vtxtyp a ,vtxtyp b){ return b > (a& Csr::ProblemType::VERTEX_ID_MASK );} );
+    startaddr = start_local;
+    outsize   = end_local-start_local;
 }
 
 /*  Sets the incoming FQ.
  *  Expect symetric partitioning, so all parameters are ignored.
  */
-void CUDA_BFS::setIncommingFQ(vtxtyp globalstart, long size, vtxtyp *startaddr, long &insize_max)
+void CUDA_BFS::setIncommingFQ(vtxtyp globalstart, long size, vtxtyp *startaddr, int &insize_max)
 {
     if(startaddr == recv_fq_buff)
         std::swap(recv_fq_buff, queuebuff);
@@ -232,22 +244,23 @@ void CUDA_BFS::getBackPredecessor(){
 
 void CUDA_BFS::getBackOutqueue()
 {
+    long queue_sizes[csr_problem->num_gpus];
     //get length of next queues
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
         Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-        queuebuff[i] = bfsGPU->getQueueSize(gs->gpu);
+        queue_sizes[i] = bfsGPU->getQueueSize(gs->gpu);
     }
     //sort values on the gpu
     for(int i=0; i < csr_problem->num_gpus; i++){
         typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaSetDevice(gs->gpu) );
         thrust::device_ptr<typename MatrixT::vtxtyp> multigpu(gs->frontier_queues.d_keys[0]);
-        thrust::sort(multigpu,multigpu+queuebuff[i]);
+        thrust::sort(multigpu,multigpu+queue_sizes[i]);
     }
 
     qb_length = csr_problem->num_gpus;
-    typename MatrixT::vtxtyp *qb_nxt  = queuebuff + csr_problem->num_gpus;
+    typename MatrixT::vtxtyp *qb_nxt  = queuebuff;
     // copy next queue to host
     for(int i=0; i < csr_problem->num_gpus; i++){
         typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];        
@@ -255,12 +268,12 @@ void CUDA_BFS::getBackOutqueue()
                     "Can't synchronize device." , __FILE__, __LINE__);
         b40c::util::B40CPerror(cudaMemcpyAsync( qb_nxt,
                          gs->frontier_queues.d_keys[0],
-                         queuebuff[i]*sizeof(typename Csr::VertexId),
+                         queue_sizes[i]*sizeof(typename Csr::VertexId),
                          cudaMemcpyDeviceToHost,
                          gs->stream
             ), "Copy of d_keys[0] failed" , __FILE__, __LINE__);
-        qb_nxt += queuebuff[i];
-        qb_length += queuebuff[i];
+        qb_nxt += queue_sizes[i];
+        qb_length += queue_sizes[i];
     }
 
     //#pragma omp parallel for
@@ -272,13 +285,12 @@ void CUDA_BFS::getBackOutqueue()
 
     // Queue preprocessing
     //Uniqueness
-    typename MatrixT::vtxtyp *qb_nxt_in  = queuebuff + csr_problem->num_gpus;
-    typename MatrixT::vtxtyp *qb_nxt_out = redbuff   + csr_problem->num_gpus;
+    typename MatrixT::vtxtyp *qb_nxt_in  = queuebuff ;
+    typename MatrixT::vtxtyp *qb_nxt_out = redbuff   ;
     for(int i=0; i < csr_problem->num_gpus; i++){
-        typename MatrixT::vtxtyp* start_in = std::upper_bound(qb_nxt_in, qb_nxt_in+queuebuff[i], -1);
-        typename MatrixT::vtxtyp* end_out = std::unique_copy(start_in, qb_nxt_in+queuebuff[i], qb_nxt_out);
-        qb_nxt_in+=queuebuff[i];
-        redbuff[i] = end_out - qb_nxt_out;
+        typename MatrixT::vtxtyp* start_in = std::upper_bound(qb_nxt_in, qb_nxt_in+queue_sizes[i], -1);
+        typename MatrixT::vtxtyp* end_out = std::unique_copy(start_in, qb_nxt_in+queue_sizes[i], qb_nxt_out);
+        qb_nxt_in+=queue_sizes[i];
         qb_nxt_out = end_out;
     }
     qb_length = qb_nxt_out - redbuff ;
@@ -287,24 +299,32 @@ void CUDA_BFS::getBackOutqueue()
 
 void CUDA_BFS::setBackInqueue()
 {
-    typename MatrixT::vtxtyp *qb_nxt  = queuebuff + csr_problem->num_gpus;
+    long queue_sizes[csr_problem->num_gpus];
+    typename MatrixT::vtxtyp *qb_nxt  = queuebuff;
+
     // copy next queue to device
     for(int i=0; i < csr_problem->num_gpus; i++){
+        typename MatrixT::vtxtyp* end_local;
         typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
+
+        //determine end of own slice
+        end_local   = std::upper_bound(qb_nxt, queuebuff+qb_length, gs->gpu,
+                          [](vtxtyp a ,vtxtyp b){ return b > ((a& Csr::ProblemType::GPU_MASK) >> Csr::ProblemType::GPU_MASK_SHIFT );} );
+        queue_sizes[i] = end_local - qb_nxt;
 
         b40c::util::B40CPerror(cudaMemcpyAsync( gs->frontier_queues.d_keys[0],
                          qb_nxt,
-                         queuebuff[i]*sizeof(typename Csr::VertexId),
+                         queue_sizes[i]*sizeof(typename Csr::VertexId),
                          cudaMemcpyHostToDevice,
                          gs->stream
             ), "Copy of d_keys[0] from device failed" , __FILE__, __LINE__);
-        qb_nxt += queuebuff[i];
+        qb_nxt = end_local;
     }
 
     //set length of current queue
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
-        bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(queuebuff[i]));
+        bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(queue_sizes[i]));
     }
 
 }
@@ -340,17 +360,15 @@ void CUDA_BFS::setStartVertex(vtxtyp start)
     }
 
     //new next queue
-    std::fill_n(queuebuff, csr_problem->num_gpus, 0);
-    qb_length =  csr_problem->num_gpus;
+    qb_length =  0;
 
     if(store.isLocalRow(start)){
         vtxtyp rstart = store.globaltolocalRow(start);
         vtxtyp src_owner = csr_problem->GpuIndex(rstart);
         rstart |= (src_owner <<  Csr::ProblemType::GPU_MASK_SHIFT);
 
-        queuebuff[src_owner] = 1;
-        queuebuff[csr_problem->num_gpus] = rstart;
-        qb_length = csr_problem->num_gpus+1;
+        queuebuff[0] = rstart;
+        qb_length = 1;
     }
 
     if(b40c::util::B40CPerror(bfsGPU->EnactSearch(
@@ -370,15 +388,17 @@ void CUDA_BFS::setStartVertex(vtxtyp start)
                      gs->stream
                ), "Copy of d_filer_mask from device failed" , __FILE__, __LINE__);
         // set new current queue
-        if(queuebuff[i]){
+        if(((queuebuff[0]& Csr::ProblemType::GPU_MASK) >> Csr::ProblemType::GPU_MASK_SHIFT ) == i){
             b40c::util::B40CPerror(cudaMemcpyAsync( gs->frontier_queues.d_keys[0],
-                             &queuebuff[csr_problem->num_gpus],
+                             &queuebuff[0],
                              sizeof(typename Csr::VertexId),
                              cudaMemcpyHostToDevice,
                              gs->stream
                 ), "Copy of d_keys[0] from device failed" , __FILE__, __LINE__);
+            bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(1));
+        }else{
+            bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(0));
         }
-        bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(queuebuff[i]));
     }
 
 }

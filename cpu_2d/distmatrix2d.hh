@@ -49,7 +49,7 @@ public:
     struct fold_prop{
         int64_t     sendColSl;
         vtxtyp startvtx;
-        vtxtyp size;
+        long size;
     };
 
     DistMatrix2d(int64_t _R, int64_t _C);
@@ -624,7 +624,7 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
     int tupsize[] = {2};
     MPI_Aint tupoffset[] = {0};
     MPI_Datatype tuptype[] = {MPI_LONG};
-    MPI_Type_struct(1,tupsize,tupoffset,tuptype,&packedEdgeMPI);
+    MPI_Type_create_struct(1,tupsize,tupoffset,tuptype,&packedEdgeMPI);
     MPI_Type_commit(&packedEdgeMPI);
 
     //column comunication
