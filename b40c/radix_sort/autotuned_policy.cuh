@@ -127,7 +127,7 @@ struct TypeSizeClassifier
 	enum {
 		KEYS_ROUNDED_SIZE		= 1 << util::Log2<sizeof(typename ProblemType::KeyType)>::VALUE,	// Round up to the nearest arch subword
 		VALUES_ROUNDED_SIZE		= 1 << util::Log2<sizeof(typename ProblemType::ValueType)>::VALUE,
-		MAX_ROUNDED_SIZE		= B40C_MAX(KEYS_ROUNDED_SIZE, VALUES_ROUNDED_SIZE),
+		MAX_ROUNDED_SIZE		= B40CG_MAX(KEYS_ROUNDED_SIZE, VALUES_ROUNDED_SIZE),
 	};
 
 	static const TypeSizeGenre GENRE 		= (MAX_ROUNDED_SIZE < 8) ? MEDIUM_TYPE : LARGE_TYPE;
@@ -510,8 +510,8 @@ struct AutotunedGenre<ProblemType, CUDA_ARCH, SMALL_SIZE, SM10, TYPE_SIZE_GENRE,
  */
 template <typename ProblemType, int PROB_SIZE_GENRE, typename PassPolicy>
 __launch_bounds__ (
-	(AutotunedClassifier<ProblemType, __B40C_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Upsweep::THREADS),
-	(AutotunedClassifier<ProblemType, __B40C_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Upsweep::MIN_CTA_OCCUPANCY))
+	(AutotunedClassifier<ProblemType, __B40CG_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Upsweep::THREADS),
+	(AutotunedClassifier<ProblemType, __B40CG_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Upsweep::MIN_CTA_OCCUPANCY))
 __global__ void TunedUpsweepKernel(
 	int 													*d_selectors,
 	typename ProblemType::SizeT 							*d_spine,
@@ -520,7 +520,7 @@ __global__ void TunedUpsweepKernel(
 	util::CtaWorkDistribution<typename ProblemType::SizeT> 	work_decomposition)
 {
 	// Load the kernel policy type identified by the enum for this architecture
-	typedef typename AutotunedClassifier<ProblemType, __B40C_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Upsweep TuningPolicy;
+	typedef typename AutotunedClassifier<ProblemType, __B40CG_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Upsweep TuningPolicy;
 	typedef upsweep::KernelPolicy<TuningPolicy, PassPolicy> KernelPolicy;
 
 	// Shared storage for the kernel
@@ -540,15 +540,15 @@ __global__ void TunedUpsweepKernel(
  */
 template <typename ProblemType, int PROB_SIZE_GENRE>
 __launch_bounds__ (
-	(AutotunedClassifier<ProblemType, __B40C_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Spine::THREADS),
-	(AutotunedClassifier<ProblemType, __B40C_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Spine::MIN_CTA_OCCUPANCY))
+	(AutotunedClassifier<ProblemType, __B40CG_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Spine::THREADS),
+	(AutotunedClassifier<ProblemType, __B40CG_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Spine::MIN_CTA_OCCUPANCY))
 __global__ void TunedSpineKernel(
 	typename ProblemType::SizeT 		*d_spine_in,
 	typename ProblemType::SizeT 		*d_spine_out,
 	int									spine_elements)
 {
 	// Load the kernel policy type identified by the enum for this architecture
-	typedef typename AutotunedClassifier<ProblemType, __B40C_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Spine KernelPolicy;
+	typedef typename AutotunedClassifier<ProblemType, __B40CG_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Spine KernelPolicy;
 
 	// Shared storage for the kernel
 	__shared__ typename KernelPolicy::SmemStorage smem_storage;
@@ -572,8 +572,8 @@ __global__ void TunedSpineKernel(
  */
 template <typename ProblemType, int PROB_SIZE_GENRE, typename PassPolicy>
 __launch_bounds__ (
-	(AutotunedClassifier<ProblemType, __B40C_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Downsweep::THREADS),
-	(AutotunedClassifier<ProblemType, __B40C_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Downsweep::MIN_CTA_OCCUPANCY))
+	(AutotunedClassifier<ProblemType, __B40CG_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Downsweep::THREADS),
+	(AutotunedClassifier<ProblemType, __B40CG_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Downsweep::MIN_CTA_OCCUPANCY))
 __global__ void TunedDownsweepKernel(
 	int 													*d_selectors,
 	typename ProblemType::SizeT 							*d_spine,
@@ -584,7 +584,7 @@ __global__ void TunedDownsweepKernel(
 	util::CtaWorkDistribution<typename ProblemType::SizeT>	work_decomposition)
 {
 	// Load the kernel policy type identified by the enum for this architecture
-	typedef typename AutotunedClassifier<ProblemType, __B40C_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Downsweep TuningPolicy;
+	typedef typename AutotunedClassifier<ProblemType, __B40CG_CUDA_ARCH__, (ProbSizeGenre) PROB_SIZE_GENRE>::Downsweep TuningPolicy;
 	typedef downsweep::KernelPolicy<TuningPolicy, PassPolicy> KernelPolicy;
 
 	// Shared storage for the kernel

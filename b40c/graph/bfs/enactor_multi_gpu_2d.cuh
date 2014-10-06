@@ -93,7 +93,7 @@ public :
     struct Policy<CsrProblem, 200>
     {
         typedef typename CsrProblem::VertexId 		VertexId;
-        typedef typename CsrProblem::SizeT 			SizeT;
+        typedef typename CsrProblem::SizeT 		SizeT;
 
         // Expansion kernel config
         typedef two_phase::expand_atomic::KernelPolicy<
@@ -171,6 +171,104 @@ public :
         typedef copy::KernelPolicy<
             typename CsrProblem::ProblemType,
             200,
+            INSTRUMENT, 			// INSTRUMENT
+            false, 					// DEQUEUE_PROBLEM_SIZE
+            6,						// LOG_SCHEDULE_GRANULARITY
+            8,						// CTA_OCCUPANCY
+            6,						// LOG_THREADS
+            0,						// LOG_LOAD_VEC_SIZE (must be vec-1 since we may be unaligned)
+            0,						// LOG_LOADS_PER_TILE
+            util::io::ld::NONE,		// QUEUE_READ_MODIFIER,
+            util::io::st::NONE,		// QUEUE_WRITE_MODIFIER,
+            false> 					// WORK_STEALING
+                CopyPolicy;
+    };
+
+    /**
+     * SM3.5 policy
+     */
+    template <typename CsrProblem>
+    struct Policy<CsrProblem, 350>
+    {
+        typedef typename CsrProblem::VertexId 		VertexId;
+        typedef typename CsrProblem::SizeT 		SizeT;
+
+        // Expansion kernel config
+        typedef two_phase::expand_atomic::KernelPolicy<
+            typename CsrProblem::ProblemType,
+            350,					// CUDA_ARCH
+            INSTRUMENT, 			// INSTRUMENT
+            8,						// CTA_OCCUPANCY
+            7,						// LOG_THREADS
+            0,						// LOG_LOAD_VEC_SIZE
+            0,						// LOG_LOADS_PER_TILE
+            5,						// LOG_RAKING_THREADS
+            util::io::ld::cg,		// QUEUE_READ_MODIFIER,
+            util::io::ld::NONE,		// COLUMN_READ_MODIFIER,
+            util::io::ld::cg,		// ROW_OFFSET_ALIGNED_READ_MODIFIER,
+            util::io::ld::NONE,		// ROW_OFFSET_UNALIGNED_READ_MODIFIER,
+            util::io::st::cg,		// QUEUE_WRITE_MODIFIER,
+            true,					// WORK_STEALING
+            32,						// WARP_GATHER_THRESHOLD
+            128 * 4, 				// CTA_GATHER_THRESHOLD,
+            6>				 		// LOG_SCHEDULE_GRANULARITY
+                ExpandPolicy;
+
+
+        // Contraction kernel config
+        typedef two_phase::contract_atomic::KernelPolicy<
+            typename CsrProblem::ProblemType,
+            350,					// CUDA_ARCH
+            INSTRUMENT, 			// INSTRUMENT
+            0, 						// SATURATION_QUIT
+            false, 					// DEQUEUE_PROBLEM_SIZE
+            8,						// CTA_OCCUPANCY
+            7,						// LOG_THREADS
+            0,						// LOG_LOAD_VEC_SIZE (must be vec-1 since we may be unaligned)
+            (sizeof(VertexId) > 4) ? 0 : 2,						// LOG_LOADS_PER_TILE
+            5,						// LOG_RAKING_THREADS
+            util::io::ld::NONE,		// QUEUE_READ_MODIFIER,
+            util::io::st::NONE,		// QUEUE_WRITE_MODIFIER,
+            false,					// WORK_STEALING
+            -1,						// END_BITMASK_CULL (always cull)
+            6> 						// LOG_SCHEDULE_GRANULARITY
+                ContractPolicy;
+
+
+        // Partition kernel config (make sure we satisfy the tuning constraints in partition::[up|down]sweep::tuning_policy.cuh)
+        typedef partition_contract::Policy<
+            // Problem Type
+            typename CsrProblem::ProblemType,
+            350,
+            INSTRUMENT, 			// INSTRUMENT
+            CsrProblem::ProblemType::LOG_MAX_GPUS,		// LOG_BINS
+            9,						// LOG_SCHEDULE_GRANULARITY
+            util::io::ld::NONE,		// CACHE_MODIFIER
+            util::io::st::NONE,		// CACHE_MODIFIER
+
+            8,						// UPSWEEP_CTA_OCCUPANCY
+            7,						// UPSWEEP_LOG_THREADS
+            0,						// UPSWEEP_LOG_LOAD_VEC_SIZE
+            2,						// UPSWEEP_LOG_LOADS_PER_TILE
+
+            7,						// SPINE_LOG_THREADS
+            2,						// SPINE_LOG_LOAD_VEC_SIZE
+            0,						// SPINE_LOG_LOADS_PER_TILE
+            5,						// SPINE_LOG_RAKING_THREADS
+
+            partition::downsweep::SCATTER_DIRECT,		// DOWNSWEEP_SCATTER_STRATEGY
+            8,						// DOWNSWEEP_CTA_OCCUPANCY
+            7,						// DOWNSWEEP_LOG_THREADS
+            1,						// DOWNSWEEP_LOG_LOAD_VEC_SIZE
+            (sizeof(VertexId) > 4) ? 0 : 1,		// DOWNSWEEP_LOG_LOADS_PER_CYCLE
+            0,						// DOWNSWEEP_LOG_CYCLES_PER_TILE
+            6> 						// DOWNSWEEP_LOG_RAKING_THREADS
+                PartitionPolicy;
+
+        // Copy kernel config
+        typedef copy::KernelPolicy<
+            typename CsrProblem::ProblemType,
+            350,
             INSTRUMENT, 			// INSTRUMENT
             false, 					// DEQUEUE_PROBLEM_SIZE
             6,						// LOG_SCHEDULE_GRANULARITY
@@ -290,7 +388,7 @@ protected:
 				int expand_min_occupancy 		= ExpandPolicy::CTA_OCCUPANCY;
 				expand_grid_size 				= MaxGridSize(expand_min_occupancy, max_grid_size);
 
-				int partition_min_occupancy		= B40C_MIN((int) PartitionPolicy::Upsweep::MAX_CTA_OCCUPANCY, (int) PartitionPolicy::Downsweep::MAX_CTA_OCCUPANCY);
+				int partition_min_occupancy		= B40CG_MIN((int) PartitionPolicy::Upsweep::MAX_CTA_OCCUPANCY, (int) PartitionPolicy::Downsweep::MAX_CTA_OCCUPANCY);
 				partition_grid_size 			= MaxGridSize(partition_min_occupancy, max_grid_size);
 
 				int copy_min_occupancy			= CopyPolicy::CTA_OCCUPANCY;
@@ -987,7 +1085,16 @@ public:
         typedef typename Csr::VertexId			VertexId;
         typedef typename Csr::SizeT				SizeT;
 
-		if (this->cuda_props.device_sm_version >= 200) {
+               /* if (this->cuda_props.device_sm_version >= 350) {
+
+            typedef Policy<Csr, 350> CsrPolicy;
+
+                        return EnactSearch<
+                                typename CsrPolicy::ContractPolicy,
+                                typename CsrPolicy::ExpandPolicy,
+                                typename CsrPolicy::PartitionPolicy,
+                                typename CsrPolicy::CopyPolicy>(csr_problem, src, max_grid_size);
+                } else */	if (this->cuda_props.device_sm_version >= 200) {
 
             typedef Policy<Csr, 200> CsrPolicy;
 
@@ -1016,7 +1123,17 @@ public:
         typedef typename Csr::VertexId			VertexId;
         typedef typename Csr::SizeT				SizeT;
 
-        if (this->cuda_props.device_sm_version >= 200) {
+        /* if (this->cuda_props.device_sm_version >= 350) {
+
+            typedef Policy<Csr, 350> CsrPolicy;
+
+            return EnactIteration<
+                typename CsrPolicy::ContractPolicy,
+                typename CsrPolicy::ExpandPolicy,
+                typename CsrPolicy::PartitionPolicy,
+                typename CsrPolicy::CopyPolicy>(csr_problem, done, max_grid_size);
+
+        }else */ if (this->cuda_props.device_sm_version >= 200) {
 
             typedef Policy<Csr, 200> CsrPolicy;
 

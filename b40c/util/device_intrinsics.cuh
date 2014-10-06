@@ -98,8 +98,8 @@ __device__ __forceinline__ int TallyWarpVote(int predicate)
 
 	__shared__ volatile int storage[ACTIVE_WARPS + 1][ACTIVE_THREADS];
 
-	int tid = threadIdx.x & (B40C_WARP_THREADS(__B40C_CUDA_ARCH__) - 1);
-	int wid = threadIdx.x >> B40C_LOG_WARP_THREADS(__B40C_CUDA_ARCH__);
+	int tid = threadIdx.x & (B40CG_WARP_THREADS(__B40CG_CUDA_ARCH__) - 1);
+	int wid = threadIdx.x >> B40CG_LOG_WARP_THREADS(__B40CG_CUDA_ARCH__);
 
 	return reduction::WarpReduce<LOG_ACTIVE_THREADS>::Invoke(predicate, storage[wid], tid);
 #endif

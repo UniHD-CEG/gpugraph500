@@ -743,7 +743,7 @@ struct CsrProblem
 			int memset_grid_size;
 
 			// Initialize d_labels elements to -1
-			memset_grid_size = B40C_MIN(memset_grid_size_max, (graph_slices[gpu]->nodes + memset_block_size - 1) / memset_block_size);
+			memset_grid_size = B40CG_MIN(memset_grid_size_max, (graph_slices[gpu]->nodes + memset_block_size - 1) / memset_block_size);
 			util::MemsetKernel<VertexId><<<memset_grid_size, memset_block_size, 0, graph_slices[gpu]->stream>>>(
 				graph_slices[gpu]->d_labels,
 				-1,
@@ -753,7 +753,7 @@ struct CsrProblem
 				"MemsetKernel failed", __FILE__, __LINE__)) return retval;
 
 			// Initialize d_visited_mask elements to 0
-			memset_grid_size = B40C_MIN(memset_grid_size_max, (visited_mask_elements + memset_block_size - 1) / memset_block_size);
+			memset_grid_size = B40CG_MIN(memset_grid_size_max, (visited_mask_elements + memset_block_size - 1) / memset_block_size);
 			util::MemsetKernel<VisitedMask><<<memset_grid_size, memset_block_size, 0, graph_slices[gpu]->stream>>>(
 				graph_slices[gpu]->d_visited_mask,
 				0,

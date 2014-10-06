@@ -43,9 +43,9 @@ namespace util {
  * CUDA architecture of the current compilation path
  */
 #ifndef __CUDA_ARCH__
-	#define __B40C_CUDA_ARCH__ 0						// Host path
+	#define __B40CG_CUDA_ARCH__ 0						// Host path
 #else
-	#define __B40C_CUDA_ARCH__ __CUDA_ARCH__			// Device path
+	#define __B40CG_CUDA_ARCH__ __CUDA_ARCH__			// Device path
 #endif
 
 
@@ -55,57 +55,93 @@ namespace util {
  ******************************************************************************/
 
 // Invalid CUDA device ordinal
-#define B40C_INVALID_DEVICE				(-1)
+#define B40CG_INVALID_DEVICE				(-1)
 
 // Threads per warp. 
-#define B40C_LOG_WARP_THREADS(arch)		(5)			// 32 threads in a warp 
-#define B40C_WARP_THREADS(arch)			(1 << B40C_LOG_WARP_THREADS(arch))
+#define B40CG_LOG_WARP_THREADS(arch)		(5)			// 32 threads in a warp 
+#define B40CG_WARP_THREADS(arch)			(1 << B40CG_LOG_WARP_THREADS(arch))
 
 // SM memory bank stride (in bytes)
-#define B40C_LOG_BANK_STRIDE_BYTES(arch)	(2)		// 4 byte words
-#define B40C_BANK_STRIDE_BYTES(arch)		(1 << B40C_LOG_BANK_STRIDE_BYTES)
+#define B40CG_LOG_BANK_STRIDE_BYTES(arch)	(2)		// 4 byte words
+#define B40CG_BANK_STRIDE_BYTES(arch)		(1 << B40CG_LOG_BANK_STRIDE_BYTES)
 
 // Memory banks per SM
-#define B40C_SM20_LOG_MEM_BANKS()		(5)			// 32 banks on SM2.0+
-#define B40C_SM10_LOG_MEM_BANKS()		(4)			// 16 banks on SM1.0-SM1.3
-#define B40C_LOG_MEM_BANKS(arch)		((arch >= 200) ? B40C_SM20_LOG_MEM_BANKS() : 	\
-														 B40C_SM10_LOG_MEM_BANKS())		
+#define B40CG_SM50_LOG_MEM_BANKS()		(5)			// 32 banks on SM5.0+
+#define B40CG_SM35_LOG_MEM_BANKS()		(5)			// 32 banks on SM3.5+
+#define B40CG_SM30_LOG_MEM_BANKS()		(5)			// 32 banks on SM3.0+
+#define B40CG_SM20_LOG_MEM_BANKS()		(5)			// 32 banks on SM2.0+
+#define B40CG_SM10_LOG_MEM_BANKS()		(4)			// 16 banks on SM1.0-SM1.3
+#define B40CG_LOG_MEM_BANKS(arch)		((arch >= 500) ? B40CG_SM50_LOG_MEM_BANKS() : 	\
+                                                        (arch >= 350) ? B40CG_SM35_LOG_MEM_BANKS() : 	\
+                                                                (arch >= 300) ? B40CG_SM30_LOG_MEM_BANKS() : 	\
+                                                                                (arch >= 200) ? B40CG_SM20_LOG_MEM_BANKS() : 	\
+														 B40CG_SM10_LOG_MEM_BANKS())		
 
 // Physical shared memory per SM (bytes)
-#define B40C_SM20_SMEM_BYTES()			(49152)		// 48KB on SM2.0+
-#define B40C_SM10_SMEM_BYTES()			(16384)		// 32KB on SM1.0-SM1.3
-#define B40C_SMEM_BYTES(arch)			((arch >= 200) ? B40C_SM20_SMEM_BYTES() : 	\
-														 B40C_SM10_SMEM_BYTES())		
+#define B40CG_SM50_SMEM_BYTES()			(65536)		// 64KB on SM5.0+
+#define B40CG_SM35_SMEM_BYTES()			(49152)		// 48KB on SM3.5+
+#define B40CG_SM30_SMEM_BYTES()			(49152)		// 48KB on SM3.0+
+#define B40CG_SM20_SMEM_BYTES()			(49152)		// 48KB on SM2.0+
+#define B40CG_SM10_SMEM_BYTES()			(16384)		// 32KB on SM1.0-SM1.3
+#define B40CG_SMEM_BYTES(arch)			((arch >= 500) ? B40CG_SM50_SMEM_BYTES() : 	\
+                                                        (arch >= 350) ? B40CG_SM35_SMEM_BYTES() : 	\
+                                                                (arch >= 300) ? B40CG_SM30_SMEM_BYTES() : 	\
+                                                                                (arch >= 200) ? B40CG_SM20_SMEM_BYTES() : 	\
+														 B40CG_SM10_SMEM_BYTES())		
 
 // Physical threads per SM
-#define B40C_SM20_SM_THREADS()			(1536)		// 1536 threads on SM2.0+
-#define B40C_SM12_SM_THREADS()			(1024)		// 1024 threads on SM1.2-SM1.3
-#define B40C_SM10_SM_THREADS()			(768)		// 768 threads on SM1.0-SM1.1
-#define B40C_SM_THREADS(arch)			((arch >= 200) ? B40C_SM20_SM_THREADS() : 	\
-										 (arch >= 130) ? B40C_SM12_SM_THREADS() : 	\
-												 	 	 B40C_SM10_SM_THREADS())
+#define B40CG_SM50_SM_THREADS()			(2048)		// 2048 threads on SM5.0+
+#define B40CG_SM35_SM_THREADS()			(2048)		// 2048 threads on SM3.5+
+#define B40CG_SM30_SM_THREADS()			(2048)		// 2048 threads on SM3.0+
+#define B40CG_SM20_SM_THREADS()			(1536)		// 1536 threads on SM2.0+
+#define B40CG_SM12_SM_THREADS()			(1024)		// 1024 threads on SM1.2-SM1.3
+#define B40CG_SM10_SM_THREADS()			(768)		// 768 threads on SM1.0-SM1.1
+#define B40CG_SM_THREADS(arch)			((arch >= 500) ? B40CG_SM50_SM_THREADS() : 	\
+                                                            (arch >= 350) ? B40CG_SM35_SM_THREADS() : 	\
+                                                                        (arch >= 300) ? B40CG_SM30_SM_THREADS() : 	\
+                                                                                 (arch >= 200) ? B40CG_SM20_SM_THREADS() : 	\
+                                                                                            (arch >= 130) ? B40CG_SM12_SM_THREADS() : 	\
+												 	 	 B40CG_SM10_SM_THREADS())
 
 // Physical threads per CTA
-#define B40C_SM20_LOG_CTA_THREADS()		(10)		// 1024 threads on SM2.0+
-#define B40C_SM10_LOG_CTA_THREADS()		(9)			// 512 threads on SM1.0-SM1.3
-#define B40C_LOG_CTA_THREADS(arch)		((arch >= 200) ? B40C_SM20_LOG_CTA_THREADS() : 	\
-												 	 	 B40C_SM10_LOG_CTA_THREADS())
+#define B40CG_SM50_LOG_CTA_THREADS()		(10)		// 1024 threads on SM5.0+
+#define B40CG_SM35_LOG_CTA_THREADS()		(10)		// 1024 threads on SM3.5+
+#define B40CG_SM30_LOG_CTA_THREADS()		(10)		// 1024 threads on SM3.0+
+#define B40CG_SM20_LOG_CTA_THREADS()		(10)		// 1024 threads on SM2.0+
+#define B40CG_SM10_LOG_CTA_THREADS()		(9)			// 512 threads on SM1.0-SM1.3
+#define B40CG_LOG_CTA_THREADS(arch)		((arch >= 500) ? B40CG_SM50_LOG_CTA_THREADS() : 	\
+                                                            (arch >= 350) ? B40CG_SM35_LOG_CTA_THREADS() : 	\
+                                                                        (arch >= 300) ? B40CG_SM30_LOG_CTA_THREADS() : 	\
+                                                                                    (arch >= 200) ? B40CG_SM20_LOG_CTA_THREADS() : 	\
+												 	 	 B40CG_SM10_LOG_CTA_THREADS())
 
 // Max CTAs per SM
-#define B40C_SM20_SM_CTAS()				(8)		// 8 CTAs on SM2.0+
-#define B40C_SM12_SM_CTAS()				(8)		// 8 CTAs on SM1.2-SM1.3
-#define B40C_SM10_SM_CTAS()				(8)		// 8 CTAs on SM1.0-SM1.1
-#define B40C_SM_CTAS(arch)				((arch >= 200) ? B40C_SM20_SM_CTAS() : 	\
-										 (arch >= 130) ? B40C_SM12_SM_CTAS() : 	\
-												 	 	 B40C_SM10_SM_CTAS())
+#define B40CG_SM50_SM_CTAS()				(32)		// 32 CTAs on SM5.0+
+#define B40CG_SM35_SM_CTAS()				(16)		// 16 CTAs on SM3.5+
+#define B40CG_SM30_SM_CTAS()				(16)		// 16 CTAs on SM3.0+
+#define B40CG_SM20_SM_CTAS()				(8)		// 8 CTAs on SM2.0+
+#define B40CG_SM12_SM_CTAS()				(8)		// 8 CTAs on SM1.2-SM1.3
+#define B40CG_SM10_SM_CTAS()				(8)		// 8 CTAs on SM1.0-SM1.1
+#define B40CG_SM_CTAS(arch)				((arch >= 500) ? B40CG_SM50_SM_CTAS() : 	\
+                                                            (arch >= 350) ? B40CG_SM35_SM_CTAS() : 	\
+                                                                (arch >= 300) ? B40CG_SM30_SM_CTAS() : 	\
+                                                                        (arch >= 200) ? B40CG_SM20_SM_CTAS() : 	\
+										 (arch >= 130) ? B40CG_SM12_SM_CTAS() : 	\
+												 	 	 B40CG_SM10_SM_CTAS())
 
 // Max registers per SM
-#define B40C_SM20_SM_REGISTERS()		(32768)		// 32768 registers on SM2.0+
-#define B40C_SM12_SM_REGISTERS()		(16384)		// 16384 registers on SM1.2-SM1.3
-#define B40C_SM10_SM_REGISTERS()		(8192)		// 8192 registers on SM1.0-SM1.1
-#define B40C_SM_REGISTERS(arch)			((arch >= 200) ? B40C_SM20_SM_REGISTERS() : 	\
-										 (arch >= 130) ? B40C_SM12_SM_REGISTERS() : 	\
-												 	 	 B40C_SM10_SM_REGISTERS())
+#define B40CG_SM50_SM_REGISTERS()		(65536)		// 64k registers on SM5.0+
+#define B40CG_SM35_SM_REGISTERS()		(65536)		// 64k registers on SM3.5+
+#define B40CG_SM30_SM_REGISTERS()		(65536)		// 64k registers on SM3.0+
+#define B40CG_SM20_SM_REGISTERS()		(32768)		// 32768 registers on SM2.0+
+#define B40CG_SM12_SM_REGISTERS()		(16384)		// 16384 registers on SM1.2-SM1.3
+#define B40CG_SM10_SM_REGISTERS()		(8192)		// 8192 registers on SM1.0-SM1.1
+#define B40CG_SM_REGISTERS(arch)			((arch >= 500) ? B40CG_SM50_SM_REGISTERS() : 	\
+                                                                (arch >= 350) ? B40CG_SM35_SM_REGISTERS() : 	\
+                                                                        (arch >= 300) ? B40CG_SM30_SM_REGISTERS() : 	\
+                                                                            (arch >= 200) ? B40CG_SM20_SM_REGISTERS() : 	\
+										 (arch >= 130) ? B40CG_SM12_SM_REGISTERS() : 	\
+												 	 	 B40CG_SM10_SM_REGISTERS())
 
 /******************************************************************************
  * Inlined PTX helper macros
@@ -114,13 +150,13 @@ namespace util {
 
 // Register modifier for pointer-types (for inlining PTX assembly)
 #if defined(_WIN64) || defined(__LP64__)
-	#define __B40C_LP64__ 1
+	#define __B40CG_LP64__ 1
 	// 64-bit register modifier for inlined asm
-	#define _B40C_ASM_PTR_ "l"
+	#define _B40CG_ASM_PTR_ "l"
 #else
-	#define __B40C_LP64__ 0
+	#define __B40CG_LP64__ 0
 	// 32-bit register modifier for inlined asm
-	#define _B40C_ASM_PTR_ "r"
+	#define _B40CG_ASM_PTR_ "r"
 #endif
 
 

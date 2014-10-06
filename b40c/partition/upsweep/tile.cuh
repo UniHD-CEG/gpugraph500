@@ -136,7 +136,7 @@ struct Tile
 				int lane = bin >> 2;										// extract composite counter lane
 				int sub_counter = bin & COUNTER_BYTE_MASK;					// extract 8-bit counter offset
 
-				if (__B40C_CUDA_ARCH__ >= 200) {
+				if (__B40CG_CUDA_ARCH__ >= 200) {
 
 					// Increment sub-field in composite counter
 					cta->smem_storage.composite_counters.counters[lane][threadIdx.x][sub_counter]++;

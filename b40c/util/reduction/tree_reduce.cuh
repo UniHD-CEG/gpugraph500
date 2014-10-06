@@ -62,7 +62,7 @@ struct TreeReduce
 	template <
 		int OFFSET_RIGHT,
 		bool WAS_WARPSCAN,
-		bool IS_WARPSCAN = (OFFSET_RIGHT <= B40C_WARP_THREADS(__B40C_CUDA_ARCH__))>
+		bool IS_WARPSCAN = (OFFSET_RIGHT <= B40CG_WARP_THREADS(__B40CG_CUDA_ARCH__))>
 	struct Iterate
 	{
 		template <

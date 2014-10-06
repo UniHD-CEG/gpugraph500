@@ -70,7 +70,7 @@ struct RakingSoaDetails<
 {
 	enum {
 		CUMULATIVE_THREAD 	= RakingSoaDetails::RAKING_THREADS - 1,
-		WARP_THREADS 		= B40C_WARP_THREADS(RakingSoaDetails::CUDA_ARCH)
+		WARP_THREADS 		= B40CG_WARP_THREADS(RakingSoaDetails::CUDA_ARCH)
 	};
 
 	// Simple SOA tuple "slice" type
@@ -190,7 +190,7 @@ struct RakingSoaDetails<
 {
 	enum {
 		CUMULATIVE_THREAD 	= RakingSoaDetails::RAKING_THREADS - 1,
-		WARP_THREADS 		= B40C_WARP_THREADS(RakingSoaDetails::CUDA_ARCH)
+		WARP_THREADS 		= B40CG_WARP_THREADS(RakingSoaDetails::CUDA_ARCH)
 	};
 
 	// Simple SOA tuple "slice" type

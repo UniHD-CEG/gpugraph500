@@ -97,26 +97,26 @@ struct VecType<T, 4> {
 /**
  * Macro for expanding partially-specialized built-in vector types
  */
-#define B40C_DEFINE_VECTOR_TYPE(base_type,short_type)                           \
+#define B40CG_DEFINE_VECTOR_TYPE(base_type,short_type)                           \
   template<> struct VecType<base_type, 1> { typedef short_type##1 Type; };      \
   template<> struct VecType<base_type, 2> { typedef short_type##2 Type; };      \
   template<> struct VecType<base_type, 4> { typedef short_type##4 Type; };     
 
-B40C_DEFINE_VECTOR_TYPE(char,               char)
-B40C_DEFINE_VECTOR_TYPE(signed char,        char)
-B40C_DEFINE_VECTOR_TYPE(short,              short)
-B40C_DEFINE_VECTOR_TYPE(int,                int)
-B40C_DEFINE_VECTOR_TYPE(long,               long)
-B40C_DEFINE_VECTOR_TYPE(long long,          longlong)
-B40C_DEFINE_VECTOR_TYPE(unsigned char,      uchar)
-B40C_DEFINE_VECTOR_TYPE(unsigned short,     ushort)
-B40C_DEFINE_VECTOR_TYPE(unsigned int,       uint)
-B40C_DEFINE_VECTOR_TYPE(unsigned long,      ulong)
-B40C_DEFINE_VECTOR_TYPE(unsigned long long, ulonglong)
-B40C_DEFINE_VECTOR_TYPE(float,              float)
-B40C_DEFINE_VECTOR_TYPE(double,             double)
+B40CG_DEFINE_VECTOR_TYPE(char,               char)
+B40CG_DEFINE_VECTOR_TYPE(signed char,        char)
+B40CG_DEFINE_VECTOR_TYPE(short,              short)
+B40CG_DEFINE_VECTOR_TYPE(int,                int)
+B40CG_DEFINE_VECTOR_TYPE(long,               long)
+B40CG_DEFINE_VECTOR_TYPE(long long,          longlong)
+B40CG_DEFINE_VECTOR_TYPE(unsigned char,      uchar)
+B40CG_DEFINE_VECTOR_TYPE(unsigned short,     ushort)
+B40CG_DEFINE_VECTOR_TYPE(unsigned int,       uint)
+B40CG_DEFINE_VECTOR_TYPE(unsigned long,      ulong)
+B40CG_DEFINE_VECTOR_TYPE(unsigned long long, ulonglong)
+B40CG_DEFINE_VECTOR_TYPE(float,              float)
+B40CG_DEFINE_VECTOR_TYPE(double,             double)
 
-#undef B40C_DEFINE_VECTOR_TYPE
+#undef B40CG_DEFINE_VECTOR_TYPE
 
 
 } // namespace util

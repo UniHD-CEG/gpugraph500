@@ -191,7 +191,7 @@ void Kernel(
     util::CtaWorkProgress<typename KernelPolicy::SizeT>	work_progress,
 	util::KernelRuntimeStats				kernel_stats)
 {
-#if __B40C_CUDA_ARCH__ >= 200
+#if __B40CG_CUDA_ARCH__ >= 200
 
 	typedef typename KernelPolicy::SizeT SizeT;
 

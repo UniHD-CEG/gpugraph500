@@ -241,7 +241,7 @@ public:
 	 */
 	CtaWorkProgressLifetime() :
         CtaWorkProgress< SizeT >(),
-		gpu(B40C_INVALID_DEVICE) {}
+		gpu(B40CG_INVALID_DEVICE) {}
 
 
 	/**
@@ -252,7 +252,7 @@ public:
 		cudaError_t retval = cudaSuccess;
 
 		do {
-			if (gpu != B40C_INVALID_DEVICE) {
+			if (gpu != B40CG_INVALID_DEVICE) {
 
 				// Save current gpu
 				int current_gpu;
@@ -266,7 +266,7 @@ public:
 					"CtaWorkProgress cudaFree d_counters failed: ", __FILE__, __LINE__)) break;
 
                 this->d_counters = NULL;
-				gpu = B40C_INVALID_DEVICE;
+				gpu = B40CG_INVALID_DEVICE;
 
 				// Restore current gpu
 				if (retval = util::B40CPerror(cudaSetDevice(current_gpu),

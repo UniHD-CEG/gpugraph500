@@ -122,7 +122,7 @@ struct KernelPolicy : _ProblemType
 		LOG_RAKING_THREADS				= _LOG_RAKING_THREADS,
 		RAKING_THREADS					= 1 << LOG_RAKING_THREADS,
 
-		LOG_WARPS						= LOG_THREADS - B40C_LOG_WARP_THREADS(CUDA_ARCH),
+		LOG_WARPS						= LOG_THREADS - B40CG_LOG_WARP_THREADS(CUDA_ARCH),
 		WARPS							= 1 << LOG_WARPS,
 
 		LOG_TILE_ELEMENTS_PER_THREAD	= LOG_LOAD_VEC_SIZE + LOG_LOADS_PER_TILE,
@@ -223,8 +223,8 @@ struct KernelPolicy : _ProblemType
 			int 								cta_comm;
 
 			// Storage for scanning local contract-expand ranks
-			SizeT 								coarse_warpscan[2][B40C_WARP_THREADS(CUDA_ARCH)];
-			SizeT 								fine_warpscan[2][B40C_WARP_THREADS(CUDA_ARCH)];
+			SizeT 								coarse_warpscan[2][B40CG_WARP_THREADS(CUDA_ARCH)];
+			SizeT 								fine_warpscan[2][B40CG_WARP_THREADS(CUDA_ARCH)];
 
 			// Enqueue offset for neighbors of the current tile
 			SizeT								fine_enqueue_offset;
@@ -234,7 +234,7 @@ struct KernelPolicy : _ProblemType
 
 		enum {
 			// Amount of storage we can use for hashing scratch space under target occupancy
-			MAX_SCRATCH_BYTES_PER_CTA		= (B40C_SMEM_BYTES(CUDA_ARCH) / _MIN_CTA_OCCUPANCY)
+			MAX_SCRATCH_BYTES_PER_CTA		= (B40CG_SMEM_BYTES(CUDA_ARCH) / _MIN_CTA_OCCUPANCY)
 												- sizeof(State)
 												- 140,											// Fudge-factor to guarantee occupancy
 
@@ -268,11 +268,11 @@ struct KernelPolicy : _ProblemType
 
 	enum {
 		// Total number of smem quads needed by this kernel
-		SMEM_QUADS						= B40C_QUADS(sizeof(SmemStorage)),
+		SMEM_QUADS						= B40CG_QUADS(sizeof(SmemStorage)),
 
-		THREAD_OCCUPANCY				= B40C_SM_THREADS(CUDA_ARCH) >> LOG_THREADS,
-		SMEM_OCCUPANCY					= B40C_SMEM_BYTES(CUDA_ARCH) / (SMEM_QUADS * sizeof(uint4)),
-		CTA_OCCUPANCY  					= B40C_MIN(_MIN_CTA_OCCUPANCY, B40C_MIN(B40C_SM_CTAS(CUDA_ARCH), B40C_MIN(THREAD_OCCUPANCY, SMEM_OCCUPANCY))),
+		THREAD_OCCUPANCY				= B40CG_SM_THREADS(CUDA_ARCH) >> LOG_THREADS,
+		SMEM_OCCUPANCY					= B40CG_SMEM_BYTES(CUDA_ARCH) / (SMEM_QUADS * sizeof(uint4)),
+		CTA_OCCUPANCY  					= B40CG_MIN(_MIN_CTA_OCCUPANCY, B40CG_MIN(B40CG_SM_CTAS(CUDA_ARCH), B40CG_MIN(THREAD_OCCUPANCY, SMEM_OCCUPANCY))),
 
 		VALID							= (CTA_OCCUPANCY > 0),
 	};

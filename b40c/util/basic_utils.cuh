@@ -43,18 +43,18 @@ namespace util {
 /**
  * Select maximum
  */
-#define B40C_MAX(a, b) ((a > b) ? a : b)
+#define B40CG_MAX(a, b) ((a > b) ? a : b)
 
 
 /**
  * Select maximum
  */
-#define B40C_MIN(a, b) ((a < b) ? a : b)
+#define B40CG_MIN(a, b) ((a < b) ? a : b)
 
 /**
  * Return the size in quad-words of a number of bytes
  */
-#define B40C_QUADS(bytes) (((bytes + sizeof(uint4) - 1) / sizeof(uint4)))
+#define B40CG_QUADS(bytes) (((bytes + sizeof(uint4) - 1) / sizeof(uint4)))
 
 /******************************************************************************
  * Simple templated utilities

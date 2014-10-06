@@ -791,8 +791,8 @@ struct Tile
 	struct PartitionTile
 	{
 		enum {
-			MEM_BANKS 					= 1 << B40C_LOG_MEM_BANKS(__B40C_CUDA_ARCH__),
-			DIGITS_PER_SCATTER_PASS 	= KernelPolicy::WARPS * (B40C_WARP_THREADS(__B40C_CUDA_ARCH__) / (MEM_BANKS)),
+			MEM_BANKS 					= 1 << B40CG_LOG_MEM_BANKS(__B40CG_CUDA_ARCH__),
+			DIGITS_PER_SCATTER_PASS 	= KernelPolicy::WARPS * (B40CG_WARP_THREADS(__B40CG_CUDA_ARCH__) / (MEM_BANKS)),
 			SCATTER_PASSES 				= KernelPolicy::BINS / DIGITS_PER_SCATTER_PASS,
 		};
 
@@ -813,7 +813,7 @@ struct Tile
 				T *d_out,
 				const SizeT &valid_elements)
 			{
-				const int LOG_STORE_TXN_THREADS = B40C_LOG_MEM_BANKS(__B40C_CUDA_ARCH__);
+				const int LOG_STORE_TXN_THREADS = B40CG_LOG_MEM_BANKS(__B40CG_CUDA_ARCH__);
 				const int STORE_TXN_THREADS = 1 << LOG_STORE_TXN_THREADS;
 
 				int store_txn_idx = threadIdx.x & (STORE_TXN_THREADS - 1);

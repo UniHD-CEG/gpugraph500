@@ -87,7 +87,7 @@ struct Cta
 
 	// Row-length cutoff below which we expand neighbors by writing gather
 	// offsets into scratch space (instead of gang-pressing warps or the entire CTA)
-	static const int SCAN_EXPAND_CUTOFF = B40C_WARP_THREADS(KernelPolicy::CUDA_ARCH);
+	static const int SCAN_EXPAND_CUTOFF = B40CG_WARP_THREADS(KernelPolicy::CUDA_ARCH);
 
 	typedef typename KernelPolicy::SmemStorage			SmemStorage;
 	typedef typename KernelPolicy::VertexId 			VertexId;
@@ -728,7 +728,7 @@ struct Cta
 			__syncthreads();
 
 			// Copy scratch space into queue
-			int scratch_remainder = B40C_MIN(SmemStorage::OFFSET_ELEMENTS, tile.fine_count - tile.progress);
+			int scratch_remainder = B40CG_MIN(SmemStorage::OFFSET_ELEMENTS, tile.fine_count - tile.progress);
 
 			for (int scratch_offset = 0;
 				scratch_offset < scratch_remainder;

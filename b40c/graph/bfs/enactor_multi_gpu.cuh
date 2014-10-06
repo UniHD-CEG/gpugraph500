@@ -290,7 +290,7 @@ protected:
 				int expand_min_occupancy 		= ExpandPolicy::CTA_OCCUPANCY;
 				expand_grid_size 				= MaxGridSize(expand_min_occupancy, max_grid_size);
 
-				int partition_min_occupancy		= B40C_MIN((int) PartitionPolicy::Upsweep::MAX_CTA_OCCUPANCY, (int) PartitionPolicy::Downsweep::MAX_CTA_OCCUPANCY);
+				int partition_min_occupancy		= B40CG_MIN((int) PartitionPolicy::Upsweep::MAX_CTA_OCCUPANCY, (int) PartitionPolicy::Downsweep::MAX_CTA_OCCUPANCY);
 				partition_grid_size 			= MaxGridSize(partition_min_occupancy, max_grid_size);
 
 				int copy_min_occupancy			= CopyPolicy::CTA_OCCUPANCY;

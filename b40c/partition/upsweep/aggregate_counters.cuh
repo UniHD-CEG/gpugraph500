@@ -88,7 +88,7 @@ struct AggregateCounters
 			AggregateCounters *aggregate_counters)
 		{
 			int lane				= (WARP_LANE * WARPS) + cta->warp_id;
-			int composite			= (THREAD_COMPOSITE * B40C_WARP_THREADS(__B40C_CUDA_ARCH__)) + cta->warp_idx;
+			int composite			= (THREAD_COMPOSITE * B40CG_WARP_THREADS(__B40CG_CUDA_ARCH__)) + cta->warp_idx;
 
 			aggregate_counters->local_counts[WARP_LANE][0] += cta->smem_storage.composite_counters.counters[lane][composite][0];
 			aggregate_counters->local_counts[WARP_LANE][1] += cta->smem_storage.composite_counters.counters[lane][composite][1];

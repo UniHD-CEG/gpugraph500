@@ -123,7 +123,7 @@ struct KernelPolicy : _ProblemType
 		LOG_RAKING_THREADS				= _LOG_RAKING_THREADS,
 		RAKING_THREADS					= 1 << LOG_RAKING_THREADS,
 
-		LOG_WARPS						= LOG_THREADS - B40C_LOG_WARP_THREADS(CUDA_ARCH),
+		LOG_WARPS						= LOG_THREADS - B40CG_LOG_WARP_THREADS(CUDA_ARCH),
 		WARPS							= 1 << LOG_WARPS,
 
 		LOG_TILE_ELEMENTS_PER_THREAD	= LOG_LOAD_VEC_SIZE + LOG_LOADS_PER_TILE,
@@ -190,14 +190,14 @@ struct KernelPolicy : _ProblemType
 			int									cta_comm;
 
 			// Storage for scanning local contract-expand ranks
-			volatile SizeT 						warpscan[2][B40C_WARP_THREADS(CUDA_ARCH)];
+			volatile SizeT 						warpscan[2][B40CG_WARP_THREADS(CUDA_ARCH)];
 			SizeT 								contract_raking_elements[RakingContractGrid::TOTAL_RAKING_ELEMENTS];
 
 		} state;
 
 		enum {
 			// Amount of storage we can use for hashing scratch space under target occupancy
-			MAX_SCRATCH_BYTES_PER_CTA		= (B40C_SMEM_BYTES(CUDA_ARCH) / _MIN_CTA_OCCUPANCY)
+			MAX_SCRATCH_BYTES_PER_CTA		= (B40CG_SMEM_BYTES(CUDA_ARCH) / _MIN_CTA_OCCUPANCY)
 												- sizeof(State)
 												- 128,											// Fudge-factor to guarantee occupancy
 
@@ -228,9 +228,9 @@ struct KernelPolicy : _ProblemType
 	};
 
 	enum {
-		THREAD_OCCUPANCY				= B40C_SM_THREADS(CUDA_ARCH) >> LOG_THREADS,
-		SMEM_OCCUPANCY					= B40C_SMEM_BYTES(CUDA_ARCH) / sizeof(SmemStorage),
-		CTA_OCCUPANCY  					= B40C_MIN(_MIN_CTA_OCCUPANCY, B40C_MIN(B40C_SM_CTAS(CUDA_ARCH), B40C_MIN(THREAD_OCCUPANCY, SMEM_OCCUPANCY))),
+		THREAD_OCCUPANCY				= B40CG_SM_THREADS(CUDA_ARCH) >> LOG_THREADS,
+		SMEM_OCCUPANCY					= B40CG_SMEM_BYTES(CUDA_ARCH) / sizeof(SmemStorage),
+		CTA_OCCUPANCY  					= B40CG_MIN(_MIN_CTA_OCCUPANCY, B40CG_MIN(B40CG_SM_CTAS(CUDA_ARCH), B40CG_MIN(THREAD_OCCUPANCY, SMEM_OCCUPANCY))),
 
 		VALID							= (CTA_OCCUPANCY > 0),
 	};

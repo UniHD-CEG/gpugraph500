@@ -72,7 +72,7 @@ enum ScatterStrategy {
  * 				counters, i.e., (1 <= raking-threads / (loads-per-cycle * bins / 4) <= 32),
  * 				equivalently:
  *
- * 					(0 <= LOG_RAKING_THREADS - LOG_LOADS_PER_CYCLE - LOG_BINS + 2 <= B40C_LOG_WARP_THREADS(arch))
+ * 					(0 <= LOG_RAKING_THREADS - LOG_LOADS_PER_CYCLE - LOG_BINS + 2 <= B40CG_LOG_WARP_THREADS(arch))
  *
  * 		(iii) 	We must have more (or equal) threads than bins in the threadblock,
  * 				i.e., (threads >= bins) equivalently:

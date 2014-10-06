@@ -196,7 +196,7 @@ struct SweepPass <KernelPolicy, true>
  */
 template <
     typename    KernelPolicy,
-    bool        VALID = (__B40C_CUDA_ARCH__ >= KernelPolicy::CUDA_ARCH)>
+    bool        VALID = (__B40CG_CUDA_ARCH__ >= KernelPolicy::CUDA_ARCH)>
 struct Dispatch
 {
 	typedef typename KernelPolicy::VertexId VertexId;
@@ -204,8 +204,8 @@ struct Dispatch
 	typedef typename KernelPolicy::VisitedMask VisitedMask;
 
 	static __device__ __forceinline__ void Kernel(
-		VertexId 					&queue_index,
-		VertexId 					&steal_index,
+                VertexId 					&queue_index,
+                VertexId 					&steal_index,
 		int							&num_gpus,
 		volatile int 				*&d_done,
 		VertexId 					*&d_vertex_frontier,

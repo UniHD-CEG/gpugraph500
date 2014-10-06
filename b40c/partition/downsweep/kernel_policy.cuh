@@ -58,7 +58,7 @@ struct KernelPolicy : TuningPolicy
 		BINS 							= 1 << TuningPolicy::LOG_BINS,
 		THREADS							= 1 << TuningPolicy::LOG_THREADS,
 
-		LOG_WARPS						= TuningPolicy::LOG_THREADS - B40C_LOG_WARP_THREADS(TuningPolicy::CUDA_ARCH),
+		LOG_WARPS						= TuningPolicy::LOG_THREADS - B40CG_LOG_WARP_THREADS(TuningPolicy::CUDA_ARCH),
 		WARPS							= 1 << LOG_WARPS,
 
 		LOAD_VEC_SIZE					= 1 << TuningPolicy::LOG_LOAD_VEC_SIZE,
@@ -80,7 +80,7 @@ struct KernelPolicy : TuningPolicy
 		LOG_TILE_ELEMENTS_PER_THREAD	= LOG_TILE_ELEMENTS - TuningPolicy::LOG_THREADS,
 		TILE_ELEMENTS_PER_THREAD		= 1 << LOG_TILE_ELEMENTS_PER_THREAD,
 	
-		LOG_SCAN_LANES_PER_LOAD			= B40C_MAX((TuningPolicy::LOG_BINS - 2), 0),		// Always at least one lane per load
+		LOG_SCAN_LANES_PER_LOAD			= B40CG_MAX((TuningPolicy::LOG_BINS - 2), 0),		// Always at least one lane per load
 		SCAN_LANES_PER_LOAD				= 1 << LOG_SCAN_LANES_PER_LOAD,
 
 		LOG_SCAN_LANES_PER_CYCLE		= TuningPolicy::LOG_LOADS_PER_CYCLE + LOG_SCAN_LANES_PER_LOAD,
@@ -126,9 +126,9 @@ struct KernelPolicy : TuningPolicy
 	};
 
 	enum {
-		THREAD_OCCUPANCY					= B40C_SM_THREADS(TuningPolicy::CUDA_ARCH) >> TuningPolicy::LOG_THREADS,
-		SMEM_OCCUPANCY						= B40C_SMEM_BYTES(TuningPolicy::CUDA_ARCH) / sizeof(SmemStorage),
-		MAX_CTA_OCCUPANCY					= B40C_MIN(B40C_SM_CTAS(TuningPolicy::CUDA_ARCH), B40C_MIN(THREAD_OCCUPANCY, SMEM_OCCUPANCY)),
+		THREAD_OCCUPANCY					= B40CG_SM_THREADS(TuningPolicy::CUDA_ARCH) >> TuningPolicy::LOG_THREADS,
+		SMEM_OCCUPANCY						= B40CG_SMEM_BYTES(TuningPolicy::CUDA_ARCH) / sizeof(SmemStorage),
+		MAX_CTA_OCCUPANCY					= B40CG_MIN(B40CG_SM_CTAS(TuningPolicy::CUDA_ARCH), B40CG_MIN(THREAD_OCCUPANCY, SMEM_OCCUPANCY)),
 
 		VALID								= (MAX_CTA_OCCUPANCY > 0),
 	};

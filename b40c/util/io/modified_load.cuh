@@ -122,123 +122,123 @@ struct ModifiedLoad
 	/**
 	 * Singleton store op
 	 */
-	#define B40C_LOAD(base_type, ptx_type, reg_mod, cast_type, modifier)																	\
+	#define B40CG_LOAD(base_type, ptx_type, reg_mod, cast_type, modifier)																	\
         template<> template<> void ModifiedLoad<ld::modifier>::Ld(base_type &val, base_type* ptr) { \
             cast_type c;                   \
-            asm volatile ("ld.global."#modifier"."#ptx_type" %0, [%1];" : "="#reg_mod(c) : _B40C_ASM_PTR_(ptr)); \
+            asm volatile ("ld.global."#modifier"."#ptx_type" %0, [%1];" : "="#reg_mod(c) : _B40CG_ASM_PTR_(ptr)); \
             val =  static_cast<cast_type>(c); \
     }																																		\
 
 	/**
 	 * Vector load ops
 	 */
-	#define B40C_LOAD_VEC1(base_type, ptx_type, reg_mod, cast_type, modifier)																	\
+	#define B40CG_LOAD_VEC1(base_type, ptx_type, reg_mod, cast_type, modifier)																	\
 		template<> template<> void ModifiedLoad<ld::modifier>::Ld(base_type &val, base_type* ptr) {												\
-			asm volatile ("ld.global."#modifier"."#ptx_type" %0, [%1];" : "="#reg_mod(reinterpret_cast<cast_type&>(val.x)) : _B40C_ASM_PTR_(ptr));			\
+			asm volatile ("ld.global."#modifier"."#ptx_type" %0, [%1];" : "="#reg_mod(reinterpret_cast<cast_type&>(val.x)) : _B40CG_ASM_PTR_(ptr));			\
 		}																																		\
 
-	#define B40C_LOAD_VEC2(base_type, ptx_type, reg_mod, cast_type, modifier)																	\
+	#define B40CG_LOAD_VEC2(base_type, ptx_type, reg_mod, cast_type, modifier)																	\
 		template<> template<> void ModifiedLoad<ld::modifier>::Ld(base_type &val, base_type* ptr) {												\
-			asm volatile ("ld.global."#modifier".v2."#ptx_type" {%0, %1}, [%2];" : "="#reg_mod(reinterpret_cast<cast_type&>(val.x)), "="#reg_mod(reinterpret_cast<cast_type&>(val.y)) : _B40C_ASM_PTR_(ptr));		\
+			asm volatile ("ld.global."#modifier".v2."#ptx_type" {%0, %1}, [%2];" : "="#reg_mod(reinterpret_cast<cast_type&>(val.x)), "="#reg_mod(reinterpret_cast<cast_type&>(val.y)) : _B40CG_ASM_PTR_(ptr));		\
 		}
 
-	#define B40C_LOAD_VEC4(base_type, ptx_type, reg_mod, cast_type, modifier)																	\
+	#define B40CG_LOAD_VEC4(base_type, ptx_type, reg_mod, cast_type, modifier)																	\
 		template<> template<> void ModifiedLoad<ld::modifier>::Ld(base_type &val, base_type* ptr) {												\
-			asm volatile ("ld.global."#modifier".v4."#ptx_type" {%0, %1, %2, %3}, [%4];" : "="#reg_mod(reinterpret_cast<cast_type&>(val.x)), "="#reg_mod(reinterpret_cast<cast_type&>(val.y)), "="#reg_mod(reinterpret_cast<cast_type&>(val.z)), "="#reg_mod(reinterpret_cast<cast_type&>(val.w)) : _B40C_ASM_PTR_(ptr));		\
+			asm volatile ("ld.global."#modifier".v4."#ptx_type" {%0, %1, %2, %3}, [%4];" : "="#reg_mod(reinterpret_cast<cast_type&>(val.x)), "="#reg_mod(reinterpret_cast<cast_type&>(val.y)), "="#reg_mod(reinterpret_cast<cast_type&>(val.z)), "="#reg_mod(reinterpret_cast<cast_type&>(val.w)) : _B40CG_ASM_PTR_(ptr));		\
 		}
 
 
 	/**
 	 * Defines specialized load ops for only the base type
 	 */
-	#define B40C_LOAD_BASE(base_type, ptx_type, reg_mod, cast_type)		\
-		B40C_LOAD(base_type, ptx_type, reg_mod, cast_type, cg)			\
-		B40C_LOAD(base_type, ptx_type, reg_mod, cast_type, ca)			\
-		B40C_LOAD(base_type, ptx_type, reg_mod, cast_type, cs)
+	#define B40CG_LOAD_BASE(base_type, ptx_type, reg_mod, cast_type)		\
+		B40CG_LOAD(base_type, ptx_type, reg_mod, cast_type, cg)			\
+		B40CG_LOAD(base_type, ptx_type, reg_mod, cast_type, ca)			\
+		B40CG_LOAD(base_type, ptx_type, reg_mod, cast_type, cs)
 
 
 	/**
 	 * Defines specialized load ops for the base type and for its derivative vec1 and vec2 types
 	 */
-	#define B40C_LOAD_BASE_ONE_TWO(base_type, dest_type, short_type, ptx_type, reg_mod, cast_type)	\
-		B40C_LOAD_BASE(base_type, ptx_type, reg_mod, cast_type)										\
+	#define B40CG_LOAD_BASE_ONE_TWO(base_type, dest_type, short_type, ptx_type, reg_mod, cast_type)	\
+		B40CG_LOAD_BASE(base_type, ptx_type, reg_mod, cast_type)										\
 																									\
-		B40C_LOAD_VEC1(short_type##1, ptx_type, reg_mod, cast_type, cg)								\
-		B40C_LOAD_VEC1(short_type##1, ptx_type, reg_mod, cast_type, ca)								\
-		B40C_LOAD_VEC1(short_type##1, ptx_type, reg_mod, cast_type, cs)								\
+		B40CG_LOAD_VEC1(short_type##1, ptx_type, reg_mod, cast_type, cg)								\
+		B40CG_LOAD_VEC1(short_type##1, ptx_type, reg_mod, cast_type, ca)								\
+		B40CG_LOAD_VEC1(short_type##1, ptx_type, reg_mod, cast_type, cs)								\
 																									\
-		B40C_LOAD_VEC2(short_type##2, ptx_type, reg_mod, cast_type, cg)								\
-		B40C_LOAD_VEC2(short_type##2, ptx_type, reg_mod, cast_type, ca)								\
-		B40C_LOAD_VEC2(short_type##2, ptx_type, reg_mod, cast_type, cs)
+		B40CG_LOAD_VEC2(short_type##2, ptx_type, reg_mod, cast_type, cg)								\
+		B40CG_LOAD_VEC2(short_type##2, ptx_type, reg_mod, cast_type, ca)								\
+		B40CG_LOAD_VEC2(short_type##2, ptx_type, reg_mod, cast_type, cs)
 
 
 	/**
 	 * Defines specialized load ops for the base type and for its derivative vec1, vec2, and vec4 types
 	 */
-	#define B40C_LOAD_BASE_ONE_TWO_FOUR(base_type, dest_type, short_type, ptx_type, reg_mod, cast_type)	\
-		B40C_LOAD_BASE_ONE_TWO(base_type, dest_type, short_type, ptx_type, reg_mod, cast_type)			\
-		B40C_LOAD_VEC4(short_type##4, ptx_type, reg_mod, cast_type, cg)									\
-		B40C_LOAD_VEC4(short_type##4, ptx_type, reg_mod, cast_type, ca)									\
-		B40C_LOAD_VEC4(short_type##4, ptx_type, reg_mod, cast_type, cs)
+	#define B40CG_LOAD_BASE_ONE_TWO_FOUR(base_type, dest_type, short_type, ptx_type, reg_mod, cast_type)	\
+		B40CG_LOAD_BASE_ONE_TWO(base_type, dest_type, short_type, ptx_type, reg_mod, cast_type)			\
+		B40CG_LOAD_VEC4(short_type##4, ptx_type, reg_mod, cast_type, cg)									\
+		B40CG_LOAD_VEC4(short_type##4, ptx_type, reg_mod, cast_type, ca)									\
+		B40CG_LOAD_VEC4(short_type##4, ptx_type, reg_mod, cast_type, cs)
 
 
 #if CUDA_VERSION >= 4000
-	#define B40C_REG8		h
-	#define B40C_REG16 		h
-	#define B40C_CAST8 		short
+	#define B40CG_REG8		h
+	#define B40CG_REG16 		h
+	#define B40CG_CAST8 		short
 #else
-	#define B40C_REG8		r
-	#define B40C_REG16 		r
-	#define B40C_CAST8 		char
+	#define B40CG_REG8		r
+	#define B40CG_REG16 		r
+	#define B40CG_CAST8 		char
 #endif
 
 
 	/**
 	 * Define cache-modified loads for all 4-byte (and smaller) structures
 	 */
-	B40C_LOAD_BASE_ONE_TWO_FOUR(char, 			char, 			char, 	s8, 	B40C_REG8, 		B40C_CAST8)
-	B40C_LOAD_BASE_ONE_TWO_FOUR(short, 			short, 			short, 	s16, 	B40C_REG16, 	short)
-	B40C_LOAD_BASE_ONE_TWO_FOUR(int, 			int, 			int, 	s32, 	r, 				int)
-	B40C_LOAD_BASE_ONE_TWO_FOUR(unsigned char, 	unsigned char, 	uchar,	u8, 	B40C_REG8, 		unsigned B40C_CAST8)
-	B40C_LOAD_BASE_ONE_TWO_FOUR(unsigned short,	unsigned short,	ushort,	u16, 	B40C_REG16, 	unsigned short)
-	B40C_LOAD_BASE_ONE_TWO_FOUR(unsigned int, 	unsigned int, 	uint,	u32, 	r, 				unsigned int)
-	B40C_LOAD_BASE_ONE_TWO_FOUR(float, 			float, 			float, 	f32, 	f, 				float)
+	B40CG_LOAD_BASE_ONE_TWO_FOUR(char, 			char, 			char, 	s8, 	B40CG_REG8, 		B40CG_CAST8)
+	B40CG_LOAD_BASE_ONE_TWO_FOUR(short, 			short, 			short, 	s16, 	B40CG_REG16, 	short)
+	B40CG_LOAD_BASE_ONE_TWO_FOUR(int, 			int, 			int, 	s32, 	r, 				int)
+	B40CG_LOAD_BASE_ONE_TWO_FOUR(unsigned char, 	unsigned char, 	uchar,	u8, 	B40CG_REG8, 		unsigned B40CG_CAST8)
+	B40CG_LOAD_BASE_ONE_TWO_FOUR(unsigned short,	unsigned short,	ushort,	u16, 	B40CG_REG16, 	unsigned short)
+	B40CG_LOAD_BASE_ONE_TWO_FOUR(unsigned int, 	unsigned int, 	uint,	u32, 	r, 				unsigned int)
+	B40CG_LOAD_BASE_ONE_TWO_FOUR(float, 			float, 			float, 	f32, 	f, 				float)
 
 	#if !defined(__LP64__) || (__LP64__ == 0)
 	// longs are 64-bit on non-Windows 64-bit compilers
-	B40C_LOAD_BASE_ONE_TWO_FOUR(long, 			long, 			long, 	s32, 	r, long)
-	B40C_LOAD_BASE_ONE_TWO_FOUR(unsigned long, 	unsigned long, 	ulong, 	u32, 	r, unsigned long)
+	B40CG_LOAD_BASE_ONE_TWO_FOUR(long, 			long, 			long, 	s32, 	r, long)
+	B40CG_LOAD_BASE_ONE_TWO_FOUR(unsigned long, 	unsigned long, 	ulong, 	u32, 	r, unsigned long)
 	#endif
 
-	B40C_LOAD_BASE(signed char, s8, r, unsigned int)		// Only need to define base: char2,char4, etc already defined from char
+	B40CG_LOAD_BASE(signed char, s8, r, unsigned int)		// Only need to define base: char2,char4, etc already defined from char
 
 
 	/**
 	 * Define cache-modified loads for all 8-byte structures
 	 */
-	B40C_LOAD_BASE_ONE_TWO(unsigned long long, 	unsigned long long, 	ulonglong, 	u64, l, unsigned long long)
-	B40C_LOAD_BASE_ONE_TWO(long long, 			long long, 				longlong, 	s64, l, long long)
-	B40C_LOAD_BASE_ONE_TWO(double, 				double, 				double, 	s64, l, long long)				// Cast to 64-bit long long a workaround for the fact that the 3.x assembler has no register constraint for doubles
+	B40CG_LOAD_BASE_ONE_TWO(unsigned long long, 	unsigned long long, 	ulonglong, 	u64, l, unsigned long long)
+	B40CG_LOAD_BASE_ONE_TWO(long long, 			long long, 				longlong, 	s64, l, long long)
+	B40CG_LOAD_BASE_ONE_TWO(double, 				double, 				double, 	s64, l, long long)				// Cast to 64-bit long long a workaround for the fact that the 3.x assembler has no register constraint for doubles
 
 	#if defined(__LP64__)
 	// longs are 64-bit on non-Windows 64-bit compilers
-	B40C_LOAD_BASE_ONE_TWO(long, 				long, 					long, 		s64, l, long)
-	B40C_LOAD_BASE_ONE_TWO(unsigned long, 		unsigned long, 			ulong, 		u64, l, unsigned long)
+	B40CG_LOAD_BASE_ONE_TWO(long, 				long, 					long, 		s64, l, long)
+	B40CG_LOAD_BASE_ONE_TWO(unsigned long, 		unsigned long, 			ulong, 		u64, l, unsigned long)
 	#endif
 
 
 	/**
 	 * Undefine macros
 	 */
-	#undef B40C_LOAD_VEC1
-	#undef B40C_LOAD_VEC2
-	#undef B40C_LOAD_VEC4
-	#undef B40C_LOAD_BASE
-	#undef B40C_LOAD_BASE_ONE_TWO
-	#undef B40C_LOAD_BASE_ONE_TWO_FOUR
-	#undef B40C_CAST8
-	#undef B40C_REG8
-	#undef B40C_REG16
+	#undef B40CG_LOAD_VEC1
+	#undef B40CG_LOAD_VEC2
+	#undef B40CG_LOAD_VEC4
+	#undef B40CG_LOAD_BASE
+	#undef B40CG_LOAD_BASE_ONE_TWO
+	#undef B40CG_LOAD_BASE_ONE_TWO_FOUR
+	#undef B40CG_CAST8
+	#undef B40CG_REG8
+	#undef B40CG_REG16
 
 
 
