@@ -4,6 +4,10 @@
 #include <cstdio>
 #include <assert.h>
 
+#include <ctgmath>
+#include <string.h>
+#include <functional>
+
 #ifndef GLOBALBFS_HH
 #define GLOBALBFS_HH
 
@@ -76,64 +80,175 @@ template<class Derived,class FQ_T,class MType,class STORE>
 void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp, MType *&owenmap, MType *&tmpmap)
 {
 
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Status    status;
-    const int outsizebm = mask_size;
-    // root 0
-    int rounds = 0;
-    while((1 << rounds) < store.getNumRowSl() ){
-        //comute recv addr
-        int recv_addr = (store.getLocalRowID() + store.getNumRowSl() - (1 << rounds)) % store.getNumRowSl();
-        //compute send addr
-        int sender_addr = (store.getLocalRowID() +  (1 << rounds)) % store.getNumRowSl();
+    MPI_Status status;
+    int size, rank, n , p2n, r;
+    int psize = mask_size;
 
-        if((store.getLocalRowID() >> rounds)%2 == 1){
-            MPI_Sendrecv(owenmap, outsizebm, bm_type, recv_addr, rounds<<1,
-                         tmpmap,  outsizebm, bm_type, recv_addr, rounds<<1,
-                         col_comm, &status );
-            for(int i = 0; i < outsizebm; i++){
-                tmpmap[i] = ~tmpmap[i] & owenmap[i];
-            }
-            int p= 0;
-            for(int i = 0; i < outsizebm; i++){
-                MType tmpm = tmpmap[i];
-                while( tmpm != 0){
-                     int last = __builtin_ctz(tmpm);
-                     tmp[p] = owen[i*8*sizeof(MType)+last];
-                     p++;
-                     tmpm ^= (1 << last);
-                }
-            }
-            //send fq
-            MPI_Ssend(tmp, p ,fq_tp_type,recv_addr,(rounds<<1)+1,col_comm);
-        } else if ( store.getLocalRowID() + (1 << rounds) < store.getNumRowSl() ){
-            MPI_Sendrecv(owenmap, outsizebm, bm_type, sender_addr, rounds<<1,
-                         tmpmap,  outsizebm, bm_type, sender_addr, rounds<<1,
-                         col_comm, &status );
-            for(int i = 0; i < outsizebm; i++){
-                tmpmap[i]  = tmpmap[i]  & ~owenmap[i];
-                owenmap[i] = owenmap[i] | tmpmap[i];
-            }
-            //recv fq
-            MPI_Recv(tmp, store.getLocColLength() ,fq_tp_type,sender_addr,(rounds<<1)+1,col_comm,&status);
-            int p= 0;
-            for(int i = 0; i < outsizebm; i++){
-                MType tmpm = tmpmap[i];
-                while( tmpm != 0){
-                     int last = __builtin_ctz(tmpm);
-                     owen[i*8*sizeof(MType)+last]=tmp[p];
-                     p++;
-                     tmpm ^= (1 << last);
-                }
-            }
+    //step 1
+    MPI_Comm_size(col_comm, &size);
+    MPI_Comm_rank(col_comm, &rank);
 
+    n = ilogb(size); //integer log_2 of size
+    p2n = 1 << n; // 2^n
+    r = size - (1 << n);
+
+    //step 2
+    if( rank < 2 * r){
+         if((rank & 1) == 0){ // even
+             MPI_Sendrecv(owenmap, psize, bm_type, rank+1, 0,
+                          tmpmap,  psize, bm_type, rank+1, 0,
+                          col_comm, &status );
+             for(int i = 0; i < psize; i++){
+                 tmpmap[i]  = tmpmap[i]  & ~owenmap[i];
+                 owenmap[i] = owenmap[i] | tmpmap[i];
+             }
+
+             MPI_Recv(tmp, store.getLocColLength() ,fq_tp_type,rank+1,1,col_comm,&status);
+             int p= 0;
+             for(int i = 0; i < psize; i++){
+                 MType tmpm = tmpmap[i];
+                 while( tmpm != 0){
+                      int last = ffsl(tmpm);
+                      owen[i*8*sizeof(MType)+last]=tmp[p];
+                      p++;
+                      tmpm ^= (1 << last);
+                 }
+             }
+
+          } else { // odd
+             MPI_Sendrecv(owenmap, psize, bm_type, rank-1, 0,
+                          tmpmap,  psize, bm_type, rank-1, 0,
+                          col_comm, &status );
+             for(int i = 0; i < psize; i++){
+                 tmpmap[i] = ~tmpmap[i] & owenmap[i];
+             }
+             int p= 0;
+             for(int i = 0; i < psize; i++){
+                 MType tmpm = tmpmap[i];
+                 while( tmpm != 0){
+                      int last = ffsl(tmpm);
+                      tmp[p] = owen[i*8*sizeof(MType)+last];
+                      p++;
+                      tmpm ^= (1 << last);
+                 }
+             }
+
+             MPI_Send(tmp, p, fq_tp_type, rank-1,1, col_comm);
+          }
+    }
+    const std::function<int (int)> newrank = [&r](int oldr) { return (oldr < 2*r)? oldr/2 : oldr -r; };
+    const std::function<int (int)> oldrank = [&r](int newr) { return (newr <  r )? newr*2 : newr +r; };
+
+    if((((rank & 1)==0) &&(rank < 2*r))||(rank >= 2*r)){
+
+         int vrank, csize, offset, lowers, uppers;
+
+         vrank  = newrank(rank);
+         csize  = psize;
+         offset = 0;
+
+         for(int it=0; it < n; it++){
+              lowers = csize/2;
+              uppers = csize - lowers;
+
+              if(((vrank >> it)&1)==0){// even
+                  MPI_Sendrecv(owenmap+offset, csize, bm_type, oldrank((vrank+(1<<it))&(p2n-1)), it<<1+2,
+                               tmpmap+offset , csize, bm_type, oldrank((vrank+(1<<it))&(p2n-1)), it<<1+2,
+                               col_comm, &status );
+                  for(int i = 0; i < csize; i++){
+                      tmpmap[i+offset]  = tmpmap[i+offset]  & ~owenmap[i+offset];
+                      owenmap[i+offset] = owenmap[i+offset] | tmpmap[i+offset];
+                  }
+                  int p= 0;
+                  for(int i = 0; i < uppers; i++){
+                      MType tmpm = tmpmap[i+offset+lowers];
+                      while( tmpm != 0){
+                           int last = ffsl(tmpm);
+                           tmp[lowers*8*sizeof(MType)+p] = owen[(i+offset+lowers)*8*sizeof(MType)+last];
+                           p++;
+                           tmpm ^= (1 << last);
+                      }
+                  }
+
+                  MPI_Sendrecv(tmp+lowers*8*sizeof(MType), p, fq_tp_type,
+                               oldrank((vrank+(1<<it))&(p2n-1)), it<<1+3,
+                               tmp, lowers*8*sizeof(MType), fq_tp_type,
+                               oldrank((vrank+(1<<it))&(p2n-1)), it<<1+3,
+                               col_comm, &status);
+
+                  p= 0;
+                  for(int i = 0; i < lowers; i++){
+                      MType tmpm = tmpmap[i];
+                      while( tmpm != 0){
+                           int last = ffsl(tmpm);
+                           owen[(i+offset)*8*sizeof(MType)+last]=tmp[p];
+                           p++;
+                           tmpm ^= (1 << last);
+                      }
+                  }
+
+                  csize = lowers;
+               } else { // odd
+                  MPI_Sendrecv(owenmap+offset, csize, bm_type,
+                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), it<<1+2,
+                               tmpmap+offset , csize, bm_type,
+                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), it<<1+2,
+                               col_comm, &status );
+                  for(int i = 0; i < csize; i++){
+                      tmpmap[i+offset]  = tmpmap[i+offset]  & ~owenmap[i+offset];
+                      owenmap[i+offset] = owenmap[i+offset] | tmpmap[i+offset];
+                  }
+                  int p= 0;
+                  for(int i = 0; i < lowers; i++){
+                      MType tmpm = tmpmap[i+offset];
+                      while( tmpm != 0){
+                           int last = ffsl(tmpm);
+                           tmp[p] = owen[(i+offset)*8*sizeof(MType)+last];
+                           p++;
+                           tmpm ^= (1 << last);
+                      }
+                  }
+
+                  MPI_Sendrecv(tmp, p, fq_tp_type,
+                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), it<<1+3,
+                               tmp+lowers*8*sizeof(MType), uppers*8*sizeof(MType), fq_tp_type,
+                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), it<<1+3,
+                               col_comm, &status);
+
+                  p= 0;
+                  for(int i = 0; i < uppers; i++){
+                      MType tmpm = tmpmap[i];
+                      while( tmpm != 0){
+                           int last = ffsl(tmpm);
+                           owen[(i+offset+lowers)*8*sizeof(MType)+last]=tmp[p+lowers*8*sizeof(MType)];
+                           p++;
+                           tmpm ^= (1 << last);
+                      }
+                  }
+
+                  offset += lowers;
+                  csize = uppers;
+              }
         }
-        rounds++;
     }
 
-    //distribute solution
-    MPI_Bcast(owen,store.getLocColLength(),fq_tp_type,0,col_comm);
+    // Transmission of the final results
+    int sizes[size];
+    int disps[size];
+
+    for(int it=0; it< p2n; it++){
+        int reverse = (p2n-1)-it;
+        sizes[oldrank(it)]=((((reverse+1)*psize)>>n) -((reverse*psize)>>n))*(sizeof(MType)*8);
+        disps[oldrank(it)]=((reverse*psize)>>n)*(sizeof(MType)*8);
+    }
+    for(int it=p2n; it< size; it++){
+        sizes[oldrank(it-p2n)+1]=0;
+        disps[oldrank(it-p2n)+1]=0;
+    }
+
+    MPI_Allgatherv(MPI_IN_PLACE, sizes[rank],
+        , owen, sizes,
+        disps, fq_tp_type, col_comm);
 }
 
 template<class Derived,class FQ_T,class MType,class STORE>
