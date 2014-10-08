@@ -5,13 +5,20 @@
 #include <assert.h>
 #include "vreduce.hpp"
 
+#include <ctgmath>
+#include <string.h>
+#include <functional>
+
 #ifndef GLOBALBFS_HH
 #define GLOBALBFS_HH
 
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template<class Derived,class FQ_T, class STORE >
+template<class Derived,
+         class FQ_T,  // Queue Type
+         class MType, // Bitmap mask
+         class STORE > //Storage of Matrix
 class GlobalBFS
 {
     MPI_Comm row_comm, col_comm;
@@ -19,14 +26,23 @@ class GlobalBFS
     // sending node column slice, startvtx, size
     std::vector<typename STORE::fold_prop> fold_fq_props;
 
+    void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
+                                MType *&owenmap, MType *&tmpmap);
+
 protected:
     const STORE& store;
     typename STORE::vtxtyp* predecessor;
 
     MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
+    MPI_Datatype bm_type;    // Bitmap Type
     //FQ_T*  __restrict__ recv_fq_buff; - conflicts with void* ref
     FQ_T*  recv_fq_buff;
+
     long    recv_fq_buff_length;
+
+    MType* owenmask;
+    MType* tmpmask;
+    int64_t mask_size;
     // Functions that have to be implemented by the children
     //void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
     //void getOutgoingFQ(FQ_T* &startaddr, vtxtype& outsize)=0;
@@ -41,8 +57,11 @@ protected:
     void getBackOutqueue();
     void setBackInqueue();
 
+    void generatOwenMask();
+
 public:
     GlobalBFS(STORE& _store);
+    ~GlobalBFS();
 
     #ifdef INSTRUMENTED
     void runBFS(typename STORE::vtxtyp startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred);
@@ -54,18 +73,214 @@ public:
     typename STORE::vtxtyp* getPredecessor();
 };
 
+/*
+ * Bitmap compression on predecessor reduction
+ *
+ */
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp, MType *&owenmap, MType *&tmpmap)
+{
 
-template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::getBackPredecessor(){}
+    MPI_Status status;
+    int size, rank, n , p2n, r;
+    int psize = mask_size;
 
-template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::getBackOutqueue(){}
+    //step 1
+    MPI_Comm_size(col_comm, &size);
+    MPI_Comm_rank(col_comm, &rank);
 
-template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::setBackInqueue(){}
+    n = ilogb(size); //integer log_2 of size
+    p2n = 1 << n; // 2^n
+    r = size - (1 << n);
 
-template<class Derived,class FQ_T,class STORE>
-GlobalBFS<Derived,FQ_T,STORE>::GlobalBFS(STORE &_store): store(_store)
+    //step 2
+    if( rank < 2 * r){
+         if((rank & 1) == 0){ // even
+             MPI_Sendrecv(owenmap, psize, bm_type, rank+1, 0,
+                          tmpmap,  psize, bm_type, rank+1, 0,
+                          col_comm, &status );
+             for(int i = 0; i < psize; i++){
+                 tmpmap[i]  = tmpmap[i]  & ~owenmap[i];
+                 owenmap[i] = owenmap[i] | tmpmap[i];
+             }
+
+             MPI_Recv(tmp, store.getLocColLength() ,fq_tp_type,rank+1,1,col_comm,&status);
+             int p= 0;
+             for(int i = 0; i < psize; i++){
+                 MType tmpm = tmpmap[i];
+                 while( tmpm != 0){
+                      int last = ffsl(tmpm);
+                      owen[i*8*sizeof(MType)+last]=tmp[p];
+                      p++;
+                      tmpm ^= (1 << last);
+                 }
+             }
+
+          } else { // odd
+             MPI_Sendrecv(owenmap, psize, bm_type, rank-1, 0,
+                          tmpmap,  psize, bm_type, rank-1, 0,
+                          col_comm, &status );
+             for(int i = 0; i < psize; i++){
+                 tmpmap[i] = ~tmpmap[i] & owenmap[i];
+             }
+             int p= 0;
+             for(int i = 0; i < psize; i++){
+                 MType tmpm = tmpmap[i];
+                 while( tmpm != 0){
+                      int last = ffsl(tmpm);
+                      tmp[p] = owen[i*8*sizeof(MType)+last];
+                      p++;
+                      tmpm ^= (1 << last);
+                 }
+             }
+
+             MPI_Send(tmp, p, fq_tp_type, rank-1,1, col_comm);
+          }
+    }
+    const std::function<int (int)> newrank = [&r](int oldr) { return (oldr < 2*r)? oldr/2 : oldr -r; };
+    const std::function<int (int)> oldrank = [&r](int newr) { return (newr <  r )? newr*2 : newr +r; };
+
+    if((((rank & 1)==0) &&(rank < 2*r))||(rank >= 2*r)){
+
+         int vrank, csize, offset, lowers, uppers;
+
+         vrank  = newrank(rank);
+         csize  = psize;
+         offset = 0;
+
+         for(int it=0; it < n; it++){
+              lowers = csize/2;
+              uppers = csize - lowers;
+
+              if(((vrank >> it)&1)==0){// even
+                  MPI_Sendrecv(owenmap+offset, csize, bm_type, oldrank((vrank+(1<<it))&(p2n-1)), it<<1+2,
+                               tmpmap+offset , csize, bm_type, oldrank((vrank+(1<<it))&(p2n-1)), it<<1+2,
+                               col_comm, &status );
+                  for(int i = 0; i < csize; i++){
+                      tmpmap[i+offset]  = tmpmap[i+offset]  & ~owenmap[i+offset];
+                      owenmap[i+offset] = owenmap[i+offset] | tmpmap[i+offset];
+                  }
+                  int p= 0;
+                  for(int i = 0; i < uppers; i++){
+                      MType tmpm = tmpmap[i+offset+lowers];
+                      while( tmpm != 0){
+                           int last = ffsl(tmpm);
+                           tmp[lowers*8*sizeof(MType)+p] = owen[(i+offset+lowers)*8*sizeof(MType)+last];
+                           p++;
+                           tmpm ^= (1 << last);
+                      }
+                  }
+
+                  MPI_Sendrecv(tmp+lowers*8*sizeof(MType), p, fq_tp_type,
+                               oldrank((vrank+(1<<it))&(p2n-1)), it<<1+3,
+                               tmp, lowers*8*sizeof(MType), fq_tp_type,
+                               oldrank((vrank+(1<<it))&(p2n-1)), it<<1+3,
+                               col_comm, &status);
+
+                  p= 0;
+                  for(int i = 0; i < lowers; i++){
+                      MType tmpm = tmpmap[i];
+                      while( tmpm != 0){
+                           int last = ffsl(tmpm);
+                           owen[(i+offset)*8*sizeof(MType)+last]=tmp[p];
+                           p++;
+                           tmpm ^= (1 << last);
+                      }
+                  }
+
+                  csize = lowers;
+               } else { // odd
+                  MPI_Sendrecv(owenmap+offset, csize, bm_type,
+                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), it<<1+2,
+                               tmpmap+offset , csize, bm_type,
+                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), it<<1+2,
+                               col_comm, &status );
+                  for(int i = 0; i < csize; i++){
+                      tmpmap[i+offset]  = tmpmap[i+offset]  & ~owenmap[i+offset];
+                      owenmap[i+offset] = owenmap[i+offset] | tmpmap[i+offset];
+                  }
+                  int p= 0;
+                  for(int i = 0; i < lowers; i++){
+                      MType tmpm = tmpmap[i+offset];
+                      while( tmpm != 0){
+                           int last = ffsl(tmpm);
+                           tmp[p] = owen[(i+offset)*8*sizeof(MType)+last];
+                           p++;
+                           tmpm ^= (1 << last);
+                      }
+                  }
+
+                  MPI_Sendrecv(tmp, p, fq_tp_type,
+                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), it<<1+3,
+                               tmp+lowers*8*sizeof(MType), uppers*8*sizeof(MType), fq_tp_type,
+                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), it<<1+3,
+                               col_comm, &status);
+
+                  p= 0;
+                  for(int i = 0; i < uppers; i++){
+                      MType tmpm = tmpmap[i];
+                      while( tmpm != 0){
+                           int last = ffsl(tmpm);
+                           owen[(i+offset+lowers)*8*sizeof(MType)+last]=tmp[p+lowers*8*sizeof(MType)];
+                           p++;
+                           tmpm ^= (1 << last);
+                      }
+                  }
+
+                  offset += lowers;
+                  csize = uppers;
+              }
+        }
+    }
+
+    // Transmission of the final results
+    int sizes[size];
+    int disps[size];
+
+    for(int it=0; it< p2n; it++){
+        int reverse = (p2n-1)-it;
+        sizes[oldrank(it)]=((((reverse+1)*psize)>>n) -((reverse*psize)>>n))*(sizeof(MType)*8);
+        disps[oldrank(it)]=((reverse*psize)>>n)*(sizeof(MType)*8);
+    }
+    for(int it=p2n; it< size; it++){
+        sizes[oldrank(it-p2n)+1]=0;
+        disps[oldrank(it-p2n)+1]=0;
+    }
+
+    MPI_Allgatherv(MPI_IN_PLACE, sizes[rank],
+        , owen, sizes,
+        disps, fq_tp_type, col_comm);
+}
+
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::getBackPredecessor(){}
+
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::getBackOutqueue(){}
+
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::setBackInqueue(){}
+
+/*
+ * Generates a map of the vertex with predecessor
+ */
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::generatOwenMask()
+{
+    #pragma omp parallel for
+    for(long i=0; i < mask_size ; i++){
+        MType tmp = 0;
+        for(long j=0; j < 8*sizeof(MType); j++){
+            if( predecessor[ i*8*sizeof(MType) + j] != -1 )
+                tmp |= 1 << j;
+        }
+        owenmask[i] = tmp;
+    }
+
+}
+
+template<class Derived,class FQ_T,class MType,class STORE>
+GlobalBFS<Derived,FQ_T,MType,STORE>::GlobalBFS(STORE &_store): store(_store)
 {
      // Split communicator into row and column communicator
      // Split by row, rank by column
@@ -75,6 +290,14 @@ GlobalBFS<Derived,FQ_T,STORE>::GlobalBFS(STORE &_store): store(_store)
 
      fold_fq_props = store.getFoldProperties();
 
+     mask_size = (store.getLocColLength()/(8*sizeof(MType)))+((store.getLocColLength()%(8*sizeof(MType))>0)? 1 : 0);
+     owenmask = new MType[mask_size];
+     tmpmask = new MType[mask_size];
+}
+template<class Derived,class FQ_T,class MType,class STORE>
+GlobalBFS<Derived,FQ_T,MType,STORE>::~GlobalBFS(){
+    delete[] owenmask;
+    delete[] tmpmask;
 }
 
 /*
@@ -88,11 +311,11 @@ GlobalBFS<Derived,FQ_T,STORE>::GlobalBFS(STORE &_store): store(_store)
  * 5) global fold
 */
 #ifdef INSTRUMENTED
-template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
 #else
-template<class Derived,class FQ_T,class STORE>
-void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
+template<class Derived,class FQ_T,class MType,class STORE>
+void GlobalBFS<Derived,FQ_T,MType,STORE>::runBFS(typename STORE::vtxtyp startVertex)
 #endif
 {
     #ifdef INSTRUMENTED
@@ -146,7 +369,11 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
         tend = MPI_Wtime();
         lqueue += tend-tstart;
         #endif
-        MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
+        //MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
+        generatOwenMask();
+        allReduceBitCompressed(predecessor,
+                               recv_fq_buff, // have to be changed for bitmap queue
+                                        owenmask, tmpmask);
         #ifdef INSTRUMENTED
         tend = MPI_Wtime();
         predlistred = tend-tstart;
@@ -328,8 +555,8 @@ void GlobalBFS<Derived,FQ_T,STORE>::runBFS(typename STORE::vtxtyp startVertex)
 }
 }
 
-template<class Derived,class FQ_T,class STORE>
-typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, STORE>::getPredecessor()
+template<class Derived,class FQ_T,class MType,class STORE>
+typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 {
     return  predecessor;
 }

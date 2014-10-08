@@ -17,3 +17,11 @@
 #else
     #define assume_aligned(typ, var, alg)
 #endif
+
+#if defined( __GNUC__ ) && !defined( __CUDACC__ )
+
+    #if ((__GNUC__ > 4) ||(__GNUC__ == 4 && __GNUC_MINOR__ >= 7 )) && defined(_OPENMP)
+        #define __PMODE__
+    #endif
+
+#endif

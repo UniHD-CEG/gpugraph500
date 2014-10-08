@@ -4,7 +4,7 @@
 #include "comp_opt.h"
 #include "cpubfs_bin.h"
 
-CPUBFS_bin::CPUBFS_bin(MatrixT& _store, int64_t verbosity):GlobalBFS<CPUBFS_bin,uint64_t,MatrixT>(_store),col64(_store.getLocColLength()/64),row64(_store.getLocRowLength()/64)
+CPUBFS_bin::CPUBFS_bin(MatrixT& _store, int64_t verbosity):GlobalBFS<CPUBFS_bin,uint64_t,uint64_t,MatrixT>(_store),col64(_store.getLocColLength()/64),row64(_store.getLocRowLength()/64)
 {
     fq_tp_type = MPI_UINT64_T; //Frontier Queue Transport Type
     //if(posix_memalign((void**)&predecessor,64,sizeof(vtxtyp)*store.getLocColLength()))predecessor=0;// new vtxtyp[store.getLocColLength()];;

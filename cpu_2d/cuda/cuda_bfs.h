@@ -30,11 +30,15 @@ using namespace b40c::graph::bfs;
 typedef long long          vtxtyp;
 typedef unsigned int       rowtyp;
 
+
 class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
                                     vtxtyp,
+                                    unsigned char,
                                     DistMatrix2d<vtxtyp, rowtyp, true, 1, true>  // use local ids
                                   >
 {
+    typedef unsigned char MType;
+
     typedef CsrProblem<vtxtyp,
                        rowtyp,
                        true> Csr;
@@ -45,7 +49,7 @@ class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
     vtxtyp* __restrict__ redbuff;
 
     //Csr::VisitedMask** __restrict__ vmask;
-    unsigned char* __restrict__ vmask;
+    MType* __restrict__ vmask;
 
     bool done;
 

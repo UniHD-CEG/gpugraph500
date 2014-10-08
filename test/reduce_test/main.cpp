@@ -5,11 +5,15 @@
 #include <cstdlib>
 #include <algorithm>
 #include <vector>
+#include <array>
+#include <tuple>
 
 
 const long iterations = 1000;
 const long psize = 1000;
 const bool test = false;// true;
+
+const long max_slices = 8;
 
 struct slice{
     long real_slice;
@@ -20,7 +24,7 @@ struct slice{
 
 int main(int argc, char** argv)
 {
-    int provided;
+    //int provided;
     //MPI_Init_thread(&argc, &argv,MPI_THREAD_MULTIPLE,&provided);
     MPI_Init(&argc, &argv);
     //if(provided==MPI_THREAD_MULTIPLE){
@@ -51,8 +55,13 @@ int main(int argc, char** argv)
     printf("Barrier: %.3e\n",(end-start)/iterations);
     }
 
+    //result
+    typedef std::tuple<long, double, std::array<double,max_slices> > restup;
+    std::vector<restup> res;
+
     //preperation
     for(long psize =20; psize < 1000000; psize*=4){
+    restup res_entry;
     if(rank==0)
         printf("problem size: %ld\n", psize);
     double* send = new double[psize];
@@ -61,6 +70,7 @@ int main(int argc, char** argv)
     for(long i=0; i<psize; i++){
         send[i] = 1.;
     }
+    std::get<0>(res_entry) = psize;
     double ref;
     //mpi reference
     start = MPI_Wtime();
@@ -82,12 +92,15 @@ int main(int argc, char** argv)
         }
     }
     end = MPI_Wtime();
+
+    ref = (end-start)/iterations;
     if(rank == 0){
-        ref = (end-start)/iterations;
         printf("default: %.3e\n",ref);
     }
+    std::get<1>(res_entry) = ref;
     //multiple slice
-    for(long slices=1; slices<9 ;slices++){
+    auto sl_res = std::get<2>(res_entry).begin();
+    for(long slices=1; slices<= max_slices ;slices++){
     double p1,p2,p3,s1=0,s2=0;
     start = MPI_Wtime();
     for(long i=0; i < iterations; i++){
@@ -130,7 +143,7 @@ int main(int argc, char** argv)
                     MPI_Isend(recv+real_slice_start, real_slice_size , MPI_DOUBLE,recv_addr,s,MPI_COMM_WORLD, &request);
                 }else
                 if(vrank + (1 << rounds) < size){ // test something to recive
-                    slice sd = {real_slice,real_slice_size,real_slice_start };
+                    slice sd{real_slice,real_slice_size,real_slice_start,MPI_REQUEST_NULL};
                     //recive
                     int sender_addr;
                     if((rank >> rounds)%2 == 0)
@@ -146,22 +159,26 @@ int main(int argc, char** argv)
                 }
             }
             #pragma omp parallel for
-            for(auto s=statusb.begin(); s !=statusb.end(); s++){
-                MPI_Wait(&s->rq,MPI_STATUS_IGNORE);
+            for(unsigned long it=0; it < statusb.size(); it++){
+                slice& s = statusb[it];
+                MPI_Wait(&s.rq,MPI_STATUS_IGNORE);
                 //do reduce
-                for(long it=s->real_slice_start;
-                    it < s->real_slice_start+s->real_slice_size; it++){
+                for(long it2=s.real_slice_start;
+                    it2 < s.real_slice_start+s.real_slice_size; it2++){
                     recv[it] += rc_buff[it];
                 }
             }
             statusb.clear();
         }
         delete[] rc_buff;
+        rc_buff = 0;
         MPI_Barrier(MPI_COMM_WORLD);
         p2=MPI_Wtime();
         s1+=p2-p1;
 
+        // does not work because send/recive memory must not overlap
         int exsl = slices +((slices%size==0)? 0: size-slices%size);
+
         int* sendc = new int[exsl];
         int* displs = new int[exsl];
         for(long i=0; i < slices; i++){
@@ -174,12 +191,15 @@ int main(int argc, char** argv)
         }
         int ms = slices/size+((slices%size!=0)?1:0);
         for(long s=0; s< ms; s++){
-            MPI_Allgatherv(recv+displs[size*s+rank], sendc[size*s+rank],
-                MPI_DOUBLE, recv+displs[size*s], sendc+size*s,
+            MPI_Allgatherv(MPI_IN_PLACE, sendc[size*s+rank],
+                MPI_DOUBLE, recv, sendc+size*s,
                 displs+size*s, MPI_DOUBLE, MPI_COMM_WORLD);
         }
-        /*
-       // MPI_Request* request = new MPI_Request[slices];
+        delete[] sendc;
+        delete[] displs;
+
+/*
+        // MPI_Request* request = new MPI_Request[slices];
         //distribute solution
         for(long s=0; s<slices; s++){
             int root = s%size;
@@ -190,7 +210,9 @@ int main(int argc, char** argv)
             MPI_Bcast(recv+sstart,ssize,MPI_DOUBLE,root,MPI_COMM_WORLD);
         }
         //MPI_Waitall(slices,request,MPI_STATUSES_IGNORE);
+        //delete[] request;
         */
+
         MPI_Barrier(MPI_COMM_WORLD);
         p3=MPI_Wtime();
         s2+=p3-p2;
@@ -217,10 +239,31 @@ int main(int argc, char** argv)
            sres, (sres/ref)*100.,
            s1res, (s1res/sres)*100.,
            s2res, (s2res/sres)*100.);
+        *sl_res = sres;
     }
+    sl_res++;
     }
+    res.push_back(res_entry);
     delete[] send;
+    send = 0;
     delete[] recv;
+    recv = 0;
+    }
+
+    //new output
+    if(rank == 0){
+        printf("\n#Elements Default ");
+        for(long slices=1; slices<9 ;slices++){
+            printf("%8lds ", slices);
+        }
+        printf("\n");
+        for(auto it=res.begin(); it != res.end(); it++){
+            printf("%7ld %.3e",std::get<0>(*it),std::get<1>(*it));
+            for(auto it2=std::get<2>(*it).begin(); it2 != std::get<2>(*it).end(); it2++){
+                printf(" %.3e",*it2);
+            }
+            printf("\n");
+        }
     }
     MPI_Finalize();
 

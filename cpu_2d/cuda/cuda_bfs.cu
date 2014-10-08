@@ -1,3 +1,4 @@
+#include "../comp_opt.h"
 #include "cuda_bfs.h"
 
 #include "b40c/util/error_utils.cuh"
@@ -8,9 +9,13 @@
 #include <algorithm>
 #include <functional>
 
+#if defined( __PMODE__)
+    #include <parallel/algorithm>
+#endif
+
 
 CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing, int64_t _verbosity):
-    GlobalBFS< CUDA_BFS,vtxtyp,MatrixT>(_store),
+    GlobalBFS< CUDA_BFS,vtxtyp,unsigned char,MatrixT>(_store),
     verbosity(_verbosity),
     queue_sizing(_queue_sizing),
     vmask(0)
@@ -32,6 +37,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing, int64_t _
     predecessor    = new vtxtyp[store.getLocColLength()];
 
     fq_tp_type = MPI_INT64_T;
+    bm_type = MPI_UNSIGNED_CHAR;
     recv_fq_buff_length = static_cast<vtxtyp>
             (std::max(store.getLocRowLength(), store.getLocColLength())*_queue_sizing);
     //recv_fq_buff = new vtxtyp[recv_fq_buff_length];

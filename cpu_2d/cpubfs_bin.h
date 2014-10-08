@@ -5,7 +5,7 @@
 typedef int64_t vtxtyp;
 typedef int64_t rowtyp;
 
-class CPUBFS_bin : public GlobalBFS<CPUBFS_bin,uint64_t,DistMatrix2d<vtxtyp,rowtyp,true, 64, false> >
+class CPUBFS_bin : public GlobalBFS<CPUBFS_bin,uint64_t,uint64_t,DistMatrix2d<vtxtyp,rowtyp,true, 64, false> >
 {
     const int64_t col64;
     const int64_t row64;
