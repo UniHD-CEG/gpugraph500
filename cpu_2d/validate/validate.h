@@ -279,10 +279,10 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
 
       for(typename std::vector<typename MatrixT::fold_prop>::const_iterator it = rowFractions.begin(); it  != rowFractions.end(); it++){
           if(it->sendColSl == store.getLocalColumnID() ){
-              MPI_Bcast(&pred[store.globaltolocalCol(it->startvtx)],it->size,MPI_INT64_T,it->sendColSl,row_comm);
-              memcpy(&rowPred[store.globaltolocalRow(it->startvtx)],&pred[store.globaltolocalCol(it->startvtx)],it->size*sizeof(int64_t));
+              MPI_Bcast(&pred[store.globaltolocalCol(it->gstartvtx)],it->size,MPI_INT64_T,it->sendColSl,row_comm);
+              memcpy(&rowPred[store.globaltolocalRow(it->gstartvtx)],&pred[store.globaltolocalCol(it->gstartvtx)],it->size*sizeof(int64_t));
           }else{
-              MPI_Bcast(&rowPred[store.globaltolocalRow(it->startvtx)],it->size,MPI_INT64_T,it->sendColSl,row_comm);
+              MPI_Bcast(&rowPred[store.globaltolocalRow(it->gstartvtx)],it->size,MPI_INT64_T,it->sendColSl,row_comm);
           }
       }
 

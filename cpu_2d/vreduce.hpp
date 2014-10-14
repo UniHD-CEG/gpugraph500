@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <functional>
 
+#include <sstream>
+
 #ifndef VREDUCE_HPP
 #define VREDUCE_HPP
 
@@ -20,9 +22,8 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
              ,double& twork
              #endif
              ){
-
     //
-    int size, rank, n , p2n, r;
+    int size, rank, rank2, n , p2n, r;
 
     //time mesurement
     #ifdef INSTRUMENTED
@@ -32,6 +33,7 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
     //step 1
     MPI_Comm_size(comm, &size);
     MPI_Comm_rank(comm, &rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank2);
     n = ilogb(static_cast<double>(size)); //integer log_2 of size
     p2n = 1 << n; // 2^n
     r = size - (1 << n);
@@ -81,6 +83,8 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
          csize  = ssize;
          offset = 0;
 
+         get(offset, csize, send, psize_to);
+
          for(int it=0; it < n; it++){
              lowers = csize/2;
              uppers = csize - lowers;
@@ -119,7 +123,7 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
                 end=MPI_Wtime();
                 twork += end -start;
                 #endif
-                MPI_Sendrecv(send+offset, lowers, type,
+                MPI_Sendrecv(send+offset, psize_to, type,
                                   oldrank((p2n+vrank-(1<<it))&(p2n-1)), it+2,
                                   recv_buff, uppers, type,
                                   oldrank((p2n+vrank-(1<<it))&(p2n-1)), it+2,
@@ -153,8 +157,8 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
      }
 
      // Transmission of the final results
-     int* sizes = new int[size];
-     int* disps = new int[size];
+     int sizes[size];
+     int disps[size];
 
      // Transmission of the subslice sizes
      MPI_Allgather(&psize_to ,1,MPI_INT,sizes,1,MPI_INT,comm);
@@ -172,9 +176,6 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
          disps, type, comm);
 
      rsize = disps[oldrank(p2n-1)] + sizes[oldrank(p2n-1)];
-
-     delete[] sizes;
-     delete[] disps;
 
 }
 

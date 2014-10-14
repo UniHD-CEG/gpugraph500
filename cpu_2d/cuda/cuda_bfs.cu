@@ -150,13 +150,14 @@ void CUDA_BFS::reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr, i
     // deterimine the local range for the reduction
     start_local = std::lower_bound(queuebuff, queuebuff+qb_length, globalstart,
                                    [](vtxtyp a ,vtxtyp b){ return a < (b& Csr::ProblemType::VERTEX_ID_MASK );} );
-    end_local   = std::upper_bound(queuebuff, queuebuff+qb_length, globalstart,
+    end_local   = std::upper_bound(start_local, queuebuff+qb_length, globalstart+size,
                                    [](vtxtyp a ,vtxtyp b){ return b > (a& Csr::ProblemType::VERTEX_ID_MASK );} );
     //reduction
     endofresult = std::set_union( start_local, end_local, startaddr, startaddr+insize, redbuff );
 
     qb_length = endofresult - redbuff;
     std::swap( queuebuff, redbuff);
+
 }
 
 void CUDA_BFS::getOutgoingFQ(vtxtyp *&startaddr, int &outsize)
@@ -182,10 +183,10 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize)
         qb_length = insize;
     }
     //update visited
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(int i=0; i < qb_length; i++){
         typename Csr::ProblemType::VertexId vtxID = queuebuff[i] & Csr::ProblemType::VERTEX_ID_MASK;
-        #pragma omp atomic
+        //#pragma omp atomic
         vmask[vtxID>>3] |= 1<< (vtxID&0x7 );
     }
 
@@ -211,7 +212,7 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, 
     // deterimine the local range for the reduction
     start_local = std::lower_bound(queuebuff, queuebuff+qb_length, globalstart,
                                    [](vtxtyp a ,vtxtyp b){ return a < (b& Csr::ProblemType::VERTEX_ID_MASK );} );
-    end_local   = std::upper_bound(queuebuff, queuebuff+qb_length, globalstart,
+    end_local   = std::upper_bound(start_local, queuebuff+qb_length, globalstart+size,
                                    [](vtxtyp a ,vtxtyp b){ return b > (a& Csr::ProblemType::VERTEX_ID_MASK );} );
     startaddr = start_local;
     outsize   = end_local-start_local;
@@ -234,17 +235,24 @@ bool CUDA_BFS::istheresomethingnew()
 
 void CUDA_BFS::getBackPredecessor(){
     //terminate all operations
-
     bfsGPU->testOverflow(*csr_problem);
     b40c::util::B40CPerror(csr_problem->ExtractResults(predecessor),
                             "Extraction of result failed" , __FILE__, __LINE__);
     bfsGPU->finalize();
-    for(uint64_t i=0; i < store.getLocColLength(); i++){
-        if(predecessor[i]>-1 )
-            predecessor[i]=store.localtoglobalRow(predecessor[i]);
-        if(predecessor[i]==-2){
-            predecessor[i]=store.localtoglobalCol(i);
+
+    for(long i=0; i < mask_size ; i++){
+        MType tmp = 0;
+        for(long j=0; j < 8*sizeof(MType); j++){
+            const vtxtyp pred = predecessor[ i*8*sizeof(MType) + j];
+            if( (pred != -1) && ((i*8*sizeof(MType) + j) < store.getLocColLength()) ){
+                tmp |= 1 << j;
+                if(pred > -2)
+                    predecessor[i*8*sizeof(MType) + j]=store.localtoglobalRow(pred);
+                else
+                    predecessor[i*8*sizeof(MType) + j]=store.localtoglobalCol(i*8*sizeof(MType) + j);
+            }
         }
+        owenmask[i] = tmp;
     }
 }
 
@@ -315,7 +323,7 @@ void CUDA_BFS::setBackInqueue()
 
         //determine end of own slice
         end_local   = std::upper_bound(qb_nxt, queuebuff+qb_length, gs->gpu,
-                          [](vtxtyp a ,vtxtyp b){ return b > ((a& Csr::ProblemType::GPU_MASK) >> Csr::ProblemType::GPU_MASK_SHIFT );} );
+                          [](vtxtyp a ,vtxtyp b){ return b < ((a& Csr::ProblemType::GPU_MASK) >> Csr::ProblemType::GPU_MASK_SHIFT );} );
         queue_sizes[i] = end_local - qb_nxt;
 
         b40c::util::B40CPerror(cudaMemcpyAsync( gs->frontier_queues.d_keys[0],
@@ -394,7 +402,8 @@ void CUDA_BFS::setStartVertex(vtxtyp start)
                      gs->stream
                ), "Copy of d_filer_mask from device failed" , __FILE__, __LINE__);
         // set new current queue
-        if(((queuebuff[0]& Csr::ProblemType::GPU_MASK) >> Csr::ProblemType::GPU_MASK_SHIFT ) == i){
+        if(store.isLocalRow(start)&&
+                (((queuebuff[0]& Csr::ProblemType::GPU_MASK) >> Csr::ProblemType::GPU_MASK_SHIFT ) == i)){
             b40c::util::B40CPerror(cudaMemcpyAsync( gs->frontier_queues.d_keys[0],
                              &queuebuff[0],
                              sizeof(typename Csr::VertexId),

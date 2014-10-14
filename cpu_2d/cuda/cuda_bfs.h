@@ -69,6 +69,8 @@ public:
     void getBackOutqueue();
     void setBackInqueue();
 
+    void generatOwenMask(){}
+
     void reduce_fq_out(vtxtyp globalstart, long size, vtxtyp* startaddr, int insize);    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
     void getOutgoingFQ(vtxtyp* &startaddr, int& outsize);
     void setModOutgoingFQ(vtxtyp* startaddr,int insize); //startaddr: 0, self modification

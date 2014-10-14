@@ -29,6 +29,8 @@ class DistMatrix2d
 public:
     typedef vertextyp    vtxtyp;
     typedef rowoffsettyp rowtyp;
+
+    const static bool WOLOFF = WOLO;
 private:
 
     int64_t R; //Row slices
@@ -54,6 +56,7 @@ public:
     struct fold_prop{
         int64_t     sendColSl;
         vtxtyp startvtx;
+        vtxtyp gstartvtx;
         long size;
     };
 
@@ -930,39 +933,52 @@ std::vector<typename DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::fold_pro
 
     if(a_quot >=  col_size_res){
         newprop.sendColSl = (row_start/ALG - col_size_res) / ua_col_size;
-        newprop.startvtx = row_start;
+        newprop.gstartvtx = row_start;
+        if(WOLO)
+            newprop.startvtx = globaltolocalRow(newprop.gstartvtx);
+        else
+            newprop.startvtx = newprop.gstartvtx;
         newprop.size = (ua_col_size-((row_start/ALG - col_size_res) % ua_col_size ))*ALG;
         newprop.size = (newprop.size < row_length)? newprop.size :  row_length;
         col_size_res = 0;
         //column end
         vtxtyp colnextstart = ((col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
         (newprop.sendColSl+1)*ua_col_size+numAlg % C)*ALG;
-        newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
+        newprop.size = (newprop.gstartvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.gstartvtx;
+
     } else {
         newprop.sendColSl = a_quot;
         newprop.startvtx = row_start;
+        if(WOLO)
+            newprop.startvtx = globaltolocalRow(newprop.gstartvtx);
+        else
+            newprop.startvtx = newprop.gstartvtx;
         newprop.size = (ua_col_size +1)*ALG;
         newprop.size = (newprop.size < row_length)? newprop.size :  row_length;
         col_size_res -= a_quot +1;
         //column end
         vtxtyp colnextstart = ((col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
         (newprop.sendColSl+1)*ua_col_size+numAlg % C)*ALG;
-        newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
+        newprop.size = (newprop.gstartvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.gstartvtx;
 
     }
     fold_fq_props.push_back(newprop);
     // other
     const vtxtyp row_end = row_start + row_length;
-    while(newprop.startvtx+newprop.size<row_end){
+    while(newprop.gstartvtx+newprop.size<row_end){
         newprop.sendColSl++;
-        newprop.startvtx+=newprop.size;
+        newprop.gstartvtx+=newprop.size;
+        if(WOLO)
+            newprop.startvtx = globaltolocalRow(newprop.gstartvtx);
+        else
+            newprop.startvtx = newprop.gstartvtx;
         newprop.size = ((col_size_res > 0)? ua_col_size+1 : ua_col_size)*ALG;
         col_size_res -= (col_size_res > 0)? 1 : 0;
-        newprop.size = (newprop.startvtx+newprop.size < row_end )? newprop.size: row_end-newprop.startvtx;
+        newprop.size = (newprop.gstartvtx+newprop.size < row_end )? newprop.size: row_end-newprop.gstartvtx;
         //column end
         vtxtyp colnextstart = ((col_size_res > 0)? (newprop.sendColSl+1)*(ua_col_size+1):
         (newprop.sendColSl+1)*ua_col_size+numAlg % C)*ALG;
-        newprop.size = (newprop.startvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.startvtx;
+        newprop.size = (newprop.gstartvtx + newprop.size <= colnextstart)? newprop.size :  colnextstart-newprop.gstartvtx;
         fold_fq_props.push_back(newprop);
     }
 
