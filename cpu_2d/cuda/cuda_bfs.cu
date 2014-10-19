@@ -150,7 +150,7 @@ void CUDA_BFS::reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr, i
     // deterimine the local range for the reduction
     start_local = std::lower_bound(queuebuff, queuebuff+qb_length, globalstart,
                                    [](vtxtyp a ,vtxtyp b){ return a < (b& Csr::ProblemType::VERTEX_ID_MASK );} );
-    end_local   = std::upper_bound(start_local, queuebuff+qb_length, globalstart+size,
+    end_local   = std::upper_bound(start_local, queuebuff+qb_length, globalstart+size-1,
                                    [](vtxtyp a ,vtxtyp b){ return b > (a& Csr::ProblemType::VERTEX_ID_MASK );} );
     //reduction
     endofresult = std::set_union( start_local, end_local, startaddr, startaddr+insize, redbuff );
@@ -212,7 +212,7 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, 
     // deterimine the local range for the reduction
     start_local = std::lower_bound(queuebuff, queuebuff+qb_length, globalstart,
                                    [](vtxtyp a ,vtxtyp b){ return a < (b& Csr::ProblemType::VERTEX_ID_MASK );} );
-    end_local   = std::upper_bound(start_local, queuebuff+qb_length, globalstart+size,
+    end_local   = std::upper_bound(start_local, queuebuff+qb_length, globalstart+size-1,
                                    [](vtxtyp a ,vtxtyp b){ return b > (a& Csr::ProblemType::VERTEX_ID_MASK );} );
     startaddr = start_local;
     outsize   = end_local-start_local;
