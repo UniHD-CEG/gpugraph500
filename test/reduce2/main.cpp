@@ -286,6 +286,18 @@ int main(int argc, char** argv)
     }
 
     }
+
+    printf("sendrecv test\n");
+    MPI_Status status;
+    int b1, b2, isize;
+    MPI_Sendrecv(&b1, 0, MPI_INT,
+                     (rank+1)%size, 96,
+                     &b2, rank+1, MPI_INT,
+                     (rank-1+size)%size, 96,
+                     MPI_COMM_WORLD, &status);
+    MPI_Get_count(&status,MPI_INT,&isize );
+    printf("r %d in %d\n",rank,isize);
+
     MPI_Finalize();
 
     return 0;

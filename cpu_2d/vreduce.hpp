@@ -83,7 +83,7 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
          csize  = ssize;
          offset = 0;
 
-         get(offset, csize, send, psize_to);
+        // get(offset, csize, send, psize_to);
 
          for(int it=0; it < n; it++){
              lowers = csize/2;

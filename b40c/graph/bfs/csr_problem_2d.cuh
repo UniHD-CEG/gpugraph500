@@ -185,6 +185,7 @@ struct CsrProblem
 	// Size of the graph
 	SizeT 						nodes;
 	SizeT						edges;
+        SizeT                                           sliceNodes;
 
 	// Set of graph slices (one for each GPU)
 	std::vector<GraphSlice*> 	graph_slices;
@@ -234,7 +235,7 @@ struct CsrProblem
 
 		} else {
 
-			return vertex % num_gpus;
+                        return vertex /sliceNodes;
 		}
 	}
 
@@ -246,7 +247,7 @@ struct CsrProblem
 	template <typename VertexId>
     VertexId GraphSliceRow(VertexId vertex) const
 	{
-		return vertex / num_gpus;
+                return vertex % sliceNodes;
 	}
 
 
@@ -274,7 +275,34 @@ struct CsrProblem
                 "CsrProblem cudaMemcpy d_labels failed", __FILE__, __LINE__)) return retval;
 
         } else {
+            // Copy out
+            #pragma omp parallel for
+            for (int gpu = 0; gpu < num_gpus; gpu++) {
+                const long offset = gpu * sliceNodes;
+                const long end = ((gpu+1) * sliceNodes<nodes)? (gpu+1) * sliceNodes : nodes;
+                // Set device
+                if (retval = util::B40CPerror(cudaSetDevice(graph_slices[gpu]->gpu),
+                    "CsrProblem cudaSetDevice failed", __FILE__, __LINE__)) continue;
 
+                if (retval = util::B40CPerror(cudaMemcpy(
+                        h_label+offset,
+                        graph_slices[gpu]->d_labels+offset,
+                        sizeof(VertexId) * (end-offset),
+                        cudaMemcpyDeviceToHost),
+                    "CsrProblem cudaMemcpy d_labels failed", __FILE__, __LINE__)) continue;
+
+                for(long i= offset; i < end; i++) {
+                    switch (h_label[i]) {
+                    case -1:
+                    case -2:
+                        break;
+                    default:
+                        h_label[i] &= ProblemType::VERTEX_ID_MASK;
+                    };
+                }
+            }
+
+/*
             VertexId **gpu_labels = new VertexId*[num_gpus];
 
             // Copy out
@@ -319,6 +347,7 @@ struct CsrProblem
                 if (gpu_labels[gpu]) cudaFreeHost( gpu_labels[gpu]);
             }
             delete gpu_labels;
+            */
         }
 
 		return retval;
@@ -338,9 +367,10 @@ struct CsrProblem
         int         verbose = 0)
 	{
 		cudaError_t retval 				= cudaSuccess;
-		this->nodes						= nodes;
+                this->nodes					= nodes;
 		this->edges 					= edges;
 		this->num_gpus 					= num_gpus;
+                this->sliceNodes                                = nodes/num_gpus +((nodes%num_gpus>0)?1:0);
 
 		do {
 			if (num_gpus <= 1) {
