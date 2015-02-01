@@ -13,12 +13,14 @@
     #include <parallel/algorithm>
 #endif
 
-
 CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing, int64_t _verbosity):
     GlobalBFS< CUDA_BFS,vtxtyp,unsigned char,MatrixT>(_store),
     verbosity(_verbosity),
     queue_sizing(_queue_sizing),
     vmask(0)
+  #ifdef DEBUG
+  , checkQueue(0, _store.getLocRowLength(), 0, _store.getLocColLength())
+  #endif
 {
 
     b40c::util::B40CPerror(cudaSetDeviceFlags(cudaDeviceMapHost),
@@ -119,7 +121,6 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing, int64_t _
              }
          }
      }
-
 }
 
 CUDA_BFS::~CUDA_BFS(){
@@ -236,10 +237,11 @@ bool CUDA_BFS::istheresomethingnew()
 void CUDA_BFS::getBackPredecessor(){
     //terminate all operations
     bfsGPU->testOverflow(*csr_problem);
-    b40c::util::B40CPerror(csr_problem->ExtractResults(predecessor),
+    b40c::util::B40CPerror(csr_problem->ExtractResults(predecessor,store.localtoglobalRow(0)),
                             "Extraction of result failed" , __FILE__, __LINE__);
     bfsGPU->finalize();
 
+    #pragma omp parallel for
     for(long i=0; i < mask_size ; i++){
         MType tmp = 0;
         for(long j=0; j < 8*sizeof(MType); j++){
@@ -247,13 +249,14 @@ void CUDA_BFS::getBackPredecessor(){
             if( (pred != -1) && ((i*8*sizeof(MType) + j) < store.getLocColLength()) ){
                 tmp |= 1 << j;
                 if(pred > -2)
-                    predecessor[i*8*sizeof(MType) + j]=store.localtoglobalRow(pred);
+                    predecessor[i*8*sizeof(MType) + j]=store.localtoglobalRow(pred & Csr::ProblemType::VERTEX_ID_MASK );
                 else
                     predecessor[i*8*sizeof(MType) + j]=store.localtoglobalCol(i*8*sizeof(MType) + j);
             }
         }
         owenmask[i] = tmp;
     }
+
 }
 
 void CUDA_BFS::getBackOutqueue()
@@ -263,7 +266,9 @@ void CUDA_BFS::getBackOutqueue()
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
         Csr::GraphSlice* gs = csr_problem->graph_slices[i];
-        queue_sizes[i] = bfsGPU->getQueueSize(gs->gpu);
+        queue_sizes[i] = bfsGPU->getQueueSize(gs->gpu,gs->stream);
+        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
+                    "Can't synchronize device." , __FILE__, __LINE__);
     }
     //sort values on the gpu
     for(int i=0; i < csr_problem->num_gpus; i++){
@@ -309,12 +314,21 @@ void CUDA_BFS::getBackOutqueue()
     }
     qb_length = qb_nxt_out - redbuff ;
     std::swap(queuebuff, redbuff);
+#ifdef DEBUG
+    if(!checkQueue.checkCol(queuebuff, qb_length))
+        std::cerr << "Get invalid queue from the device." << std::end;
+#endif
 }
 
 void CUDA_BFS::setBackInqueue()
 {
     long queue_sizes[csr_problem->num_gpus];
     typename MatrixT::vtxtyp *qb_nxt  = queuebuff;
+
+#ifdef DEBUG
+    if(!checkQueue.checkRow(queuebuff, qb_length))
+        std::cerr << "Try to copy invalid queue on the device." << std::end;
+#endif
 
     // copy next queue to device
     for(int i=0; i < csr_problem->num_gpus; i++){
@@ -338,9 +352,11 @@ void CUDA_BFS::setBackInqueue()
     //set length of current queue
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
-        bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(queue_sizes[i]));
+        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
+        bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(queue_sizes[i]),gs->stream);
+        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
+                    "Can't synchronize device." , __FILE__, __LINE__);
     }
-
 }
 
 void CUDA_BFS::setStartVertex(vtxtyp start)
@@ -410,9 +426,9 @@ void CUDA_BFS::setStartVertex(vtxtyp start)
                              cudaMemcpyHostToDevice,
                              gs->stream
                 ), "Copy of d_keys[0] from device failed" , __FILE__, __LINE__);
-            bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(1));
+            bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(1),gs->stream);
         }else{
-            bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(0));
+            bfsGPU->setQueueSize(i,static_cast<typename Csr::SizeT>(0),gs->stream);
         }
     }
 

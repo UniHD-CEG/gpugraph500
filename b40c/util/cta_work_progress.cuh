@@ -328,17 +328,26 @@ public:
 	/**
 	 * Checks if overflow counter is set
      */
-	cudaError_t CheckOverflow(bool &overflow)	// out param
+        cudaError_t CheckOverflow(bool &overflow, cudaStream_t stream = 0)	// out param
 	{
         cudaError_t retval;
         SizeT       counter;
 
-        retval = util::B40CPerror(cudaMemcpy(
+        /*retval = util::B40CPerror(cudaMemcpy(
                 &counter,
                 this->d_counters + this->QUEUE_COUNTERS + this->STEAL_COUNTERS,
                 1 * sizeof(SizeT),
                 cudaMemcpyDeviceToHost),
                 "CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__);
+        */
+        retval = util::B40CPerror(cudaMemcpyAsync(
+                        &counter,
+                        this->d_counters + this->QUEUE_COUNTERS + this->STEAL_COUNTERS,
+                        1 * sizeof(SizeT),
+                        cudaMemcpyDeviceToHost,
+                        stream),
+                        "CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__);
+
 
         overflow = counter;
 
@@ -352,19 +361,28 @@ public:
     template <typename IterationT>
 	cudaError_t GetQueueLength(
 		IterationT iteration,
-		SizeT &queue_length)		// out param
+                SizeT &queue_length,
+                cudaStream_t stream = 0)		// out param
 	{
 		cudaError_t retval = cudaSuccess;
 
 		do {
             int queue_length_idx = iteration & 0x3;
 
-			if (retval = util::B40CPerror(cudaMemcpy(
+                        /*if (retval = util::B40CPerror(cudaMemcpy(
 					&queue_length,
                     this->d_counters + queue_length_idx,
 					1 * sizeof(SizeT),
 					cudaMemcpyDeviceToHost),
 				"CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__)) break;
+                                */
+                         if (retval = util::B40CPerror(cudaMemcpyAsync(
+                                         &queue_length,
+                         this->d_counters + queue_length_idx,
+                                         1 * sizeof(SizeT),
+                                         cudaMemcpyDeviceToHost,
+                                         stream),
+                                 "CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__)) break;
 
 		} while (0);
 
@@ -378,19 +396,28 @@ public:
     template <typename IterationT>
 	cudaError_t SetQueueLength(
 		IterationT iteration,
-        SizeT& queue_length)
+                SizeT& queue_length,
+                cudaStream_t stream = 0 )
 	{
 		cudaError_t retval = cudaSuccess;
 
 		do {
             int queue_length_idx = iteration & 0x3;
 
-			if (retval = util::B40CPerror(cudaMemcpy(
+                        /*if (retval = util::B40CPerror(cudaMemcpy(
                      this->d_counters + queue_length_idx,
 					&queue_length,
 					1 * sizeof(SizeT),
 					cudaMemcpyHostToDevice),
 				"CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__)) break;
+                                */
+                    if (retval = util::B40CPerror(cudaMemcpyAsync(
+                 this->d_counters + queue_length_idx,
+                                    &queue_length,
+                                    1 * sizeof(SizeT),
+                                    cudaMemcpyHostToDevice,
+                                    stream),
+                            "CtaWorkProgress cudaMemcpy d_counters failed", __FILE__, __LINE__)) break;
 
 		} while (0);
 

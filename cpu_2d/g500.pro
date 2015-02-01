@@ -12,7 +12,8 @@ SOURCES += main.cpp \
     simplecpubfs.cpp \
     validate/onesided.c \
     validate/onesided_emul.c \
-    cpubfs_bin.cpp
+    cpubfs_bin.cpp \
+    validate/checkqueue.cpp
 
 OTHER_FILES += \
     generator/README \
@@ -43,7 +44,8 @@ HEADERS += \
     globalbfs.hh \
     vreduce.hpp \
     cuda/cuda_support.hh \
-    comp_opt.h
+    comp_opt.h \
+    validate/checkqueue.h
 
 opencl{
 QMAKE_CXXFLAGS += -D_OPENCL

@@ -427,9 +427,9 @@ protected:
 	     *
 	     * (SizeT may be different for each graph search)
 	     */
-         cudaError_t UpdateQueueLength()
+         cudaError_t UpdateQueueLength( cudaStream_t stream = 0 )
 	    {
-            cudaError_t retval = work_progress.GetQueueLength(queue_index, queue_length);
+            cudaError_t retval = work_progress.GetQueueLength(queue_index, queue_length,stream);
 
 	    	return retval;
 	    }
@@ -440,9 +440,9 @@ protected:
          *
          * (SizeT may be different for each graph search)
          */
-        cudaError_t SetQueueLength(typename Csr::SizeT& length)
+        cudaError_t SetQueueLength(typename Csr::SizeT& length, cudaStream_t stream = 0 )
         {
-            cudaError_t retval = work_progress.SetQueueLength(queue_index, length);
+            cudaError_t retval = work_progress.SetQueueLength(queue_index, length,stream);
             queue_length = length;
 
             return retval;
@@ -1148,14 +1148,14 @@ public:
         return cudaErrorInvalidDeviceFunction;
     }
 
-    typename Csr::SizeT getQueueSize(int gpu){
+    typename Csr::SizeT getQueueSize(int gpu,cudaStream_t stream = 0){
        util::B40CPerror(control_blocks[gpu]->UpdateQueueLength(),
          "Update length queue failed", __FILE__, __LINE__);
        return control_blocks[gpu]->queue_length;
     }
 
-    void setQueueSize(int gpu, typename Csr::SizeT length){
-        control_blocks[gpu]->SetQueueLength(length);
+    void setQueueSize(int gpu,typename Csr::SizeT length, cudaStream_t stream = 0){
+        control_blocks[gpu]->SetQueueLength(length, stream);
     }
 
     cudaError_t finalize(){

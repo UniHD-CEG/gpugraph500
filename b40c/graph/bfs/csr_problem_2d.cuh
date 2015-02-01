@@ -255,7 +255,7 @@ struct CsrProblem
 	 * Extract into a single host vector the BFS results disseminated across
 	 * all GPUs
 	 */
-	cudaError_t ExtractResults(VertexId *h_label)
+        cudaError_t ExtractResults(VertexId *h_label, VertexId offset)
 	{
 		cudaError_t retval = cudaSuccess;
 
@@ -290,7 +290,7 @@ struct CsrProblem
                         sizeof(VertexId) * (end-offset),
                         cudaMemcpyDeviceToHost),
                     "CsrProblem cudaMemcpy d_labels failed", __FILE__, __LINE__)) continue;
-
+/*
                 for(long i= offset; i < end; i++) {
                     switch (h_label[i]) {
                     case -1:
@@ -300,54 +300,9 @@ struct CsrProblem
                         h_label[i] &= ProblemType::VERTEX_ID_MASK;
                     };
                 }
+                */
             }
 
-/*
-            VertexId **gpu_labels = new VertexId*[num_gpus];
-
-            // Copy out
-            #pragma omp parallel for
-            for (int gpu = 0; gpu < num_gpus; gpu++) {
-
-                // Set device
-                if (retval = util::B40CPerror(cudaSetDevice(graph_slices[gpu]->gpu),
-                    "CsrProblem cudaSetDevice failed", __FILE__, __LINE__)) continue;
-
-                // Allocate and copy out
-                //gpu_labels[gpu] = new VertexId[graph_slices[gpu]->nodes];
-                 cudaHostAlloc(gpu_labels+gpu, graph_slices[gpu]->nodes*sizeof(VertexId), cudaHostAllocDefault );
-
-                if (retval = util::B40CPerror(cudaMemcpy(
-                        gpu_labels[gpu],
-                        graph_slices[gpu]->d_labels,
-                        sizeof(VertexId) * graph_slices[gpu]->nodes,
-                        cudaMemcpyDeviceToHost),
-                    "CsrProblem cudaMemcpy d_labels failed", __FILE__, __LINE__)) continue;
-            }
-            if (retval) return retval;
-
-            // Combine
-            #pragma omp parallel for schedule(static)
-            for (VertexId node = 0; node < nodes; node++) {
-                int gpu = GpuIndex(node);
-                VertexId slice_row = GraphSliceRow(node);
-                h_label[node] = gpu_labels[gpu][slice_row];
-
-                switch (h_label[node]) {
-                case -1:
-                case -2:
-                    break;
-                default:
-                    h_label[node] &= ProblemType::VERTEX_ID_MASK;
-                };
-            }
-
-            // Clean up
-            for (int gpu = 0; gpu < num_gpus; gpu++) {
-                if (gpu_labels[gpu]) cudaFreeHost( gpu_labels[gpu]);
-            }
-            delete gpu_labels;
-            */
         }
 
 		return retval;

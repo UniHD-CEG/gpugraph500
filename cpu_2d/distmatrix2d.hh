@@ -577,7 +577,7 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix(packed_edge 
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
 void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge *&input, int64_t &numberOfEdges, bool undirected){
 
-    vtxtyp maxVertex = -1;
+    int64_t maxVertex = -1;
     if(undirected == true){
         //generate other direction to be undirected
         input=(packed_edge *)realloc(input, 2*numberOfEdges*sizeof(packed_edge));
@@ -607,7 +607,7 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
             maxVertex  = (maxVertex > read.v1)? maxVertex :  read.v1;
         }
     }
-    MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_INT64_T, MPI_MAX, MPI_COMM_WORLD);
     //because start at 0
     globalNumberOfVertex += 1;
     //row slice padding
@@ -631,7 +631,7 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
     MPI_Datatype packedEdgeMPI;
     int tupsize[] = {2};
     MPI_Aint tupoffset[] = {0};
-    MPI_Datatype tuptype[] = {MPI_LONG};
+    MPI_Datatype tuptype[] = {MPI_INT64_T};
     MPI_Type_create_struct(1,tupsize,tupoffset,tuptype,&packedEdgeMPI);
     MPI_Type_commit(&packedEdgeMPI);
 

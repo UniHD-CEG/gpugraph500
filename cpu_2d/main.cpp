@@ -320,6 +320,8 @@ int main(int argc, char** argv)
       MatrixT store(R,C);
       store.setupMatrix2(edgelist,number_of_edges);
 
+      if((verbosity >= 1) && (rank == 0))
+          printf("Global matrix redistribution done!\n");
 #ifdef _OPENCL
       OCLRunner oclrun;
       OpenCL_BFS runBfs(store, *oclrun);

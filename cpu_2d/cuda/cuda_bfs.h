@@ -1,3 +1,6 @@
+#ifndef CUDA_BFS_H
+#define CUDA_BFS_H
+
 #define __restrict__
 #ifdef __CUDACC__
 #include "cuda_support.hh" //for enactor_base.cuh
@@ -21,8 +24,9 @@ class EnactorMultiGpu;
 
 #include "../globalbfs.hh"
 
-#ifndef CUDA_BFS_H
-#define CUDA_BFS_H
+#ifdef DEBUG
+    #include "validate/checkqueue.h"
+#endif
 
 using namespace b40c::graph::bfs;
 
@@ -58,6 +62,10 @@ class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
     EnactorMultiGpu<Csr, true>* bfsGPU;
 #else
     EnactorMultiGpu<Csr, false>* bfsGPU;
+#endif
+
+#ifdef DEBUG
+    CheckQueue<vtxtyp> checkQueue;
 #endif
 
 public:
