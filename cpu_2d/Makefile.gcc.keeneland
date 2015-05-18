@@ -9,7 +9,7 @@ MAKEFILE      = Makefile
 
 CC            = mpicc
 CXX           = mpicxx
-DEFINES       = 
+DEFINES       = -DDEBUG
 CFLAGS        = -m64 -pipe -D_CUDA -std=c99 -fopenmp -O3 -Wall -W -fPIE $(DEFINES)
 CXXFLAGS      = -m64 -pipe -D_CUDA -fopenmp -DINSTRUMENTED -O3 -Wall -W -fPIE $(DEFINES)
 INCPATH       = -I. 
@@ -48,6 +48,7 @@ SOURCES       = main.cpp \
 		generator/make_graph.c \
 		generator/graph_generator.c \
 		simplecpubfs.cpp \
+		validate/checkqueue.cpp \
 		validate/onesided.c \
 		validate/onesided_emul.c \
 		cpubfs_bin.cpp 
@@ -58,6 +59,7 @@ OBJECTS       = ${OBJECTS_DIR}cuda_bfs_cuda.o \
 		make_graph.o \
 		graph_generator.o \
 		simplecpubfs.o \
+		checkqueue.o \
 		onesided.o \
 		onesided_emul.o \
 		cpubfs_bin.o
@@ -188,6 +190,7 @@ main.o: main.cpp validate/validate.h \
 		distmatrix2d.hh \
 		generator/graph_generator.h \
 		generator/user_settings.h \
+		validate/checkqueue.h \
 		validate/mpi_workarounds.h \
 		generator/utils.h \
 		generator/splittable_mrg.h \
@@ -309,6 +312,9 @@ simplecpubfs.o: simplecpubfs.cpp simplecpubfs.h \
 		generator/graph_generator.h \
 		generator/user_settings.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o simplecpubfs.o simplecpubfs.cpp
+
+checkqueue.o: validate/ocheckqueue.cpp validate/checkqueue.h 
+	$(CXX) -c $(CFLAGS) $(INCPATH) -o checkqueue.o validate/checkqueue.cpp
 
 onesided.o: validate/onesided.c validate/mpi_workarounds.h \
 		validate/onesided.h \
