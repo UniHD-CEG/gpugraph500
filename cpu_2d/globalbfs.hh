@@ -1,5 +1,6 @@
 #include "distmatrix2d.hh"
 #include "comp_opt.h"
+#include "bitlevelfunctions.h"
 #include <vector>
 #include <cstdio>
 #include <assert.h>
@@ -82,29 +83,29 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE:
 {
 
     MPI_Status status;
-    int size, rank, n , p2n, r;
+    int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum;
     int psize = mask_size;
 
     //step 1
-    MPI_Comm_size(col_comm, &size);
-    MPI_Comm_rank(col_comm, &rank);
+    MPI_Comm_size(col_comm, &communicatorSize);
+    MPI_Comm_rank(col_comm, &communicatorRank);
 
-    n = ilogb(static_cast<double>(size)); //integer log_2 of size
-    p2n = 1 << n; // 2^n
-    r = size - (1 << n);
+    intLdSize = ilogb(static_cast<double>(communicatorSize)); //integer log_2 of size
+    power2intLdSize = 1 << intLdSize; // 2^n
+    residuum = communicatorSize - (1 << intLdSize);
 
     //step 2
-    if( rank < 2 * r){
-         if((rank & 1) == 0){ // even
-             MPI_Sendrecv(owenmap, psize, bm_type, rank+1, 0,
-                          tmpmap,  psize, bm_type, rank+1, 0,
+    if( communicatorRank < 2 * residuum){
+         if((communicatorRank & 1) == 0){ // even
+             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank+1, 0,
+                          tmpmap,  psize, bm_type, communicatorRank+1, 0,
                           col_comm, &status );
              for(int i = 0; i < psize; i++){
                  tmpmap[i]  = tmpmap[i]  & ~owenmap[i];
                  owenmap[i] = owenmap[i] | tmpmap[i];
              }
 
-             MPI_Recv(tmp, store.getLocColLength() ,fq_tp_type,rank+1,1,col_comm,&status);
+             MPI_Recv(tmp, store.getLocColLength() ,fq_tp_type,communicatorRank+1,1,col_comm,&status);
              int p= 0;
              for(int i = 0; i < psize; i++){
                  MType tmpm = tmpmap[i];
@@ -117,8 +118,8 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE:
              }
 
           } else { // odd
-             MPI_Sendrecv(owenmap, psize, bm_type, rank-1, 0,
-                          tmpmap,  psize, bm_type, rank-1, 0,
+             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank-1, 0,
+                          tmpmap,  psize, bm_type, communicatorRank-1, 0,
                           col_comm, &status );
              for(int i = 0; i < psize; i++){
                  tmpmap[i] = ~tmpmap[i] & owenmap[i];
@@ -134,28 +135,28 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE:
                  }
              }
 
-             MPI_Send(tmp, p, fq_tp_type, rank-1,1, col_comm);
+             MPI_Send(tmp, p, fq_tp_type, communicatorRank-1,1, col_comm);
           }
     }
-    const std::function<int (int)> newrank = [&r](int oldr) { return (oldr < 2*r)? oldr/2 : oldr -r; };
-    const std::function<int (int)> oldrank = [&r](int newr) { return (newr <  r )? newr*2 : newr +r; };
+    const std::function<int (int)> newRank = [&residuum](int oldr) { return (oldr < 2*residuum)? oldr/2 : oldr -residuum; };
+    const std::function<int (int)> oldRank = [&residuum](int newr) { return (newr <  residuum )? newr*2 : newr +residuum; };
 
-    if((((rank & 1)==0) &&(rank < 2*r))||(rank >= 2*r)){
+    if((((communicatorRank & 1)==0) &&(communicatorRank < 2*residuum))||(communicatorRank >= 2*residuum)){
 
          int ssize, vrank, offset, lowers, uppers;
 
          ssize=psize;
-         vrank  = newrank(rank);
+         vrank  = newRank(communicatorRank);
          offset = 0;
 
-         for(int it=0; it < n; it++){
+         for(int it=0; it < intLdSize; it++){
               lowers = ssize/2; //lower slice size
               uppers = ssize - lowers; //upper slice size
 
               if(((vrank >> it)&1)==0){// even
                   //Transmission of the the bitmap
-                  MPI_Sendrecv(owenmap+offset, ssize, bm_type, oldrank((vrank+(1<<it))&(p2n-1)), (it<<1)+2,
-                               tmpmap+offset , ssize, bm_type, oldrank((vrank+(1<<it))&(p2n-1)), (it<<1)+2,
+                  MPI_Sendrecv(owenmap+offset, ssize, bm_type, oldRank((vrank+(1<<it))&(power2intLdSize-1)), (it<<1)+2,
+                               tmpmap+offset , ssize, bm_type, oldRank((vrank+(1<<it))&(power2intLdSize-1)), (it<<1)+2,
                                col_comm, &status );
                   for(int i = 0; i < lowers; i++){
                       tmpmap[i+offset]  = tmpmap[i+offset]  & ~owenmap[i+offset];
@@ -177,9 +178,9 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE:
                   }
                   //Transmission of updates
                   MPI_Sendrecv(tmp+lowers*8*sizeof(MType), p, fq_tp_type,
-                               oldrank((vrank+(1<<it))&(p2n-1)), (it<<1)+3,
+                               oldRank((vrank+(1<<it))&(power2intLdSize-1)), (it<<1)+3,
                                tmp, lowers*8*sizeof(MType), fq_tp_type,
-                               oldrank((vrank+(1<<it))&(p2n-1)), (it<<1)+3,
+                               oldRank((vrank+(1<<it))&(power2intLdSize-1)), (it<<1)+3,
                                col_comm, &status);
                   //Updates for own data
                   p= 0;
@@ -196,9 +197,9 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE:
                } else { // odd
                   //Transmission of the the bitmap
                   MPI_Sendrecv(owenmap+offset, ssize, bm_type,
-                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), (it<<1)+2,
+                               oldRank((power2intLdSize+vrank-(1<<it))&(power2intLdSize-1)), (it<<1)+2,
                                tmpmap+offset , ssize, bm_type,
-                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), (it<<1)+2,
+                               oldRank((power2intLdSize+vrank-(1<<it))&(power2intLdSize-1)), (it<<1)+2,
                                col_comm, &status );
                   for(int i = 0; i < lowers; i++){
                       tmpmap[i+offset]  = (~tmpmap[i+offset])  & owenmap[i+offset];
@@ -220,9 +221,9 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE:
                   }
                   //Transmission of updates
                   MPI_Sendrecv(tmp, p, fq_tp_type,
-                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), (it<<1)+3,
+                               oldRank((power2intLdSize+vrank-(1<<it))&(power2intLdSize-1)), (it<<1)+3,
                                tmp+lowers*8*sizeof(MType), uppers*8*sizeof(MType), fq_tp_type,
-                               oldrank((p2n+vrank-(1<<it))&(p2n-1)), (it<<1)+3,
+                               oldRank((power2intLdSize+vrank-(1<<it))&(power2intLdSize-1)), (it<<1)+3,
                                col_comm, &status);
 
                   //Updates for own data
@@ -241,23 +242,29 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::allReduceBitCompressed(typename STORE:
                   ssize = uppers;
               }
         }
-
     }
+    //Computation of displacements
+    int sizes[communicatorSize];
+    int disps[communicatorSize];
+    unsigned int lastReversedSliceIDs = 0;
+    unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
+    sizes[lastTargetNode] = ((psize)>>intLdSize)*(sizeof(MType)*8);
+    disps[lastTargetNode] = 0;
 
+    for(unsigned int slice=1; slice<power2intLdSize; slice++){
+        unsigned int reversedSliceIDs = reverse(slice, intLdSize);
+        unsigned int targetNode = oldRank(reversedSliceIDs);
+        sizes[targetNode] = (psize>>intLdSize)*sizeof(MType)*8;
+        disps[targetNode] = ((slice*psize)>>intLdSize)*sizeof(MType)*8;
+        lastTargetNode = targetNode;
+    }
+    //nodes without a partial resulty
+    for(unsigned int node=0; node < residuum; node++ ){
+            sizes[2*node+1] = 0;
+            disps[2*node+1] = 0;
+    }
     // Transmission of the final results
-    int sizes[size];
-    int disps[size];
-
-    for(int it=0; it< p2n; it++){
-        sizes[oldrank(it)]=((((it+1)*psize)>>n) -((it*psize)>>n))*(sizeof(MType)*8);
-        disps[oldrank(it)]=((it*psize)>>n)*(sizeof(MType)*8);
-    }
-    for(int it=p2n; it< size; it++){
-        sizes[oldrank(it-p2n)+1]=0;
-        disps[oldrank(it-p2n)+1]=0;
-    }
-
-    MPI_Allgatherv(MPI_IN_PLACE, sizes[rank], fq_tp_type,
+    MPI_Allgatherv(MPI_IN_PLACE, sizes[communicatorRank], fq_tp_type,
                    owen, sizes, disps, fq_tp_type, col_comm);
 
 }

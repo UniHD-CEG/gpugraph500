@@ -13,7 +13,7 @@ SOURCES += main.cpp \
     validate/onesided.c \
     validate/onesided_emul.c \
     cpubfs_bin.cpp \
-    validate/checkqueue.cpp
+    bitlevelfunctions.cpp
 
 OTHER_FILES += \
     generator/README \
@@ -45,7 +45,8 @@ HEADERS += \
     vreduce.hpp \
     cuda/cuda_support.hh \
     comp_opt.h \
-    validate/checkqueue.h
+    validate/checkqueue.h \
+    bitlevelfunctions.h
 
 opencl{
 QMAKE_CXXFLAGS += -D_OPENCL

@@ -9,7 +9,7 @@ MAKEFILE      = Makefile
 
 CC            = mpicc
 CXX           = mpicxx
-DEFINES       = -D_CUDA -DDEBUG
+DEFINES       = -D_CUDA -D_DEBUG
 CFLAGS        = -m64 -pipe  -std=c99 -fopenmp -O3 -march=native -Wall -W -fPIE $(DEFINES)
 CXXFLAGS      = -m64 -pipe  -std=c++11 -fopenmp -DINSTRUMENTED -O3 -march=native -Wall -W -fPIE $(DEFINES)
 INCPATH       = -I. 
@@ -50,6 +50,7 @@ SOURCES       = main.cpp \
 		simplecpubfs.cpp \
 		validate/onesided.c \
 		validate/onesided_emul.c \
+		bitlevelfunction.cpp \
 		cpubfs_bin.cpp 
 OBJECTS       = ${OBJECTS_DIR}cuda_bfs_cuda.o \
 		main.o \
@@ -60,6 +61,7 @@ OBJECTS       = ${OBJECTS_DIR}cuda_bfs_cuda.o \
 		simplecpubfs.o \
 		onesided.o \
 		onesided_emul.o \
+		bitlevelfunction.o \
 		cpubfs_bin.o
 DIST          = /usr/share/qt5/mkspecs/features/spec_pre.prf \
 		/usr/share/qt5/mkspecs/common/shell-unix.conf \
@@ -166,7 +168,7 @@ compiler_cuda_make_all: ${OBJECTS_DIR}cuda_bfs_cuda.o
 compiler_cuda_clean:
 	-$(DEL_FILE) ${OBJECTS_DIR}cuda_bfs_cuda.o
 ${OBJECTS_DIR}cuda_bfs_cuda.o: cuda/cuda_bfs.cu
-	nvcc -c -ccbin g++ -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-O3,-std=c++11,-fopenmp,"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,'`" -std=c++11 -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\" --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
+	nvcc -c -ccbin g++ -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-D_DEBUG,-O3,-std=c++11,-fopenmp,"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,'`" -std=c++11 -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\" --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
 
 compiler_wayland-server-header_make_all:
 compiler_wayland-server-header_clean:
@@ -275,6 +277,7 @@ main.o: main.cpp validate/validate.h \
 		../b40c/graph/bfs/copy/cta.cuh \
 		../b40c/graph/bfs/copy/kernel_policy.cuh \
 		globalbfs.hh \
+		bitlevelfunction.h \
 		cpubfs_bin.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
@@ -321,6 +324,9 @@ onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h \
 		generator/utils.h \
 		generator/splittable_mrg.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o onesided_emul.o validate/onesided_emul.c
+
+bitlevelfunctions.o: bitlevelfunctions.cpp bitlevelfunctions.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o bitlevelfunctions.o bitlevelfunctions.cpp
 
 cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h \
 		globalbfs.hh \

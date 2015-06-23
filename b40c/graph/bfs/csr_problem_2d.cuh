@@ -59,7 +59,7 @@ enum FrontierType {
 	MIXED_FRONTIERS,		// O(n) global vertex frontier, O(m) global edge frontier
 	MULTI_GPU_FRONTIERS,	// O(MULTI_GPU_VERTEX_FRONTIER_SCALE * n) global vertex frontier, O(m) global edge frontier, O(m) global sorted, filtered edge frontier
 
-	MULTI_GPU_VERTEX_FRONTIER_SCALE = 2,
+        MULTI_GPU_VERTEX_FRONTIER_SCALE = 1,
 };
 
 

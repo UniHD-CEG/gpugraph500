@@ -18,7 +18,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing, int64_t _
     verbosity(_verbosity),
     queue_sizing(_queue_sizing),
     vmask(0)
-  #ifdef DEBUG
+  #ifdef _DEBUG
   , checkQueue(0, _store.getLocRowLength(), 0, _store.getLocColLength())
   #endif
 {
@@ -41,7 +41,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store,int& num_gpus,double _queue_sizing, int64_t _
     fq_tp_type = MPI_INT64_T;
     bm_type = MPI_UNSIGNED_CHAR;
     recv_fq_buff_length = static_cast<vtxtyp>
-            (std::max(store.getLocRowLength(), store.getLocColLength())*_queue_sizing);
+            (std::max(store.getLocRowLength(), store.getLocColLength())*queue_sizing);
     //recv_fq_buff = new vtxtyp[recv_fq_buff_length];
     cudaHostAlloc(&recv_fq_buff, recv_fq_buff_length*sizeof(vtxtyp), cudaHostAllocDefault );
     //multipurpose buffer
@@ -144,6 +144,29 @@ CUDA_BFS::~CUDA_BFS(){
  */
 void CUDA_BFS::reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr, int insize)
 {
+#ifdef _DEBUG
+    CheckQueue<vtxtyp>::ErrorCode errorCode;
+    if((errorCode=checkQueue.checkCol(startaddr, insize))!= CheckQueue<vtxtyp>::ErrorCode::Valid){
+        std::cerr << "(" <<store.getLocalRowID() << ":" <<store.getLocalColumnID() << ") ";
+        switch(errorCode){
+            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
+            std::cerr << "Recieved queue with invalid length";
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
+            std::cerr << "Recieved queue with ids out of range";
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
+            std::cerr << "Recieved not sorted queue";
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
+            std::cerr << "Recieved queue with duplicate ids";
+            break;
+            default:
+            std::cerr << "Recieved invalid queue";
+        }
+        std::cerr << " from source node." << std::endl;
+    }
+#endif
     typename MatrixT::vtxtyp* start_local;
     typename MatrixT::vtxtyp* end_local;
     typename MatrixT::vtxtyp *endofresult;
@@ -156,9 +179,31 @@ void CUDA_BFS::reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr, i
     //reduction
     endofresult = std::set_union( start_local, end_local, startaddr, startaddr+insize, redbuff );
 
+#ifdef _DEBUG
+    //CheckQueue<vtxtyp>::ErrorCode errorCode;
+    if((errorCode=checkQueue.checkCol(redbuff, endofresult - redbuff))!= CheckQueue<vtxtyp>::ErrorCode::Valid){
+        std::cerr << "(" <<store.getLocalRowID() << ":" <<store.getLocalColumnID() << ") ";
+        switch(errorCode){
+            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
+            std::cerr << "Try to send queue with invalid length to the device." << std::endl;
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
+            std::cerr << "Try to send queue with ids out of range to the device." << std::endl;
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
+            std::cerr << "Try to send not sorted queue to the device." << std::endl;
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
+            std::cerr << "Try to send queue with duplicate ids to the device." << std::endl;
+            break;
+            default:
+            std::cerr << "Try to send invalid queue to the device." << std::endl;
+        }
+    }
+#endif
     qb_length = endofresult - redbuff;
-    std::swap( queuebuff, redbuff);
 
+    std::swap( queuebuff, redbuff);
 }
 
 void CUDA_BFS::getOutgoingFQ(vtxtyp *&startaddr, int &outsize)
@@ -215,6 +260,31 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, 
                                    [](vtxtyp a ,vtxtyp b){ return a < (b& Csr::ProblemType::VERTEX_ID_MASK );} );
     end_local   = std::upper_bound(start_local, queuebuff+qb_length, globalstart+size-1,
                                    [](vtxtyp a ,vtxtyp b){ return b > (a& Csr::ProblemType::VERTEX_ID_MASK );} );
+
+#ifdef _DEBUG
+    CheckQueue<vtxtyp>::ErrorCode errorCode;
+    if((errorCode=checkQueue.checkCol(start_local, end_local-start_local))!= CheckQueue<vtxtyp>::ErrorCode::Valid){
+        std::cerr << "(" <<store.getLocalRowID() << ":" <<store.getLocalColumnID() << ") ";
+        switch(errorCode){
+            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
+            std::cerr << "Select queue with invalid length";
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
+            std::cerr << "Select queue with ids out of range";
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
+            std::cerr << "Select not sorted queue";
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
+            std::cerr << "Select queue with duplicate ids";
+            break;
+            default:
+            std::cerr << "Select invalid queue";
+        }
+        std::cerr << "." << std::endl;
+    }
+#endif
+
     startaddr = start_local;
     outsize   = end_local-start_local;
 }
@@ -262,6 +332,9 @@ void CUDA_BFS::getBackPredecessor(){
 void CUDA_BFS::getBackOutqueue()
 {
     long queue_sizes[csr_problem->num_gpus];
+    #ifdef _DEBUG
+    b40c::util::B40CPerror(bfsGPU->testOverflow(csr_problem));
+    #endif
     //get length of next queues
     #pragma omp parallel for
     for(int i=0; i < csr_problem->num_gpus; i++){
@@ -278,11 +351,11 @@ void CUDA_BFS::getBackOutqueue()
         thrust::sort(multigpu,multigpu+queue_sizes[i]);
     }
 
-    qb_length = csr_problem->num_gpus;
+    qb_length = 0;//csr_problem->num_gpus;
     typename MatrixT::vtxtyp *qb_nxt  = queuebuff;
     // copy next queue to host
     for(int i=0; i < csr_problem->num_gpus; i++){
-        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];        
+        typename Csr::GraphSlice* gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
                     "Can't synchronize device." , __FILE__, __LINE__);
         b40c::util::B40CPerror(cudaMemcpyAsync( qb_nxt,
@@ -314,9 +387,27 @@ void CUDA_BFS::getBackOutqueue()
     }
     qb_length = qb_nxt_out - redbuff ;
     std::swap(queuebuff, redbuff);
-#ifdef DEBUG
-    if(!checkQueue.checkCol(queuebuff, qb_length))
-        std::cerr << "Get invalid queue from the device." << std::end;
+#ifdef _DEBUG
+    CheckQueue<vtxtyp>::ErrorCode errorCode;
+    if((errorCode=checkQueue.checkCol(queuebuff, qb_length))!= CheckQueue<vtxtyp>::ErrorCode::Valid){
+        std::cerr << "(" <<store.getLocalRowID() << ":" <<store.getLocalColumnID() << ") ";
+        switch(errorCode){
+            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
+            std::cerr << "Got queue with invalid length from the device." << std::endl;
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
+            std::cerr << "Got queue with ids out of range from the device." << std::endl;
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
+            std::cerr << "Got not sorted queue from the device." << std::endl;
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
+            std::cerr << "Got queue with duplicate ids from the device." << std::endl;
+            break;
+            default:
+            std::cerr << "Got invalid queue from the device." << std::endl;
+        }
+    }
 #endif
 }
 
@@ -325,9 +416,27 @@ void CUDA_BFS::setBackInqueue()
     long queue_sizes[csr_problem->num_gpus];
     typename MatrixT::vtxtyp *qb_nxt  = queuebuff;
 
-#ifdef DEBUG
-    if(!checkQueue.checkRow(queuebuff, qb_length))
-        std::cerr << "Try to copy invalid queue on the device." << std::end;
+#ifdef _DEBUG
+    CheckQueue<vtxtyp>::ErrorCode errorCode;
+    if((errorCode=checkQueue.checkRow(queuebuff, qb_length))!= CheckQueue<vtxtyp>::ErrorCode::Valid){
+        std::cerr << "(" <<store.getLocalRowID() << ":" <<store.getLocalColumnID() << ") ";
+        switch(errorCode){
+            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
+            std::cerr << "Try to copy queue with invalid length to the device." << std::endl;
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
+            std::cerr << "Try to copy queue with ids out of range to the device." << std::endl;
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
+            std::cerr << "Try to copy not sorted queue to the device." << std::endl;
+            break;
+            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
+            std::cerr << "Try to copy queue with duplicate ids to the device." << std::endl;
+            break;
+            default:
+            std::cerr << "Try to copy invalid queue to the device." << std::endl;
+        }
+    }
 #endif
 
     // copy next queue to device

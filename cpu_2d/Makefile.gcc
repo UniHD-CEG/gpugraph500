@@ -50,6 +50,7 @@ SOURCES       = main.cpp \
 		simplecpubfs.cpp \
 		validate/onesided.c \
 		validate/onesided_emul.c \
+		bitlevelfunctions.cpp \
 		cpubfs_bin.cpp 
 OBJECTS       = ${OBJECTS_DIR}cuda_bfs_cuda.o \
 		main.o \
@@ -60,6 +61,7 @@ OBJECTS       = ${OBJECTS_DIR}cuda_bfs_cuda.o \
 		simplecpubfs.o \
 		onesided.o \
 		onesided_emul.o \
+		bitlevelfunctions.o \
 		cpubfs_bin.o
 DIST          = /usr/share/qt5/mkspecs/features/spec_pre.prf \
 		/usr/share/qt5/mkspecs/common/shell-unix.conf \
@@ -275,6 +277,7 @@ main.o: main.cpp validate/validate.h \
 		../b40c/graph/bfs/copy/cta.cuh \
 		../b40c/graph/bfs/copy/kernel_policy.cuh \
 		globalbfs.hh \
+		bitlevelfunctions.h \
 		cpubfs_bin.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
@@ -321,6 +324,9 @@ onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h \
 		generator/utils.h \
 		generator/splittable_mrg.h
 	$(CC) -c $(CFLAGS) $(INCPATH) -o onesided_emul.o validate/onesided_emul.c
+
+bitlevelfunctions.o: bitlevelfunctions.cpp bitlevelfunctions.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o bitlevelfunctions.o bitlevelfunctions.cpp
 
 cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h \
 		globalbfs.hh \

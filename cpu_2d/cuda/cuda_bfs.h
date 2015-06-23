@@ -24,8 +24,8 @@ class EnactorMultiGpu;
 
 #include "../globalbfs.hh"
 
-#ifdef DEBUG
-    #include "validate/checkqueue.h"
+#ifdef _DEBUG
+    #include "../validate/checkqueue.h"
 #endif
 
 using namespace b40c::graph::bfs;
@@ -64,7 +64,7 @@ class CUDA_BFS : public GlobalBFS<  CUDA_BFS,
     EnactorMultiGpu<Csr, false>* bfsGPU;
 #endif
 
-#ifdef DEBUG
+#ifdef _DEBUG
     CheckQueue<vtxtyp> checkQueue;
 #endif
 
