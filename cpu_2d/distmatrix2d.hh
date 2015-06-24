@@ -182,7 +182,7 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix(packed_edge 
     vtxtyp maxVertex = -1;
 
     #ifdef _OPENMP
-    #pragma omp parallel for reduction(max: maxVertex)
+    #pragma omp parallel for
     #endif
     for(vtxtyp i = 0; i < numberOfEdges; i++){
         packed_edge read = input[i];
@@ -583,7 +583,7 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
         input=(packed_edge *)realloc(input, 2*numberOfEdges*sizeof(packed_edge));
 
         #ifdef _OPENMP
-        #pragma omp parallel for reduction(max: maxVertex)
+        #pragma omp parallel for 
         #endif
         for(int64_t i = 0; i < numberOfEdges; i++){
             packed_edge read = input[i];
@@ -598,7 +598,7 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::setupMatrix2(packed_edge
         numberOfEdges= 2*numberOfEdges;
     } else {
         #ifdef _OPENMP
-        #pragma omp parallel for reduction(max: maxVertex)
+        #pragma omp parallel for
         #endif
         for(int64_t i = 0; i < numberOfEdges; i++){
             packed_edge read = input[i];
