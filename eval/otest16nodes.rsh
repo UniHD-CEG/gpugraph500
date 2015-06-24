@@ -5,7 +5,8 @@
 #SBATCH --ntasks-per-node=2
 #SBATCH --gres=gpu:1
 #SBATCH -t 10:00
-source ~/.bashrc
+
+
 date
-mpirun ./../cpu_2d/g500 -s 21 -C 4 -gpus 1 -qs 1
+mpirun ./../cpu_2d/g500 -s 10 -C 4 -gpus 1 -qs 1
 
