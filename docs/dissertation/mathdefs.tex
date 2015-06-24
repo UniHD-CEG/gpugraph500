@@ -1,0 +1,197 @@
+%%% mathdefs.tex
+%
+
+
+% Taken from Adam Lupu-Sax ....................................................
+%%% derivatives
+\newcommand{\deriv}[2]{\frac{d#1}{d#2}}
+\newcommand{\derivc}[3]{\left. \frac{d#1}{d#2}\right|_{#3}}
+\newcommand{\pd}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pdc}[3]{\left. \frac{\partial #1}{\partial #2}\right|_{#3}}
+
+%%% Dirac notation
+\newcommand{\bra}[1]{\left\langle #1\right|}
+\newcommand{\ket}[1]{\left|#1\right\rangle}
+\newcommand{\braket}[2]{\left\langle #1 \left|#2\right.\right\rangle}
+\newcommand{\braOket}[3]{\left\langle #1\left|#2\right|#3\right\rangle}
+
+% calligraphic letters in math.
+\def\cal#1{\mathcal{#1}}
+
+
+% Taken from M Haggerty ......................................................
+\def\avg#1{\left< #1 \right>}
+\def\abs#1{\left| #1 \right|}
+\def\recip#1{\frac{1}{#1}}
+\def\vhat#1{\hat{{\bf #1}}}
+\def\smallfrac#1#2{{\textstyle\frac{#1}{#2}}}
+\def\smallrecip#1{\smallfrac{1}{#1}}
+
+% SPSmith's definitions ......................................................
+\def\spshalf{{1\over{2}}}
+\def\Orabi{\Omega_{\rm rabi}}
+\def\btt#1{{\tt$\backslash$#1}}
+
+
+
+
+% My own .....................................................................
+
+%%% Equations
+\def\schrod{Schroedinger's Equation}
+\def\helm{Helmholtz Equation}
+
+
+%%% Equation environments
+\def\be{\begin{equation}}
+\def\ee{\end{equation}}
+\def\bea{\begin{eqnarray}}
+\def\eea{\end{eqnarray}}
+\def\bean{\begin{mathletters}\begin{eqnarray}}
+\def\eean{\end{eqnarray}\end{mathletters}}
+
+
+%%% macros for Feb 2000 PRL
+\newcommand{\tbox}[1]{\mbox{\tiny #1}}
+\newcommand{\half}{\mbox{\small $\frac{1}{2}$}}
+\newcommand{\pit}{\mbox{\small $\frac{\pi}{2}$}}
+\newcommand{\sfrac}[1]{\mbox{\small $\frac{1}{#1}$}}
+\newcommand{\mbf}[1]{{\mathbf #1}}
+% hack to get APS's \text style to work ok:
+\def\text{\tbox}
+
+\newcommand{\mV}{{\mathsf{V}}}
+\newcommand{\mL}{{\mathsf{L}}}
+\newcommand{\mA}{{\mathsf{A}}}
+\newcommand{\lB}{\lambda_{\tbox{B}}}  % de Broglie
+\newcommand{\ofr}{{(\mbf{r})}}       % (r vec)
+\def\ofkr{(k;\mbf{r})}			% (k;r vec)
+\def\ofks{(k;\mbf{s})}			% (k;s vec)
+\newcommand{\ofs}{{(\mbf{s})}}       % (s vec)
+\def\xt{\mbf{x}^{\tbox T}}		% x^T vec
+
+\def\ce{\tilde{C}_{\tbox E}}		% C_E
+\def\cew{\tilde{C}_{\tbox E}(\omega)}		% C_E(w)
+\def\ceqmw{\tilde{C}^{\tbox{qm}}_{\tbox E}(\omega)}	% C^qm_E(w)
+\def\cewqm{\tilde{C}^{\tbox{qm}}_{\tbox E}}	% C^qm_E(w) no omega
+\def\ceqm{C^{\tbox{qm}}_{\tbox E}}	% C^qm_E no tilde
+\def\cw{\tilde{C}(\omega)}		% C(w)
+\def\cfw{\tilde{C}_{\cal F}(\omega)}		% C_F(w)
+
+\def\tcl{\tau_{\tbox{cl}}}		% tau cl
+\def\tcol{\tau_{\tbox{col}}}		% tau col
+\def\terg{t_{\tbox{erg}}}		% t_erg
+\def\tbl{\tau_{\tbox{bl}}}		% tau bl
+\def\theis{t_{\tbox{H}}}		% t_Heis
+
+\def\area{\mathsf{A}_D}			% piston effective area A_D 
+\def\ve{\nu_{\tbox{E}}}			% nu_E, noise intensity
+\def\vewna{\nu_E^{\tbox{WNA}}}		% nu_E for WNA
+
+\def\dxcqm{\delta x^{\tbox{qm}}_{\tbox c}}	% x to mix levels.
+
+%% operators
+\newcommand{\rop}{\hat{\mbf{r}}}	% vector valued operators
+\newcommand{\pop}{\hat{\mbf{p}}}
+
+
+%%% Integrals
+\newcommand{\sint}{\oint \! d\mbf{s} \,} % surface int
+\def\gint{\oint_\Gamma \!\! d\mbf{s} \,} % surface int over Gamma.
+\newcommand{\lint}{\oint \! ds \,}	% d=2
+\def\infint{\int_{-\infty}^{\infty} \!\!}	% infinite integral
+\def\dn{\partial_n}				% d_n
+\def\aswapb{a^*\!{\leftrightarrow}b}		% a* <-> b
+\def\eps{\varepsilon}				% eps
+
+%%% Dissipation.
+\def\dhdxt{\partial {\cal H} / \partial x}
+\def\dhdx{\pd{\cal H}{x}}
+\def\dhdxnm{\left( \pd{\cal H}{x} \right)_{\!nm}}
+\def\dhdxnmsq{\left| \left( \pd{\cal H}{x} \right)_{\!nm} \right| ^2}
+
+%%% vergini
+\def\bcs{\stackrel{\tbox{BCs}}{\longrightarrow}}	% apply BCs
+
+
+
+
+%%% DIEL atom project.
+\def\wx{\omega_x}
+\def\wy{\omega_y}
+\newcommand{\ofro}{({\bf r_0})}
+\def\Eb{E_{\rm blue,rms}}
+\def\Er{E_{\rm red,rms}}
+\def\Es2{E_{0,{\rm sat}}^2}
+\def\sb{s_{\rm blue}}
+\def\sr{s_{\rm red}}
+
+%%% text usefuls
+\def\ie{{\it i.e.\ }}
+\def\eg{{\it e.g.\ }}
+\newcommand{\etal}{{\it et al.\ }}
+\newcommand{\ibid}{{\it ibid.\ }}
+
+%%% tables spaces.
+\def\gap{\hspace{0.2in}}
+
+
+%%%%%%%%%%%%%%%%%%%%
+%%% mathletters code (from http://www.grad.uiuc.edu/thesis/latexcode.html )
+% Modified Alex Barnett 00/9/28 to handle non-arabic \thechapter output
+% (ie, now works in Appendices)
+% Fails to give correct references in eqnarray (offset by one).
+% Still inserts small extra space after equation - unknown reason.
+%
+%    Original code:
+%\newcounter{eqletter}
+%\def\mathletters{%
+%\setcounter{eqletter}{0}%
+%\addtocounter{equation}{1}
+%\edef\curreqno{\arabic{equation}}
+%\edef\@currentlabel{\theequation}
+%\def\theequation{%
+%\addtocounter{eqletter}{1}\arabic{chapter}.\curreqno\alph{eqletter}%
+%}%
+%}
+%\def\endmathletters{\setcounter{equation}{\curreqno}}
+
+\newcounter{eqletter}
+\def\mathletters{%
+\setcounter{eqletter}{0}%
+\addtocounter{equation}{1}
+\edef\curreqno{\arabic{equation}}
+\edef\@currentlabel{\theequation}
+\def\theequation{%
+\addtocounter{eqletter}{1}\thechapter.\curreqno\alph{eqletter}%
+}%
+}
+\def\endmathletters{\setcounter{equation}{\curreqno}}
+
+
+%...............................................QPC...................
+
+\newcommand{\bk}{{\bf k}}
+\def\kf{k_{\text F}}
+\newcommand{\br}{{\bf r}}
+\newcommand{\TL}{{\text{(L)}}}
+\newcommand{\TR}{{\text{(R)}}}
+\newcommand{\TLR}{{\text{L,R}}}
+\newcommand{\VSD}{V_{\text{SD}}}
+\newcommand{\GT}{\Gamma_{\text{T}}}
+\newcommand{\DEL}{\mbox{\boldmath $\nabla$}}
+\def\lf{\lambda_{\text F}}
+\def\st{\sigma_{\text T}}
+\def\stlr{\sigma_{\text T}^{\text{L$\rightarrow$R}}}
+\def\strl{\sigma_{\text T}^{\text{R$\rightarrow$L}}}
+\def\aeff{a_{\text{eff}}}
+\def\aaeff{A_{\text{eff}}}
+\def\gat{G_{\text{atom}}}
+\newcommand{\LB}{Landauer-B\"{u}ttiker}
+
+% .............. NOTES ..................
+% To force linebreak when get overfull hbox from equation in paragraph
+% test, use \linebreak (which makes it justify the line it broke).
+% Contrast \\ or \newline which leave empty space.
+%
+%
