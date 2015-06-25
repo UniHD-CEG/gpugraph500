@@ -80,7 +80,7 @@ function generate_r_plotcode {
     tsk_list="$4"
     num_tasks=$3
     values="'mean_local_bfs_time' 'mean_row_com_time' 'mean_column_com_time' 'mean_predecessor_list_reduction_time' 'mean_time'"
-    labels_x_text="'Total time', 'Pred list red', 'Col com', 'Row com', 'Expansion'"
+    labels_x_text="'Expansion','Row com' ,'Col com','Pred list red' ,'Total time'"
     num_labels_x=`echo "$values" | wc -w`
 
     local val_list=`echo "$values" | sed 's/ /,/g'`
@@ -103,12 +103,15 @@ function generate_r_plotcode {
   return(res)
   }"
 
-   function_ggcols="ggcols <- function (n, l = 25, c = 75) {
-    hues <- seq(15, 375, length = n + 1)
-    hcl(h = hues, l = l, c = c)[1:n]
-   }"
+#   function_ggcols="ggcols <- function (n, l = 25, c = 75) {
+#    hues <- seq(15, 375, length = n + 1)
+#    hcl(h = hues, l = l, c = c)[1:n]
+#   }"
 
-  # function_ggcols="ggcols=c('red', 'green', 'darkcyan','purple', 'blue')"
+  function_ggcols="ccols<-function(n){
+      res<-c('red', 'green', 'darkcyan','purple', 'blue')
+      return(res)
+  }"
 
   # function_plot="par(xpd = TRUE, mar = c(4,4,2,2))
   #	 invisible(sapply(1:nrow(matriz), function(x)
@@ -122,17 +125,17 @@ function generate_r_plotcode {
   #	legend('topright', bty = 'n', title = '',
   #     legend = c($labels_x_text), fill = tcol(ggcols(5), 100))"
 
-  plot="par(xpd = TRUE, mar = c(3,3,2,2))
+  plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
         invisible(sapply(1:nrow(matriz), function(x)
           barplot(matriz[x, ], axes = FALSE, axisnames = FALSE,
-            main = '', border = NA,
-            col = tcol(ggcols($num_labels_x)[x], 50), 
+            main = '', border = 'black',
+            col = tcol(topo.colors($num_labels_x)[x], 100), 
             axis.lty = 10, ylim = c(0, 0.5), 
             add  = ifelse(x == 1, FALSE, TRUE))))
         axis(1, at = barplot(matriz, plot = FALSE), labels = colnames(matriz))
         axis(2, at = seq(0, 0.75, 0.05), labels = seq(0, 0.75, 0.05))
-        legend('topright', bty = 'n', title = '',
-        legend = c($labels_x_text), fill = tcol(ggcols($num_labels_x), 100))"
+        legend('topright', inset = c(-0.25, 0), fill = tcol(topo.colors(length(rownames(matriz))), 100),
+        legend = c($labels_x_text))"
 
 
     write_r "# Main Plot Code" $1
