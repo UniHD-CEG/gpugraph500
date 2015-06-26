@@ -6,3 +6,11 @@
 file*.r
 **/run
 eval/r-ify.sh
+*.etf
+*.0
+*.trc
+*.z
+*.otf
+*.ppk
+*.slog2
+*.edf
