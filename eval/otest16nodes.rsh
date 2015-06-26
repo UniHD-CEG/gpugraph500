@@ -1,8 +1,9 @@
 #!/bin/bash
 #SBATCH -J test_reduce
 #SBATCH --get-user-env
-#SBATCH --tasks=16
-#SBATCH --ntasks-per-node=2
+## SBATCH --tasks=16
+#SBATCH -N 4
+#SBATCH --ntasks-per-node=4
 #SBATCH --gres=gpu:1
 #SBATCH -t 10:00
 

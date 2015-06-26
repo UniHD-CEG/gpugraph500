@@ -8,5 +8,5 @@
 
 
 date
-mpirun tau_exec ./../cpu_2d/g500 -s 21 -C 3 -gpus 1 -qs 2
+mpirun tau_exec ./../cpu_2d/g500 -s 21 -C 3 -gpus 1 -qs 1
 
