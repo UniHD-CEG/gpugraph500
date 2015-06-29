@@ -46,7 +46,7 @@ function iterate_files {
     is_valid=`echo $validation_line | grep "Validation: passed"` 
 
     if [ "x$is_valid" != "x" ]; then
-        echo "-> File $file. Validation passed (Tasks: $total_tasks, GPUS: $gpus, Scale Factor: $scale_factor). "
+        echo "-> File $file. Validation passed (Tasks: $total_tasks, GPUS/Task: $gpus, Scale Factor: $scale_factor). "
     else
         echo "Error. execution ended with error. File $file"
         exit 1
@@ -148,7 +148,7 @@ function generate_r_plotcode {
     write_r "tasks_list <- c($tasks)" $1
     labels_x=""
     for i in `seq $num_tasks`; do
-        labels_x_paste="paste(tasks_list[$i], ' Task(s) ',$gpus,' GPU(S)',sep='')"
+        labels_x_paste="paste(tasks_list[$i], ' Task(s) ',$gpus,' GPUs/Task',sep='')"
         if [ "x$labels_x" = "x" ]; then
             labels_x="$labels_x_paste"
         else
