@@ -14,3 +14,4 @@ eval/r-ify.sh
 *.ppk
 *.slog2
 *.edf
+eval/tau.sh
