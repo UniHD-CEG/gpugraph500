@@ -9,5 +9,5 @@
 
 
 date
-mpirun ./../cpu_2d/g500 -s 21 -C 2 -gpus 1 -qs 1
+mpirun ./../cpu_2d/g500 -s 21 -C 2 -gpus 2 -qs 1
 
