@@ -75,11 +75,12 @@ function generate_r_variables {
 }
 
 function generate_r_plotcode {
-
+# mean_time
     id_list="$2"
     tsk_list="$4"
     num_tasks=$3
-    values="'mean_local_bfs_time' 'mean_row_com_time' 'mean_column_com_time' 'mean_predecessor_list_reduction_time' 'mean_time'"
+    values_total_time="'mean_time'"
+    values="'mean_local_bfs_time' 'mean_row_com_time' 'mean_column_com_time' 'mean_predecessor_list_reduction_time'"
     labels_x_text="'Expansion','Row com' ,'Col com','Pred list red' ,'Total time'"
     num_labels_x=`echo "$values" | wc -w`
 
@@ -125,22 +126,36 @@ function generate_r_plotcode {
   #	legend('topright', bty = 'n', title = '',
   #     legend = c($labels_x_text), fill = tcol(ggcols(5), 100))"
 
+#  plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
+#        invisible(sapply(1:nrow(matriz), function(x)
+#          barplot(matriz[x, ], axes = FALSE, axisnames = FALSE,
+#            main = '', border = 'black',
+#            col = ccols($num_labels_x)[x], 
+#            axis.lty = 10, ylim = c(0, 0.5), 
+#            add  = ifelse(x == 1, FALSE, TRUE))))
+#        axis(1, at = barplot(matriz, plot = FALSE), labels = colnames(matriz))
+#        axis(2, at = seq(0, 0.75, 0.05), labels = seq(0, 0.75, 0.05))
+#        legend('topright', inset = c(-0.25, 0), fill = ccols(length(rownames(matriz))),
+#        legend = c($labels_x_text))"
+
+  labels="labs<-c(\"4P2N\", \"4P3N\", \"4P4N\", \"9P8N\", \"16P8N\")"
+
   plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
-        invisible(sapply(1:nrow(matriz), function(x)
-          barplot(matriz[x, ], axes = FALSE, axisnames = FALSE,
+          barplot(matriz, axes = FALSE, axisnames = FALSE,
             main = '', border = 'black',
-            col = tcol(topo.colors($num_labels_x)[x], 100), 
-            axis.lty = 10, ylim = c(0, 0.5), 
-            add  = ifelse(x == 1, FALSE, TRUE))))
-        axis(1, at = barplot(matriz, plot = FALSE), labels = colnames(matriz))
-        axis(2, at = seq(0, 0.75, 0.05), labels = seq(0, 0.75, 0.05))
-        legend('topright', inset = c(-0.25, 0), fill = tcol(topo.colors(length(rownames(matriz))), 100),
+            col = ccols($num_labels_x))
+        axis(1, at = barplot(matriz, plot = FALSE), labels = labs)
+        axis(2, at = seq(0, 1.75, 0.05), labels = seq(0, 1.75, 0.05))
+        legend('topright', inset = c(-0.25, 0), fill = ccols(length(rownames(matriz))),
         legend = c($labels_x_text))"
 
+  totals_points="points(x=bp, y=totals, col=\"blue\")
+                 lines(x=bp, y=totals, col=\"blue\")"
 
     write_r "# Main Plot Code" $1
     write_r "require(grDevices)" $1
 
+    write_r "$labels" $1
     write_r "$function_transparent" $1
     write_r "$function_ggcols" $1
 
@@ -172,16 +187,32 @@ function generate_r_plotcode {
     labels_y="c($labels_y)"
     num_labels_y=`echo "$values" | wc -w`
 
+    labels_total_time=""
+    for i in $values_total_time; do
+        for j in $id_list; do
+            labels_total_time_paste="get(paste('id__',$j,'__',$i,sep=''))"
+            if [ "x$labels_total_time" = "x" ]; then
+                labels_total_time="$labels_total_time_paste"
+            else
+                labels_total_time="$labels_total_time, $labels_total_time_paste"
+            fi
+        done
+    done
+    labels_total_time="c($labels_total_time)"
+
+
     write_r "matriz <- matrix($labels_y, nrow = $num_labels_, ncol = $num_tasks, byrow = TRUE, \
         dimnames = list(c($val_list), \
         $labels_x))" $1
-  
+    write_r "totals<-$labels_total_time" $1  
+
     # write_r "barplot(matriz, legend.text = c($labels_x_text),
     #                args.legend = list(x = 'topleft', bty ='n'), beside = FALSE, col = c('red', 'green', 'darkcyan',
     #            'purple', 'blue'))" $1
 
     write_r "$plot" $1
-
+    write_r "$totals_points" $1
+   	
 
     write_r "title(main = 'Execution on Fermi. Scale Factor $scale_factor', font.main = 4)" $1
 }
