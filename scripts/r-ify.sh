@@ -88,61 +88,18 @@ function generate_r_plotcode {
     local tasks=`echo "$tsk_list" | sed 's/^ //;s/ /,/g'`
     local ids=`echo "$id_list" | sed 's/ /,/g'`
 
-    function_transparent="tcol <- function(color, trans = 255) {
-  if (length(color) != length(trans) & 
-        !any(c(length(color), length(trans)) == 1)) 
-    stop('Vector lengths not correct')
-  if (length(color) == 1 & length(trans) > 1) 
-    color <- rep(color, length(trans))
-  if (length(trans) == 1 & length(color) > 1) 
-    trans <- rep(trans, length(color))
-
-  res <- paste0('#', apply(apply(rbind(col2rgb(color)), 2, function(x) 
-    format(as.hexmode(x), 2)), 2, paste, collapse = ''))
-  res <- unlist(unname(Map(paste0, res, as.character(as.hexmode(trans)))))
-  res[is.na(color)] <- NA
-  return(res)
-  }"
-
-#   function_ggcols="ggcols <- function (n, l = 25, c = 75) {
-#    hues <- seq(15, 375, length = n + 1)
-#    hcl(h = hues, l = l, c = c)[1:n]
-#   }"
-
   function_ggcols="ccols<-function(n){
       res<-c('red', 'green', 'darkcyan','purple', 'blue')
       return(res)
   }"
 
-  # function_plot="par(xpd = TRUE, mar = c(4,4,2,2))
-  #	 invisible(sapply(1:nrow(matriz), function(x)
-  #  	  barplot(matriz[x, ], axes = FALSE, axisnames = FALSE,
-  #         main = 'identity', border = NA,
-  #          col = tcol(ggcols(5)[x], 50), 
-  #          axis.lty = 10, ylim = c(0, 0.3), 
-  #          add  = ifelse(x == 1, FALSE, TRUE))))
-  #	axis(1, at = barplot(matriz, plot = FALSE), labels = colnames($matriz))
-  #	axis(2, at = seq(0, 0.05, 10), labels = seq(0, 0.05, 10))
-  #	legend('topright', bty = 'n', title = '',
-  #     legend = c($labels_x_text), fill = tcol(ggcols(5), 100))"
-
-#  plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
-#        invisible(sapply(1:nrow(matriz), function(x)
-#          barplot(matriz[x, ], axes = FALSE, axisnames = FALSE,
-#            main = '', border = 'black',
-#            col = ccols($num_labels_x)[x], 
-#            axis.lty = 10, ylim = c(0, 0.5), 
-#            add  = ifelse(x == 1, FALSE, TRUE))))
-#        axis(1, at = barplot(matriz, plot = FALSE), labels = colnames(matriz))
-#        axis(2, at = seq(0, 0.75, 0.05), labels = seq(0, 0.75, 0.05))
-#        legend('topright', inset = c(-0.25, 0), fill = ccols(length(rownames(matriz))),
-#        legend = c($labels_x_text))"
 
   labels="labs<-c(\"4P2N\", \"4P3N\", \"4P4N\", \"9P8N\", \"16P8N\")"
+  labels="labs<-c(\"4P2N Row Opti\",\"4P2N Col OptiM\",\"4P2N Non Optim\")"
 
   plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
           barplot(matriz, axes = FALSE, axisnames = FALSE,
-            main = '', border = 'black',
+            main = '', border = NA,
             col = ccols($num_labels_x))
         axis(1, at = barplot(matriz, plot = FALSE), labels = labs)
         axis(2, at = seq(0, 1.75, 0.05), labels = seq(0, 1.75, 0.05))
@@ -156,7 +113,6 @@ function generate_r_plotcode {
     write_r "require(grDevices)" $1
 
     write_r "$labels" $1
-    write_r "$function_transparent" $1
     write_r "$function_ggcols" $1
 
     write_r "ids <- c($ids)" $1

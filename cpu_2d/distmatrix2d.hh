@@ -153,6 +153,7 @@ DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::DistMatrix2d(int64_t _R, int6
     //Compute owen row and column id
     r = rank/C;
     c = rank%C;
+    printf("row: %d col: %d\n", r, c);
 }
 
 template<class vertextyp, class rowoffsettyp,bool WOLO, int ALG, bool PAD>

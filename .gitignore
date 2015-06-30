@@ -15,3 +15,4 @@ eval/r-ify.sh
 *.slog2
 *.edf
 eval/tau.sh
+eval/tau_clean.sh

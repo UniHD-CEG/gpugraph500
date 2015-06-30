@@ -9,5 +9,5 @@
 
 
 date
-mpirun -np 4 -mca btl tcp,self ./../cpu_2d/g500 -s 21 -C 2 -gpus 1 -qs 1
+mpirun -np 4 -hostfile hosts-roptimum -mca btl tcp,self ./../cpu_2d/g500 -s 21 -C 2 -gpus 1 -qs 1
 
