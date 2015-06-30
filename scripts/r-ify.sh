@@ -95,10 +95,10 @@ function generate_r_plotcode {
 
 
   labels="labs<-c(\"4P2N\", \"4P3N\", \"4P4N\", \"9P8N\", \"16P8N\")"
-  labels="labs<-c(\"4P2N Row Opti\",\"4P2N Col OptiM\",\"4P2N Non Optim\")"
+  labels="labs<-c(\"4P2N Row Optim\",\"4P2N Col Optim\",\"4P2N Non Optim\")"
 
   plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
-          barplot(matriz, axes = FALSE, axisnames = FALSE,
+        bp <-  barplot(matriz, axes = FALSE, axisnames = FALSE,
             main = '', border = NA,
             col = ccols($num_labels_x))
         axis(1, at = barplot(matriz, plot = FALSE), labels = labs)
