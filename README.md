@@ -72,17 +72,17 @@ Check out example.cpp
 
 You can run it like so:
 
-make example
-./example
+    	make example  
+    	./example
 
 #### Usage
 
-make
-./unit
+    	make  
+    	./unit
 
 To run tests, you can do 
 
-./testcodecs
+    	./testcodecs
 
 (follow the instructions)
 
@@ -108,27 +108,20 @@ it is not optimized for the compression of sorted lists of integers.
 #### Licensing
 
 Apache License, Version 2.0
-
 As far as the authors know, this work is patent-free.
 
 #### Requirements
 
-A CPU (AMD or Intel) with support for SSE2 (Pentium 4 or better) is required
-while a CPU with SSE 4.1* (Penryn  [2007] processors or better) is recommended. 
-
-
-A recent GCC (4.7 or better), Clang or Intel compiler.
-
-A processor support AVX (Intel or AMD).
+* A CPU (AMD or Intel) with support for SSE2 (Pentium 4 or better) is required
+* while a CPU with SSE 4.1* (Penryn  [2007] processors or better) is recommended. 
+* A recent GCC (4.7 or better), Clang or Intel compiler.
+* A processor support AVX (Intel or AMD).
 
 Tested on Linux and MacOS. It should be portable to Windows and other platforms.
 
 *- The default makefile might assume AVX support, but AVX is not required. For GCC
 compilers you might need the -msse2 flag, but you will not need the -mavx flag.
 
-For advanced benchmarking, please see
-
-advancedbenchmarking/README.md
+For advanced benchmarking, please see `advancedbenchmarking/README.md`
 
 where there is additional information as well as links to real data sets.
-
