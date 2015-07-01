@@ -1,4 +1,5 @@
-creek01 max_slots=1
-creek02 max_slots=1
-creek01 max_slots=1
-creek02 max_slots=1
+rank 0=+n0 slot=1
+rank 1=+n1 slot=1
+rank 2=+n0 slot=2
+rank 3=+n1 slot=3
+
