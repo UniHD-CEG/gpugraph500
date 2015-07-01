@@ -16,3 +16,15 @@ eval/r-ify.sh
 *.edf
 eval/tau.sh
 eval/tau_clean.sh
+cpu_2d/compression/benchintersection
+cpu_2d/compression/benchsearch
+cpu_2d/compression/bitpacking
+cpu_2d/compression/budgetedtest
+cpu_2d/compression/compflatstat
+cpu_2d/compression/compress
+cpu_2d/compression/entropy
+cpu_2d/compression/simplesynth
+cpu_2d/compression/testcodecs
+cpu_2d/compression/testintegration
+cpu_2d/compression/uncompress
+cpu_2d/compression/unit
