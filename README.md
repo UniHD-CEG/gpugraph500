@@ -58,7 +58,7 @@ This is significantly faster than generic codecs like gzip, LZO, Snappy or LZ4.
 Authors: Leonid Boystov, Nathan Kurz and Daniel Lemire
 with some contributions from Owen Kaser, Andrew Consroe and others.
 
-[Documentation][]
+#### [Documentation]()
 
 
 * Daniel Lemire, Leonid Boytsov, Nathan Kurz, SIMD Compression and the Intersection of Sorted Integers, Software Practice & Experience (to appear) http://arxiv.org/abs/1401.6399
@@ -66,7 +66,7 @@ with some contributions from Owen Kaser, Andrew Consroe and others.
 * Jeff Plaisance, Nathan Kurz, Daniel Lemire, Vectorized VByte Decoding, International Symposium on Web Algorithms 2015, 2015. http://arxiv.org/abs/1503.07387
 * Wayne Xin Zhao, Xudong Zhang, Daniel Lemire, Dongdong Shan, Jian-Yun Nie, Hongfei Yan, Ji-Rong Wen, A General SIMD-based Approach to Accelerating Compression Algorithms, ACM Transactions on Information Systems 33 (3), 2015. http://arxiv.org/abs/1502.01916
 
-[Simple demo][]
+#### [Simple demo]()
 
 Check out example.cpp
 
@@ -75,7 +75,7 @@ You can run it like so:
 make example
 ./example
 
-[Usage][]
+#### [Usage]()
 
 make
 ./unit
@@ -87,7 +87,7 @@ To run tests, you can do
 (follow the instructions)
 
 
-[For a simple C library][]
+#### [For a simple C library]()
 
 
 This library is a C++ research library. For something simpler,
@@ -96,7 +96,7 @@ written in C, see:
 https://github.com/lemire/simdcomp
 
 
-[Comparison with the FastPFOR C++ library][]
+#### [Comparison with the FastPFOR C++ library]()
 
 
 The FastPFOR C++ Library available at https://github.com/lemire/FastPFor
@@ -105,13 +105,13 @@ it is not optimized for the compression of sorted lists of integers.
 
 
 
-[Licensing][]
+#### [Licensing]()
 
 Apache License, Version 2.0
 
 As far as the authors know, this work is patent-free.
 
-[Requirements][]
+#### [Requirements]()
 
 A CPU (AMD or Intel) with support for SSE2 (Pentium 4 or better) is required
 while a CPU with SSE 4.1* (Penryn  [2007] processors or better) is recommended. 
