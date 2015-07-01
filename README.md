@@ -5,7 +5,7 @@ in the paper, Scalable Graph Traversals.
 All copyrights reserved to their original owners.
 
 
-###Goggle c++ Test Framework
+### [Goggle Test Framework](https://code.google.com/p/googletest/)
 
 To install the package in ~/usr/gtest/ as shared libraries, together with sample build as well:
 
@@ -41,7 +41,7 @@ To compile the test:
         $ g++ -I test.cpp $GTEST_HOME/include -L $GTEST_HOME/lib -lgtest -lgtest_main -lpthread 
 
 
-###SIMDCompressionAndIntersection Library
+### [SIMDCompressionAndIntersection Library](https://github.com/lemire/SIMDCompressionAndIntersection)
 
 
 As the name suggests, this is a C/C++ library for fast
