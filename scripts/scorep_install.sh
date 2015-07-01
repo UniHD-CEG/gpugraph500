@@ -94,8 +94,6 @@ function install {
   exit_error $res
 
   make install
-  res=$?
-  exit_error $res
 }
 
 install
