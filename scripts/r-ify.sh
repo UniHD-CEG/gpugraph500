@@ -78,7 +78,7 @@ function generate_r_plotcode {
 # mean_time
     id_list="$2"
     tsk_list="$4"
-    num_tasks=$3
+    total_jobids=$3
     values_total_time="'mean_time'"
     values="'mean_local_bfs_time' 'mean_row_com_time' 'mean_column_com_time' 'mean_predecessor_list_reduction_time'"
     labels_x_text="'Expansion','Row com' ,'Col com','Pred list red' ,'Total time'"
@@ -94,19 +94,19 @@ function generate_r_plotcode {
   }"
 
 
-  labels="labs<-c(\"4P2N\", \"4P3N\", \"4P4N\", \"9P8N\", \"16P8N\")"
-  labels="labs<-c(\"4P2N Row Optim\",\"4P2N Col Optim\",\"4P2N Non Optim\")"
+    labels="labs<-c(\"4P2N\", \"4P3N\", \"4P4N\", \"9P8N\", \"16P8N\")"
+    labels="labs<-c(\"4P2N Row Optim\",\"4P2N Col Optim\",\"4P2N Non Optim\")"
 
-  plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
+    plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
         bp <-  barplot(matriz, axes = FALSE, axisnames = FALSE,
             main = '', border = NA,
             col = ccols($num_labels_x))
-        axis(1, at = barplot(matriz, plot = FALSE), labels = labs)
+        axis(1, at = barplot(matriz, plot = FALSE), labels = $labels_x)
         axis(2, at = seq(0, 1.75, 0.05), labels = seq(0, 1.75, 0.05))
         legend('topright', inset = c(-0.25, 0), fill = ccols(length(rownames(matriz))),
         legend = c($labels_x_text))"
 
-  totals_points="points(x=bp, y=totals, col=\"blue\")
+    totals_points="points(x=bp, y=totals, col=\"blue\")
                  lines(x=bp, y=totals, col=\"blue\")"
 
     write_r "# Main Plot Code" $1
@@ -118,8 +118,8 @@ function generate_r_plotcode {
     write_r "ids <- c($ids)" $1
     write_r "tasks_list <- c($tasks)" $1
     labels_x=""
-    for i in `seq $num_tasks`; do
-        labels_x_paste="paste(tasks_list[$i], ' Task(s) ',$gpus,' GPUs/Task',sep='')"
+    for i in `seq $total_jobids`; do
+        labels_x_paste="paste(tasks_list[$i], ' Process(es) ',sep='')"
         if [ "x$labels_x" = "x" ]; then
             labels_x="$labels_x_paste"
         else
@@ -128,7 +128,6 @@ function generate_r_plotcode {
     done
     labels_x="c($labels_x)"
 
-    num_labes_y=0
     labels_y=""
     for i in $values; do
         for j in $id_list; do
@@ -156,16 +155,30 @@ function generate_r_plotcode {
     done
     labels_total_time="c($labels_total_time)"
 
+   continue_loop="y"
+   while [ "x$continue_loop" = "xy" ]; do
+       echo -n "Enter new labels for the X-Axe? (y/n) [n] "
+       read yesno < /dev/tty
 
-    write_r "matriz <- matrix($labels_y, nrow = $num_labels_, ncol = $num_tasks, byrow = TRUE, \
+       if [ "x$yesno" = "xy" ];then
+          echo -n "Enter a total $total_jobids label(s) between quoutes. Separate them with spaces: "
+          read labels_x_temp < /dev/tty
+          num_labels_x_temp=`echo "$labels_x_temp" | wc -w`
+          if [ $num_labels_x_temp != "$total_jobids"  ]; then
+             echo "Error entering label(s). $num_labels_x_temp label(s) were entered."
+          else
+             continue_loop="n"
+          fi
+       else
+          continue_loop="n"
+       fi
+    done
+
+    write_r "matriz <- matrix($labels_y, nrow = $num_labels_, ncol = $total_jobids, byrow = TRUE, \
         dimnames = list(c($val_list), \
         $labels_x))" $1
+
     write_r "totals<-$labels_total_time" $1  
-
-    # write_r "barplot(matriz, legend.text = c($labels_x_text),
-    #                args.legend = list(x = 'topleft', bty ='n'), beside = FALSE, col = c('red', 'green', 'darkcyan',
-    #            'purple', 'blue'))" $1
-
     write_r "$plot" $1
     write_r "$totals_points" $1
    	
@@ -176,6 +189,7 @@ function generate_r_plotcode {
 function build {
     echo ""
     ids="$1"
+    total_jobids=$2 
     id="-`echo "$ids" | sed 's/ /-/g'`" 
     common_sf=""
     common_gpus=""
@@ -212,7 +226,7 @@ function build {
 
     done
 
-    generate_r_plotcode "$result_file" "$ids" $2 "$tasks_list"
+    generate_r_plotcode "$result_file" "$ids" $total_jobids "$tasks_list"
 
     echo "-> Created file \"$result_file\". "
     echo "-> R-Code successfully generated.";
