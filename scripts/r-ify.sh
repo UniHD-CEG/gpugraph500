@@ -178,7 +178,7 @@ function generate_r_plotcode {
         dimnames = list(c($val_list), \
         $labels_x))" $1
 
-    write_r "totals<-$labels_total_time" $1
+    write_r "totals<-$labels_total_time" $1  
     write_r "$plot" $1
     write_r "$totals_points" $1
 
@@ -189,8 +189,8 @@ function generate_r_plotcode {
 function build {
     echo ""
     ids="$1"
-    total_jobids=$2
-    id="-`echo "$ids" | sed 's/ /-/g'`"
+    total_jobids=$2 
+    id="-`echo "$ids" | sed 's/ /-/g'`" 
     common_sf=""
     common_gpus=""
     tasks_list=""
