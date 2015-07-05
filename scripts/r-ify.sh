@@ -89,34 +89,21 @@ function generate_r_plotcode {
     local ids=`echo "$id_list" | sed 's/ /,/g'`
 
   function_ggcols="ccols<-function(n){
-      res<-c('red', 'green', 'darkcyan','purple', 'blue')
-      return(res)
-  }"
-
-
-    labels="labs<-c(\"4P2N\", \"4P3N\", \"4P4N\", \"9P8N\", \"16P8N\")"
-    labels="labs<-c(\"4P2N Row Optim\",\"4P2N Col Optim\",\"4P2N Non Optim\")"
-
-    plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
-        bp <-  barplot(matriz, axes = FALSE, axisnames = FALSE,
-            main = '', border = NA,
-            col = ccols($num_labels_x))
-        axis(1, at = barplot(matriz, plot = FALSE), labels = $labels_x)
-        axis(2, at = seq(0, 1.75, 0.05), labels = seq(0, 1.75, 0.05))
-        legend('topright', inset = c(-0.25, 0), fill = ccols(length(rownames(matriz))),
-        legend = c($labels_x_text))"
+       res<-c('red', 'green', 'darkcyan','purple', 'blue')
+       return(res)
+     }"
 
     totals_points="points(x=bp, y=totals, col=\"blue\")
                  lines(x=bp, y=totals, col=\"blue\")"
 
     write_r "# Main Plot Code" $1
     write_r "require(grDevices)" $1
-
     write_r "$labels" $1
     write_r "$function_ggcols" $1
-
     write_r "ids <- c($ids)" $1
     write_r "tasks_list <- c($tasks)" $1
+
+
     labels_x=""
     for i in `seq $total_jobids`; do
         labels_x_paste="paste(tasks_list[$i], ' Process(es) ',sep='')"
@@ -155,11 +142,10 @@ function generate_r_plotcode {
     done
     labels_total_time="c($labels_total_time)"
 
-   continue_loop="y"
-   while [ "x$continue_loop" = "xy" ]; do
+    continue_loop="y"
+    while [ "x$continue_loop" = "xy" ]; do
        echo -n "Enter new labels for the X-Axe? (y/n) [n] "
        read yesno < /dev/tty
-
        if [ "x$yesno" = "xy" ];then
           echo -n "Enter a total $total_jobids label(s) between quoutes. Separate them with spaces: "
           read labels_x_temp < /dev/tty
@@ -168,21 +154,31 @@ function generate_r_plotcode {
              echo "Error entering label(s). $num_labels_x_temp label(s) were entered."
           else
              continue_loop="n"
+             labels_x="c(`echo "$labels_x_temp" | sed 's/ /,/g'`)"
           fi
+
        else
           continue_loop="n"
        fi
     done
 
+
+    plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
+        bp <-  barplot(matriz, axes = FALSE, axisnames = FALSE,
+            main = '', border = NA,
+            col = ccols($num_labels_x))
+        axis(1, at = barplot(matriz, plot = FALSE), labels = $labels_x)
+        axis(2, at = seq(0, 1.75, 0.05), labels = seq(0, 1.75, 0.05))
+        legend('topright', inset = c(-0.25, 0), fill = ccols(length(rownames(matriz))),
+        legend = c($labels_x_text))"
+
+
     write_r "matriz <- matrix($labels_y, nrow = $num_labels_, ncol = $total_jobids, byrow = TRUE, \
         dimnames = list(c($val_list), \
         $labels_x))" $1
-
     write_r "totals<-$labels_total_time" $1  
     write_r "$plot" $1
     write_r "$totals_points" $1
-
-
     write_r "title(main = 'Execution on Fermi. Scale Factor $scale_factor', font.main = 4)" $1
 }
 
