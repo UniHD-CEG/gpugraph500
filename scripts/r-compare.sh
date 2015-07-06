@@ -97,6 +97,7 @@ function read_variable {
 function generate_r_variables {
     sf="$1"
     results_file=$2
+    labels_x_set=$3
 
     read_jobids $sf jobids n_jobids
     for jobid in $jobids; do
@@ -122,11 +123,15 @@ function generate_r_variables {
     values="c($values)"
     write_r "vect__${sf} <- $values" $results_file
 
-    get_labels "$jobids" $sf labels
-    write_r "labels_x <- $labels" $results_file
+    if [ $labels_x_set -eq 0 ]; then
+        get_labels "$jobids" $sf labels_x
+        write_r "labels_x <- $labels_x" $results_file
+        labels_x_set=1
+    fi
 
-    eval "$3=\"$jobids\""
-    eval "$4=$n_jobids"
+    eval "$4=\"$jobids\""
+    eval "$5=$n_jobids"
+    eval "$6=$labels_x_set"
 }
 
 function get_labels {
@@ -158,8 +163,16 @@ function get_labels {
              echo "Error entering label(s). $n_labels_temp label(s) were entered."
          echo -n "Re-"
           else
-             continue_loop="n"
-             labels_x="c(`echo "$labels_temp" | sed 's/ /,/g'`)"
+              continue_loop="n"
+              labels_x=""
+              for label_x in $labels_temp; do
+                  if [ "x$labels_x" = "x" ]; then
+                      labels_x="'$label_x'"
+                  else
+                      labels_x="$labels_x,'$label_x'"
+                  fi
+              done
+             labels_x="c($labels_x)"
           fi
        else
           continue_loop="n"
@@ -199,7 +212,7 @@ function generate_r_plotcode {
 
     matrix="mat <- matrix($values, nrow = $n_sfs, ncol = length(labels_x), byrow = TRUE, dimnames = list(labels_y, labels_x))"
     plotcode="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 8.1))
-        mp <-  matplot(mat, axes = FALSE,
+        mp <-  matplot(t(mat), axes = FALSE,
         main = '', col = rainbow(length(rownames(mat))), type='c', lty=1, lwd=1)
         axis(1, at = 1:length(colnames(mat)), labels = labels_x)
         axis(2, at = seq(0, 1.75, 0.01), labels = seq(0, 1.75, 0.01))
@@ -222,9 +235,10 @@ function build {
     create_r_file "$token" result_file
     old_number_jobids="0"
     jobid_list=""
+    labels_x_set=0
     for sf in $sfs; do
 
-        generate_r_variables $sf $result_file jobids new_number_jobids
+        generate_r_variables $sf $result_file $labels_x_set jobids new_number_jobids labels_x_set
 
         if [ "x$old_number_jobids" = "x0" ]; then
             old_number_jobids=$new_number_jobids
@@ -257,4 +271,5 @@ if [ $# -lt 1 ] || [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ]; then
     echo "Usage: $0 <SCALE_FACTOR> [SCALE_FACTOR] [SCALE_FACTOR] ..."
     exit 1
 fi
+
 build "$*" $#
