@@ -10,8 +10,8 @@ MAKEFILE      = Makefile
 
 ####### Compiler, tools and options
 
-CC            = mpicc
-CXX           = mpicxx
+CC            = scorep mpicc
+CXX           = scorep mpicxx
 DEFINES       = 
 CFLAGS        = -m64 -pipe -D_CUDA -std=c99 -fopenmp -O3 -Wall -W -fPIE $(DEFINES)
 CXXFLAGS      = -m64 -pipe -D_CUDA -std=c++11 -fopenmp -DINSTRUMENTED -O3 -Wall -W -fPIE $(DEFINES)

@@ -29,3 +29,5 @@ cpu_2d/compression/testintegration
 cpu_2d/compression/uncompress
 cpu_2d/compression/unit
 eval/r-compare.sh
+**/*.log
+*.log
