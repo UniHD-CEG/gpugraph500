@@ -43,10 +43,10 @@ function iterate_files {
     gpus=${gpus##*:\ }
     total_tasks=`echo "$variables" | grep "num_mpi_processes"`
     total_tasks=${total_tasks##*:\ }
-    is_valid=`echo $validation_line | grep "Validation: passed"` 
+    is_valid=`echo $validation_line | grep "Validation: passed"`
 
     if [ "x$is_valid" != "x" ]; then
-        echo "-> File $file. Validation passed (Tasks: $total_tasks, GPUS: $gpus, Scale Factor: $scale_factor). "
+        echo "-> File $file. Validation passed (Tasks: $total_tasks, GPUS/Task: $gpus, Scale Factor: $scale_factor). "
     else
         echo "Error. execution ended with error. File $file"
         exit 1
@@ -63,8 +63,8 @@ function generate_r_variables {
     local id=$2
     for block in "$1"; do
 	transformed_block=`echo "$block" | sed 's/ //'`
-    done 
-    for line in $transformed_block; do 
+    done
+    for line in $transformed_block; do
         transformed_line=`echo "$line" | sed 's/:/=/' | sed 's/^\(.*\)/id__'$id'__\1/'`
         result_code="$result_code"`echo ""; echo "$transformed_line"`
     done
@@ -75,77 +75,38 @@ function generate_r_variables {
 }
 
 function generate_r_plotcode {
-
+# mean_time
     id_list="$2"
     tsk_list="$4"
-    num_tasks=$3
-    values="'mean_local_bfs_time' 'mean_row_com_time' 'mean_column_com_time' 'mean_predecessor_list_reduction_time' 'mean_time'"
-    labels_x_text="'Total time', 'Pred list red', 'Col com', 'Row com', 'Expansion'"
+    total_jobids=$3
+    values_total_time="'mean_time'"
+    values="'mean_local_bfs_time' 'mean_row_com_time' 'mean_column_com_time' 'mean_predecessor_list_reduction_time'"
+    labels_x_text="'Expansion','Row com' ,'Col com','Pred list red' ,'Total time'"
     num_labels_x=`echo "$values" | wc -w`
 
     local val_list=`echo "$values" | sed 's/ /,/g'`
     local tasks=`echo "$tsk_list" | sed 's/^ //;s/ /,/g'`
     local ids=`echo "$id_list" | sed 's/ /,/g'`
 
-    function_transparent="tcol <- function(color, trans = 255) {
-  if (length(color) != length(trans) & 
-        !any(c(length(color), length(trans)) == 1)) 
-    stop('Vector lengths not correct')
-  if (length(color) == 1 & length(trans) > 1) 
-    color <- rep(color, length(trans))
-  if (length(trans) == 1 & length(color) > 1) 
-    trans <- rep(trans, length(color))
+  function_ggcols="ccols<-function(n){
+       res<-c('red', 'green', 'darkcyan','purple', 'blue')
+       return(res)
+     }"
 
-  res <- paste0('#', apply(apply(rbind(col2rgb(color)), 2, function(x) 
-    format(as.hexmode(x), 2)), 2, paste, collapse = ''))
-  res <- unlist(unname(Map(paste0, res, as.character(as.hexmode(trans)))))
-  res[is.na(color)] <- NA
-  return(res)
-  }"
-
-   function_ggcols="ggcols <- function (n, l = 25, c = 75) {
-    hues <- seq(15, 375, length = n + 1)
-    hcl(h = hues, l = l, c = c)[1:n]
-   }"
-
-  # function_ggcols="ggcols=c('red', 'green', 'darkcyan','purple', 'blue')"
-
-  # function_plot="par(xpd = TRUE, mar = c(4,4,2,2))
-  #	 invisible(sapply(1:nrow(matriz), function(x)
-  #  	  barplot(matriz[x, ], axes = FALSE, axisnames = FALSE,
-  #         main = 'identity', border = NA,
-  #          col = tcol(ggcols(5)[x], 50), 
-  #          axis.lty = 10, ylim = c(0, 0.3), 
-  #          add  = ifelse(x == 1, FALSE, TRUE))))
-  #	axis(1, at = barplot(matriz, plot = FALSE), labels = colnames($matriz))
-  #	axis(2, at = seq(0, 0.05, 10), labels = seq(0, 0.05, 10))
-  #	legend('topright', bty = 'n', title = '',
-  #     legend = c($labels_x_text), fill = tcol(ggcols(5), 100))"
-
-  plot="par(xpd = TRUE, mar = c(3,3,2,2))
-        invisible(sapply(1:nrow(matriz), function(x)
-          barplot(matriz[x, ], axes = FALSE, axisnames = FALSE,
-            main = '', border = NA,
-            col = tcol(ggcols($num_labels_x)[x], 50), 
-            axis.lty = 10, ylim = c(0, 0.5), 
-            add  = ifelse(x == 1, FALSE, TRUE))))
-        axis(1, at = barplot(matriz, plot = FALSE), labels = colnames(matriz))
-        axis(2, at = seq(0, 0.75, 0.05), labels = seq(0, 0.75, 0.05))
-        legend('topright', bty = 'n', title = '',
-        legend = c($labels_x_text), fill = tcol(ggcols($num_labels_x), 100))"
-
+    totals_points="points(x=bp, y=totals, col=\"blue\")
+                 lines(x=bp, y=totals, col=\"blue\")"
 
     write_r "# Main Plot Code" $1
     write_r "require(grDevices)" $1
-
-    write_r "$function_transparent" $1
+    write_r "$labels" $1
     write_r "$function_ggcols" $1
-
     write_r "ids <- c($ids)" $1
     write_r "tasks_list <- c($tasks)" $1
+
+
     labels_x=""
-    for i in `seq $num_tasks`; do
-        labels_x_paste="paste(tasks_list[$i], ' Task(s) ',$gpus,' GPU(S)',sep='')"
+    for i in `seq $total_jobids`; do
+        labels_x_paste="paste(tasks_list[$i], ' Process(es) ',sep='')"
         if [ "x$labels_x" = "x" ]; then
             labels_x="$labels_x_paste"
         else
@@ -154,7 +115,6 @@ function generate_r_plotcode {
     done
     labels_x="c($labels_x)"
 
-    num_labes_y=0
     labels_y=""
     for i in $values; do
         for j in $id_list; do
@@ -169,23 +129,63 @@ function generate_r_plotcode {
     labels_y="c($labels_y)"
     num_labels_y=`echo "$values" | wc -w`
 
-    write_r "matriz <- matrix($labels_y, nrow = $num_labels_, ncol = $num_tasks, byrow = TRUE, \
+    labels_total_time=""
+    for i in $values_total_time; do
+        for j in $id_list; do
+            labels_total_time_paste="get(paste('id__',$j,'__',$i,sep=''))"
+            if [ "x$labels_total_time" = "x" ]; then
+                labels_total_time="$labels_total_time_paste"
+            else
+                labels_total_time="$labels_total_time, $labels_total_time_paste"
+            fi
+        done
+    done
+    labels_total_time="c($labels_total_time)"
+
+    continue_loop="y"
+    while [ "x$continue_loop" = "xy" ]; do
+       echo -n "Enter new labels for the X-Axe? (y/n) [n] "
+       read yesno < /dev/tty
+       if [ "x$yesno" = "xy" ];then
+          echo -n "Enter a total $total_jobids label(s) between quoutes. Separate them with spaces: "
+          read labels_x_temp < /dev/tty
+          num_labels_x_temp=`echo "$labels_x_temp" | wc -w`
+          if [ $num_labels_x_temp != "$total_jobids"  ]; then
+             echo "Error entering label(s). $num_labels_x_temp label(s) were entered."
+          else
+             continue_loop="n"
+             labels_x="c(`echo "$labels_x_temp" | sed 's/ /,/g'`)"
+          fi
+
+       else
+          continue_loop="n"
+       fi
+    done
+
+
+    plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
+        bp <-  barplot(matriz, axes = FALSE, axisnames = FALSE,
+            main = '', border = NA,
+            col = ccols($num_labels_x))
+        axis(1, at = barplot(matriz, plot = FALSE), labels = $labels_x)
+        axis(2, at = seq(0, 1.75, 0.05), labels = seq(0, 1.75, 0.05))
+        legend('topright', inset = c(-0.25, 0), fill = ccols(length(rownames(matriz))),
+        legend = c($labels_x_text))"
+
+
+    write_r "matriz <- matrix($labels_y, nrow = $num_labels_, ncol = $total_jobids, byrow = TRUE, \
         dimnames = list(c($val_list), \
         $labels_x))" $1
-  
-    # write_r "barplot(matriz, legend.text = c($labels_x_text),
-    #                args.legend = list(x = 'topleft', bty ='n'), beside = FALSE, col = c('red', 'green', 'darkcyan',
-    #            'purple', 'blue'))" $1
-
+    write_r "totals<-$labels_total_time" $1  
     write_r "$plot" $1
-
-
+    write_r "$totals_points" $1
     write_r "title(main = 'Execution on Fermi. Scale Factor $scale_factor', font.main = 4)" $1
 }
 
 function build {
     echo ""
     ids="$1"
+    total_jobids=$2 
     id="-`echo "$ids" | sed 's/ /-/g'`" 
     common_sf=""
     common_gpus=""
@@ -222,7 +222,7 @@ function build {
 
     done
 
-    generate_r_plotcode "$result_file" "$ids" $2 "$tasks_list"
+    generate_r_plotcode "$result_file" "$ids" $total_jobids "$tasks_list"
 
     echo "-> Created file \"$result_file\". "
     echo "-> R-Code successfully generated.";
@@ -240,4 +240,3 @@ if [ $# -lt 1 ] || [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ]; then
 fi
 
 build "$*" $#
-
