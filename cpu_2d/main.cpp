@@ -38,6 +38,16 @@ struct statistic {
     double hstddev;
 };
 
+enum GGen {
+    G500 = 0,
+    OLD_G500
+};
+
+
+void externalArgumentsIterate(int argc, char *const *argv, int i, int64_t &scale, int64_t &edgefactor,
+                              int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
+                              int &graph_gen, int &gpus, double &queue_sizing);
+
 template<class T>
 statistic getStatistics(std::vector<T>& input){
     statistic out;
@@ -112,10 +122,6 @@ int main(int argc, char** argv)
       int64_t scale =  21;
       int64_t edgefactor = 16;
       int64_t num_of_iterations = 64;
-      enum GGen {
-          G500 = 0,
-          OLD_G500
-      };
       int graph_gen= G500;
       int64_t verbosity = 1;
 
@@ -137,117 +143,11 @@ int main(int argc, char** argv)
       if(rank == 0){
         int i = 1;
         // simple Commandline parser
-        while(i < argc){
-            if(!strcmp(argv[i], "-s")){
-                if(i+1 < argc){
-                    int s_tmp = atol(argv[i+1]);
-                    if(s_tmp < 1){
-                        printf("Invalid scale factor: %s\n", argv[i+1]);
-                    } else{
-                        scale = s_tmp;
-                        i++;
-                    }
-                }
-            }else if(!strcmp(argv[i], "-e")){
-                if(i+1 < argc){
-                    int e_tmp = atol(argv[i+1]);
-                    if(e_tmp < 1){
-                       printf("Invalid edge factor: %s\n", argv[i+1]);
-                    } else{
-                        edgefactor = e_tmp;
-                        i++;
-                    }
-                }
-            }else if(!strcmp(argv[i], "-i")){
-                if(i+1 < argc){
-                    int i_tmp = atol(argv[i+1]);
-                    if(i_tmp < 1){
-                       printf("Invalid number of iterations: %s\n", argv[i+1]);
-                    } else{
-                        num_of_iterations = i_tmp;
-                        i++;
-                    }
-                }
-            }else if(!strcmp(argv[i], "-R")){
-                if(i+1 < argc){
-                    int R_tmp = atoi(argv[i+1]);
-                    if(R_tmp < 1){
-                       printf("Invalid row slice number: %s\n", argv[i+1]);
-                    } else{
-                       R_set = true;
-                       R = R_tmp;
-                       i++;
-                    }
-                }
-            }else if(!strcmp(argv[i], "-C")){
-                if(i+1 < argc){
-                    int C_tmp = atoi(argv[i+1]);
-                    if(C_tmp < 1){
-                        printf("Invalid column slice number: %s\n", argv[i+1]);
-                    } else{
-                        C_set = true;
-                        C = C_tmp;
-                        i++;
-                    }
-                 } 
-#ifdef _CUDA
-            }else if(!strcmp(argv[i], "-gpus")){
-                if(i+1 < argc){
-                    int gpus_tmp = atoi(argv[i+1]);
-                    if(gpus_tmp < 1 || gpus_tmp > 8){
-                         printf("Invalid gpu number: %s\n", argv[i+1]);
-                    } else{
-                        gpus = gpus_tmp;
-                        i++;
-                    }
-                 }
-            }else if(!strcmp(argv[i], "-qs")){
-                if(i+1 < argc){
-                    double qs_tmp = atof(argv[i+1]);
-                    if(qs_tmp < 1.){
-                         printf("Invalid queue sizing: %s\n", argv[i+1]);
-                    } else{
-                        queue_sizing = qs_tmp;
-                        i++;
-                    }
-                 }
-#endif
-            }else if(!strcmp(argv[i], "-v")){
-                /* Verbosity level:
-                 * 0: Suppress all unnessesary output
-                 * 1: Level infos
-                 * 8: problem info
-                 * 16: Output Matrix
-                 * 24: problem pointer
-                 */
-                if(i+1 < argc){
-                    long verbosity_tmp = atol(argv[i+1]);
-                    if(verbosity_tmp < 0){
-                         printf("Invalid verbosity: %s\n", argv[i+1]);
-                    } else{
-                        verbosity = verbosity_tmp;
-                        i++;
-                    }
-                 }
-            } else if(!strcmp(argv[i], "-g")){
-                // graph genarator
-                if(i+1 < argc){
-                    if(!strcmp(argv[i+1], "g500")){
-                         graph_gen = G500;
-                         i++;
-                    } else if(!strcmp(argv[i+1], "old_g500")){
-                        graph_gen = OLD_G500;
-                        i++;
-                   } else{
-                        printf("Generator %s unknown!\n", argv[i+1]);
-                        i++;
-                    }
-                 }
-            }
-            i++;
-        }
+          externalArgumentsIterate(argc, argv, i, scale, edgefactor, num_of_iterations, verbosity,
+                                   R, C, R_set, C_set, graph_gen,
+                                   gpus, queue_sizing);
 
-        if(R_set &&  !C_set ){
+          if(R_set &&  !C_set ){
             if(R > size){
                 printf("Error not enought nodesRequested: %d available: %d\n", R , size);
                 MPI_Abort(MPI_COMM_WORLD, 1);
@@ -317,11 +217,13 @@ int main(int argc, char** argv)
       //typedef SimpleCPUBFS::MatrixT MatrixT;
       typedef CPUBFS_bin::MatrixT MatrixT;
 #endif
+
       MatrixT store(R,C);
       store.setupMatrix2(edgelist,number_of_edges);
-
       if((verbosity >= 1) && (rank == 0))
           printf("Global matrix redistribution done!\n");
+
+
 #ifdef _OPENCL
       OCLRunner oclrun;
       OpenCL_BFS runBfs(store, *oclrun);
@@ -608,5 +510,120 @@ int main(int argc, char** argv)
         #endif
       }
       MPI_Finalize();
+}
+
+void externalArgumentsIterate(int argc, char *const *argv, int i, int64_t &scale, int64_t &edgefactor,
+                              int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
+                              int &graph_gen, int &gpus, double &queue_sizing) {
+
+    while(i < argc){
+            if(!strcmp(argv[i], "-s")){
+                if(i+1 < argc){
+                    int s_tmp = atol(argv[i+1]);
+                    if(s_tmp < 1){
+                        printf("Invalid scale factor: %s\n", argv[i+1]);
+                    } else{
+                        scale = s_tmp;
+                        i++;
+                    }
+                }
+            }else if(!strcmp(argv[i], "-e")){
+                if(i+1 < argc){
+                    int e_tmp = atol(argv[i+1]);
+                    if(e_tmp < 1){
+                       printf("Invalid edge factor: %s\n", argv[i+1]);
+                    } else{
+                        edgefactor = e_tmp;
+                        i++;
+                    }
+                }
+            }else if(!strcmp(argv[i], "-i")){
+                if(i+1 < argc){
+                    int i_tmp = atol(argv[i+1]);
+                    if(i_tmp < 1){
+                       printf("Invalid number of iterations: %s\n", argv[i+1]);
+                    } else{
+                        num_of_iterations = i_tmp;
+                        i++;
+                    }
+                }
+            }else if(!strcmp(argv[i], "-R")){
+                if(i+1 < argc){
+                    int R_tmp = atoi(argv[i+1]);
+                    if(R_tmp < 1){
+                       printf("Invalid row slice number: %s\n", argv[i+1]);
+                    } else{
+                       R_set = true;
+                       R = R_tmp;
+                       i++;
+                    }
+                }
+            }else if(!strcmp(argv[i], "-C")){
+                if(i+1 < argc){
+                    int C_tmp = atoi(argv[i+1]);
+                    if(C_tmp < 1){
+                        printf("Invalid column slice number: %s\n", argv[i+1]);
+                    } else{
+                        C_set = true;
+                        C = C_tmp;
+                        i++;
+                    }
+                 }
+#ifdef _CUDA
+            }else if(!strcmp(argv[i], "-gpus")){
+                if(i+1 < argc){
+                    int gpus_tmp = atoi(argv[i+1]);
+                    if(gpus_tmp < 1 || gpus_tmp > 8){
+                         printf("Invalid gpu number: %s\n", argv[i+1]);
+                    } else{
+                        gpus = gpus_tmp;
+                        i++;
+                    }
+                 }
+            }else if(!strcmp(argv[i], "-qs")){
+                if(i+1 < argc){
+                    double qs_tmp = atof(argv[i+1]);
+                    if(qs_tmp < 1.){
+                         printf("Invalid queue sizing: %s\n", argv[i+1]);
+                    } else{
+                        queue_sizing = qs_tmp;
+                        i++;
+                    }
+                 }
+#endif
+            }else if(!strcmp(argv[i], "-v")){
+                /* Verbosity level:
+                 * 0: Suppress all unnessesary output
+                 * 1: Level infos
+                 * 8: problem info
+                 * 16: Output Matrix
+                 * 24: problem pointer
+                 */
+                if(i+1 < argc){
+                    long verbosity_tmp = atol(argv[i+1]);
+                    if(verbosity_tmp < 0){
+                         printf("Invalid verbosity: %s\n", argv[i+1]);
+                    } else{
+                        verbosity = verbosity_tmp;
+                        i++;
+                    }
+                 }
+            } else if(!strcmp(argv[i], "-g")){
+                // graph genarator
+                if(i+1 < argc){
+                    if(!strcmp(argv[i+1], "g500")){
+                         graph_gen = G500;
+                         i++;
+                    } else if(!strcmp(argv[i+1], "old_g500")){
+                        graph_gen = OLD_G500;
+                        i++;
+                   } else{
+                        printf("Generator %s unknown!\n", argv[i+1]);
+                        i++;
+                    }
+                 }
+            }
+            i++;
+        }
 }
 

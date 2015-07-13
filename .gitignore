@@ -31,3 +31,4 @@ cpu_2d/compression/unit
 eval/r-compare.sh
 **/*.log
 *.log
+.idea/
