@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
     int R, C, graph_gen = G500, size, rank;
     int level, this_valid;
     int next, maxiterations;
-    long local_edges, elem;
+    long local_edges, elem, global_edges_wd;
     int iterations = 0, maxgenvtx = 32; // relative number of maximum attempts to find a valid start vertix per possible attempt
     std::vector <vtxtyp> tries;
     std::vector <double> bfs_time;
@@ -157,7 +157,6 @@ int main(int argc, char **argv) {
     MPI_Barrier(MPI_COMM_WORLD);
     tstop = MPI_Wtime();
 
-    long global_edges_wd;
     MPI_Reduce(&number_of_edges, &global_edges_wd, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
     make_graph_time = tstop - tstart;
     if (rank == 0) {
@@ -201,6 +200,8 @@ int main(int argc, char **argv) {
     if (rank == 0) {
         outputMatrixGenerationResults(size, global_edges, constr_time, global_edges_wd);
     }
+
+
 #if INSTRUMENTED
     if (verbosity >= 16) {
         // print matrix

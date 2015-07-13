@@ -94,6 +94,8 @@ public:
     //For Validator
     void get_vertex_distribution_for_pred(size_t count, const vtxtyp* vertex_p, int* owner_p, size_t* local_p) const;
 
+    // 32bits tester
+    bool all_values_smaller_than_32bits() const;
 };
 
 
@@ -1007,4 +1009,33 @@ void DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::get_vertex_distribution_
     }
 }
 
+/*
+ * 32bits Check
+ * Checks if all values in the Matrix are smaller than 32bits
+*/
+template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+bool DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::all_values_smaller_than_32bits() const {
+
+    const rowtyp *rowp = this->getRowPointer();
+    const vtxtyp *columnp = this->getColumnIndex();
+    bool allSmaller=true;
+    int i = 0;
+    rowtyp j;
+    long val64;
+
+    while (allSmaller && i < this->getLocRowLength()) {
+
+        val64 = static_cast<int64_t>(this->localtoglobalRow(i));
+        allSmaller = (!((val64 >> 32) & 0xFFFFFFFF)) ? true : false;
+        printf("%lX: ", val64);
+
+        j = rowp[i];
+        while ( allSmaller && j < rowp[i + 1]) {
+            val64 = static_cast<int64_t>(columnp[j]);
+            allSmaller = (!((val64 >> 32) & 0xFFFFFFFF)) ? true : false;
+            printf("%lX ", val64);
+        }
+    }
+    return allSmaller;
+}
 #endif // DISTMATRIX2D_HH
