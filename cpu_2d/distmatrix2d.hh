@@ -1,3 +1,9 @@
+/**
+ *   This class is a representation of a distributed 2d partitioned adjacency Matrix
+ *   in CRS style. The edges are not weighted, so there is no value, because an row
+ *   and column index indicate the edge. It uses MPI.
+ *
+ */
 #include "comp_opt.h"
 #include "generator/graph_generator.h"
 #include <mpi.h>
@@ -15,12 +21,7 @@
 
 #ifndef DISTMATRIX2D_HH
 #define DISTMATRIX2D_HH
-/*
-*   This class is a representation of a distributed 2d partitioned adjacency Matrix
-*   in CRS style. The edges are not weighted, so there is no value, because an row
-*   and column index indicate the edge. It uses MPI.
-*
-*/
+
 
 // WOLO: without local offset; ALG: vertex alligment; PAD: pad the row slices, so that they are equal
 template<class vertextyp, class rowoffsettyp, bool WOLO=false, int ALG=1, bool PAD=false>
@@ -1018,24 +1019,26 @@ bool DistMatrix2d<vertextyp,rowoffsettyp,WOLO,ALG,PAD>::all_values_smaller_than_
 
     const rowtyp *rowp = this->getRowPointer();
     const vtxtyp *columnp = this->getColumnIndex();
-    bool allSmaller=true;
-    int i = 0;
-    rowtyp j;
+    bool allSmaller = true;
     long val64;
+    int i = 0, rowLength = this->getLocRowLength();
+    rowtyp j, max_j;
 
-    while (allSmaller && i < this->getLocRowLength()) {
-
-        val64 = static_cast<int64_t>(this->localtoglobalRow(i));
-        allSmaller = (!((val64 >> 32) & 0xFFFFFFFF)) ? true : false;
-        printf("%lX: ", val64);
+    while (allSmaller && i < rowLength) {
 
         j = rowp[i];
-        while ( allSmaller && j < rowp[i + 1]) {
-            val64 = static_cast<int64_t>(columnp[j]);
-            allSmaller = (!((val64 >> 32) & 0xFFFFFFFF)) ? true : false;
-            printf("%lX ", val64);
+        max_j = rowp[i + 1];
+        while ( allSmaller && j < max_j ) {
+
+            val64 = static_cast<long>(columnp[j]);
+            if (((val64 >> 32) & 0xFFFFFFFF) != 0x00000000) {
+                allSmaller = false;
+            }
+            ++j;
         }
+        ++i;
     }
+
     return allSmaller;
 }
 #endif // DISTMATRIX2D_HH
