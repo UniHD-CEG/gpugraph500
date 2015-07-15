@@ -284,7 +284,9 @@ void GlobalBFS<Derived,FQ_T,MType,STORE>::setBackInqueue(){}
 template<class Derived,class FQ_T,class MType,class STORE>
 void GlobalBFS<Derived,FQ_T,MType,STORE>::generatOwenMask()
 {
+#ifdef _OPENMP
     #pragma omp parallel for
+#endif
     for(long i=0; i < mask_size ; i++){
         MType tmp = 0;
         for(long j=0; j < 8*sizeof(MType); j++){

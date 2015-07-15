@@ -70,7 +70,9 @@ static int check_value_ranges(const MatrixT& store, const int64_t nglobalverts, 
       ptrdiff_t i;
       assert (i_start >= 0 && i_start <= (ptrdiff_t)store.getLocColLength());
       assert (i_end >= 0 && i_end <= (ptrdiff_t)store.getLocColLength());
-#pragma omp parallel for reduction(||:any_range_errors)
+#ifdef _OPENMP
+    #pragma omp parallel for reduction(||:any_range_errors)
+#endif
       for (i = i_start; i < i_end; ++i) {
         int64_t p = get_pred_from_pred_entry(pred[i]);
         if (p < -1 || p >= nglobalverts) {
@@ -98,7 +100,9 @@ static int build_bfs_depth_map(const MatrixT& store, const int64_t nglobalverts,
   if (root_is_mine) assert (root_local < static_cast<size_t>(nlocalverts));
 
   {
-#pragma omp parallel for
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
     for (ptrdiff_t i = 0; i < (ptrdiff_t)nlocalverts; ++i) write_pred_entry_depth(&pred[i], UINT16_MAX);
     if (root_is_mine) write_pred_entry_depth(&pred[root_local], 0);
   }
@@ -124,13 +128,17 @@ static int build_bfs_depth_map(const MatrixT& store, const int64_t nglobalverts,
         begin_gather(pred_win);
         assert (i_start >= 0 && i_start <= (ptrdiff_t)nlocalverts);
         assert (i_end >= 0 && i_end <= (ptrdiff_t)nlocalverts);
-#pragma omp parallel for
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
         for (ptrdiff_t i = i_start; i < i_end; ++i) {
           pred_vtx[i - i_start] = get_pred_from_pred_entry(pred[i]);
         }
 
         store.get_vertex_distribution_for_pred(i_end - i_start, pred_vtx, pred_owner, pred_local);
-#pragma omp parallel for
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
         for (ptrdiff_t i = i_start; i < i_end; ++i) {
           if (pred[i] != -1) {
             add_gather_request(pred_win, i - i_start, pred_owner[i - i_start], pred_local[i - i_start], i - i_start);
@@ -139,7 +147,9 @@ static int build_bfs_depth_map(const MatrixT& store, const int64_t nglobalverts,
           }
         }
         end_gather(pred_win);
-#pragma omp parallel for reduction(&&:validation_passed) reduction(||:any_changes)
+#ifdef _OPENMP
+    #pragma omp parallel for reduction(&&:validation_passed) reduction(||:any_changes)
+#endif
         for (ptrdiff_t i = i_start; i < i_end; ++i) {
           if (store.getLocalColumnID() == root_owner && (size_t)i == root_local) continue;
           if (get_depth_from_pred_entry(pred_pred[i - i_start]) != UINT16_MAX) {
@@ -226,12 +236,16 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
 
       assert (i_start >= 0 && i_start <= (ptrdiff_t)store.getLocColLength());
       assert (i_end >= 0 && i_end <= (ptrdiff_t)store.getLocColLength());
-#pragma omp parallel for
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
       for (ptrdiff_t i = i_start; i < i_end; ++i) {
         pred_vtx[i - i_start] = get_pred_from_pred_entry(pred[i]);
       }
       store.get_vertex_distribution_for_pred(i_end - i_start, pred_vtx, pred_owner, pred_local);
-#pragma omp parallel for reduction(&&:validation_passed)
+#ifdef _OPENMP
+    #pragma omp parallel for reduction(&&:validation_passed)
+#endif
       for (ptrdiff_t i = i_start; i < i_end; ++i) {
         if ((!root_is_mine || (size_t)i != root_local) &&
             get_pred_from_pred_entry(pred[i]) != -1 &&
@@ -285,8 +299,9 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
               MPI_Bcast(&rowPred[store.globaltolocalRow(it->gstartvtx)],it->size,MPI_INT64_T,it->sendColSl,row_comm);
           }
       }
-
-      #pragma omp parallel for reduction(+: edge_visit_count) reduction(&&: valid_level)
+#ifdef _OPENMP
+    #pragma omp parallel for reduction(+: edge_visit_count) reduction(&&: valid_level)
+#endif
       for(long i=0; i < number_of_edges; i++){
           packed_edge edge = edgelist[i];
 
@@ -314,7 +329,9 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
               uint64_t bit_index  = vertex1_loc%64;
 
               if((pred_visited[word_index] & (1 << bit_index)) == 0 ){
+#ifdef _OPENMP
                 #pragma omp atomic
+#endif
                 pred_visited[word_index]|= 1 << bit_index;
               }
           }
@@ -326,8 +343,9 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
           printf("invalid_level\n");
 
        MPI_Allreduce(MPI_IN_PLACE,pred_visited, pred_visited_size, MPI_UINT64_T, MPI_BOR, col_comm);
-
-       #pragma omp parallel for reduction(&&: all_visited)
+#ifdef _OPENMP
+    #pragma omp parallel for reduction(&&: all_visited)
+#endif
        for(long i=0; i < store.getLocColLength(); i++){
            // check that there is a mark for each vertex that there is an edge
            // to its claimed predecessor
