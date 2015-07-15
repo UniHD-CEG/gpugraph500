@@ -305,9 +305,9 @@ int main(int argc, char **argv) {
         rtstart = MPI_Wtime();
 #ifdef INSTRUMENTED
         if(rank == 0){
-            runBfs.runBFS(tries[i],lexp,lqueue, rowcom, colcom, predlistred);
+            runBfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred);
         }else{
-            runBfs.runBFS(-1,lexp,lqueue, rowcom, colcom, predlistred);
+            runBfs.runBFS(-1, lexp, lqueue, rowcom, colcom, predlistred);
         }
 #else
         if (rank == 0) {
@@ -423,6 +423,12 @@ int main(int argc, char **argv) {
     MPI_Finalize();
 }
 
+/**
+ *
+ * Methods implementation
+ *
+ */
+
 void outputBfsRunIterationResults(double rtstart, double rtstop, double gmax_lexp, double gmax_lqueue,
 double gmax_rowcom, double gmax_colcom, double gmax_predlistred) {
     printf("max. local exp.:     %fs(%f%%)\n", gmax_lexp,  100.*gmax_lexp/(rtstop-rtstart));
@@ -453,15 +459,6 @@ double make_graph_time, int iterations, double totalBFSTime) {
     printf("Total BFS Runs time: %f\n", totalBFSTime);
 
 }
-
-
-/**
- *
- * Methods implementation
- *
- */
-
-
 
 void outputMatrixGenerationResults(int size, const int64_t &global_edges, double constr_time, long global_edges_wd) {
     printf("Adjacency Matrix setup.\n");

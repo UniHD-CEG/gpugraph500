@@ -11,8 +11,8 @@ MAKEFILE      = Makefile
 
 PROFILER      = scorep --mpp=mpi 
 PROFILER      = 
-KEPLER        = -arch=sm35
-FERMI         = -arch=sm20 -ftz=true -prec-div=false -prec-sqrt=false
+KEPLER        = -arch=sm_35
+FERMI         = -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
 NV_ARCH       = 
 CC            = $(PROFILER) mpicc
 CXX           = $(PROFILER) mpicxx
@@ -43,7 +43,8 @@ MOVE          = mv -f
 CHK_DIR_EXISTS= test -d
 MKDIR         = mkdir -p
 NVCC          = /home/jromera/cuda/cuda-6.5/bin/nvcc
-
+NVCCARGS      = --ptxas-options="-O3" -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+NVCCARGS      = --ptxas-options="-O3" -fmad=true $(FERMI) 
 
 ####### Output directory
 
@@ -180,7 +181,7 @@ compiler_cuda_clean:
 # /usr/local/cuda-7.0/bin/nvcc
 
 ${OBJECTS_DIR}cuda_bfs_cuda.o: cuda/cuda_bfs.cu
-	$(PROFILER) $(NVCC) -c -ccbin /usr/bin/g++-4.8 -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-O3,-std=c++11,-fopenmp,"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\" --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
+	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin /usr/bin/g++-4.8 -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-O3,-std=c++11,-fopenmp,"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
 
 compiler_wayland-server-header_make_all:
 compiler_wayland-server-header_clean:
