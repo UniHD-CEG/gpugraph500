@@ -615,7 +615,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 #ifdef _OPENMP
         #pragma omp parallel for 
 #endif
-        for (int64_t i = 0; i < numberOfEdges; ++i) {
+        for (long i = 0; i < numberOfEdges; ++i) {
             packed_edge read = input[i];
 
             input[numberOfEdges + i].v0 = read.v1;
@@ -630,7 +630,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 #ifdef _OPENMP
         #pragma omp parallel for
 #endif
-        for (int64_t i = 0; i < numberOfEdges; ++i) {
+        for (long i = 0; i < numberOfEdges; ++i) {
             packed_edge read = input[i];
 
             maxVertex = (maxVertex > read.v0) ? maxVertex : read.v0;
@@ -683,7 +683,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     // offset for transmission
     int64_t sl_start = 0;
     owen_offset[0] = 0;
-    for (int64_t i = 1; i < R; ++i) {
+    for (long i = 1; i < R; ++i) {
         if (res > 0) {
             sl_start += (ua_sl_size + 1) * ALG;
             --res;
@@ -697,14 +697,14 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     owen_offset[R] = numberOfEdges;
 
     // compute transmission sizes
-    for (int64_t i = 0; i < R; ++i) {
+    for (long i = 0; i < R; ++i) {
         owen_send_size[i] = owen_offset[i + 1] - owen_offset[i];
     }
     // send others sizes to receive sizes
     MPI_Alltoall(owen_send_size, 1, MPI_INT, other_size, 1, MPI_INT, col_comm);
     // compute transmission offsets
     other_offset[0] = 0;
-    for (int64_t i = 1; i < R + 1; ++i) {
+    for (long i = 1; i < R + 1; ++i) {
         other_offset[i] = other_size[i - 1] + other_offset[i - 1];
     }
     numberOfEdges = other_offset[R];
@@ -745,7 +745,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     // offset for transmission
     sl_start = 0;
     owen_offset[0] = 0;
-    for (int64_t i = 1; i < C; ++i) {
+    for (long i = 1; i < C; ++i) {
         if (res > 0) {
             sl_start += (ua_sl_size + 1) * ALG;
             --res;
@@ -760,14 +760,14 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     owen_offset[C] = numberOfEdges;
 
     // compute transmission sizes
-    for (int64_t i = 0; i < C; ++i) {
+    for (long i = 0; i < C; ++i) {
         owen_send_size[i] = owen_offset[i + 1] - owen_offset[i];
     }
     // send others sizes to receive sizes
     MPI_Alltoall(owen_send_size, 1, MPI_INT, other_size, 1, MPI_INT, row_comm);
     // compute transmission offsets
     other_offset[0] = 0;
-    for (int64_t i = 1; i < C + 1; ++i) {
+    for (long i = 1; i < C + 1; ++i) {
         other_offset[i] = other_size[i - 1] + other_offset[i - 1];
     }
     numberOfEdges = other_offset[C];
@@ -803,7 +803,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
-    for (int64_t i = 0; i < row_length; ++i) {
+    for (long i = 0; i < row_length; ++i) {
         row_elm[i] = 0;
     }
 
@@ -1001,7 +1001,7 @@ std::vector <typename DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::fol
     // other
     const vtxtyp row_end = row_start + row_length;
     while (newprop.gstartvtx + newprop.size < row_end) {
-        newprop.sendColSl++;
+        ++newprop.sendColSl;
         newprop.gstartvtx += newprop.size;
         if (WOLO)
             newprop.startvtx = globaltolocalRow(newprop.gstartvtx);
@@ -1034,8 +1034,10 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::get_vertex_distribut
     int64_t c_residuum = numAlg % C;
     int64_t c_SliceSize = numAlg / C;
 
-    //#pragma omp parallel for
-    for (int64_t i = 0; i < (ptrdiff_t) count; ++i) {
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
+    for (long i = 0; i < (ptrdiff_t) count; ++i) {
         if (vertex_p[i] / ((c_SliceSize + 1) * ALG) >= c_residuum) {
             owner_p[i] = (vertex_p[i] - c_residuum * ALG) / (c_SliceSize * ALG);
             local_p[i] = (vertex_p[i] - c_residuum * ALG) % (c_SliceSize * ALG);
@@ -1052,7 +1054,6 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::get_vertex_distribut
  */
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
 bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::all_values_smaller_than_32bits() const {
-
     const rowtyp *rowp = this->getRowPointer();
     const vtxtyp *columnp = this->getColumnIndex();
     bool allSmaller = true;

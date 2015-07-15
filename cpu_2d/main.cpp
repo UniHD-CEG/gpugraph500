@@ -63,7 +63,7 @@ statistic getStatistics(std::vector <T> &input);
 void printStat(statistic &input, const char *name, bool harmonic);
 
 void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
-                             double make_graph_time, int iterations);
+                             double make_graph_time, int iterations, double totalBFSRunsTime);
 
 void output32bitMatrixVerificationResults(bool allValues32, int rank);
 
@@ -88,6 +88,7 @@ int main(int argc, char **argv) {
     vtxtyp start, locstart, num_edges;
     double tstart, tstop;
     double rtstart, rtstop;
+    double startTotalBFSTimer, stopTotalBFSTimer;
     double make_graph_time, constr_time;
     bool R_set = false, C_set = false, valid = true, allValues32 = true;
     int R, C, graph_gen = G500, size, rank;
@@ -198,7 +199,7 @@ int main(int argc, char **argv) {
     OCLRunner oclrun;
     OpenCL_BFS runBfs(store, *oclrun);
 #elif defined _CUDA
-    CUDA_BFS runBfs(store,gpus,queue_sizing, verbosity);
+    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity);
 #else
     CPUBFS_bin runBfs(store, verbosity);
 #endif
@@ -290,8 +291,13 @@ int main(int argc, char **argv) {
         }
     }
 
+
     // BFS runs start
     MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    startTotalBFSTimer = MPI_Wtime();
+
     for (int i = 0; i < iterations; ++i) {
 
         // BFS
@@ -375,10 +381,12 @@ int main(int argc, char **argv) {
     } // BFS runs end
     free(edgelist);
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    stopTotalBFSTimer = MPI_Wtime();
 
     // Output statistics
     if (rank == 0) {
-        outputGeneralStatistics(scale, edgefactor, size, valid, make_graph_time, iterations);
+        outputGeneralStatistics(scale, edgefactor, size, valid, make_graph_time, iterations, stopTotalBFSTimer - startTotalBFSTimer);
 #ifdef _CUDA
         printf("gpus_per_process: %d\n", gpus);
         printf("total_gpus: %d\n", gpus * size);
@@ -435,13 +443,15 @@ void output32bitMatrixVerificationResults(bool allValues32, int rank) {
 }
 
 void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
-double make_graph_time, int iterations) {
+double make_graph_time, int iterations, double totalBFSTime) {
     printf("Validation: %s\n", (valid) ? "passed" : "failed!");
     printf("SCALE: %ld\n", scale);
     printf("edgefactor: %ld\n", edgefactor);
     printf("NBFS: %d\n", iterations);
     printf("graph_generation: %2.3e\n", make_graph_time);
     printf("num_mpi_processes: %d\n", size);
+    printf("Total BFS Runs time: %f\n", totalBFSTime);
+
 }
 
 
