@@ -1035,13 +1035,12 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getVertexDistributio
     int64_t c_residuum = numAlg % C;
     int64_t c_SliceSize = numAlg / C;
     long maxCount = (ptrdiff_t) count;
-    vtxtyp temporalVertex;
 
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
     for (long i = 0; i < maxCount; ++i) {
-        temporalVertex = vertex_p[i];
+        vtxtyp temporalVertex = vertex_p[i];
         if (temporalVertex / ((c_SliceSize + 1) * ALG) >= c_residuum) {
             owner_p[i] = (temporalVertex - c_residuum * ALG) / (c_SliceSize * ALG);
             local_p[i] = (temporalVertex - c_residuum * ALG) % (c_SliceSize * ALG);
