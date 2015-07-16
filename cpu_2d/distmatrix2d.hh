@@ -1,9 +1,13 @@
+#ifndef DISTMATRIX2D_HH
+#define DISTMATRIX2D_HH
+
 /**
  *   This class is a representation of a distributed 2d partitioned adjacency Matrix
  *   in CRS style. The edges are not weighted, so there is no value, because an row
  *   and column index indicate the edge. It uses MPI.
  *
  */
+
 #include "comp_opt.h"
 #include "generator/graph_generator.h"
 #include <mpi.h>
@@ -20,8 +24,6 @@
     #include <parallel/algorithm>
 #endif
 
-#ifndef DISTMATRIX2D_HH
-#define DISTMATRIX2D_HH
 
 
 // WOLO: without local offset; ALG: vertex alligment; PAD: pad the row slices, so that they are equal
@@ -109,11 +111,11 @@ public:
 
     inline vtxtyp getLocColLength() const { return column_length; }
 
-    void get_vertex_distribution_for_pred(size_t count, const vtxtyp *vertex_p,
+    void getVertexDistributionForPred(size_t count, const vtxtyp *vertex_p,
                                           int *owner_p,
                                           size_t *local_p) const;
 
-    bool all_values_smaller_than_32bits() const;
+    bool allValuesSmallerThan32Bits() const;
 
 };
 
@@ -832,7 +834,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
             }
             while(j < numberOfEdges && input[j].v0-row_start == i ){
                 if(input[j].v0 != input[j].v1 && last_valid != input[j].v1){
-                    row_elm[i]++;
+                    ++row_elm[i];
                 }
                 last_valid = input[j].v1;
                 ++j;
@@ -847,7 +849,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
         while (j < numberOfEdges && input[j].v0 - row_start == i) {
             if (input[j].v0 != input[j].v1) {
                 last_valid = input[j].v1;
-                row_elm[i]++;
+                ++row_elm[i];
                 ++j;
                 break;
             }
@@ -855,7 +857,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
         }
         while (j < numberOfEdges && input[j].v0 - row_start == i) {
             if (input[j].v0 != input[j].v1 && last_valid != input[j].v1) {
-                row_elm[i]++;
+                ++row_elm[i];
             }
             last_valid = input[j].v1;
             ++j;
@@ -895,7 +897,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
                     } else {
                         column_index[row_pointer[i]+inrow] = input[j].v1;
                     }
-                    inrow++;
+                    ++inrow;
                     ++j;
                     break;
                 }
@@ -941,14 +943,13 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
                 } else {
                     column_index[row_pointer[i] + inrow] = input[j].v1;
                 }
-                inrow++;
+                ++inrow;
             }
             last_valid = input[j].v1;
             ++j;
         }
     }
 #endif
-
 }
 
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
@@ -1026,24 +1027,27 @@ std::vector <typename DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::fol
  * Computes the column and the local pointer of the verteces in an array
  */
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
-void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::get_vertex_distribution_for_pred(size_t count,
-                                                                                             const vtxtyp *vertex_p,
-                                                                                             int *owner_p,
-                                                                                             size_t *local_p) const {
+void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getVertexDistributionForPred(size_t count,
+                                                                                         const vtxtyp *vertex_p,
+                                                                                         int *owner_p,
+                                                                                         size_t *local_p) const {
     int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1 : 0);
     int64_t c_residuum = numAlg % C;
     int64_t c_SliceSize = numAlg / C;
+    long maxCount = (ptrdiff_t) count;
+    vtxtyp temporalVertex;
 
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
-    for (long i = 0; i < (ptrdiff_t) count; ++i) {
-        if (vertex_p[i] / ((c_SliceSize + 1) * ALG) >= c_residuum) {
-            owner_p[i] = (vertex_p[i] - c_residuum * ALG) / (c_SliceSize * ALG);
-            local_p[i] = (vertex_p[i] - c_residuum * ALG) % (c_SliceSize * ALG);
+    for (long i = 0; i < maxCount; ++i) {
+        temporalVertex = vertex_p[i];
+        if (temporalVertex / ((c_SliceSize + 1) * ALG) >= c_residuum) {
+            owner_p[i] = (temporalVertex - c_residuum * ALG) / (c_SliceSize * ALG);
+            local_p[i] = (temporalVertex - c_residuum * ALG) % (c_SliceSize * ALG);
         } else {
-            owner_p[i] = vertex_p[i] / ((c_SliceSize + 1) * ALG);
-            local_p[i] = vertex_p[i] % ((c_SliceSize + 1) * ALG);
+            owner_p[i] = temporalVertex / ((c_SliceSize + 1) * ALG);
+            local_p[i] = temporalVertex % ((c_SliceSize + 1) * ALG);
         }
     }
 }
@@ -1053,7 +1057,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::get_vertex_distribut
  * Checks if all values in the Matrix are smaller than 32bits
  */
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
-bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::all_values_smaller_than_32bits() const {
+bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesSmallerThan32Bits() const {
     const rowtyp *rowp = this->getRowPointer();
     const vtxtyp *columnp = this->getColumnIndex();
     bool allSmaller = true;

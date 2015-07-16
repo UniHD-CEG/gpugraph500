@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
     }
 
 #ifdef INSTRUMENTED
-    allValues32 = store.all_values_smaller_than_32bits();
+    allValues32 = store.allValuesSmallerThan32Bits();
     output32bitMatrixVerificationResults(allValues32, rank);
 #endif
 

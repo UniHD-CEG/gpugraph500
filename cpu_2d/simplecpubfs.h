@@ -1,9 +1,8 @@
-#include <vector>
-
-#include "globalbfs.hh"
-
 #ifndef SIMPLECPUBFS_H
 #define SIMPLECPUBFS_H
+
+#include <vector>
+#include "globalbfs.hh"
 
 typedef long long vtxtyp;
 typedef int       rowtyp;

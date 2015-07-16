@@ -6,19 +6,19 @@
  * Adaption for set operations: Matthias Hauck, 2014
  *
  */
-#include <mpi.h>
-#include <omp.h>
-#include <cmath>
-
-#include <algorithm>
-#include <functional>
-
-#include <sstream>
-
-#include "bitlevelfunctions.h"
 
 #ifndef VREDUCE_HPP
 #define VREDUCE_HPP
+
+#include <mpi.h>
+#include <omp.h>
+#include <cmath>
+#include <algorithm>
+#include <functional>
+#include <sstream>
+#include "bitlevelfunctions.h"
+
+
 template<class T>
 void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
              std::function<void(T, long, T*&, int& )>& get, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)

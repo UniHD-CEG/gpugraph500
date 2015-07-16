@@ -7,6 +7,10 @@
 /*  Authors: Jeremiah Willcock                                             */
 /*           Andrew Lumsdaine                                              */
 /* modification for 2d partitioning: Matthias Hauck 2014 */
+
+#ifndef VALIDATE_H
+#define VALIDATE_H
+
 #define __STDC_LIMIT_MACROS
 #include "../distmatrix2d.hh"
 #include "mpi_workarounds.h"
@@ -21,8 +25,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-#ifndef VALIDATE_H
-#define VALIDATE_H
 
 static inline size_t size_min(size_t a, size_t b) {
   return a < b ? a : b;
@@ -95,7 +97,7 @@ static int build_bfs_depth_map(const MatrixT& store, const int64_t nglobalverts,
   int validation_passed = 1;
   int root_owner;
   size_t root_local;
-  store.get_vertex_distribution_for_pred(1, &root, &root_owner, &root_local);
+  store.getVertexDistributionForPred(1, &root, &root_owner, &root_local);
   int root_is_mine = (root_owner == store.getLocalColumnID());
   if (root_is_mine) assert (root_local < static_cast<size_t>(nlocalverts));
 
@@ -135,7 +137,7 @@ static int build_bfs_depth_map(const MatrixT& store, const int64_t nglobalverts,
           pred_vtx[i - i_start] = get_pred_from_pred_entry(pred[i]);
         }
 
-        store.get_vertex_distribution_for_pred(i_end - i_start, pred_vtx, pred_owner, pred_local);
+        store.getVertexDistributionForPred(i_end - i_start, pred_vtx, pred_owner, pred_local);
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
@@ -204,7 +206,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
   int validation_passed = 1;
   int root_owner;
   size_t root_local;
-  store.get_vertex_distribution_for_pred(1, &root, &root_owner, &root_local);
+  store.getVertexDistributionForPred(1, &root, &root_owner, &root_local);
   int root_is_mine = (root_owner == store.getLocalColumnID());
 
   /* Get maximum values so loop counts are consistent across ranks. */
@@ -242,7 +244,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
       for (ptrdiff_t i = i_start; i < i_end; ++i) {
         pred_vtx[i - i_start] = get_pred_from_pred_entry(pred[i]);
       }
-      store.get_vertex_distribution_for_pred(i_end - i_start, pred_vtx, pred_owner, pred_local);
+      store.getVertexDistributionForPred(i_end - i_start, pred_vtx, pred_owner, pred_local);
 #ifdef _OPENMP
     #pragma omp parallel for reduction(&&:validation_passed)
 #endif
