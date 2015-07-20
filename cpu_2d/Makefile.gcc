@@ -43,9 +43,12 @@ MOVE          = mv -f
 CHK_DIR_EXISTS= test -d
 MKDIR         = mkdir -p
 NVCC          = /home/jromera/cuda/cuda-6.5/bin/nvcc
+NVCC          = /usr/local/cuda-7.0/bin/nvcc
+
+
 # Temporally commented out Matthias auto detect architecture. Testing
-NVCCARGS      = --ptxas-options="-O3" -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
-NVCCARGS      = --ptxas-options="-O3" -fmad=true $(FERMI) 
+NVCCARGS      = --ptxas-options="-v" -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+# NVCCARGS      = --ptxas-options="-O3" -fmad=true $(FERMI) 
 
 ####### Output directory
 
