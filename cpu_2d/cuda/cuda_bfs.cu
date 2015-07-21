@@ -23,6 +23,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
 #endif
 {
 
+    int cpro_verbosity;
     b40c::util::B40CPerror(cudaSetDeviceFlags(cudaDeviceMapHost),
                            "Enabling of the allocation of pinned host memory faild", __FILE__, __LINE__);
 
@@ -56,7 +57,8 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
 #else
     bfsGPU = new EnactorMultiGpu<Csr, false>;
 #endif
-    int cpro_verbosity = 0;
+
+    cpro_verbosity = 0;
     if (verbosity >= 24) {
         cpro_verbosity = 2;
     } else if (verbosity >= 8) {
@@ -217,11 +219,15 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp *&startaddr, int &outsize) {
  * -recompute the visited mask
  */
 void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize) {
+    int numGpus;
+
+    Csr::GraphSlice *gs;
+    numGpus = csr_problem->num_gpus;
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for shared(gs) shared(numGpus)
 #endif
-    for (int i = 0; i < csr_problem->num_gpus; i++) {
-        Csr::GraphSlice *gs = csr_problem->graph_slices[i];
+    for (int i = 0; i < numGpus; ++i) {
+        gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
                                "Can't synchronize Stream.", __FILE__, __LINE__);
     }
@@ -238,9 +244,10 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize) {
         vmask[vtxID >> 3] |= 1 << (vtxID & 0x7);
     }
 
-    for (int i = 0; i < csr_problem->num_gpus; ++i) {
+    int visited_mask_bytes;
+    for (int i = 0; i < numGpus; ++i) {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
-        int visited_mask_bytes = ((csr_problem->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
+        visited_mask_bytes = ((csr_problem->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
         b40c::util::B40CPerror(cudaMemcpyAsync(gs->d_visited_mask,
                                                vmask,
                                                visited_mask_bytes,
@@ -248,6 +255,7 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize) {
                                                gs->stream
         ), "Copy of d_filer_mask to device failed", __FILE__, __LINE__);
     }
+
 }
 
 /*
@@ -307,19 +315,23 @@ bool CUDA_BFS::istheresomethingnew() {
 
 void CUDA_BFS::getBackPredecessor() {
     //terminate all operations
+    long sizeOfMType, storeColLength;
+
     bfsGPU->testOverflow(*csr_problem);
     b40c::util::B40CPerror(csr_problem->ExtractResults(predecessor, store.localtoglobalRow(0)),
                            "Extraction of result failed", __FILE__, __LINE__);
     bfsGPU->finalize();
+    sizeOfMType = 8 * sizeof(MType);
+    storeColLength = store.getLocColLength();
+
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for shared(sizeOfMType) shared(storeColLength)
 #endif
     for (long i = 0; i < mask_size; ++i) {
-        long sizeOfMType = 8 * sizeof(MType);
         MType tmp = 0;
         for (long j = 0; j < sizeOfMType; ++j) {
             const vtxtyp pred = predecessor[i * sizeOfMType + j];
-            if ((pred != -1) && ((i * sizeOfMType + j) < store.getLocColLength())) {
+            if ((pred != -1) && ((i * sizeOfMType + j) < storeColLength)) {
                 tmp |= 1 << j;
                 if (pred > -2) {
                     predecessor[i * sizeOfMType + j] = store.localtoglobalRow(
@@ -335,21 +347,25 @@ void CUDA_BFS::getBackPredecessor() {
 
 void CUDA_BFS::getBackOutqueue() {
     long queue_sizes[csr_problem->num_gpus];
+    int numGpus;
+
+
+    numGpus = csr_problem->num_gpus;
 #ifdef _DEBUG
     b40c::util::B40CPerror(bfsGPU->testOverflow(csr_problem));
 #endif
     //get length of next queues
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for shared(numGpus)
 #endif
-    for (int i = 0; i < csr_problem->num_gpus; ++i) {
+    for (int i = 0; i < numGpus; ++i) {
         Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         queue_sizes[i] = bfsGPU->getQueueSize(gs->gpu, gs->stream);
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
                                "Can't synchronize device.", __FILE__, __LINE__);
     }
     //sort values on the gpu
-    for (int i = 0; i < csr_problem->num_gpus; ++i) {
+    for (int i = 0; i < numGpus; ++i) {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaSetDevice(gs->gpu));
         thrust::device_ptr <typename MatrixT::vtxtyp> multigpu(gs->frontier_queues.d_keys[0]);
@@ -359,7 +375,7 @@ void CUDA_BFS::getBackOutqueue() {
     qb_length = 0;//csr_problem->num_gpus;
     typename MatrixT::vtxtyp *qb_nxt = queuebuff;
     // copy next queue to host
-    for (int i = 0; i < csr_problem->num_gpus; ++i) {
+    for (int i = 0; i < numGpus; ++i) {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
                                "Can't synchronize device.", __FILE__, __LINE__);
@@ -374,17 +390,16 @@ void CUDA_BFS::getBackOutqueue() {
     }
 
     //#pragma omp parallel for
-    for (int i = 0; i < csr_problem->num_gpus; ++i) {
+    for (int i = 0; i < numGpus; ++i) {
         Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
                                "Can't synchronize Stream.", __FILE__, __LINE__);
     }
-
     // Queue preprocessing
     //Uniqueness
     typename MatrixT::vtxtyp *qb_nxt_in = queuebuff;
     typename MatrixT::vtxtyp *qb_nxt_out = redbuff;
-    for (int i = 0; i < csr_problem->num_gpus; ++i) {
+    for (int i = 0; i < numGpus; ++i) {
         typename MatrixT::vtxtyp *start_in = std::upper_bound(qb_nxt_in, qb_nxt_in + queue_sizes[i], -1);
         typename MatrixT::vtxtyp *end_out = std::unique_copy(start_in, qb_nxt_in + queue_sizes[i], qb_nxt_out);
         qb_nxt_in += queue_sizes[i];
@@ -421,6 +436,7 @@ void CUDA_BFS::setBackInqueue() {
     typename MatrixT::vtxtyp *qb_nxt = queuebuff;
     typename MatrixT::vtxtyp *end_local;
     typename Csr::GraphSlice *gs;
+    int numGpus = csr_problem->num_gpus;
 
 #ifdef _DEBUG
     CheckQueue<vtxtyp>::ErrorCode errorCode;
@@ -446,7 +462,7 @@ void CUDA_BFS::setBackInqueue() {
 #endif
 
     // copy next queue to device
-    for (int i = 0; i < csr_problem->num_gpus; ++i) {
+    for (int i = 0; i < numGpus; ++i) {
         gs = csr_problem->graph_slices[i];
 
         //determine end of own slice
@@ -468,9 +484,9 @@ void CUDA_BFS::setBackInqueue() {
 
     //set length of current queue
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for shared(numGpus)
 #endif
-    for (int i = 0; i < csr_problem->num_gpus; ++i) {
+    for (int i = 0; i < numGpus; ++i) {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         bfsGPU->setQueueSize(i, static_cast<typename Csr::SizeT>(queue_sizes[i]), gs->stream);
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
@@ -482,7 +498,9 @@ void CUDA_BFS::setStartVertex(vtxtyp start) {
     done = false;
     vtxtyp src_owner, rstart, lstart = -1;
     typename Csr::GraphSlice *gs;
-    int cpro_verbosity = 0;
+    int cpro_verbosity = 0, numGpus, visited_mask_bytes;
+
+    numGpus = csr_problem->num_gpus;
 
 #ifdef INSTRUMENTED
     if (verbosity >= 24) {
@@ -491,6 +509,7 @@ void CUDA_BFS::setStartVertex(vtxtyp start) {
         cpro_verbosity = 1;
     }
 #endif
+
     if (b40c::util::B40CPerror(csr_problem->Reset(
             bfsGPU->GetFrontierType(),
             queue_sizing,
@@ -501,7 +520,8 @@ void CUDA_BFS::setStartVertex(vtxtyp start) {
     // Alloc and reset visited mask on host
 
     gs = csr_problem->graph_slices[0];
-    int visited_mask_bytes = ((csr_problem->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
+
+    visited_mask_bytes = ((csr_problem->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
     if (vmask == 0) {
         cudaHostAlloc(&vmask, visited_mask_bytes, cudaHostAllocDefault);
     }
@@ -531,7 +551,7 @@ void CUDA_BFS::setStartVertex(vtxtyp start) {
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    for (int i = 0; i < csr_problem->num_gpus; ++i) {
+    for (int i = 0; i < numGpus; ++i) {
         //set new visited map
         gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaMemcpyAsync(gs->d_visited_mask,
@@ -558,8 +578,10 @@ void CUDA_BFS::setStartVertex(vtxtyp start) {
 }
 
 void CUDA_BFS::runLocalBFS() {
+    int numGpus = csr_problem->num_gpus;
+
     //finish outstanding copys
-    for (int i = 0; i < csr_problem->num_gpus; ++i) {
+    for (int i = 0; i < numGpus; ++i) {
         cudaStreamSynchronize(csr_problem->graph_slices[i]->stream);
     }
     //enact expansion kernel

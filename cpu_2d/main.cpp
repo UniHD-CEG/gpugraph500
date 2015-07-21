@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
     double rtstart, rtstop;
     double startTotalBFSTimer, stopTotalBFSTimer;
     double make_graph_time, constr_time;
-    bool R_set = false, C_set = false, valid = true, allValues32 = true;
+    bool R_set = false, C_set = false, valid = true;
     int R, C, graph_gen = G500, size, rank;
     int level, this_valid;
     int next, maxiterations;
@@ -191,8 +191,7 @@ int main(int argc, char **argv) {
     }
 
 #ifdef INSTRUMENTED
-    allValues32 = store.allValuesSmallerThan32Bits();
-    output32bitMatrixVerificationResults(allValues32, rank);
+    output32bitMatrixVerificationResults(store.allValuesSmallerThan32Bits(), rank);
 #endif
 
 #ifdef _OPENCL
