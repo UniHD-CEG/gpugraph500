@@ -63,7 +63,12 @@ statistic getStatistics(std::vector <T> &input);
 void printStat(statistic &input, const char *name, bool harmonic);
 
 void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
-                             double make_graph_time, int iterations);
+                             double make_graph_time, int iterations, double totalBFSRunsTime);
+
+void output32bitMatrixVerificationResults(bool allValues32, int rank);
+
+void outputBfsRunIterationResults(double rtstart, double rtstop, double gmax_lexp, double gmax_lqueue,
+                                  double gmax_rowcom, double gmax_colcom, double gmax_predlistred);
 
 /**
  *
@@ -83,12 +88,13 @@ int main(int argc, char **argv) {
     vtxtyp start, locstart, num_edges;
     double tstart, tstop;
     double rtstart, rtstop;
+    double startTotalBFSTimer, stopTotalBFSTimer;
     double make_graph_time, constr_time;
-    bool R_set = false, C_set = false, valid = true;
+    bool R_set = false, C_set = false, valid = true, allValues32 = true;
     int R, C, graph_gen = G500, size, rank;
     int level, this_valid;
     int next, maxiterations;
-    long local_edges, elem;
+    long local_edges, elem, global_edges_wd;
     int iterations = 0, maxgenvtx = 32; // relative number of maximum attempts to find a valid start vertix per possible attempt
     std::vector <vtxtyp> tries;
     std::vector <double> bfs_time;
@@ -157,7 +163,6 @@ int main(int argc, char **argv) {
     MPI_Barrier(MPI_COMM_WORLD);
     tstop = MPI_Wtime();
 
-    long global_edges_wd;
     MPI_Reduce(&number_of_edges, &global_edges_wd, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
     make_graph_time = tstop - tstart;
     if (rank == 0) {
@@ -166,9 +171,10 @@ int main(int argc, char **argv) {
                make_graph_time, global_edges_wd / make_graph_time * 1.e-6, size);
     }
 
-    // Matrix definition
     MPI_Barrier(MPI_COMM_WORLD);
     tstart = MPI_Wtime();
+
+    // Matrix definition
 #ifdef _OPENCL
     typedef OpenCL_BFS::MatrixT MatrixT;
 #elif defined _CUDA
@@ -184,11 +190,16 @@ int main(int argc, char **argv) {
         printf("Global matrix redistribution done!\n");
     }
 
+#ifdef INSTRUMENTED
+    allValues32 = store.allValuesSmallerThan32Bits();
+    output32bitMatrixVerificationResults(allValues32, rank);
+#endif
+
 #ifdef _OPENCL
     OCLRunner oclrun;
     OpenCL_BFS runBfs(store, *oclrun);
 #elif defined _CUDA
-    CUDA_BFS runBfs(store,gpus,queue_sizing, verbosity);
+    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity);
 #else
     CPUBFS_bin runBfs(store, verbosity);
 #endif
@@ -201,6 +212,8 @@ int main(int argc, char **argv) {
     if (rank == 0) {
         outputMatrixGenerationResults(size, global_edges, constr_time, global_edges_wd);
     }
+
+
 #if INSTRUMENTED
     if (verbosity >= 16) {
         // print matrix
@@ -226,7 +239,6 @@ int main(int argc, char **argv) {
 
     maxiterations = num_of_iterations * maxgenvtx;
 
-    // Init
     if (rank == 0) {
         int giteration = 0; // number of tried iterations
         while (iterations < num_of_iterations && giteration < maxiterations) {
@@ -280,7 +292,12 @@ int main(int argc, char **argv) {
     }
 
 
+    // BFS runs start
     MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    startTotalBFSTimer = MPI_Wtime();
+
     for (int i = 0; i < iterations; ++i) {
 
         // BFS
@@ -288,9 +305,9 @@ int main(int argc, char **argv) {
         rtstart = MPI_Wtime();
 #ifdef INSTRUMENTED
         if(rank == 0){
-            runBfs.runBFS(tries[i],lexp,lqueue, rowcom, colcom, predlistred);
+            runBfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred);
         }else{
-            runBfs.runBFS(-1,lexp,lqueue, rowcom, colcom, predlistred);
+            runBfs.runBFS(-1, lexp, lqueue, rowcom, colcom, predlistred);
         }
 #else
         if (rank == 0) {
@@ -313,12 +330,8 @@ int main(int argc, char **argv) {
             }
 #ifdef INSTRUMENTED
             if(verbosity >= 1){
-                printf("max. local exp.:     %fs(%f%%)\n", gmax_lexp,  100.*gmax_lexp/(rtstop-rtstart));
-                printf("max. queue handling: %fs(%f%%)\n", gmax_lqueue,100.*gmax_lqueue/(rtstop-rtstart));
-                printf("est. rest:           %fs(%f%%)\n",(rtstop-rtstart)-gmax_lexp-gmax_lqueue, 100.*(1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart)));
-                printf("max. row com.:       %fs(%f%%)\n", gmax_rowcom,  100.*gmax_rowcom/(rtstop-rtstart));
-                printf("max. col com.:       %fs(%f%%)\n", gmax_colcom,  100.*gmax_colcom/(rtstop-rtstart));
-                printf("max. pred. list. red:%fs(%f%%)\n", gmax_predlistred,  100.*gmax_predlistred/(rtstop-rtstart));
+                outputBfsRunIterationResults(rtstart, rtstop, gmax_lexp, gmax_lqueue, gmax_rowcom, gmax_colcom,
+                                             gmax_predlistred);
             }
 
             bfs_local.push_back(gmax_lexp);
@@ -365,13 +378,15 @@ int main(int argc, char **argv) {
             valid_time.push_back(tstop - tstart);
 #endif
         }
-    }
+    } // BFS runs end
     free(edgelist);
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    stopTotalBFSTimer = MPI_Wtime();
 
-    // Statistics
+    // Output statistics
     if (rank == 0) {
-        outputGeneralStatistics(scale, edgefactor, size, valid, make_graph_time, iterations);
+        outputGeneralStatistics(scale, edgefactor, size, valid, make_graph_time, iterations, stopTotalBFSTimer - startTotalBFSTimer);
 #ifdef _CUDA
         printf("gpus_per_process: %d\n", gpus);
         printf("total_gpus: %d\n", gpus * size);
@@ -381,6 +396,7 @@ int main(int argc, char **argv) {
         statistic bfs_time_s = getStatistics(bfs_time);
         statistic nedge_s = getStatistics(nedge);
         statistic teps_s = getStatistics(teps);
+
         outputIterationStatistics(bfs_time_s, nedge_s, teps_s);
 
 #ifdef INSTRUMENTED
@@ -397,6 +413,7 @@ int main(int argc, char **argv) {
         statistic lcolcom_share_s = getStatistics(lcolcom_share);
         statistic lpredlistred_s = getStatistics(lpredlistred);
         statistic lpredlistred_share_s = getStatistics(lpredlistred_share);
+
         outputIterationInstrumentedStatistics(valid_time_s, lbfs_time_s, lbfs_share_s, lqueue_time_s,
                                               lqueue_share_s, rest_time_s, rest_share_s, lrowcom_s,
                                               lrowcom_share_s, lcolcom_s, lcolcom_share_s, lpredlistred_s,
@@ -406,24 +423,42 @@ int main(int argc, char **argv) {
     MPI_Finalize();
 }
 
-void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
-double make_graph_time, int iterations) {
-    printf("Validation: %s\n", (valid) ? "passed" : "failed!");
-    printf("SCALE: %ld\n", scale);
-    printf("edgefactor: %ld\n", edgefactor);
-    printf("NBFS: %d\n", iterations);
-    printf("graph_generation: %2.3e\n", make_graph_time);
-    printf("num_mpi_processes: %d\n", size);
-}
-
-
 /**
  *
  * Methods implementation
  *
  */
 
+void outputBfsRunIterationResults(double rtstart, double rtstop, double gmax_lexp, double gmax_lqueue,
+double gmax_rowcom, double gmax_colcom, double gmax_predlistred) {
+    printf("max. local exp.:     %fs(%f%%)\n", gmax_lexp,  100.*gmax_lexp/(rtstop-rtstart));
+    printf("max. queue handling: %fs(%f%%)\n", gmax_lqueue,100.*gmax_lqueue/(rtstop-rtstart));
+    printf("est. rest:           %fs(%f%%)\n",(rtstop-rtstart)-gmax_lexp-gmax_lqueue, 100.*(1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart)));
+    printf("max. row com.:       %fs(%f%%)\n", gmax_rowcom,  100.*gmax_rowcom/(rtstop-rtstart));
+    printf("max. col com.:       %fs(%f%%)\n", gmax_colcom,  100.*gmax_colcom/(rtstop-rtstart));
+    printf("max. pred. list. red:%fs(%f%%)\n", gmax_predlistred,  100.*gmax_predlistred/(rtstop-rtstart));
+}
 
+void output32bitMatrixVerificationResults(bool allValues32, int rank) {
+    std::cout << "Analyzing the SubMatrix for task #" << rank << "..." << std::endl;
+    if (allValues32) {
+        std::cout << "32bits: OK." << std::endl;
+    }else {
+        std::cout << "32bits: ERROR. Not all values are 32bit Integers." << std::endl;
+    }
+}
+
+void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
+double make_graph_time, int iterations, double totalBFSTime) {
+    printf("Validation: %s\n", (valid) ? "passed" : "failed!");
+    printf("SCALE: %ld\n", scale);
+    printf("edgefactor: %ld\n", edgefactor);
+    printf("NBFS: %d\n", iterations);
+    printf("graph_generation: %2.3e\n", make_graph_time);
+    printf("num_mpi_processes: %d\n", size);
+    printf("Total BFS Runs time: %f\n", totalBFSTime);
+
+}
 
 void outputMatrixGenerationResults(int size, const int64_t &global_edges, double constr_time, long global_edges_wd) {
     printf("Adjacency Matrix setup.\n");
