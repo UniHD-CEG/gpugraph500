@@ -6,10 +6,8 @@
 #include <cstdlib>
 #include <algorithm>
 #include <functional>
-#include "codecfactory.h"
-#include "codecfactory.h"
+// #include "codecfactory.h"
 // #include "intersection.h"
-
 // -msse3, -march=, -mfpmath=sse
 // using namespace SIMDCompressionLib;
 
