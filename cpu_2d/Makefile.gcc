@@ -12,11 +12,11 @@ MAKEFILE      = Makefile
 OPENMP        = -fopenmp
 OPENMP        =
 CUDA_OPENMP   = -fopenmp
-CUDA_OPENMP   = 
+# CUDA_OPENMP   = 
 PROFILER      = scorep --mpp=mpi 
 PROFILER      = 
 INSTRUMENTED  = -DINSTRUMENTED
-INSTRUMENTED  = 
+# INSTRUMENTED  = 
 CUDA_INSTRUM  = -DINSTRUMENTED
 # CUDA_INSTRUM  =
 KEPLER        = -arch=sm_35

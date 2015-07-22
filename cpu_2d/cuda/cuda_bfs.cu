@@ -221,13 +221,13 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp *&startaddr, int &outsize) {
 void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize) {
     int numGpus;
 
-    Csr::GraphSlice *gs;
+
     numGpus = csr_problem->num_gpus;
 #ifdef _OPENMP
-    #pragma omp parallel for shared(gs) shared(numGpus)
+    #pragma omp parallel for
 #endif
     for (int i = 0; i < numGpus; ++i) {
-        gs = csr_problem->graph_slices[i];
+        Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
                                "Can't synchronize Stream.", __FILE__, __LINE__);
     }
@@ -325,7 +325,7 @@ void CUDA_BFS::getBackPredecessor() {
     storeColLength = store.getLocColLength();
 
 #ifdef _OPENMP
-    #pragma omp parallel for shared(sizeOfMType) shared(storeColLength)
+    #pragma omp parallel for
 #endif
     for (long i = 0; i < mask_size; ++i) {
         MType tmp = 0;
@@ -356,7 +356,7 @@ void CUDA_BFS::getBackOutqueue() {
 #endif
     //get length of next queues
 #ifdef _OPENMP
-    #pragma omp parallel for shared(numGpus)
+    #pragma omp parallel for
 #endif
     for (int i = 0; i < numGpus; ++i) {
         Csr::GraphSlice *gs = csr_problem->graph_slices[i];
@@ -484,7 +484,7 @@ void CUDA_BFS::setBackInqueue() {
 
     //set length of current queue
 #ifdef _OPENMP
-    #pragma omp parallel for shared(numGpus)
+    #pragma omp parallel for
 #endif
     for (int i = 0; i < numGpus; ++i) {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
