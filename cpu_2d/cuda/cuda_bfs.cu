@@ -1,13 +1,17 @@
 #include "../comp_opt.h"
 #include "cuda_bfs.h"
-
 #include "b40c/util/error_utils.cuh"
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
-
 #include <cstdlib>
 #include <algorithm>
 #include <functional>
+#include "codecfactory.h"
+#include "codecfactory.h"
+// #include "intersection.h"
+
+// -msse3, -march=, -mfpmath=sse
+// using namespace SIMDCompressionLib;
 
 #if defined( __PMODE__)
     #include <parallel/algorithm>

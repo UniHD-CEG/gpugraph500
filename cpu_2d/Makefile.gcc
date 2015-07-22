@@ -25,8 +25,8 @@ NV_ARCH       =
 CC            = $(PROFILER) mpicc
 CXX           = $(PROFILER) mpicxx
 DEFINES       = 
-CFLAGS        = -m64 -pipe -D_CUDA -std=c99 $(OPENMP) -O3 -march=native -Wall -W -fPIE $(DEFINES)
-CXXFLAGS      = -m64 -pipe -D_CUDA -std=c++0x $(OPENMP) $(INSTRUMENTED) -O3 -march=native -Wall -W -fPIE $(DEFINES)
+CFLAGS        = -m64 -pipe -D_CUDA -std=c99 $(OPENMP) -O3 -mavx -Wall -W -fPIE $(DEFINES)
+CXXFLAGS      = -m64 -pipe -D_CUDA -std=c++0x $(OPENMP) $(INSTRUMENTED) -O3 -mavx -Wall -W -fPIE $(DEFINES)
 INCPATH       = -I. 
 LINK          = $(PROFILER) mpicxx
 LFLAGS        = -m64 -fopenmp -Wl,-O3
@@ -59,6 +59,8 @@ PTXAS         = --ptxas-options="-v"
 PTXAS         = 
 NVCCARGS      = $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 # NVCCARGS      = --ptxas-options="-O3" -fmad=true $(FERMI) 
+
+COMPRESSION_HEADERS= $(shell ls compression/include/*h)
 
 ####### Output directory
 
@@ -195,7 +197,7 @@ compiler_cuda_clean:
 # /usr/local/cuda-7.0/bin/nvcc
 
 ${OBJECTS_DIR}cuda_bfs_cuda.o: cuda/cuda_bfs.cu
-	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin /usr/bin/g++-4.8 -Xcompiler -m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
+	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin /usr/bin/g++-4.8 -Xcompiler -mavx,-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." -Icompression/include cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o 
 
 compiler_wayland-server-header_make_all:
 compiler_wayland-server-header_clean:
