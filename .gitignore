@@ -37,3 +37,5 @@ eval/r-compare.sh
 **/*.pp.cpp
 CMakeFiles/
 **/CMakeFiles/
+.*
+**/.*
