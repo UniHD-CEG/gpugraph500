@@ -1,10 +1,13 @@
-CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
-CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
-
 .SUFFIXES:
 #
 .SUFFIXES: .cpp .o .c .h
 # replace the CXX variable with a path to a C++11 compatible compiler.
+
+
+CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
+CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
+
+
 ifeq ($(INTEL), 1)
 # if you wish to use the Intel compiler, please do "make INTEL=1".
     CXX ?= icpc
@@ -17,7 +20,7 @@ else
     CCFLAGS = -std=c99 -O2 -Wall -ansi -xAVX -DNDEBUG=1  -ggdb
 endif # debug
 else #intel
-    CXX ?= g++-4.7
+    CXX ?= g++-8
 ifeq ($(DEBUG),1)
     CXXFLAGS = -mavx -std=c++11  -Weffc++ -pedantic -ggdb -DDEBUG=1 -D_GLIBCXX_DEBUG -Wall -Wextra
     CCFLAGS =-mavx -std=c99  -pedantic -ggdb -DDEBUG=1 -D_GLIBCXX_DEBUG -Wall -Wextra
