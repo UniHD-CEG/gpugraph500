@@ -6,14 +6,11 @@
 #include <cstdlib>
 #include <algorithm>
 #include <functional>
-// #include "codecfactory.h"
-// #include "intersection.h"
-// -msse3, -march=, -mfpmath=sse
-// using namespace SIMDCompressionLib;
 
 #if defined( __PMODE__)
     #include <parallel/algorithm>
 #endif
+
 
 CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity) :
         GlobalBFS<CUDA_BFS, vtxtyp, unsigned char, MatrixT>(_store),
@@ -373,6 +370,7 @@ void CUDA_BFS::getBackOutqueue() {
         thrust::device_ptr <typename MatrixT::vtxtyp> multigpu(gs->frontier_queues.d_keys[0]);
         thrust::sort(multigpu, multigpu + queue_sizes[i]);
     }
+
 
     qb_length = 0;//csr_problem->num_gpus;
     typename MatrixT::vtxtyp *qb_nxt = queuebuff;

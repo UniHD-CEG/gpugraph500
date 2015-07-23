@@ -14,7 +14,6 @@
 #include <functional>
 
 
-
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
@@ -34,14 +33,11 @@ class GlobalBFS {
 protected:
     const STORE &store;
     typename STORE::vtxtyp *predecessor;
-
     MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
     MPI_Datatype bm_type;    // Bitmap Type
     //FQ_T*  __restrict__ recv_fq_buff; - conflicts with void* ref
     FQ_T *recv_fq_buff;
-
     long recv_fq_buff_length;
-
     MType *owenmask;
     MType *tmpmask;
     int64_t mask_size;
@@ -70,7 +66,7 @@ public:
 
 #ifdef INSTRUMENTED
     void runBFS(typename STORE::vtxtyp startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred);
-    #else
+#else
 
     void runBFS(typename STORE::vtxtyp startVertex);
 
@@ -114,7 +110,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
             MPI_Recv(tmp, store.getLocColLength(), fq_tp_type, communicatorRank + 1, 1, col_comm, &status);
             int p = 0;
-            for (int i = 0; i < psize; i++) {
+            for (int i = 0; i < psize; ++i) {
                 MType tmpm = tmpmap[i];
                 while (tmpm != 0) {
                     int last = ffsl(tmpm) - 1;
