@@ -1,40 +1,58 @@
 # Makefile
 
+nvidia_architecture="auto"
+nvidia_ptxas_otimize="no"
+openmp_on_cuda="no"
+openmp_on_cxx_mpi="no"
+scorep_profiler_enable="no"
+instrument_cuda="yes"
+instrument_cxx_mpi="yes"
+
+ifeq ($(nvidia_ptxas_otimize), "yes")
+	PTXAS 		= --ptxas-options="-O3"
+endif
+
+ifeq ($(nvidia_architecture), "fermi")
+	NVCCARGS	= $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
+else
+	NVCCARGS	= $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+endif
+
+ifeq ($(scorep_profiler_enable), "yes")
+	PROFILER 	= scorep
+endif
+
+ifeq ($(instrument_cuda), "yes")
+	CUDA_INSTRUM  = -DINSTRUMENTED
+endif
+
+ifeq ($(instrument_cxx_mpi), "yes")
+	INSTRUMENTED  = -DINSTRUMENTED
+endif
+
+ifeq ($(openmp_on_cuda), "yes")
+	CUDA_OPENMP   = -fopenmp
+endif
+
+ifeq ($(openmp_on_cxx_mpi), "yes")
+	OPENMP        = -fopenmp
+endif
+
 CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
 CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
+NVCC := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
+MPICC := $(PROFILER) mpicc
+MPICXX := $(PROFILER) mpicxx
+LINK := $(PROFILER) mpicxx
 
-CXXFLAGS = -mavx -std=c++11  -Weffc++ -pedantic -O3 -Wall -Wextra
-CCFLAGS =-mavx -std=c99 -pedantic -O3 -Wall -Wextra
 
-MPICFLAGS     = -m64 -pipe -D_CUDA -std=c99 -pedantic $(OPENMP) -O3 -mavx -Wall -W -fPIE $(DEFINES)
-MPICXXFLAGS   = -m64 -pipe -D_CUDA -std=c++0x -pedantic $(OPENMP) $(INSTRUMENTED) -O3 -mavx -Wall -W -fPIE $(DEFINES)
-
-OPENMP        = -fopenmp
-OPENMP        =
-CUDA_OPENMP   = -fopenmp
-# CUDA_OPENMP   =
-PROFILER      = scorep --mpp=mpi
-PROFILER      =
-INSTRUMENTED  = -DINSTRUMENTED
-# INSTRUMENTED  =
-CUDA_INSTRUM  = -DINSTRUMENTED
-# CUDA_INSTRUM  =
-KEPLER        = -arch=sm_35
-FERMI         = -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
-MPICC         = $(PROFILER) mpicc
-MPICXX        = $(PROFILER) mpicxx
-INCPATH       = -I.
-LINK          = $(PROFILER) mpicxx
-LFLAGS        = -m64 -fopenmp -Wl,-O3
-LIBS          = $(SUBLIBS) -L"`which nvcc | sed 's,/bin/nvcc$$,,'`"/lib64 -L"`which nvcc | sed 's,/bin/nvcc$$,,'`"/lib -lcudart -lcuda
-NVCC          = /home/jromera/cuda/cuda-6.5/bin/nvcc
-NVCC          = /usr/local/cuda-7.0/bin/nvcc
-# GPU architecture auto-detect.
-PTXAS         = --ptxas-options="-v"
-PTXAS         =
-NVCCARGS      = $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
-# NVCCARGS      = --ptxas-options="-O3" -fmad=true $(FERMI)
-
+CXXFLAGS 	= -mavx -std=c++11  -Weffc++ -pedantic -O3 -Wall -Wextra
+CCFLAGS 	= -mavx -std=c99 -pedantic -O3 -Wall -Wextra
+MPICFLAGS 	= -m64 -pipe -D_CUDA -std=c99 -pedantic $(OPENMP) -O3 -mavx -Wall -W -fPIE $(DEFINES)
+MPICXXFLAGS = -m64 -pipe -D_CUDA -std=c++0x -pedantic $(OPENMP) $(INSTRUMENTED) -O3 -mavx -Wall -W -fPIE $(DEFINES)
+LFLAGS 		= -m64 -fopenmp -Wl,-O3
+INCPATH		= -I.
+LIBS		= -L"`which nvcc | sed 's,/bin/nvcc$$,,'`"/lib64 -L"`which nvcc | sed 's,/bin/nvcc$$,,'`"/lib -lcudart -lcuda
 
 OUTFILES := $(shell ls *.o)
 HEADERS := $(shell ls compression/include/*h)
@@ -45,7 +63,30 @@ OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
 
 all: clean g500
 
-.SUFFIXES: .cpp .o .c .h
+main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h generator/user_settings.h validate/mpi_workarounds.h generator/utils.h \
+		generator/splittable_mrg.h validate/onesided.h generator/make_graph.h cuda/cuda_bfs.h cuda/cuda_support.hh \
+		../b40c/util/basic_utils.cuh ../b40c/graph/bfs/csr_problem_2d.cuh ../b40c/util/cuda_properties.cuh ../b40c/util/memset_kernel.cuh ../b40c/util/cta_work_progress.cuh ../b40c/util/error_utils.cuh \
+		../b40c/util/device_intrinsics.cuh ../b40c/util/reduction/warp_reduce.cuh ../b40c/util/operators.cuh ../b40c/util/io/modified_load.cuh ../b40c/util/vector_types.cuh ../b40c/util/io/modified_store.cuh \
+		../b40c/util/multiple_buffering.cuh ../b40c/graph/bfs/problem_type.cuh ../b40c/partition/problem_type.cuh ../b40c/radix_sort/sort_utils.cuh \
+		../b40c/graph/bfs/enactor_multi_gpu_2d.cuh ../b40c/util/spine.cuh ../b40c/util/kernel_runtime_stats.cuh ../b40c/graph/bfs/enactor_base.cuh \
+		../b40c/graph/bfs/two_phase/contract_atomic/kernel.cuh ../b40c/util/cta_work_distribution.cuh ../b40c/graph/bfs/two_phase/contract_atomic/cta.cuh ../b40c/util/scan/cooperative_scan.cuh \
+		../b40c/util/srts_grid.cuh ../b40c/util/numeric_traits.cuh ../b40c/util/reduction/cooperative_reduction.cuh ../b40c/util/reduction/serial_reduce.cuh \
+		../b40c/util/scan/serial_scan.cuh ../b40c/util/scan/warp_scan.cuh ../b40c/util/io/initialize_tile.cuh ../b40c/util/io/load_tile.cuh \
+		../b40c/util/io/store_tile.cuh ../b40c/util/io/scatter_tile.cuh ../b40c/util/reduction/tree_reduce.cuh ../b40c/graph/bfs/two_phase/contract_atomic/kernel_policy.cuh \
+		../b40c/util/srts_details.cuh ../b40c/graph/bfs/two_phase/expand_atomic/kernel.cuh ../b40c/graph/bfs/two_phase/expand_atomic/cta.cuh ../b40c/util/soa_tuple.cuh \
+		../b40c/util/scan/soa/cooperative_soa_scan.cuh ../b40c/util/reduction/soa/cooperative_soa_reduction.cuh ../b40c/util/reduction/soa/serial_soa_reduce.cuh ../b40c/util/reduction/soa/warp_soa_reduce.cuh \
+		../b40c/util/scan/soa/warp_soa_scan.cuh ../b40c/util/scan/soa/serial_soa_scan.cuh ../b40c/graph/bfs/two_phase/expand_atomic/kernel_policy.cuh ../b40c/util/srts_soa_details.cuh \
+		../b40c/graph/bfs/partition_contract/policy.cuh ../b40c/partition/policy.cuh ../b40c/partition/spine/kernel.cuh ../b40c/scan/spine/kernel.cuh \
+		../b40c/scan/downsweep/cta.cuh ../b40c/scan/problem_type.cuh ../b40c/reduction/problem_type.cuh ../b40c/scan/kernel_policy.cuh \
+		../b40c/partition/upsweep/tuning_policy.cuh ../b40c/partition/downsweep/tuning_policy.cuh ../b40c/graph/bfs/partition_contract/upsweep/kernel.cuh ../b40c/graph/bfs/partition_contract/upsweep/cta.cuh \
+		../b40c/partition/upsweep/cta.cuh ../b40c/partition/upsweep/aggregate_counters.cuh ../b40c/partition/upsweep/composite_counters.cuh ../b40c/partition/upsweep/tile.cuh \
+		../b40c/graph/bfs/partition_contract/upsweep/tile.cuh ../b40c/graph/bfs/partition_contract/upsweep/kernel_policy.cuh ../b40c/partition/upsweep/kernel_policy.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel.cuh \
+		../b40c/graph/bfs/partition_contract/downsweep/cta.cuh ../b40c/partition/downsweep/cta.cuh ../b40c/graph/bfs/partition_contract/downsweep/tile.cuh \
+		../b40c/partition/downsweep/tile.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh ../b40c/partition/downsweep/kernel_policy.cuh \
+		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h
+	@echo ""
+	@echo "C, C++ and MPI sources"
+	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
 
 bitpacking.o: compression/include/bitpacking.h compression/src/bitpacking.cpp
 	@echo ""
@@ -91,33 +132,6 @@ for.o: compression/src/for.c $(HEADERS)
 simdintegratedbitpacking.o: compression/include/simdintegratedbitpacking.h compression/include/delta.h compression/src/simdintegratedbitpacking.cpp
 	$(CXX) $(CXXFLAGS) -c compression/src/simdintegratedbitpacking.cpp -Icompression/include
 
-.SUFFIXES: .o .c .cpp .cc .cxx .C
-
-main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h generator/user_settings.h validate/mpi_workarounds.h generator/utils.h \
-		generator/splittable_mrg.h validate/onesided.h generator/make_graph.h cuda/cuda_bfs.h cuda/cuda_support.hh \
-		../b40c/util/basic_utils.cuh ../b40c/graph/bfs/csr_problem_2d.cuh ../b40c/util/cuda_properties.cuh ../b40c/util/memset_kernel.cuh ../b40c/util/cta_work_progress.cuh ../b40c/util/error_utils.cuh \
-		../b40c/util/device_intrinsics.cuh ../b40c/util/reduction/warp_reduce.cuh ../b40c/util/operators.cuh ../b40c/util/io/modified_load.cuh ../b40c/util/vector_types.cuh ../b40c/util/io/modified_store.cuh \
-		../b40c/util/multiple_buffering.cuh ../b40c/graph/bfs/problem_type.cuh ../b40c/partition/problem_type.cuh ../b40c/radix_sort/sort_utils.cuh \
-		../b40c/graph/bfs/enactor_multi_gpu_2d.cuh ../b40c/util/spine.cuh ../b40c/util/kernel_runtime_stats.cuh ../b40c/graph/bfs/enactor_base.cuh \
-		../b40c/graph/bfs/two_phase/contract_atomic/kernel.cuh ../b40c/util/cta_work_distribution.cuh ../b40c/graph/bfs/two_phase/contract_atomic/cta.cuh ../b40c/util/scan/cooperative_scan.cuh \
-		../b40c/util/srts_grid.cuh ../b40c/util/numeric_traits.cuh ../b40c/util/reduction/cooperative_reduction.cuh ../b40c/util/reduction/serial_reduce.cuh \
-		../b40c/util/scan/serial_scan.cuh ../b40c/util/scan/warp_scan.cuh ../b40c/util/io/initialize_tile.cuh ../b40c/util/io/load_tile.cuh \
-		../b40c/util/io/store_tile.cuh ../b40c/util/io/scatter_tile.cuh ../b40c/util/reduction/tree_reduce.cuh ../b40c/graph/bfs/two_phase/contract_atomic/kernel_policy.cuh \
-		../b40c/util/srts_details.cuh ../b40c/graph/bfs/two_phase/expand_atomic/kernel.cuh ../b40c/graph/bfs/two_phase/expand_atomic/cta.cuh ../b40c/util/soa_tuple.cuh \
-		../b40c/util/scan/soa/cooperative_soa_scan.cuh ../b40c/util/reduction/soa/cooperative_soa_reduction.cuh ../b40c/util/reduction/soa/serial_soa_reduce.cuh ../b40c/util/reduction/soa/warp_soa_reduce.cuh \
-		../b40c/util/scan/soa/warp_soa_scan.cuh ../b40c/util/scan/soa/serial_soa_scan.cuh ../b40c/graph/bfs/two_phase/expand_atomic/kernel_policy.cuh ../b40c/util/srts_soa_details.cuh \
-		../b40c/graph/bfs/partition_contract/policy.cuh ../b40c/partition/policy.cuh ../b40c/partition/spine/kernel.cuh ../b40c/scan/spine/kernel.cuh \
-		../b40c/scan/downsweep/cta.cuh ../b40c/scan/problem_type.cuh ../b40c/reduction/problem_type.cuh ../b40c/scan/kernel_policy.cuh \
-		../b40c/partition/upsweep/tuning_policy.cuh ../b40c/partition/downsweep/tuning_policy.cuh ../b40c/graph/bfs/partition_contract/upsweep/kernel.cuh ../b40c/graph/bfs/partition_contract/upsweep/cta.cuh \
-		../b40c/partition/upsweep/cta.cuh ../b40c/partition/upsweep/aggregate_counters.cuh ../b40c/partition/upsweep/composite_counters.cuh ../b40c/partition/upsweep/tile.cuh \
-		../b40c/graph/bfs/partition_contract/upsweep/tile.cuh ../b40c/graph/bfs/partition_contract/upsweep/kernel_policy.cuh ../b40c/partition/upsweep/kernel_policy.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel.cuh \
-		../b40c/graph/bfs/partition_contract/downsweep/cta.cuh ../b40c/partition/downsweep/cta.cuh ../b40c/graph/bfs/partition_contract/downsweep/tile.cuh \
-		../b40c/partition/downsweep/tile.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh ../b40c/partition/downsweep/kernel_policy.cuh \
-		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h
-	@echo ""
-	@echo "C, C++ and MPI sources"
-	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
-
 utils.o: generator/utils.c generator/splittable_mrg.h generator/graph_generator.h generator/user_settings.h generator/utils.h
 	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o utils.o generator/utils.c
 
@@ -149,20 +163,20 @@ cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 	@echo ""
 	@echo "CUDA sources"
-	$(PROFILER) $(NVCC) -c -ccbin $(CXX) -Xcompiler -mavx,-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." -Icompression/include cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin $(CXX) -Xcompiler -mavx,-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." -Icompression/include cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 
 g500:  $(OBJECTS)
 	@echo ""
 	@echo "Linkage"
 	$(LINK) $(LFLAGS) -o $@ $(OBJECTS) $(OBJCOMP) $(LIBS)
 
-example:  $(HEADERS) compression/example.cpp  $(COMPRESSION_OBJECTS)
-	$(CXX) $(CXXFLAGS)  -o example compression/example.cpp  $(COMPRESSION_OBJECTS) -Icompression/include
-
-.PHONY: g500 clean
-
 clean:
 	@echo ""
 	@echo "Cleaning"
 	rm -rf $(OUTFILES) $(OBJECTS)
 	rm -rf *~ core *.core example g500
+
+example:  $(HEADERS) compression/example.cpp  $(COMPRESSION_OBJECTS)
+	$(CXX) $(CXXFLAGS)  -o example compression/example.cpp  $(COMPRESSION_OBJECTS) -Icompression/include
+
+.PHONY: g500 clean
