@@ -1,19 +1,13 @@
-#############################################################################
-# Makefile for building: g500
-# This version was tested with CUDA 5.5 and GCC 4.8.2 on KIDS
-#############################################################################
-
-####### Compiler, tools and options
+# Makefile
 
 CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
 CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
 
 CXXFLAGS = -mavx -std=c++11  -Weffc++ -pedantic -O3 -Wall -Wextra
 CCFLAGS =-mavx -std=c99 -pedantic -O3 -Wall -Wextra
-HEADERS= $(shell ls compression/include/*h)
 
-MPICFLAGS     = -m64 -pipe -D_CUDA -std=c99 $(OPENMP) -O3 -mavx -Wall -W -fPIE $(DEFINES)
-MPICXXFLAGS   = -m64 -pipe -D_CUDA -std=c++0x $(OPENMP) $(INSTRUMENTED) -O3 -mavx -Wall -W -fPIE $(DEFINES)
+MPICFLAGS     = -m64 -pipe -D_CUDA -std=c99 -pedantic $(OPENMP) -O3 -mavx -Wall -W -fPIE $(DEFINES)
+MPICXXFLAGS   = -m64 -pipe -D_CUDA -std=c++0x -pedantic $(OPENMP) $(INSTRUMENTED) -O3 -mavx -Wall -W -fPIE $(DEFINES)
 
 OPENMP        = -fopenmp
 OPENMP        =
@@ -27,58 +21,35 @@ CUDA_INSTRUM  = -DINSTRUMENTED
 # CUDA_INSTRUM  =
 KEPLER        = -arch=sm_35
 FERMI         = -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
-NV_ARCH       =
 MPICC         = $(PROFILER) mpicc
 MPICXX        = $(PROFILER) mpicxx
-DEFINES       =
 INCPATH       = -I.
 LINK          = $(PROFILER) mpicxx
 LFLAGS        = -m64 -fopenmp -Wl,-O3
 LIBS          = $(SUBLIBS) -L"`which nvcc | sed 's,/bin/nvcc$$,,'`"/lib64 -L"`which nvcc | sed 's,/bin/nvcc$$,,'`"/lib -lcudart -lcuda
-AR            = ar cqs
-RANLIB        =
-QMAKE         = /usr/lib/x86_64-linux-gnu/qt5/bin/qmake
-TAR           = tar -cf
-COMPRESS      = gzip -9f
-COPY          = cp -f
-SED           = sed
-COPY_FILE     = cp -f
-COPY_DIR      = cp -f -R
-STRIP         =
-INSTALL_FILE  = install -m 644 -p
-INSTALL_DIR   = $(COPY_DIR)
-INSTALL_PROGRAM = install -m 755 -p
-DEL_FILE      = rm -f
-SYMLINK       = ln -f -s
-DEL_DIR       = rmdir
-MOVE          = mv -f
-CHK_DIR_EXISTS= test -d
-MKDIR         = mkdir -p
 NVCC          = /home/jromera/cuda/cuda-6.5/bin/nvcc
 NVCC          = /usr/local/cuda-7.0/bin/nvcc
-
-# Matthias' GPU architecture auto-detect.
+# GPU architecture auto-detect.
 PTXAS         = --ptxas-options="-v"
 PTXAS         =
 NVCCARGS      = $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 # NVCCARGS      = --ptxas-options="-O3" -fmad=true $(FERMI)
 
 
-####### Files
-
-SOURCES = main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c simplecpubfs.cpp validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp cpubfs_bin.cpp
+OUTFILES := $(shell ls *.o)
+HEADERS := $(shell ls compression/include/*h)
+SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c simplecpubfs.cpp validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp cpubfs_bin.cpp
 COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o intersection.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
 OBJECTS := cuda_bfs_cuda.o main.o utils.o splittable_mrg.o make_graph.o graph_generator.o simplecpubfs.o onesided.o onesided_emul.o bitlevelfunctions.o cpubfs_bin.o
 OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
-DESTDIR =
 
-####### Implicit rules
-
-all: g500
+all: clean g500
 
 .SUFFIXES: .cpp .o .c .h
 
 bitpacking.o: compression/include/bitpacking.h compression/src/bitpacking.cpp
+	@echo ""
+	@echo "Lemure/SIMDCompression Library"
 	$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
 
 intersection.o: compression/include/intersection.h compression/src/intersection.cpp
@@ -143,80 +114,55 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		../b40c/graph/bfs/partition_contract/downsweep/cta.cuh ../b40c/partition/downsweep/cta.cuh ../b40c/graph/bfs/partition_contract/downsweep/tile.cuh \
 		../b40c/partition/downsweep/tile.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh ../b40c/partition/downsweep/kernel_policy.cuh \
 		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h
-		$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
+	@echo ""
+	@echo "C, C++ and MPI sources"
+	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
 
-utils.o: generator/utils.c generator/splittable_mrg.h \
-		generator/graph_generator.h \
-		generator/user_settings.h \
-		generator/utils.h
-		$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o utils.o generator/utils.c
+utils.o: generator/utils.c generator/splittable_mrg.h generator/graph_generator.h generator/user_settings.h generator/utils.h
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o utils.o generator/utils.c
 
-splittable_mrg.o: generator/splittable_mrg.c generator/mod_arith.h \
-		generator/user_settings.h \
-		generator/mod_arith_64bit.h \
-		generator/mod_arith_32bit.h \
-		generator/splittable_mrg.h \
-		generator/mrg_transitions.c
-		$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o splittable_mrg.o generator/splittable_mrg.c
+splittable_mrg.o: generator/splittable_mrg.c generator/mod_arith.h generator/user_settings.h generator/mod_arith_64bit.h generator/mod_arith_32bit.h \
+		generator/splittable_mrg.h generator/mrg_transitions.c
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o splittable_mrg.o generator/splittable_mrg.c
 
-make_graph.o: generator/make_graph.c generator/graph_generator.h \
-		generator/user_settings.h \
-		generator/utils.h \
-		generator/splittable_mrg.h
-		$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o make_graph.o generator/make_graph.c
+make_graph.o: generator/make_graph.c generator/graph_generator.h generator/user_settings.h generator/utils.h generator/splittable_mrg.h
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o make_graph.o generator/make_graph.c
 
-graph_generator.o: generator/graph_generator.c generator/user_settings.h \
-		generator/splittable_mrg.h \
-		generator/graph_generator.h
-		$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o graph_generator.o generator/graph_generator.c
+graph_generator.o: generator/graph_generator.c generator/user_settings.h generator/splittable_mrg.h generator/graph_generator.h
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o graph_generator.o generator/graph_generator.c
 
-simplecpubfs.o: simplecpubfs.cpp simplecpubfs.h \
-		globalbfs.hh \
-		distmatrix2d.hh \
-		generator/graph_generator.h \
-		generator/user_settings.h
-		$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o simplecpubfs.o simplecpubfs.cpp
+simplecpubfs.o: simplecpubfs.cpp simplecpubfs.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
+	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o simplecpubfs.o simplecpubfs.cpp
 
-onesided.o: validate/onesided.c validate/mpi_workarounds.h \
-		validate/onesided.h \
-		generator/utils.h \
-		generator/splittable_mrg.h
-		$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided.o validate/onesided.c
+onesided.o: validate/onesided.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided.o validate/onesided.c
 
-onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h \
-		validate/onesided.h \
-		generator/utils.h \
-		generator/splittable_mrg.h
-		$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided_emul.o validate/onesided_emul.c
+onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided_emul.o validate/onesided_emul.c
 
 bitlevelfunctions.o: bitlevelfunctions.cpp bitlevelfunctions.h
-		$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o bitlevelfunctions.o bitlevelfunctions.cpp
+	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o bitlevelfunctions.o bitlevelfunctions.cpp
 
-cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h \
-		globalbfs.hh \
-		distmatrix2d.hh \
-		generator/graph_generator.h \
-		generator/user_settings.h
-		$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o cpubfs_bin.o cpubfs_bin.cpp
-
-
-####### Sub-libraries
+cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
+	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o cpubfs_bin.o cpubfs_bin.cpp
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
-	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin /usr/bin/g++-4.8 -Xcompiler -mavx,-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." -Icompression/include cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
-
-####### Compile
+	@echo ""
+	@echo "CUDA sources"
+	$(PROFILER) $(NVCC) -c -ccbin $(CXX) -Xcompiler -mavx,-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." -Icompression/include cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 
 g500:  $(OBJECTS)
-	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(OBJCOMP) $(LIBS)
-
-clean:
-	-$(DEL_FILE) *.o $(OBJECTS)
-	-$(DEL_FILE) *~ core *.core example
+	@echo ""
+	@echo "Linkage"
+	$(LINK) $(LFLAGS) -o $@ $(OBJECTS) $(OBJCOMP) $(LIBS)
 
 example:  $(HEADERS) compression/example.cpp  $(COMPRESSION_OBJECTS)
 	$(CXX) $(CXXFLAGS)  -o example compression/example.cpp  $(COMPRESSION_OBJECTS) -Icompression/include
 
-.PHONY: clean g500
+.PHONY: g500 clean
 
-
+clean:
+	@echo ""
+	@echo "Cleaning"
+	rm -rf $(OUTFILES) $(OBJECTS)
+	rm -rf *~ core *.core example g500
