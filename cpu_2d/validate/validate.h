@@ -304,7 +304,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
 #ifdef _OPENMP
     #pragma omp parallel for reduction(+: edge_visit_count) reduction(&&: valid_level)
 #endif
-      for(long i=0; i < number_of_edges; i++){
+      for(long i=0; i < number_of_edges; ++i){
           packed_edge edge = edgelist[i];
 
           int64_t p_vertex0 = rowPred[store.globaltolocalRow(edge.v0)];
@@ -338,11 +338,13 @@ int validate_bfs_result(const MatrixT &store, packed_edge* edgelist, int64_t num
               }
           }
           //count "visited" edge
-          if(get_pred_from_pred_entry(p_vertex0)!= -1)
+          if(get_pred_from_pred_entry(p_vertex0)!= -1) {
               edge_visit_count++;
+          }
        }
-      if(valid_level==0)
+      if(valid_level==0) {
           printf("invalid_level\n");
+      }
 
        MPI_Allreduce(MPI_IN_PLACE,pred_visited, pred_visited_size, MPI_UINT64_T, MPI_BOR, col_comm);
 #ifdef _OPENMP

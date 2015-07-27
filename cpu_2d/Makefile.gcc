@@ -7,6 +7,8 @@ openmp_on_cxx_mpi="no"
 scorep_profiler_enable="no"
 instrument_cuda="yes"
 instrument_cxx_mpi="yes"
+custom_openmpi="yes"
+custom_openmpi_path=/home/jromera/openmpi
 
 ifeq ($(nvidia_ptxas_otimize), "yes")
 	PTXAS = --ptxas-options="-O3"
@@ -42,29 +44,42 @@ CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
 CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
 NVCC := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
 NVDIR := $(shell echo $(NVCC) | sed 's,/bin/nvcc$$,,')
-MPICC := $(PROFILER) mpicc
-MPICXX := $(PROFILER) mpicxx
-LINK := $(PROFILER) mpicxx
+
+ifeq ($(custom_openmpi), "yes")
+	export OMPI_CC := $(CC)
+	export OMPI_CXX := $(CXX)
+        MPICC := $(custom_openmpi_path)/bin/mpicc
+        MPICXX := $(custom_openmpi_path)/bin/mpicxx
+else
+        MPICC := mpicc
+        MPICXX := mpicxx
+endif
+
+MPICC := $(PROFILER) $(MPICC)
+MPICXX := $(PROFILER) $(MPICXX)
+LINK := $(PROFILER) $(MPICXX)
 
 
 CXXFLAGS 	= -mavx -std=c++11  -Weffc++ -pedantic -O3 -Wall -Wextra
 CCFLAGS 	= -mavx -std=c99 -pedantic -O3 -Wall -Wextra
-MPICFLAGS 	= -m64 -pipe -D_CUDA -std=c99 -pedantic $(OPENMP) -O3 -mavx -Wall -W -fPIE $(DEFINES)
-MPICXXFLAGS = -m64 -pipe -D_CUDA -std=c++11 -pedantic $(OPENMP) $(INSTRUMENTED) -O3 -mavx -Wall -W -fPIE $(DEFINES)
+MPICFLAGS 	= -m64 -pipe -D_CUDA -std=c99 -pedantic $(OPENMP) -O3 -march=native -Wall -W -fPIE $(DEFINES)
+MPICXXFLAGS = -m64 -pipe -D_CUDA -std=c++11 -pedantic $(OPENMP) $(INSTRUMENTED) -O3 -march=native -Wall -W -fPIE $(DEFINES)
 LFLAGS 		= -m64 -fopenmp -Wl,-O3
 INCPATH		= -I. -Icompression/include
+INCPATH		= -I.
 LIBS		= -L$(NVDIR)/lib64 -L$(NVDIR)/lib -lcudart -lcuda
 
 OUTFILES := $(shell ls *.o)
 HEADERS := $(shell ls compression/include/*h)
+HEADERS := 
 SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c simplecpubfs.cpp validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp cpubfs_bin.cpp
 COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o intersection.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
 OBJECTS := cuda_bfs_cuda.o main.o utils.o splittable_mrg.o make_graph.o graph_generator.o simplecpubfs.o onesided.o onesided_emul.o bitlevelfunctions.o cpubfs_bin.o
-OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
+# OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
+OBJECTS := $(OBJECTS)
 
-# all: clean g500
 
-all: g500
+all: clean g500
 
 main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h generator/user_settings.h validate/mpi_workarounds.h generator/utils.h \
 		generator/splittable_mrg.h validate/onesided.h generator/make_graph.h cuda/cuda_bfs.h cuda/cuda_support.hh \
@@ -88,12 +103,12 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		../b40c/partition/downsweep/tile.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh ../b40c/partition/downsweep/kernel_policy.cuh \
 		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h
 	@echo ""
-	@echo "C, C++ and MPI sources"
+	@echo "--- Compiling g500"
 	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
 
 bitpacking.o: compression/include/bitpacking.h compression/src/bitpacking.cpp
 	@echo ""
-	@echo "Lemure/SIMDCompression Library"
+	@echo "--- Compiling Lemure/SIMDCompression Library"
 	$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
 
 intersection.o: compression/include/intersection.h compression/src/intersection.cpp
@@ -165,17 +180,29 @@ cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 	@echo ""
-	@echo "CUDA sources"
-	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin $(CXX) -Xcompiler -mavx,-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
+	@echo ""
+	@echo "--- Compiling CUDA"
+	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin $(CXX) -Xcompiler -march=native,-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 
 g500:  $(OBJECTS)
 	@echo ""
-	@echo "Linkage"
+	@echo "============================================================================"
+	@echo "== Linking"
+	@echo "============================================================================"
+	@echo ""
+	@echo "--- Linking"
 	$(LINK) $(LFLAGS) -o $@ $(OBJECTS) $(OBJCOMP) $(LIBS)
 
 clean:
 	@echo ""
-	@echo "Cleaning"
+	@echo "============================================================================"
+	@echo "== Cleaning"
+	@echo "============================================================================"
+	@echo ""
+	@echo "--- Cleaning"
 	rm -rf $(OUTFILES) $(OBJECTS)
 	rm -rf *~ core *.core example g500
 
