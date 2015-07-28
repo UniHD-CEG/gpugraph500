@@ -112,7 +112,7 @@ function wait_and_process {
 function print_header {
   local scale_factors="$1"
   
-  echo ""; echo -e "${green}[ . ] = success   ${red}[ x ] = error${nocolor}"
+  echo ""; echo -e "${green}[ $checkmark ] = success   ${red}[ $fancyx ] = error${nocolor}"
   printf "%-20s" "script / sf"
   for sf in $scale_factors; do
     if [ $sf -lt 10 ]; then
@@ -141,14 +141,14 @@ function iterate {
   jobid=`head -1 $lock | grep "Submitted batch" | sed -e 's/[^0-9]//g'`
 
   if $error || [ "x$jobid" = "x" ]; then
-     echo -ne "  ${red}x${nocolor}"
+     echo -ne "  ${red}${fancyx}${nocolor}"
   else 
      wait_and_process $jobid success
      clean_char
      if $success ; then
-        echo -ne "  ${green}.${nocolor}"
+        echo -ne "  ${green}${checkmark}${nocolor}"
      else
-        echo -ne "  ${red}x${nocolor}"
+        echo -ne "  ${red}${fancyx}${nocolor}"
      fi
      clean_char
   fi
@@ -196,7 +196,20 @@ if [ $1 -gt $2 ]; then
   exit 1
 fi
 
-red='\e[0;31m'     
-green='\e[0;32m'
-nocolor='\e[0m'
+
+colors="yes"
+
+if [ "x$colors" = "xyes" ]; then
+  fancyx='\u0058'
+  checkmark='\u221A'
+  nocolor='\e[0m'
+  red='\e[1;31m'
+  green='\e[0;32m'
+else 
+  fancyx='x'
+  checkmark='.'
+  red=''     
+  green=''
+  nocolor=''
+fi
 main $1 $2
