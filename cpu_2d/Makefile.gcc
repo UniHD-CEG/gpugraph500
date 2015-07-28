@@ -9,7 +9,7 @@ instrument_cuda="yes"
 instrument_cxx_mpi="yes"
 custom_openmpi="yes"
 custom_openmpi_path=/home/jromera/openmpi
-debug="yes"
+debug="no"
 
 ifeq ($(nvidia_ptxas_otimize), "yes")
 	PTXAS = --ptxas-options="-O3"
