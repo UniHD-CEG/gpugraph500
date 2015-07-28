@@ -19,5 +19,5 @@ export mpirun=mpirun
 export mpirun=/home/jromera/openmpi/bin/mpirun
 
 date
-$mpirun -np 4 --display-map -rf hosts-coptimum $HOME/ClionProjects/bfs_multinode/cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1
+$mpirun -np 4 --display-map -rf hosts-coptimum ./../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1
 

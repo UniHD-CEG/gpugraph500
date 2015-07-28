@@ -9,6 +9,7 @@ instrument_cuda="yes"
 instrument_cxx_mpi="yes"
 custom_openmpi="yes"
 custom_openmpi_path=/home/jromera/openmpi
+debug="yes"
 
 ifeq ($(nvidia_ptxas_otimize), "yes")
 	PTXAS = --ptxas-options="-O3"
@@ -40,6 +41,10 @@ ifeq ($(openmp_on_cxx_mpi), "yes")
 	OPENMP = -fopenmp
 endif
 
+ifeq ($(debug), "yes")
+	DEFINES += -D_DEBUG
+endif
+
 CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
 CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
 NVCC := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
@@ -62,8 +67,8 @@ LINK := $(PROFILER) $(MPICXX)
 
 CXXFLAGS 	= -mavx -std=c++11  -Weffc++ -pedantic -O3 -Wall -Wextra
 CCFLAGS 	= -mavx -std=c99 -pedantic -O3 -Wall -Wextra
-MPICFLAGS 	= -m64 -pipe -D_CUDA -std=c99 -pedantic $(OPENMP) -O3 -march=native -Wall -W -fPIE $(DEFINES)
-MPICXXFLAGS = -m64 -pipe -D_CUDA -std=c++11 -pedantic $(OPENMP) $(INSTRUMENTED) -O3 -march=native -Wall -W -fPIE $(DEFINES)
+MPICFLAGS 	= -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic $(OPENMP) -O3 -march=native -Wall -W -fPIE
+MPICXXFLAGS = -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -pedantic $(OPENMP) $(INSTRUMENTED) -O3 -march=native -Wall -W -fPIE
 LFLAGS 		= -m64 -fopenmp -Wl,-O3
 INCPATH		= -I. -Icompression/include
 INCPATH		= -I.

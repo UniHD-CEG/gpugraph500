@@ -17,7 +17,7 @@ else
 fi
 mpirun=mpirun
 mpirun=/home/jromera/openmpi/bin/mpirun
-vargrind=valgrind
+valgrind=
 
 date
 $mpirun -np 16 $valgrind ./../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 2

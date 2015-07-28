@@ -96,6 +96,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
     // Enable symmetric peer access between gpus
     // from test_bfs.cu
     // if(peerPossible)
+    printf("1: %d \n", num_gpus);
     Csr::GraphSlice *gs;
     Csr::GraphSlice *gs_other;
     for (int gpu = 0; gpu < num_gpus; ++gpu) {
@@ -225,6 +226,7 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize) {
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
+    printf("2: %d \n", numGpus);
     for (int i = 0; i < numGpus; ++i) {
         Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
@@ -243,6 +245,7 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize) {
         vmask[vtxID >> 3] |= 1 << (vtxID & 0x7);
     }
 
+    printf("3: %d \n", numGpus);
     int visited_mask_bytes;
     for (int i = 0; i < numGpus; ++i) {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
@@ -350,6 +353,7 @@ void CUDA_BFS::getBackOutqueue() {
 
 
     numGpus = csr_problem->num_gpus;
+    printf("4: %d \n", numGpus);
 #ifdef _DEBUG
     b40c::util::B40CPerror(bfsGPU->testOverflow(csr_problem));
 #endif
@@ -364,6 +368,7 @@ void CUDA_BFS::getBackOutqueue() {
                                "Can't synchronize device.", __FILE__, __LINE__);
     }
     //sort values on the gpu
+    printf("5: %d \n", numGpus);
     for (int i = 0; i < numGpus; ++i) {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaSetDevice(gs->gpu));
@@ -375,6 +380,7 @@ void CUDA_BFS::getBackOutqueue() {
     qb_length = 0;//csr_problem->num_gpus;
     typename MatrixT::vtxtyp *qb_nxt = queuebuff;
     // copy next queue to host
+    printf("6: %d \n", numGpus);
     for (int i = 0; i < numGpus; ++i) {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
@@ -389,12 +395,14 @@ void CUDA_BFS::getBackOutqueue() {
         qb_length += queue_sizes[i];
     }
 
+    printf("7: %d \n", numGpus);
     //#pragma omp parallel for
     for (int i = 0; i < numGpus; ++i) {
         Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
                                "Can't synchronize Stream.", __FILE__, __LINE__);
     }
+    printf("8: %d \n", numGpus);
     // Queue preprocessing
     //Uniqueness
     typename MatrixT::vtxtyp *qb_nxt_in = queuebuff;
@@ -461,6 +469,7 @@ void CUDA_BFS::setBackInqueue() {
     }
 #endif
 
+    printf("9: %d \n", numGpus);
     // copy next queue to device
     for (int i = 0; i < numGpus; ++i) {
         gs = csr_problem->graph_slices[i];
@@ -482,6 +491,7 @@ void CUDA_BFS::setBackInqueue() {
         qb_nxt = end_local;
     }
 
+    printf("2: %d \n", numGpus);
     //set length of current queue
 #ifdef _OPENMP
     #pragma omp parallel for
@@ -551,6 +561,7 @@ void CUDA_BFS::setStartVertex(vtxtyp start) {
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
+    printf("2: %d \n", numGpus);
     for (int i = 0; i < numGpus; ++i) {
         //set new visited map
         gs = csr_problem->graph_slices[i];
@@ -580,6 +591,7 @@ void CUDA_BFS::setStartVertex(vtxtyp start) {
 void CUDA_BFS::runLocalBFS() {
     int numGpus = csr_problem->num_gpus;
 
+    printf("10: %d \n", numGpus);
     //finish outstanding copys
     for (int i = 0; i < numGpus; ++i) {
         cudaStreamSynchronize(csr_problem->graph_slices[i]->stream);
