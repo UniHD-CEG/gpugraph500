@@ -133,64 +133,70 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
     r_residuum = numAlg % R;
     rSliceSize = numAlg / R;
 
-    if ((rowSlice = row / (rSliceSize + 1)) >=
-        r_residuum) {//compute row slice, if the slice number is in the bigger intervals
-        rowSlice =
-                (row - r_residuum) / rSliceSize; //compute row slice, if the slice number is in the smaler intervals
-            }
+    if ((rowSlice = row / (rSliceSize + 1)) >= r_residuum) {
+        //compute row slice, if the slice number is in the bigger intervals
+        rowSlice = (row - r_residuum) / rSliceSize; //compute row slice, if the slice number is in the smaler intervals
+    }
+    c_residuum = numAlg % C;
+    cSliceSize = numAlg / C;
 
-            c_residuum = numAlg % C;
-            cSliceSize = numAlg / C;
-
-            if ((columnSlice = column / (cSliceSize + 1)) >=
-        c_residuum) { //compute column slice, if the slice number is in the bigger intervals
-                columnSlice = (column - c_residuum) /
-                      cSliceSize; //compute column slice, if the slice number is in the smaler interval
-                    }
-                    return rowSlice * C + columnSlice;
-                }
+    if ((columnSlice = column / (cSliceSize + 1)) >= c_residuum) {
+            //compute column slice, if the slice number is in the bigger intervals
+            columnSlice = (column - c_residuum) /
+            cSliceSize; //compute column slice, if the slice number is in the smaler interval
+    }
+    return rowSlice * C + columnSlice;
+}
 
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                 bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::comparePackedEdgeR(packed_edge i, packed_edge j) {
-                    if (i.v0 < j.v0) {
-                        return true;
-                    } else if (i.v0 > j.v0) {
-                        return false;
-                    } else
-                    return (i.v1 < j.v1);
-                }
+
+        if (i.v0 < j.v0) {
+            return true;
+        } else if (i.v0 > j.v0) {
+            return false;
+        } else {
+            return (i.v1 < j.v1);
+        }
+ }
 
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                 bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::comparePackedEdgeC(packed_edge i, packed_edge j) {
-                    if (i.v1 < j.v1) {
-                        return true;
-                    } else if (i.v1 > j.v1) {
-                        return false;
-                    } else
-                    return (i.v0 < j.v0);
-                }
+
+        if (i.v1 < j.v1) {
+            return true;
+        } else if (i.v1 > j.v1) {
+            return false;
+        } else {
+            return (i.v0 < j.v0);
+        }
+ }
 
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                 DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::DistMatrix2d(int64_t _R, int64_t _C) : R(_R), C(_C),
                 row_pointer(NULL),
                 column_index(NULL) {
-                    int rank;
+        int rank;
 
-                    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-                    // Compute own row and column id
-                    r = rank / C;
-                    c = rank % C;
-                }
+        // Compute own row and column id
+        r = rank / C;
+        c = rank % C;
+}
 
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                 DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::~DistMatrix2d() {
-                    if (row_pointer != NULL) delete[] row_pointer;
-                    row_pointer = NULL;
-                    if (column_index != NULL) delete[] column_index;
-                    column_index = NULL;
 
-                }
+        if (row_pointer != NULL) {
+            delete[] row_pointer;
+        }
+        row_pointer = NULL;
+        if (column_index != NULL) {
+            delete[] column_index;
+        }
+        column_index = NULL;
+}
 
 /*
  * Setup of 2d partitioned adjacency matrix.
@@ -239,6 +245,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         globalNumberOfVertex +=
         (globalNumberOfVertex % R > 0) ? R - globalNumberOfVertex % R : 0;
     }
+
     numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1 : 0);
     row_start = (r * (numAlg / R) + ((r < numAlg % R) ? r : numAlg % R)) * ALG;
     row_length = (numAlg / R + ((r < numAlg % R) ? 1 : 0)) * ALG;
@@ -344,7 +351,6 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                 MPI_Recv(&buf, 1, MPI_LONG, MPI_ANY_SOURCE, 0,
                     MPI_COMM_WORLD, &status);
                 ++row_elem[buf - row_start];
-
             }
         }
     }
@@ -363,27 +369,26 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         }
         //Ask other if there is something unfinished
         MPI_Allreduce(&someting_unfinshed, &gunfinished, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
-        if (gunfinished == 0)
+        if (gunfinished == 0) {
             break;
+        }
         while (true) {
             //Test if there is something to receive
-            MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
-                &flag, &status);
-            if (!flag) {// There is no package to receive
+            MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+            if (!flag) {
+                // There is no package to receive
                 break;
             }
 
-            MPI_Recv(&buf, 1, MPI_LONG, MPI_ANY_SOURCE, 0,
-                MPI_COMM_WORLD, &status);
+            MPI_Recv(&buf, 1, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
             ++row_elem[buf - row_start];
-
         }
     };
 
 //2. Step
     //compute row index array(prefix scan)
     row_pointer[0] = 0;
-    for (vtxtyp i = 1; i < row_length + 1; ++i) {
+    for (vtxtyp i = 1; i <= row_length; ++i) {
         row_pointer[i] = row_pointer[i - 1] + row_elem[i - 1];
     }
     // row_elem is now a pointer to the relative position, where new elements of a row may be insert
@@ -436,11 +441,10 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
             }
 
 
-            MPI_Recv(buf2, 2, MPI_LONG, MPI_ANY_SOURCE, 0,
-                MPI_COMM_WORLD, &status);
-            column_index[row_pointer[buf2[0] - row_start] + row_elem[buf2[0] - row_start]] = buf2[1];
-            row_elem[buf2[0] - row_start]++;
-
+            MPI_Recv(buf2, 2, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+            int rstart = buf2[0] - row_start;
+            column_index[row_pointer[rstart] + row_elem[rstart]] = buf2[1];
+            ++row_elem[rstart];
         }
     }
 
@@ -466,27 +470,24 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                     int64_t dest = computeOwner(input[count_elementssend].v1, input[count_elementssend].v0);
                     MPI_Issend(send_buf, 2, MPI_LONG, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
                     //}
-                    count_elementssend++;
+                    ++count_elementssend;
                 } else {
                     someting_unfinshed = 1;
-
                     //Tell others that there is something unfinished
                     MPI_Allreduce(&someting_unfinshed, &gunfinished, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
                 }
             }
             while (true) {
                 //Test if there is something to receive
-                MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
-                    &flag, &status);
+                MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
                 if (!flag) {// There is no package to receive
                     break;
                 }
 
-                MPI_Recv(buf2, 2, MPI_LONG, MPI_ANY_SOURCE, 0,
-                    MPI_COMM_WORLD, &status);
-                column_index[row_pointer[buf2[0] - row_start] + row_elem[buf2[0] - row_start]] = buf2[1];
-                row_elem[buf2[0] - row_start]++;
-
+                MPI_Recv(buf2, 2, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+                int rstart = buf2[0] - row_start;
+                column_index[row_pointer[rstart] + row_elem[rstart]] = buf2[1];
+                ++row_elem[rstart];
             }
         }
     }
@@ -516,10 +517,10 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
             if (!flag) // There is no package to receive
                 break;
 
-            MPI_Recv(buf2, 2, MPI_LONG, MPI_ANY_SOURCE, 0,
-                MPI_COMM_WORLD, &status);
-            column_index[row_pointer[buf2[0] - row_start] + row_elem[buf2[0] - row_start]] = buf2[1];
-            ++row_elem[buf2[0] - row_start];
+            MPI_Recv(buf2, 2, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+            int rstart = buf2[0] - row_start;
+            column_index[row_pointer[rstart] + row_elem[rstart]] = buf2[1];
+            ++row_elem[rstart];
         }
     }
 
@@ -539,15 +540,18 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
+
     for (vtxtyp i = 0; i < row_length; ++i) {
         std::sort(column_index + row_pointer[i], column_index + row_pointer[i + 1]);
     }
+
 //5.
     // remove duplicates
     // The next section is very bad, because it use too much memory.
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
+
     for (vtxtyp i = 0; i < row_length; ++i) {
         rowtyp tmp_row_num = row_elem[i];
         //Search for duplicates in every row
@@ -562,19 +566,21 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
     vtxtyp *tmp_column_index;
 
     tmp_row_pointer[0] = 0;
-    for (vtxtyp i = 1; i < row_length + 1; ++i) {
+    for (vtxtyp i = 1; i <= row_length; ++i) {
         tmp_row_pointer[i] = tmp_row_pointer[i - 1] + row_elem[i - 1];
     }
 
     tmp_column_index = new vtxtyp[tmp_row_pointer[row_length]];
+
     //Copy unique entries in every row
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
+
     for (vtxtyp i = 0; i < row_length; ++i) {
         rowtyp next_elem = tmp_row_pointer[i];
         //skip empty row
-        if (next_elem == tmp_row_pointer[i + 1]) continue;
+        if (next_elem == tmp_row_pointer[i + 1]) { continue; }
         if (WOLO) {
             tmp_column_index[next_elem] = column_index[row_pointer[i]] - column_start;
         } else {
@@ -605,9 +611,9 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
 void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_edge *&input,
     int64_t &numberOfEdges,
     bool undirected) {
-
     int64_t maxVertex = -1;
-    if (undirected == true) {
+
+    if (undirected) {
         //generate other direction to be undirected
         input = (packed_edge *) realloc(input, 2 * numberOfEdges * sizeof(packed_edge));
 
@@ -705,7 +711,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     MPI_Alltoall(owen_send_size, 1, MPI_INT, other_size, 1, MPI_INT, col_comm);
     // compute transmission offsets
     other_offset[0] = 0;
-    for (long i = 1; i < R + 1; ++i) {
+    for (long i = 1; i <= R ; ++i) {
         other_offset[i] = other_size[i - 1] + other_offset[i - 1];
     }
     numberOfEdges = other_offset[R];
@@ -716,7 +722,6 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     // transmit data
     MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, coltransBuf, other_size, other_offset,
         packedEdgeMPI, col_comm);
-
 
     //not necessary any more
     free(input);
@@ -768,7 +773,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     MPI_Alltoall(owen_send_size, 1, MPI_INT, other_size, 1, MPI_INT, row_comm);
     // compute transmission offsets
     other_offset[0] = 0;
-    for (long i = 1; i < C + 1; ++i) {
+    for (long i = 1; i <= C ; ++i) {
         other_offset[i] = other_size[i - 1] + other_offset[i - 1];
     }
     numberOfEdges = other_offset[C];
@@ -934,7 +939,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
                 } else {
                     column_index[row_pointer[i] + inrow] = input[j].v1;
                 }
-                inrow++;
+                ++inrow;
                 ++j;
                 break;
             }
