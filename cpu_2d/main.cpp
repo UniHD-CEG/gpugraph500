@@ -22,10 +22,11 @@
 #else
     #include "cpubfs_bin.h"
 #endif
-// #include "codecfactory.h"
-// #include "intersection.h"
-// using namespace SIMDCompressionLib;
-
+#ifdef _SIMDCOMPRESS
+	#include "codecfactory.h"
+	#include "intersection.h"
+	using namespace SIMDCompressionLib;
+#endif
 
 struct statistic {
     double min;
@@ -126,7 +127,9 @@ int main(int argc, char **argv) {
     double queue_sizing = 1.20;
 #endif
 
-    // SIMDCompressionLib::IntegerCODEC &codec =  * SIMDCompressionLib::CODECFactory::getFromName("s4-bp128-dm");
+#ifdef _SIMDCOMPRESS
+    SIMDCompressionLib::IntegerCODEC &codec =  * SIMDCompressionLib::CODECFactory::getFromName("s4-bp128-dm");
+#endif
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);

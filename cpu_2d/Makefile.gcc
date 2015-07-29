@@ -10,46 +10,57 @@ instrument_cxx_mpi="yes"
 custom_openmpi="yes"
 custom_openmpi_path=/home/jromera/openmpi
 use_avx_instructions="yes"
+enable_simd_compression="yes"
 debug="no"
 
+
 ifeq ($(use_avx_instructions), "yes")
-	arch = -mavx
+	arch := -mavx
 else
-	arch = -march=native
+	arch := -march=native
 endif
 
 ifeq ($(nvidia_ptxas_otimize), "yes")
-	PTXAS = --ptxas-options="-O3"
+	PTXAS := --ptxas-options="-O3"
 endif
 
 ifeq ($(nvidia_architecture), "fermi")
-	NVCCARGS = $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
+	NVCCARGS := $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
 else
-	NVCCARGS = $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+	NVCCARGS := $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 endif
 
 ifeq ($(scorep_profiler_enable), "yes")
-	PROFILER = scorep
-endif
-
-ifeq ($(instrument_cuda), "yes")
-	CUDA_INSTRUM = -DINSTRUMENTED
-endif
-
-ifeq ($(instrument_cxx_mpi), "yes")
-	INSTRUMENTED = -DINSTRUMENTED
+	PROFILER := scorep
 endif
 
 ifeq ($(openmp_on_cuda), "yes")
-	CUDA_OPENMP = -fopenmp
+	CUDA_OPENMP := -fopenmp
 endif
 
 ifeq ($(openmp_on_cxx_mpi), "yes")
-	OPENMP = -fopenmp
+	OPENMP := -fopenmp
+endif
+
+ifeq ($(instrument_cuda), "yes")
+	CUDA_INSTRUM := -DINSTRUMENTED
+endif
+
+ifeq ($(instrument_cxx_mpi), "yes")
+	INSTRUMENTED := -DINSTRUMENTED
 endif
 
 ifeq ($(debug), "yes")
 	DEFINES += -D_DEBUG
+endif
+
+ifeq ($(enable_simd_compression), "yes")
+	DEFINES += -D_SIMDCOMPRESS
+	INCPATH := -I. -Icompression/include
+	HEADERS := $(shell ls compression/include/*h)
+else
+	INCPATH := -I.
+	HEADERS :=
 endif
 
 CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
@@ -71,25 +82,21 @@ MPICC := $(PROFILER) $(MPICC)
 MPICXX := $(PROFILER) $(MPICXX)
 LINK := $(PROFILER) $(MPICXX)
 
-
-CXXFLAGS 	= -mavx -std=c++11  -Weffc++ -pedantic -O3 -Wall -Wextra
-CCFLAGS 	= -mavx -std=c99 -pedantic -O3 -Wall -Wextra
-MPICFLAGS 	= -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic $(OPENMP) -O3 $(arch) -Wall -W -fPIE
-MPICXXFLAGS = -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
-LFLAGS 		= -m64 -fopenmp -Wl,-O3
-INCPATH		= -I. -Icompression/include
-INCPATH		= -I.
-LIBS		= -L$(NVDIR)/lib64 -L$(NVDIR)/lib -lcudart -lcuda
+CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic -O3 -Wall -Wextra
+CCFLAGS := -mavx -std=c99 -pedantic -O3 -Wall -Wextra
+MPICFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic $(OPENMP) -O3 $(arch) -Wall -W -fPIE
+MPICXXFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
+LFLAGS := -m64 -fopenmp -Wl,-O3
+LIBS := -L$(NVDIR)/lib64 -L$(NVDIR)/lib -lcudart -lcuda
 
 OUTFILES := $(shell ls *.o)
-HEADERS := $(shell ls compression/include/*h)
-HEADERS := 
 SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c simplecpubfs.cpp validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp cpubfs_bin.cpp
 COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o intersection.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
 OBJECTS := cuda_bfs_cuda.o main.o utils.o splittable_mrg.o make_graph.o graph_generator.o simplecpubfs.o onesided.o onesided_emul.o bitlevelfunctions.o cpubfs_bin.o
-# OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
-OBJECTS := $(OBJECTS)
 
+ifeq ($(enable_simd_compression), "yes")
+	OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
+endif
 
 all: clean g500
 
@@ -119,6 +126,12 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
 
 bitpacking.o: compression/include/bitpacking.h compression/src/bitpacking.cpp
+ifeq ($(enable_simd_compression), "yes")
+	@echo ""
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
+endif
 	@echo ""
 	@echo "--- Compiling Lemure/SIMDCompression Library"
 	$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
@@ -192,12 +205,14 @@ cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 	@echo ""
+ifneq ($(enable_simd_compression), "yes")
 	@echo "============================================================================"
 	@echo "== Compiling"
 	@echo "============================================================================"
+endif
 	@echo ""
 	@echo "--- Compiling CUDA"
-	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin $(CXX) -Xcompiler -march=native,-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin $(CXX) -Xcompiler $(arch),-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 
 g500:  $(OBJECTS)
 	@echo ""
