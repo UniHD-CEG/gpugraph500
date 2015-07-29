@@ -7,14 +7,16 @@
 /*  Authors: Jeremiah Willcock                                             */
 /*           Andrew Lumsdaine                                              */
 
+#ifndef ONESIDED_H
+#define ONESIDED_H
+
 //#include "common.h"
 #include <mpi.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef ONESIDED_H
-#define ONESIDED_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif

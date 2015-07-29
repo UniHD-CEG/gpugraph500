@@ -1,345 +1,239 @@
-#############################################################################
-# Makefile for building: g500
-# This version was tested with CUDA 5.5 and GCC 4.8.2 on KIDS
-#############################################################################
+# Makefile
 
-MAKEFILE      = Makefile
-
-####### Compiler, tools and options
-
-CC            = mpicc
-CXX           = mpicxx
-DEFINES       = 
-CFLAGS        = -m64 -pipe -D_CUDA -std=c99 -fopenmp -O3 -march=native -Wall -W -fPIE $(DEFINES)
-CXXFLAGS      = -m64 -pipe -D_CUDA -std=c++0x -fopenmp -DINSTRUMENTED -O3 -march=native -Wall -W -fPIE $(DEFINES)
-INCPATH       = -I. 
-LINK          = mpicxx
-LFLAGS        = -m64 -fopenmp -Wl,-O3
-LIBS          = $(SUBLIBS) -L"`which nvcc | sed 's,/bin/nvcc$$,,'`"/lib64 -L"`which nvcc | sed 's,/bin/nvcc$$,,'`"/lib -lcudart -lcuda 
-AR            = ar cqs
-RANLIB        = 
-QMAKE         = /usr/lib/x86_64-linux-gnu/qt5/bin/qmake
-TAR           = tar -cf
-COMPRESS      = gzip -9f
-COPY          = cp -f
-SED           = sed
-COPY_FILE     = cp -f
-COPY_DIR      = cp -f -R
-STRIP         = strip
-INSTALL_FILE  = install -m 644 -p
-INSTALL_DIR   = $(COPY_DIR)
-INSTALL_PROGRAM = install -m 755 -p
-DEL_FILE      = rm -f
-SYMLINK       = ln -f -s
-DEL_DIR       = rmdir
-MOVE          = mv -f
-CHK_DIR_EXISTS= test -d
-MKDIR         = mkdir -p
-
-####### Output directory
-
-OBJECTS_DIR   = ./
-
-####### Files
-
-SOURCES       = main.cpp \
-		generator/utils.c \
-		generator/splittable_mrg.c \
-		generator/make_graph.c \
-		generator/graph_generator.c \
-		simplecpubfs.cpp \
-		validate/onesided.c \
-		validate/onesided_emul.c \
-		bitlevelfunctions.cpp \
-		cpubfs_bin.cpp 
-OBJECTS       = ${OBJECTS_DIR}cuda_bfs_cuda.o \
-		main.o \
-		utils.o \
-		splittable_mrg.o \
-		make_graph.o \
-		graph_generator.o \
-		simplecpubfs.o \
-		onesided.o \
-		onesided_emul.o \
-		bitlevelfunctions.o \
-		cpubfs_bin.o
-DIST          = /usr/share/qt5/mkspecs/features/spec_pre.prf \
-		/usr/share/qt5/mkspecs/common/shell-unix.conf \
-		/usr/share/qt5/mkspecs/common/unix.conf \
-		/usr/share/qt5/mkspecs/common/linux.conf \
-		/usr/share/qt5/mkspecs/common/gcc-base.conf \
-		/usr/share/qt5/mkspecs/common/gcc-base-unix.conf \
-		/usr/share/qt5/mkspecs/common/g++-base.conf \
-		/usr/share/qt5/mkspecs/common/g++-unix.conf \
-		/usr/share/qt5/mkspecs/qconfig.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_bootstrap.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_concurrent.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_core.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_dbus.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_gui.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_network.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_opengl.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_platformsupport.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_printsupport.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_qml.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_qmldevtools.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_qmltest.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_quick.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_quickparticles.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_sql.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_testlib.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_widgets.pri \
-		/usr/share/qt5/mkspecs/modules/qt_lib_xml.pri \
-		/usr/share/qt5/mkspecs/features/qt_functions.prf \
-		/usr/share/qt5/mkspecs/features/qt_config.prf \
-		/usr/share/qt5/mkspecs/linux-g++-64/qmake.conf \
-		/usr/share/qt5/mkspecs/features/spec_post.prf \
-		/usr/share/qt5/mkspecs/features/exclusive_builds.prf \
-		/usr/share/qt5/mkspecs/features/default_pre.prf \
-		/usr/share/qt5/mkspecs/features/unix/default_pre.prf \
-		/usr/share/qt5/mkspecs/features/resolve_config.prf \
-		/usr/share/qt5/mkspecs/features/default_post.prf \
-		/usr/share/qt5/mkspecs/features/unix/gdb_dwarf_index.prf \
-		/usr/share/qt5/mkspecs/features/warn_on.prf \
-		/usr/share/qt5/mkspecs/features/wayland-scanner.prf \
-		/usr/share/qt5/mkspecs/features/testcase_targets.prf \
-		/usr/share/qt5/mkspecs/features/exceptions.prf \
-		/usr/share/qt5/mkspecs/features/yacc.prf \
-		/usr/share/qt5/mkspecs/features/lex.prf \
-		g500.pro \
-		g500.pro
-QMAKE_TARGET  = g500
-DESTDIR       = 
-TARGET        = g500
+nvidia_architecture="auto"
+nvidia_ptxas_otimize="no"
+openmp_on_cuda="no"
+openmp_on_cxx_mpi="no"
+scorep_profiler_enable="no"
+instrument_cuda="yes"
+instrument_cxx_mpi="yes"
+custom_openmpi="yes"
+custom_openmpi_path=/home/jromera/openmpi
+use_avx_instructions="yes"
+enable_simd_compression="yes"
+debug="no"
 
 
-first: all
-####### Implicit rules
+ifeq ($(use_avx_instructions), "yes")
+	arch := -mavx
+else
+	arch := -march=native
+endif
 
-.SUFFIXES: .o .c .cpp .cc .cxx .C
+ifeq ($(nvidia_ptxas_otimize), "yes")
+	PTXAS := --ptxas-options="-O3"
+endif
 
-.cpp.o:
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o "$@" "$<"
+ifeq ($(nvidia_architecture), "fermi")
+	NVCCARGS := $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
+else
+	NVCCARGS := $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+endif
 
-.cc.o:
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o "$@" "$<"
+ifeq ($(scorep_profiler_enable), "yes")
+	PROFILER := scorep
+endif
 
-.cxx.o:
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o "$@" "$<"
+ifeq ($(openmp_on_cuda), "yes")
+	CUDA_OPENMP := -fopenmp
+endif
 
-.C.o:
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o "$@" "$<"
+ifeq ($(openmp_on_cxx_mpi), "yes")
+	OPENMP := -fopenmp
+endif
 
-.c.o:
-	$(CC) -c $(CFLAGS) $(INCPATH) -o "$@" "$<"
+ifeq ($(instrument_cuda), "yes")
+	CUDA_INSTRUM := -DINSTRUMENTED
+endif
 
-####### Build rules
+ifeq ($(instrument_cxx_mpi), "yes")
+	INSTRUMENTED := -DINSTRUMENTED
+endif
 
-all: Makefile $(TARGET)
+ifeq ($(debug), "yes")
+	DEFINES += -D_DEBUG
+endif
 
-$(TARGET):  $(OBJECTS)  
-	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(OBJCOMP) $(LIBS)
+ifeq ($(enable_simd_compression), "yes")
+	DEFINES += -D_SIMDCOMPRESS
+	INCPATH := -I. -Icompression/include
+	HEADERS := $(shell ls compression/include/*h)
+else
+	INCPATH := -I.
+	HEADERS :=
+endif
 
-qmake: FORCE
-	@$(QMAKE) -o Makefile g500.pro
+CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
+CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
+NVCC := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
+NVDIR := $(shell echo $(NVCC) | sed 's,/bin/nvcc$$,,')
 
-qmake_all: FORCE
+ifeq ($(custom_openmpi), "yes")
+	export OMPI_CC := $(CC)
+	export OMPI_CXX := $(CXX)
+        MPICC := $(custom_openmpi_path)/bin/mpicc
+        MPICXX := $(custom_openmpi_path)/bin/mpicxx
+else
+        MPICC := mpicc
+        MPICXX := mpicxx
+endif
 
-dist: 
-	@test -d .tmp/g5001.0.0 || mkdir -p .tmp/g5001.0.0
-	$(COPY_FILE) --parents $(SOURCES) $(DIST) .tmp/g5001.0.0/ && $(COPY_FILE) --parents cuda/cuda_bfs.cu .tmp/g5001.0.0/ && (cd `dirname .tmp/g5001.0.0` && $(TAR) g5001.0.0.tar g5001.0.0 && $(COMPRESS) g5001.0.0.tar) && $(MOVE) `dirname .tmp/g5001.0.0`/g5001.0.0.tar.gz . && $(DEL_FILE) -r .tmp/g5001.0.0
+MPICC := $(PROFILER) $(MPICC)
+MPICXX := $(PROFILER) $(MPICXX)
+LINK := $(PROFILER) $(MPICXX)
 
+CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic -O3 -Wall -Wextra
+CCFLAGS := -mavx -std=c99 -pedantic -O3 -Wall -Wextra
+MPICFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic $(OPENMP) -O3 $(arch) -Wall -W -fPIE
+MPICXXFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
+LFLAGS := -m64 -fopenmp -Wl,-O3
+LIBS := -L$(NVDIR)/lib64 -L$(NVDIR)/lib -lcudart -lcuda
 
-clean:compiler_clean 
-	-$(DEL_FILE) $(OBJECTS)
-	-$(DEL_FILE) *~ core *.core
+OUTFILES := $(shell ls *.o)
+SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c simplecpubfs.cpp validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp cpubfs_bin.cpp
+COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o intersection.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
+OBJECTS := cuda_bfs_cuda.o main.o utils.o splittable_mrg.o make_graph.o graph_generator.o simplecpubfs.o onesided.o onesided_emul.o bitlevelfunctions.o cpubfs_bin.o
 
+ifeq ($(enable_simd_compression), "yes")
+	OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
+endif
 
-####### Sub-libraries
+all: clean g500
 
-distclean: clean
-	-$(DEL_FILE) $(TARGET) 
-	-$(DEL_FILE) Makefile
+main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h generator/user_settings.h validate/mpi_workarounds.h generator/utils.h \
+		generator/splittable_mrg.h validate/onesided.h generator/make_graph.h cuda/cuda_bfs.h cuda/cuda_support.hh \
+		../b40c/util/basic_utils.cuh ../b40c/graph/bfs/csr_problem_2d.cuh ../b40c/util/cuda_properties.cuh ../b40c/util/memset_kernel.cuh ../b40c/util/cta_work_progress.cuh ../b40c/util/error_utils.cuh \
+		../b40c/util/device_intrinsics.cuh ../b40c/util/reduction/warp_reduce.cuh ../b40c/util/operators.cuh ../b40c/util/io/modified_load.cuh ../b40c/util/vector_types.cuh ../b40c/util/io/modified_store.cuh \
+		../b40c/util/multiple_buffering.cuh ../b40c/graph/bfs/problem_type.cuh ../b40c/partition/problem_type.cuh ../b40c/radix_sort/sort_utils.cuh \
+		../b40c/graph/bfs/enactor_multi_gpu_2d.cuh ../b40c/util/spine.cuh ../b40c/util/kernel_runtime_stats.cuh ../b40c/graph/bfs/enactor_base.cuh \
+		../b40c/graph/bfs/two_phase/contract_atomic/kernel.cuh ../b40c/util/cta_work_distribution.cuh ../b40c/graph/bfs/two_phase/contract_atomic/cta.cuh ../b40c/util/scan/cooperative_scan.cuh \
+		../b40c/util/srts_grid.cuh ../b40c/util/numeric_traits.cuh ../b40c/util/reduction/cooperative_reduction.cuh ../b40c/util/reduction/serial_reduce.cuh \
+		../b40c/util/scan/serial_scan.cuh ../b40c/util/scan/warp_scan.cuh ../b40c/util/io/initialize_tile.cuh ../b40c/util/io/load_tile.cuh \
+		../b40c/util/io/store_tile.cuh ../b40c/util/io/scatter_tile.cuh ../b40c/util/reduction/tree_reduce.cuh ../b40c/graph/bfs/two_phase/contract_atomic/kernel_policy.cuh \
+		../b40c/util/srts_details.cuh ../b40c/graph/bfs/two_phase/expand_atomic/kernel.cuh ../b40c/graph/bfs/two_phase/expand_atomic/cta.cuh ../b40c/util/soa_tuple.cuh \
+		../b40c/util/scan/soa/cooperative_soa_scan.cuh ../b40c/util/reduction/soa/cooperative_soa_reduction.cuh ../b40c/util/reduction/soa/serial_soa_reduce.cuh ../b40c/util/reduction/soa/warp_soa_reduce.cuh \
+		../b40c/util/scan/soa/warp_soa_scan.cuh ../b40c/util/scan/soa/serial_soa_scan.cuh ../b40c/graph/bfs/two_phase/expand_atomic/kernel_policy.cuh ../b40c/util/srts_soa_details.cuh \
+		../b40c/graph/bfs/partition_contract/policy.cuh ../b40c/partition/policy.cuh ../b40c/partition/spine/kernel.cuh ../b40c/scan/spine/kernel.cuh \
+		../b40c/scan/downsweep/cta.cuh ../b40c/scan/problem_type.cuh ../b40c/reduction/problem_type.cuh ../b40c/scan/kernel_policy.cuh \
+		../b40c/partition/upsweep/tuning_policy.cuh ../b40c/partition/downsweep/tuning_policy.cuh ../b40c/graph/bfs/partition_contract/upsweep/kernel.cuh ../b40c/graph/bfs/partition_contract/upsweep/cta.cuh \
+		../b40c/partition/upsweep/cta.cuh ../b40c/partition/upsweep/aggregate_counters.cuh ../b40c/partition/upsweep/composite_counters.cuh ../b40c/partition/upsweep/tile.cuh \
+		../b40c/graph/bfs/partition_contract/upsweep/tile.cuh ../b40c/graph/bfs/partition_contract/upsweep/kernel_policy.cuh ../b40c/partition/upsweep/kernel_policy.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel.cuh \
+		../b40c/graph/bfs/partition_contract/downsweep/cta.cuh ../b40c/partition/downsweep/cta.cuh ../b40c/graph/bfs/partition_contract/downsweep/tile.cuh \
+		../b40c/partition/downsweep/tile.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh ../b40c/partition/downsweep/kernel_policy.cuh \
+		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h
+	@echo ""
+	@echo "--- Compiling g500"
+	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
 
+bitpacking.o: compression/include/bitpacking.h compression/src/bitpacking.cpp
+ifeq ($(enable_simd_compression), "yes")
+	@echo ""
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
+endif
+	@echo ""
+	@echo "--- Compiling Lemure/SIMDCompression Library"
+	$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
 
-check: first
+intersection.o: compression/include/intersection.h compression/src/intersection.cpp
+	$(CXX) $(CXXFLAGS) -c compression/src/intersection.cpp -Icompression/include
 
-compiler_cuda_make_all: ${OBJECTS_DIR}cuda_bfs_cuda.o
-compiler_cuda_clean:
-	-$(DEL_FILE) ${OBJECTS_DIR}cuda_bfs_cuda.o
-${OBJECTS_DIR}cuda_bfs_cuda.o: cuda/cuda_bfs.cu
-	/usr/local/cuda-7.0/bin/nvcc -c -ccbin g++-4.8 -Xcompiler -m64,-pipe,-D_CUDA,-DINSTRUMENTED,-O3,-std=c++0x,-fopenmp,"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,'`" -std=c++11 -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\" --compiler-options -fno-strict-aliasing -use_fast_math --ptxas-options=-v -m64 -O3 -I ""`which nvcc | sed 's,/bin/nvcc$$,,'`"/include" -I ".." cuda/cuda_bfs.cu -o ${OBJECTS_DIR}cuda_bfs_cuda.o
+benchintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
+	$(CXX) $(CXXFLAGS) -o benchintersection compression/src/benchintersection.cpp intersection.o -Icompression/include
 
-compiler_wayland-server-header_make_all:
-compiler_wayland-server-header_clean:
-compiler_wayland-client-header_make_all:
-compiler_wayland-client-header_clean:
-compiler_wayland-code_make_all:
-compiler_wayland-code_clean:
-compiler_yacc_decl_make_all:
-compiler_yacc_decl_clean:
-compiler_yacc_impl_make_all:
-compiler_yacc_impl_clean:
-compiler_lex_make_all:
-compiler_lex_clean:
-compiler_clean: compiler_cuda_clean 
+likwidintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
+	$(CXX) $(CXXFLAGS) -DLIKWID_MARKERS -pthread -o likwidintersection compression/src/benchintersection.cpp intersection.o -Icompression/include -llikwid
 
-####### Compile
+integratedbitpacking.o: compression/include/integratedbitpacking.h compression/src/integratedbitpacking.cpp
+	$(CXX) $(CXXFLAGS) -c compression/src/integratedbitpacking.cpp -Icompression/include
 
-main.o: main.cpp validate/validate.h \
-		distmatrix2d.hh \
-		generator/graph_generator.h \
-		generator/user_settings.h \
-		validate/mpi_workarounds.h \
-		generator/utils.h \
-		generator/splittable_mrg.h \
-		validate/onesided.h \
-		generator/make_graph.h \
-		#opencl/OCLrunner.hh \
-		#opencl/opencl_bfs.h \
-		cuda/cuda_bfs.h \
-		cuda/cuda_support.hh \
-		../b40c/util/basic_utils.cuh \
-		../b40c/graph/bfs/csr_problem_2d.cuh \
-		../b40c/util/cuda_properties.cuh \
-		../b40c/util/memset_kernel.cuh \
-		../b40c/util/cta_work_progress.cuh \
-		../b40c/util/error_utils.cuh \
-		../b40c/util/device_intrinsics.cuh \
-		../b40c/util/reduction/warp_reduce.cuh \
-		../b40c/util/operators.cuh \
-		../b40c/util/io/modified_load.cuh \
-		../b40c/util/vector_types.cuh \
-		../b40c/util/io/modified_store.cuh \
-		../b40c/util/multiple_buffering.cuh \
-		../b40c/graph/bfs/problem_type.cuh \
-		../b40c/partition/problem_type.cuh \
-		../b40c/radix_sort/sort_utils.cuh \
-		../b40c/graph/bfs/enactor_multi_gpu_2d.cuh \
-		../b40c/util/spine.cuh \
-		../b40c/util/kernel_runtime_stats.cuh \
-		../b40c/graph/bfs/enactor_base.cuh \
-		../b40c/graph/bfs/two_phase/contract_atomic/kernel.cuh \
-		../b40c/util/cta_work_distribution.cuh \
-		../b40c/graph/bfs/two_phase/contract_atomic/cta.cuh \
-		../b40c/util/scan/cooperative_scan.cuh \
-		../b40c/util/srts_grid.cuh \
-		../b40c/util/numeric_traits.cuh \
-		../b40c/util/reduction/cooperative_reduction.cuh \
-		../b40c/util/reduction/serial_reduce.cuh \
-		../b40c/util/scan/serial_scan.cuh \
-		../b40c/util/scan/warp_scan.cuh \
-		../b40c/util/io/initialize_tile.cuh \
-		../b40c/util/io/load_tile.cuh \
-		../b40c/util/io/store_tile.cuh \
-		../b40c/util/io/scatter_tile.cuh \
-		../b40c/util/reduction/tree_reduce.cuh \
-		../b40c/graph/bfs/two_phase/contract_atomic/kernel_policy.cuh \
-		../b40c/util/srts_details.cuh \
-		../b40c/graph/bfs/two_phase/expand_atomic/kernel.cuh \
-		../b40c/graph/bfs/two_phase/expand_atomic/cta.cuh \
-		../b40c/util/soa_tuple.cuh \
-		../b40c/util/scan/soa/cooperative_soa_scan.cuh \
-		../b40c/util/reduction/soa/cooperative_soa_reduction.cuh \
-		../b40c/util/reduction/soa/serial_soa_reduce.cuh \
-		../b40c/util/reduction/soa/warp_soa_reduce.cuh \
-		../b40c/util/scan/soa/warp_soa_scan.cuh \
-		../b40c/util/scan/soa/serial_soa_scan.cuh \
-		../b40c/graph/bfs/two_phase/expand_atomic/kernel_policy.cuh \
-		../b40c/util/srts_soa_details.cuh \
-		../b40c/graph/bfs/partition_contract/policy.cuh \
-		../b40c/partition/policy.cuh \
-		../b40c/partition/spine/kernel.cuh \
-		../b40c/scan/spine/kernel.cuh \
-		../b40c/scan/downsweep/cta.cuh \
-		../b40c/scan/problem_type.cuh \
-		../b40c/reduction/problem_type.cuh \
-		../b40c/scan/kernel_policy.cuh \
-		../b40c/partition/upsweep/tuning_policy.cuh \
-		../b40c/partition/downsweep/tuning_policy.cuh \
-		../b40c/graph/bfs/partition_contract/upsweep/kernel.cuh \
-		../b40c/graph/bfs/partition_contract/upsweep/cta.cuh \
-		../b40c/partition/upsweep/cta.cuh \
-		../b40c/partition/upsweep/aggregate_counters.cuh \
-		../b40c/partition/upsweep/composite_counters.cuh \
-		../b40c/partition/upsweep/tile.cuh \
-		../b40c/graph/bfs/partition_contract/upsweep/tile.cuh \
-		../b40c/graph/bfs/partition_contract/upsweep/kernel_policy.cuh \
-		../b40c/partition/upsweep/kernel_policy.cuh \
-		../b40c/graph/bfs/partition_contract/downsweep/kernel.cuh \
-		../b40c/graph/bfs/partition_contract/downsweep/cta.cuh \
-		../b40c/partition/downsweep/cta.cuh \
-		../b40c/graph/bfs/partition_contract/downsweep/tile.cuh \
-		../b40c/partition/downsweep/tile.cuh \
-		../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh \
-		../b40c/partition/downsweep/kernel_policy.cuh \
-		../b40c/graph/bfs/copy/kernel.cuh \
-		../b40c/graph/bfs/copy/cta.cuh \
-		../b40c/graph/bfs/copy/kernel_policy.cuh \
-		globalbfs.hh \
-		bitlevelfunctions.h \
-		cpubfs_bin.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
+simdpackedsearch.o:  compression/src/simdpackedsearch.c
+	$(CC) $(CCFLAGS) -c compression/src/simdpackedsearch.c
 
-utils.o: generator/utils.c generator/splittable_mrg.h \
-		generator/graph_generator.h \
-		generator/user_settings.h \
-		generator/utils.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o utils.o generator/utils.c
+simdpackedselect.o:  compression/src/simdpackedselect.c
+	$(CC) $(CCFLAGS) -c compression/src/simdpackedselect.c
 
-splittable_mrg.o: generator/splittable_mrg.c generator/mod_arith.h \
-		generator/user_settings.h \
-		generator/mod_arith_64bit.h \
-		generator/mod_arith_32bit.h \
-		generator/splittable_mrg.h \
-		generator/mrg_transitions.c
-	$(CC) -c $(CFLAGS) $(INCPATH) -o splittable_mrg.o generator/splittable_mrg.c
+streamvbyte.o:  compression/src/streamvbyte.c
+	$(CC) $(CCFLAGS) -c compression/src/streamvbyte.c
 
-make_graph.o: generator/make_graph.c generator/graph_generator.h \
-		generator/user_settings.h \
-		generator/utils.h \
-		generator/splittable_mrg.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o make_graph.o generator/make_graph.c
+varintdecode.o:  compression/src/varintdecode.c
+	$(CC) $(CCFLAGS) -c compression/src/varintdecode.c
 
-graph_generator.o: generator/graph_generator.c generator/user_settings.h \
-		generator/splittable_mrg.h \
-		generator/graph_generator.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o graph_generator.o generator/graph_generator.c
+simdbitpacking.o: compression/include/simdbitpacking.h compression/src/simdbitpacking.cpp
+	$(CXX) $(CXXFLAGS) -c compression/src/simdbitpacking.cpp -Icompression/include
 
-simplecpubfs.o: simplecpubfs.cpp simplecpubfs.h \
-		globalbfs.hh \
-		distmatrix2d.hh \
-		generator/graph_generator.h \
-		generator/user_settings.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o simplecpubfs.o simplecpubfs.cpp
+usimdbitpacking.o: compression/include/usimdbitpacking.h compression/src/usimdbitpacking.cpp
+	$(CXX) $(CXXFLAGS) -c compression/src/usimdbitpacking.cpp -Icompression/include
 
-onesided.o: validate/onesided.c validate/mpi_workarounds.h \
-		validate/onesided.h \
-		generator/utils.h \
-		generator/splittable_mrg.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o onesided.o validate/onesided.c
+frameofreference.o: compression/src/frameofreference.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c compression/src/frameofreference.cpp -Icompression/include
 
-onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h \
-		validate/onesided.h \
-		generator/utils.h \
-		generator/splittable_mrg.h
-	$(CC) -c $(CFLAGS) $(INCPATH) -o onesided_emul.o validate/onesided_emul.c
+for.o: compression/src/for.c $(HEADERS)
+	$(CC) $(CCFLAGS) -c compression/src/for.c -Icompression/include
+
+simdintegratedbitpacking.o: compression/include/simdintegratedbitpacking.h compression/include/delta.h compression/src/simdintegratedbitpacking.cpp
+	$(CXX) $(CXXFLAGS) -c compression/src/simdintegratedbitpacking.cpp -Icompression/include
+
+utils.o: generator/utils.c generator/splittable_mrg.h generator/graph_generator.h generator/user_settings.h generator/utils.h
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o utils.o generator/utils.c
+
+splittable_mrg.o: generator/splittable_mrg.c generator/mod_arith.h generator/user_settings.h generator/mod_arith_64bit.h generator/mod_arith_32bit.h \
+		generator/splittable_mrg.h generator/mrg_transitions.c
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o splittable_mrg.o generator/splittable_mrg.c
+
+make_graph.o: generator/make_graph.c generator/graph_generator.h generator/user_settings.h generator/utils.h generator/splittable_mrg.h
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o make_graph.o generator/make_graph.c
+
+graph_generator.o: generator/graph_generator.c generator/user_settings.h generator/splittable_mrg.h generator/graph_generator.h
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o graph_generator.o generator/graph_generator.c
+
+simplecpubfs.o: simplecpubfs.cpp simplecpubfs.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
+	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o simplecpubfs.o simplecpubfs.cpp
+
+onesided.o: validate/onesided.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided.o validate/onesided.c
+
+onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
+	$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided_emul.o validate/onesided_emul.c
 
 bitlevelfunctions.o: bitlevelfunctions.cpp bitlevelfunctions.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o bitlevelfunctions.o bitlevelfunctions.cpp
+	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o bitlevelfunctions.o bitlevelfunctions.cpp
 
-cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h \
-		globalbfs.hh \
-		distmatrix2d.hh \
-		generator/graph_generator.h \
-		generator/user_settings.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o cpubfs_bin.o cpubfs_bin.cpp
+cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
+	$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o cpubfs_bin.o cpubfs_bin.cpp
 
-####### Install
+cuda_bfs_cuda.o: cuda/cuda_bfs.cu
+	@echo ""
+ifneq ($(enable_simd_compression), "yes")
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
+endif
+	@echo ""
+	@echo "--- Compiling CUDA"
+	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin $(CXX) -Xcompiler $(arch),-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`mpicxx -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 
-install:   FORCE
+g500:  $(OBJECTS)
+	@echo ""
+	@echo "============================================================================"
+	@echo "== Linking"
+	@echo "============================================================================"
+	@echo ""
+	@echo "--- Linking"
+	$(LINK) $(LFLAGS) -o $@ $(OBJECTS) $(OBJCOMP) $(LIBS)
 
-uninstall:   FORCE
+clean:
+	@echo ""
+	@echo "============================================================================"
+	@echo "== Cleaning"
+	@echo "============================================================================"
+	@echo ""
+	@echo "--- Cleaning"
+	rm -rf $(OUTFILES) $(OBJECTS)
+	rm -rf *~ core *.core example g500
 
-FORCE:
+example:  $(HEADERS) compression/example.cpp  $(COMPRESSION_OBJECTS)
+	$(CXX) $(CXXFLAGS)  -o example compression/example.cpp  $(COMPRESSION_OBJECTS) -Icompression/include
 
+.PHONY: g500 clean

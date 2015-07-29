@@ -6,19 +6,20 @@
  * Adaption for set operations: Matthias Hauck, 2014
  *
  */
-#include <mpi.h>
-#include <omp.h>
-#include <cmath>
-
-#include <algorithm>
-#include <functional>
-
-#include <sstream>
-
-#include "bitlevelfunctions.h"
 
 #ifndef VREDUCE_HPP
 #define VREDUCE_HPP
+
+#include <vector>
+#include <mpi.h>
+#include <omp.h>
+#include <cmath>
+#include <algorithm>
+#include <functional>
+#include <sstream>
+#include "bitlevelfunctions.h"
+
+
 template<class T>
 void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
              std::function<void(T, long, T*&, int& )>& get, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
@@ -99,7 +100,7 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
 
         // get(offset, csize, send, psize_to);
 
-         for(int it=0; it < intLdSize; it++){
+         for(int it=0; it < intLdSize; ++it){
              lowerId = currentSliceSize/2;
              upperId = currentSliceSize - lowerId;
 
@@ -171,11 +172,11 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
      }
 
      // Transmission of the final results
-     int sizes[communicatorSize];
-     int disps[communicatorSize];
+     std::vector<int> sizes(communicatorSize);
+     std::vector<int> disps(communicatorSize);
 
      // Transmission of the subslice sizes
-     MPI_Allgather(&psizeTo ,1,MPI_INT,sizes,1,MPI_INT,comm);
+     MPI_Allgather(&psizeTo ,1,MPI_INT,&sizes[0],1,MPI_INT,comm);
      //Computation of displacements
      unsigned int lastReversedSliceIDs = 0;
      unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -194,8 +195,8 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
      rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
      MPI_Allgatherv(send, sizes[communicatorRank],
-         type, recv_buff, sizes,
-         disps, type, comm);
+         type, recv_buff, &sizes[0],
+         &disps[0], type, comm);
 
 }
 
