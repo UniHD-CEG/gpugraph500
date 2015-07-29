@@ -46,3 +46,5 @@ cpu_2d/testcodecs
 cpu_2d/testintegration
 cpu_2d/unit
 temp.tmp
+*.tgp
+eval/tmp.tmp

@@ -1,20 +1,50 @@
 #!/bin/bash
 
 
+function set_colors {
+  colors="$1"
+
+if [ "x$colors" = "xyes" ]; then
+  fancyx='\u0058'
+  fancyo='\u03BF'
+  checkmark='\u221A'
+  nocolor='\e[0m'
+  red='\e[1;31m'
+  green='\e[0;32m'
+else
+  fancyx='x'
+  fancyo='o'
+  checkmark='.'
+  nocolor=''
+  red=''
+  green=''
+fi
+}
+
 function test_result {
   local res=$1 
   local error=false
+
   if [ $res -ne 0 ]; then
     error=true
   fi
-  eval "$2=$error"
+
+  eval "$2='$error'"
 }
 
 function get_size {
   local file=$1
  
   size=`ls -l $file 2>/dev/null | awk '{ print $5 }'`
-  eval "$2=$size"
+  res=$?
+
+  test_result $res error
+  if $error ; then
+echo -n " errorsize "
+    size=0
+  fi
+
+  eval "$2='$size'"
 }
 
 function clean_char {
@@ -45,23 +75,26 @@ function update_progress {
       tput cub 4
       ;; 
   esac
-
 }
 
 function cancel_job {
   local jobid=$1
   local progress=$2
 
-# echo "killing $jobid"
-  clean_char
-  update_progress $progress
-  scancel $jobid &> /dev/null
   squeue=`squeue | grep -i $jobid`
-
+  if [ "x$squeue" != "x" ]; then
+    # clean_char
+echo -n " $jobid kill1 "
+    update_progress $progress
+    scancel $jobid &> /dev/null
+    squeue=`squeue | grep -i $jobid`
+  fi
+    
   while [ ! "x$squeue" = "x" ]; do
     sleep 1s
+echo -n " kill2 "
     squeue=`squeue | grep -i $jobid`
-    let "progress+=1"
+    progress=$((progress + 1))
     update_progress $progress
   done
 }
@@ -72,13 +105,15 @@ function wait_and_process {
   local file="slurm-$1.out"
   local hasfinished=false
   local validation=""
-  local increment=$(($sf / 10))
+  local initial_filesize=0
+  local increment=$(( $sf / 5 )) 
+  success="no"
+
   if [ $sf -ge 20 ]; then 
-    local modulus=$((2 + $increment))
+    local modulus=$((6 + $increment))
   else 
     local modulus=2
   fi
-  initial_filesize=0
  
   echo -n " "
   tput cub1
@@ -86,13 +121,14 @@ function wait_and_process {
   while [ ! -f $file ]; do
     sleep 1s
     update_progress $i
+    i=$(($i + 1))
   done
- 
-  # get_size $file initial_filesize
+
+  i=1
   while ! $hasfinished ; do
-echo -n "-$(( $i % $modulus ))"
     if [ $(( $i % $modulus ))  -eq 0 ]; then
         get_size $file current_filesize 
+echo -n " $initial_filesize-$current_filesize"
         if [ $current_filesize -eq $initial_filesize ]; then
            hasfinished=true
         else
@@ -100,29 +136,27 @@ echo -n "-$(( $i % $modulus ))"
         fi
       fi 
     sleep 1s
-    let "i+=1"
+    i=$(($i + 1))
     update_progress $i
   done
- 
-  if [ -f $file ];then 
-    validation=`grep "Validation:" $file | grep "passed"`
-  fi 
-
-  if  [ ! "x$validation" = "x" ]; then
-    success=true
-  else 
-    success=false
-  fi
-  
   cancel_job $jobid $i
-  eval "$3=$success"
+
+  validation=`cat $file | grep "Validation:" | grep "passed"`
+  if  [ ! "x$validation" = "x" ]; then
+    success="yes"
+  fi
+
+  eval "$3='$success'"
 }
 
 function print_header {
   local scale_factors="$1"
   
-  echo ""; echo -e "${green}[ $checkmark ] = success   ${red}[ $fancyx ] = error${nocolor}"
-  printf "%-20s" "script / sf"
+  printf "\n"
+  echo -ne "$green[ $checkmark ] = success"
+  echo -ne "   $red[ $fancyx ] = error"
+  echo -ne "   [ $fancyo ] = error / bug$nocolor"
+  printf "\n%-20s" "script / sf"
   for sf in $scale_factors; do
     if [ $sf -lt 10 ]; then
       echo -n "  $sf"
@@ -144,18 +178,22 @@ function iterate {
   local lock="$3"
   local error=false
 
+  if [ "x$script" = "xo16p8n.rsh" ] || [ "x$script" = "xo9p8n.rsh" ]; then
+    return 0
+  fi
+  
   sbatch $script $sf &> $lock
   res=$?
+
   test_result $res error 
   jobid=`head -1 $lock | grep "Submitted batch" | sed -e 's/[^0-9]//g'`
 
-# echo "starting $jobid"
   if $error || [ "x$jobid" = "x" ]; then
-     echo -ne "  ${red}d${fancyx}${nocolor}"
+     echo -ne "  ${red}${fancyo}${nocolor}"
   else 
      wait_and_process $jobid $sf success
      clean_char
-     if $success ; then
+     if [ "x$success" = "xyes" ] ; then
         echo -ne "  ${green}${checkmark}${nocolor}"
      else
         echo -ne "  ${red}${fancyx}${nocolor}"
@@ -207,19 +245,5 @@ if [ $1 -gt $2 ]; then
 fi
 
 
-colors="yes"
-
-if [ "x$colors" = "xyes" ]; then
-  fancyx='\u0058'
-  checkmark='\u221A'
-  nocolor='\e[0m'
-  red='\e[1;31m'
-  green='\e[0;32m'
-else 
-  fancyx='x'
-  checkmark='.'
-  red=''     
-  green=''
-  nocolor=''
-fi
+set_colors "yes"
 main $1 $2

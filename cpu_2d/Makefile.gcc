@@ -10,7 +10,7 @@ instrument_cxx_mpi="yes"
 custom_openmpi="yes"
 custom_openmpi_path=/home/jromera/openmpi
 use_avx_instructions="yes"
-debug="yes"
+debug="no"
 
 ifeq ($(use_avx_instructions), "yes")
 	arch = -mavx
