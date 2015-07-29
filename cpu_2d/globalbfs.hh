@@ -301,8 +301,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::setBackInqueue() { }
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
-
-int mtypesize = 8 * sizeof(MType);
+    int mtypesize = 8 * sizeof(MType);
 
 #ifdef _OPENMP
     #pragma omp parallel for
@@ -337,13 +336,14 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
     tmpmask = new MType[mask_size];
 }
 
+
 template<class Derived, class FQ_T, class MType, class STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
     delete[] owenmask;
     delete[] tmpmask;
 }
 
-/*
+/**********************************************************************************
  * BFS search:
  * 0) Node 0 sends start vertex to all nodes
  * 1) Nodes test, if they are responsible for this vertex and push it,
@@ -352,7 +352,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
  * 3) Test if anything is done
  * 4) global expansion
  * 5) global fold
-*/
+ **********************************************************************************/
 
 #ifdef INSTRUMENTED
     template<class Derived,class FQ_T,class MType,class STORE>
@@ -373,10 +373,10 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
     colcom = 0;
 #endif
 
-// 0
+// 0) Node 0 sends start vertex to all nodes
     MPI_Bcast(&startVertex, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-// 1
 
+// 1) Nodes test, if they are responsible for this vertex and push it, if they are in there fq
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
@@ -388,7 +388,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
     lqueue +=tend-tstart;
 #endif
 
-// 2
+// 2) Local expansion
     int iter = 0;
     while (true) {
 
@@ -402,7 +402,8 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
     tend = MPI_Wtime();
     lexp +=tend-tstart;
 #endif
-// 3
+
+// 3) Test if anything is done
         int anynewnodes, anynewnodes_global;
 
 #ifdef INSTRUMENTED
@@ -430,21 +431,21 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
     lqueue += tend-tstart;
 #endif
 
-            //MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
+            // MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
             static_cast<Derived *>(this)->generatOwenMask();
             allReduceBitCompressed(predecessor,
                                    recv_fq_buff, // have to be changed for bitmap queue
                                    owenmask, tmpmask);
 
 #ifdef INSTRUMENTED
-        tend = MPI_Wtime();
-        predlistred = tend-tstart;
+    tend = MPI_Wtime();
+    predlistred = tend-tstart;
 #endif
 
-            return; //There is nothing too do. Finish iteration.
+            return; // There is nothing too do. Finish iteration.
         }
 
-// 4
+// 4) global expansion
 #ifdef INSTRUMENTED
     comtstart = MPI_Wtime();
     tstart = MPI_Wtime();
@@ -485,7 +486,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
     colcom += comtend-comtstart;
 #endif
 
-// 5
+// 5) global fold
 #ifdef INSTRUMENTED
     comtstart = MPI_Wtime();
 #endif
