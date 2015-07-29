@@ -40,7 +40,6 @@ function get_size {
 
   test_result $res error
   if $error ; then
-echo -n " errorsize "
     size=0
   fi
 
@@ -83,8 +82,6 @@ function cancel_job {
 
   squeue=`squeue | grep -i $jobid`
   if [ "x$squeue" != "x" ]; then
-    # clean_char
-echo -n " $jobid kill1 "
     update_progress $progress
     scancel $jobid &> /dev/null
     squeue=`squeue | grep -i $jobid`
@@ -92,7 +89,6 @@ echo -n " $jobid kill1 "
     
   while [ ! "x$squeue" = "x" ]; do
     sleep 1s
-echo -n " kill2 "
     squeue=`squeue | grep -i $jobid`
     progress=$((progress + 1))
     update_progress $progress
@@ -108,11 +104,14 @@ function wait_and_process {
   local initial_filesize=0
   local increment=$(( $sf / 5 )) 
   success="no"
+  local modulus=$(( 6 + $increment))
 
-  if [ $sf -ge 20 ]; then 
-    local modulus=$((6 + $increment))
-  else 
+  if [ $sf -le 15 ]; then 
     local modulus=2
+  elif [ $sf -le 20 ]; then
+    local modulus=$(($increment - 1))
+  else
+    local modulus=$((6 + $increment))    
   fi
  
   echo -n " "
@@ -128,7 +127,6 @@ function wait_and_process {
   while ! $hasfinished ; do
     if [ $(( $i % $modulus ))  -eq 0 ]; then
         get_size $file current_filesize 
-echo -n " $initial_filesize-$current_filesize"
         if [ $current_filesize -eq $initial_filesize ]; then
            hasfinished=true
         else
@@ -178,10 +176,6 @@ function iterate {
   local lock="$3"
   local error=false
 
-  if [ "x$script" = "xo16p8n.rsh" ] || [ "x$script" = "xo9p8n.rsh" ]; then
-    return 0
-  fi
-  
   sbatch $script $sf &> $lock
   res=$?
 
