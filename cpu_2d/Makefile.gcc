@@ -9,7 +9,14 @@ instrument_cuda="yes"
 instrument_cxx_mpi="yes"
 custom_openmpi="yes"
 custom_openmpi_path=/home/jromera/openmpi
-debug="no"
+use_avx_instructions="yes"
+debug="yes"
+
+ifeq ($(use_avx_instructions), "yes")
+	arch = -mavx
+else
+	arch = -march=native
+endif
 
 ifeq ($(nvidia_ptxas_otimize), "yes")
 	PTXAS = --ptxas-options="-O3"
@@ -67,8 +74,8 @@ LINK := $(PROFILER) $(MPICXX)
 
 CXXFLAGS 	= -mavx -std=c++11  -Weffc++ -pedantic -O3 -Wall -Wextra
 CCFLAGS 	= -mavx -std=c99 -pedantic -O3 -Wall -Wextra
-MPICFLAGS 	= -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic $(OPENMP) -O3 -march=native -Wall -W -fPIE
-MPICXXFLAGS = -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -pedantic $(OPENMP) $(INSTRUMENTED) -O3 -march=native -Wall -W -fPIE
+MPICFLAGS 	= -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic $(OPENMP) -O3 $(arch) -Wall -W -fPIE
+MPICXXFLAGS = -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
 LFLAGS 		= -m64 -fopenmp -Wl,-O3
 INCPATH		= -I. -Icompression/include
 INCPATH		= -I.

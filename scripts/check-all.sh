@@ -52,6 +52,7 @@ function cancel_job {
   local jobid=$1
   local progress=$2
 
+# echo "killing $jobid"
   clean_char
   update_progress $progress
   scancel $jobid &> /dev/null
@@ -67,29 +68,37 @@ function cancel_job {
 
 function wait_and_process {
   local jobid=$1
+  local sf=$2
   local file="slurm-$1.out"
   local hasfinished=false
   local validation=""
-
-  echo -n " "
-  tput cub1    
-  sleep 1s
-  if [ ! -f $file ]; then
-    hasfinished=true
+  local increment=$(($sf / 10))
+  if [ $sf -ge 20 ]; then 
+    local modulus=$((2 + $increment))
+  else 
+    local modulus=2
   fi
-  
-  get_size $file initial_filesize
-  i=1
-  update_progress $i
+  initial_filesize=0
+ 
+  echo -n " "
+  tput cub1
+  i=1    
+  while [ ! -f $file ]; do
+    sleep 1s
+    update_progress $i
+  done
+ 
+  # get_size $file initial_filesize
   while ! $hasfinished ; do
-    if [ $(( $i % 3 ))  -eq 0 ]; then
-      get_size $file current_filesize 
-      if [ $current_filesize -eq $initial_filesize ];then
-         hasfinished=true
-       else
-         get_size $file initial_filesize
-       fi 
-    fi
+echo -n "-$(( $i % $modulus ))"
+    if [ $(( $i % $modulus ))  -eq 0 ]; then
+        get_size $file current_filesize 
+        if [ $current_filesize -eq $initial_filesize ]; then
+           hasfinished=true
+        else
+           get_size $file initial_filesize
+        fi
+      fi 
     sleep 1s
     let "i+=1"
     update_progress $i
@@ -106,7 +115,7 @@ function wait_and_process {
   fi
   
   cancel_job $jobid $i
-  eval "$2=$success"
+  eval "$3=$success"
 }
 
 function print_header {
@@ -134,16 +143,17 @@ function iterate {
   local sf=$2
   local lock="$3"
   local error=false
-  
+
   sbatch $script $sf &> $lock
   res=$?
   test_result $res error 
   jobid=`head -1 $lock | grep "Submitted batch" | sed -e 's/[^0-9]//g'`
 
+# echo "starting $jobid"
   if $error || [ "x$jobid" = "x" ]; then
-     echo -ne "  ${red}${fancyx}${nocolor}"
+     echo -ne "  ${red}d${fancyx}${nocolor}"
   else 
-     wait_and_process $jobid success
+     wait_and_process $jobid $sf success
      clean_char
      if $success ; then
         echo -ne "  ${green}${checkmark}${nocolor}"
