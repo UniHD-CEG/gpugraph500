@@ -88,7 +88,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     MPI_Status status;
     int communicatorSize, communicatorRank, intLdSize, power2intLdSize, residuum;
     int psize = mask_size;
-
+    int mtypesize = 8 * sizeof(MType);
     //step 1
     MPI_Comm_size(col_comm, &communicatorSize);
     MPI_Comm_rank(col_comm, &communicatorRank);
@@ -103,7 +103,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank + 1, 0,
                          tmpmap, psize, bm_type, communicatorRank + 1, 0,
                          col_comm, &status);
-            for (int i = 0; i < psize; i++) {
+            for (int i = 0; i < psize; ++i) {
                 tmpmap[i] = tmpmap[i] & ~owenmap[i];
                 owenmap[i] = owenmap[i] | tmpmap[i];
             }
@@ -112,10 +112,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             int p = 0;
             for (int i = 0; i < psize; ++i) {
                 MType tmpm = tmpmap[i];
+                int size = i * mtypesize;
                 while (tmpm != 0) {
                     int last = ffsl(tmpm) - 1;
-                    owen[i * 8 * sizeof(MType) + last] = tmp[p];
-                    p++;
+                    owen[size + last] = tmp[p];
+                    ++p;
                     tmpm ^= (1 << last);
                 }
             }
@@ -124,16 +125,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank - 1, 0,
                          tmpmap, psize, bm_type, communicatorRank - 1, 0,
                          col_comm, &status);
-            for (int i = 0; i < psize; i++) {
+            for (int i = 0; i < psize; ++i) {
                 tmpmap[i] = ~tmpmap[i] & owenmap[i];
             }
             int p = 0;
-            for (int i = 0; i < psize; i++) {
+            for (int i = 0; i < psize; ++i) {
                 MType tmpm = tmpmap[i];
+                int size = i * mtypesize;
                 while (tmpm != 0) {
                     int last = ffsl(tmpm) - 1;
-                    tmp[p] = owen[i * 8 * sizeof(MType) + last];
-                    p++;
+                    tmp[p] = owen[size + last];
+                    ++p;
                     tmpm ^= (1 << last);
                 }
             }
@@ -156,7 +158,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         vrank = newRank(communicatorRank);
         offset = 0;
 
-        for (int it = 0; it < intLdSize; it++) {
+        for (int it = 0; it < intLdSize; ++it) {
             lowers = ssize / 2; //lower slice size
             uppers = ssize - lowers; //upper slice size
 
@@ -167,38 +169,43 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                              tmpmap + offset, ssize, bm_type, oldRank((vrank + (1 << it)) & (power2intLdSize - 1)),
                              (it << 1) + 2,
                              col_comm, &status);
-                for (int i = 0; i < lowers; i++) {
-                    tmpmap[i + offset] = tmpmap[i + offset] & ~owenmap[i + offset];
-                    owenmap[i + offset] = owenmap[i + offset] | tmpmap[i + offset];
+                for (int i = 0; i < lowers; ++i) {
+		    int ioffset = i + offset;	
+                    tmpmap[ioffset] = tmpmap[ioffset] & ~owenmap[ioffset];
+                    owenmap[ioffset] = owenmap[ioffset] | tmpmap[ioffset];
                 }
-                for (int i = lowers; i < ssize; i++) {
-                    tmpmap[i + offset] = (~tmpmap[i + offset]) & owenmap[i + offset];
+                for (int i = lowers; i < ssize; ++i) {
+		    int ioffset = i + offset;	
+                    tmpmap[ioffset] = (~tmpmap[ioffset]) & owenmap[ioffset];
                 }
                 //Generation of foreign updates
                 int p = 0;
-                for (int i = 0; i < uppers; i++) {
+                for (int i = 0; i < uppers; ++i) {
                     MType tmpm = tmpmap[i + offset + lowers];
+		    int size = lowers * mtypesize;
+                    int index = (i + offset + lowers) * mtypesize;	
                     while (tmpm != 0) {
                         int last = ffsl(tmpm) - 1;
-                        tmp[lowers * 8 * sizeof(MType) + p] = owen[(i + offset + lowers) * 8 * sizeof(MType) + last];
-                        p++;
+                        tmp[size + p] = owen[index + last];
+                        ++p;
                         tmpm ^= (1 << last);
                     }
                 }
                 //Transmission of updates
-                MPI_Sendrecv(tmp + lowers * 8 * sizeof(MType), p, fq_tp_type,
+                MPI_Sendrecv(tmp + lowers * mtypesize, p, fq_tp_type,
                              oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
-                             tmp, lowers * 8 * sizeof(MType), fq_tp_type,
+                             tmp, lowers * mtypesize, fq_tp_type,
                              oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
                              col_comm, &status);
                 //Updates for own data
                 p = 0;
-                for (int i = 0; i < lowers; i++) {
+                for (int i = 0; i < lowers; ++i) {
                     MType tmpm = tmpmap[offset + i];
+		    int index = (i + offset) * mtypesize;
                     while (tmpm != 0) {
                         int last = ffsl(tmpm) - 1;
-                        owen[(i + offset) * 8 * sizeof(MType) + last] = tmp[p];
-                        p++;
+                        owen[index + last] = tmp[p];
+                        ++p;
                         tmpm ^= (1 << last);
                     }
                 }
@@ -210,28 +217,28 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                              tmpmap + offset, ssize, bm_type,
                              oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 2,
                              col_comm, &status);
-                for (int i = 0; i < lowers; i++) {
+                for (int i = 0; i < lowers; ++i) {
                     tmpmap[i + offset] = (~tmpmap[i + offset]) & owenmap[i + offset];
                 }
-                for (int i = lowers; i < ssize; i++) {
+                for (int i = lowers; i < ssize; ++i) {
                     tmpmap[i + offset] = tmpmap[i + offset] & ~owenmap[i + offset];
                     owenmap[i + offset] = owenmap[i + offset] | tmpmap[i + offset];
                 }
                 //Generation of foreign updates
                 int p = 0;
-                for (int i = 0; i < lowers; i++) {
+                for (int i = 0; i < lowers; ++i) {
                     MType tmpm = tmpmap[i + offset];
                     while (tmpm != 0) {
                         int last = ffsl(tmpm) - 1;
-                        tmp[p] = owen[(i + offset) * 8 * sizeof(MType) + last];
-                        p++;
+                        tmp[p] = owen[(i + offset) * mtypesize + last];
+                        ++p;
                         tmpm ^= (1 << last);
                     }
                 }
                 //Transmission of updates
                 MPI_Sendrecv(tmp, p, fq_tp_type,
                              oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
-                             tmp + lowers * 8 * sizeof(MType), uppers * 8 * sizeof(MType), fq_tp_type,
+                             tmp + lowers * mtypesize, uppers * mtypesize, fq_tp_type,
                              oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
                              col_comm, &status);
 
@@ -239,14 +246,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 p = 0;
                 for (int i = 0; i < uppers; ++i) {
                     MType tmpm = tmpmap[offset + lowers + i];
+		    int lindex = (i + offset + lowers) * mtypesize;
+		    int rindex = lowers * mtypesize;
                     while (tmpm != 0) {
                         int last = ffsl(tmpm) - 1;
-                        owen[(i + offset + lowers) * 8 * sizeof(MType) + last] = tmp[p + lowers * 8 * sizeof(MType)];
-                        p++;
+                        owen[lindex + last] = tmp[p + rindex];
+                        ++p;
                         tmpm ^= (1 << last);
                     }
                 }
-
                 offset += lowers;
                 ssize = uppers;
             }
@@ -259,14 +267,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
 
-    sizes[lastTargetNode] = ((psize) >> intLdSize) * (sizeof(MType) * 8);
+    sizes[lastTargetNode] = ((psize) >> intLdSize) * mtypesize;
     disps[lastTargetNode] = 0;
 
     for (unsigned int slice = 1; slice < power2intLdSize; ++slice) {
         unsigned int reversedSliceIDs = reverse(slice, intLdSize);
         unsigned int targetNode = oldRank(reversedSliceIDs);
-        sizes[targetNode] = (psize >> intLdSize) * sizeof(MType) * 8;
-        disps[targetNode] = ((slice * psize) >> intLdSize) * sizeof(MType) * 8;
+        sizes[targetNode] = (psize >> intLdSize) * mtypesize;
+        disps[targetNode] = ((slice * psize) >> intLdSize) * mtypesize;
         lastTargetNode = targetNode;
     }
     //nodes without a partial resulty
@@ -294,14 +302,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::setBackInqueue() { }
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
+
+int mtypesize = 8 * sizeof(MType);
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
-    for (long i = 0; i < mask_size; i++) {
+    for (long i = 0; i < mask_size; ++i) {
         MType tmp = 0;
-        for (long j = 0; j < 8 * sizeof(MType); j++) {
-            if ((predecessor[i * 8 * sizeof(MType) + j] != -1) &&
-                ((i * 8 * sizeof(MType) + j) < store.getLocColLength()))
+        int index = i * mtypesize;
+        for (long j = 0; j < mtypesize; ++j) {
+            if ((predecessor[index + j] != -1) &&
+                ((index + j) < store.getLocColLength()))
                 tmp |= 1 << j;
         }
         owenmask[i] = tmp;
@@ -310,6 +321,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 template<class Derived, class FQ_T, class MType, class STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store) {
+    int mtypesize = 8 * sizeof(MType);
     // Split communicator into row and column communicator
     // Split by row, rank by column
     MPI_Comm_split(MPI_COMM_WORLD, store.getLocalRowID(), store.getLocalColumnID(), &row_comm);
@@ -318,8 +330,8 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
 
     fold_fq_props = store.getFoldProperties();
 
-    mask_size = (store.getLocColLength() / (8 * sizeof(MType))) +
-                ((store.getLocColLength() % (8 * sizeof(MType)) > 0) ? 1 : 0);
+    mask_size = (store.getLocColLength() / mtypesize) +
+                ((store.getLocColLength() % mtypesize > 0) ? 1 : 0);
     owenmask = new MType[mask_size];
     tmpmask = new MType[mask_size];
 }
@@ -457,7 +469,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
     comtstart = MPI_Wtime();
 #endif
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
-             it != fold_fq_props.end(); it++) {
+             it != fold_fq_props.end(); ++it) {
             if (it->sendColSl == store.getLocalColumnID()) {
                 FQ_T *startaddr;
                 int outsize;
