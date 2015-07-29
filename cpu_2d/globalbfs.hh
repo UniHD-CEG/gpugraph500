@@ -44,15 +44,16 @@ protected:
     int64_t mask_size;
 
     // Functions that have to be implemented by the children
-    //void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
-    //void getOutgoingFQ(FQ_T* &startaddr, vtxtype& outsize)=0;
-    //void setModOutgoingFQ(FQ_T* startaddr, long insize)=0; //startaddr: 0, self modification
-    //void getOutgoingFQ(vtxtype globalstart, vtxtype size, FQ_T* &startaddr, vtxtype& outsize)=0;
-    //void setIncommingFQ(vtxtype globalstart, vtxtype size, FQ_T* startaddr, vtxtype& insize_max)=0;
-    //bool istheresomethingnew()=0;           //to detect if finished
-    //void setStartVertex(const vtxtype start)=0;
-    //void runLocalBFS()=0;
-    //For accelerators with owen memory
+    // void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
+    // void getOutgoingFQ(FQ_T* &startaddr, vtxtype& outsize)=0;
+    // void setModOutgoingFQ(FQ_T* startaddr, long insize)=0; //startaddr: 0, self modification
+    // void getOutgoingFQ(vtxtype globalstart, vtxtype size, FQ_T* &startaddr, vtxtype& outsize)=0;
+    // void setIncommingFQ(vtxtype globalstart, vtxtype size, FQ_T* startaddr, vtxtype& insize_max)=0;
+    // bool istheresomethingnew()=0;           //to detect if finished
+    // void setStartVertex(const vtxtype start)=0;
+    // void runLocalBFS()=0;
+    // For accelerators with own memory
+
     void getBackPredecessor(); // expected to be used afet the application finished
 
     void getBackOutqueue();
@@ -138,7 +139,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     tmpm ^= (1 << last);
                 }
             }
-
             MPI_Send(tmp, p, fq_tp_type, communicatorRank - 1, 1, col_comm);
         }
     }

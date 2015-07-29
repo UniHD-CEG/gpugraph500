@@ -178,7 +178,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
 
                     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    //Compute owen row and column id
+                    // Compute own row and column id
                     r = rank / C;
                     c = rank % C;
                 }
@@ -222,6 +222,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
+
     //get max vtx
     for (vtxtyp i = 0; i < numberOfEdges; ++i) {
         packed_edge read = input[i];
@@ -613,6 +614,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
+
         for (long i = 0; i < numberOfEdges; ++i) {
             packed_edge read = input[i];
 
@@ -625,6 +627,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 
         numberOfEdges = 2 * numberOfEdges;
     } else {
+
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
@@ -795,12 +798,14 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 #else
     std::sort(input, input + numberOfEdges, DistMatrix2d::comparePackedEdgeR);
 #endif
+
     rowtyp *row_elm = new rowtyp[row_length];
     row_pointer = new rowtyp[row_length + 1];
 
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
+
     for (long i = 0; i < row_length; ++i) {
         row_elm[i] = 0;
     }
@@ -811,24 +816,22 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
         int this_thread = omp_get_thread_num(), num_threads = omp_get_num_threads();
         vtxtyp start = (this_thread  ) * row_length / num_threads;
         vtxtyp end   = (this_thread+1) * row_length / num_threads;
-
         packed_edge startEdge = {start+row_start,0};
         vtxtyp j = std::lower_bound(input, input+numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR)-input;
-
 
         for(vtxtyp i=start; i < end && j < numberOfEdges; ++i){
             vtxtyp last_valid = -1;
 
-            while(j < numberOfEdges && input[j].v0-row_start == i ){
+            while (j < numberOfEdges && input[j].v0-row_start == i ){
                 if(input[j].v0 != input[j].v1){
                     last_valid = input[j].v1;
-                    row_elm[i]++;
+                    ++row_elm[i];
                     ++j;
                     break;
                 }
                 ++j;
             }
-            while(j < numberOfEdges && input[j].v0-row_start == i ){
+            while (j < numberOfEdges && input[j].v0-row_start == i ){
                 if(input[j].v0 != input[j].v1 && last_valid != input[j].v1){
                     ++row_elm[i];
                 }
@@ -836,9 +839,10 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
                 ++j;
             }
         }
-
     }
-#else
+#endif
+
+#ifndef _OPENMP
     for (vtxtyp i = 0, j = 0; i < row_length && j < numberOfEdges; ++i) {
         vtxtyp last_valid = -1;
 
@@ -885,9 +889,10 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
             vtxtyp last_valid = -1;
             rowtyp inrow = 0;
 
-            while(j < numberOfEdges && input[j].v0-row_start == i ){
+            while (j < numberOfEdges && input[j].v0-row_start == i ){
                 if(input[j].v0 != input[j].v1){
                     last_valid = input[j].v1;
+
                     if(WOLO){
                         column_index[row_pointer[i]+inrow] = input[j].v1-column_start;
                     } else {
@@ -899,8 +904,9 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
                 }
                 ++j;
             }
-            while(j < numberOfEdges && input[j].v0-row_start == i ){
+            while (j < numberOfEdges && input[j].v0-row_start == i ){
                 if(input[j].v0 != input[j].v1 && last_valid != input[j].v1){
+
                     if(WOLO){
                         column_index[row_pointer[i]+inrow] = input[j].v1-column_start;
                     } else {
@@ -913,7 +919,9 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
             }
         }
     }
-#else
+#endif
+
+#ifndef _OPENMP
     for (vtxtyp i = 0, j = 0; i < row_length && j < numberOfEdges; ++i) {
         vtxtyp last_valid = -1;
         rowtyp inrow = 0;
@@ -964,10 +972,13 @@ std::vector <typename DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::fol
     if (a_quot >= col_size_res) {
         newprop.sendColSl = (row_start / ALG - col_size_res) / ua_col_size;
         newprop.gstartvtx = row_start;
-        if (WOLO)
+
+        if (WOLO) {
             newprop.startvtx = globaltolocalRow(newprop.gstartvtx);
-        else
+        } else {
             newprop.startvtx = newprop.gstartvtx;
+        }
+
         newprop.size = (ua_col_size - ((row_start / ALG - col_size_res) % ua_col_size)) * ALG;
         newprop.size = (newprop.size < row_length) ? newprop.size : row_length;
         col_size_res = 0;
@@ -980,10 +991,13 @@ std::vector <typename DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::fol
     } else {
         newprop.sendColSl = a_quot;
         newprop.startvtx = row_start;
-        if (WOLO)
+
+        if (WOLO) {
             newprop.startvtx = globaltolocalRow(newprop.gstartvtx);
-        else
+        } else {
             newprop.startvtx = newprop.gstartvtx;
+        }
+
         newprop.size = (ua_col_size + 1) * ALG;
         newprop.size = (newprop.size < row_length) ? newprop.size : row_length;
         col_size_res -= a_quot + 1;
@@ -1000,10 +1014,13 @@ std::vector <typename DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::fol
     while (newprop.gstartvtx + newprop.size < row_end) {
         ++newprop.sendColSl;
         newprop.gstartvtx += newprop.size;
-        if (WOLO)
+
+        if (WOLO) {
             newprop.startvtx = globaltolocalRow(newprop.gstartvtx);
-        else
+        } else {
             newprop.startvtx = newprop.gstartvtx;
+        }
+
         newprop.size = ((col_size_res > 0) ? ua_col_size + 1 : ua_col_size) * ALG;
         col_size_res -= (col_size_res > 0) ? 1 : 0;
         newprop.size = (newprop.gstartvtx + newprop.size < row_end) ? newprop.size : row_end - newprop.gstartvtx;
@@ -1035,6 +1052,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
+
     for (long i = 0; i < maxCount; ++i) {
         vtxtyp temporalVertex = vertex_p[i];
         if (temporalVertex / ((c_SliceSize + 1) * ALG) >= c_residuum) {
@@ -1061,11 +1079,9 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
     rowtyp j, max_j;
 
     while (allSmaller && i < rowLength) {
-
         j = rowp[i];
         max_j = rowp[i + 1];
         while (allSmaller && j < max_j) {
-
             val64 = static_cast<long>(columnp[j]);
             if (((val64 >> 32) & 0xFFFFFFFF) != 0x00000000) {
                 allSmaller = false;
