@@ -253,14 +253,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         }
     }
     //Computation of displacements
-    int sizes[communicatorSize];
-    int disps[communicatorSize];
+    std::vector<int> sizes(communicatorSize);
+    std::vector<int> disps(communicatorSize);
+
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
+
     sizes[lastTargetNode] = ((psize) >> intLdSize) * (sizeof(MType) * 8);
     disps[lastTargetNode] = 0;
 
-    for (unsigned int slice = 1; slice < power2intLdSize; slice++) {
+    for (unsigned int slice = 1; slice < power2intLdSize; ++slice) {
         unsigned int reversedSliceIDs = reverse(slice, intLdSize);
         unsigned int targetNode = oldRank(reversedSliceIDs);
         sizes[targetNode] = (psize >> intLdSize) * sizeof(MType) * 8;
@@ -268,13 +270,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         lastTargetNode = targetNode;
     }
     //nodes without a partial resulty
-    for (unsigned int node = 0; node < residuum; node++) {
+    for (unsigned int node = 0; node < residuum; ++node) {
         sizes[2 * node + 1] = 0;
         disps[2 * node + 1] = 0;
     }
     // Transmission of the final results
     MPI_Allgatherv(MPI_IN_PLACE, sizes[communicatorRank], fq_tp_type,
-                   owen, sizes, disps, fq_tp_type, col_comm);
+                   owen, &sizes[0], &disps[0], fq_tp_type, col_comm);
 
 }
 
