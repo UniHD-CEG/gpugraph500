@@ -48,3 +48,4 @@ cpu_2d/unit
 temp.tmp
 *.tgp
 eval/tmp.tmp
+*.scorep_init.c

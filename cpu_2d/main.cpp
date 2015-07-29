@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
     std::vector <double> bfs_time;
     std::vector <long> nedge; //number of edges
     std::vector <double> teps;
+
 #ifdef INSTRUMENTED
     double lexp, lqueue, rowcom, colcom, predlistred;
     double gmax_lexp,gmax_lqueue, gmax_rowcom, gmax_colcom, gmax_predlistred;
@@ -577,6 +578,7 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
                     ++i;
                 }
             }
+
 #ifdef _CUDA
             }else if(!strcmp(argv[i], "-gpus")){
                 if(i+1 < argc){
@@ -599,6 +601,7 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
                     }
                  }
 #endif
+
         } else if (!strcmp(argv[i], "-v")) {
             /* Verbosity level:
              * 0: Suppress all unnessesary output

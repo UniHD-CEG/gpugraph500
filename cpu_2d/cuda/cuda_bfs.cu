@@ -130,7 +130,9 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
 
 CUDA_BFS::~CUDA_BFS() {
 
-    if (vmask != 0) { cudaFreeHost(vmask); }
+    if (vmask != 0) {
+        cudaFreeHost(vmask);
+    }
 
     delete bfsGPU;
     delete csr_problem;
@@ -254,7 +256,6 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize) {
                                                gs->stream
         ), "Copy of d_filer_mask to device failed", __FILE__, __LINE__);
     }
-
 }
 
 /*
@@ -370,7 +371,6 @@ void CUDA_BFS::getBackOutqueue() {
         thrust::device_ptr <typename MatrixT::vtxtyp> multigpu(gs->frontier_queues.d_keys[0]);
         thrust::sort(multigpu, multigpu + queue_sizes[i]);
     }
-
 
     qb_length = 0;//csr_problem->num_gpus;
     typename MatrixT::vtxtyp *qb_nxt = queuebuff;
@@ -574,7 +574,6 @@ void CUDA_BFS::setStartVertex(vtxtyp start) {
             bfsGPU->setQueueSize(i, static_cast<typename Csr::SizeT>(0), gs->stream);
         }
     }
-
 }
 
 void CUDA_BFS::runLocalBFS() {
