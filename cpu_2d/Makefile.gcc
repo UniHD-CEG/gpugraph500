@@ -8,9 +8,9 @@ instrument_cuda="yes"
 instrument_cxx_mpi="yes"
 custom_openmpi="yes"
 custom_openmpi_basedir=/home/jromera/openmpi
-scorep_profiler_enable="yes"
+scorep_profiler_enable="no"
 scorep_custom="yes"
-scorep_custom_basedir=/home/jromera/scorep
+scorep_custom_basedir=/home/jromera/distlibs/score_p
 use_avx_instructions="yes"
 enable_simd_compression="yes"
 debug="no"
@@ -248,7 +248,7 @@ ifneq ($(enable_simd_compression), "yes")
 endif
 	@echo ""
 	@echo "--- Compiling CUDA"
-	$(Q)$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin $(CXX) -Xcompiler $(arch),-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin $(CXX) -Xcompiler $(arch),-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,$(CUDA_OPENMP),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC       $@"
 
 g500:  $(OBJECTS)
