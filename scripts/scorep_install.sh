@@ -41,7 +41,7 @@ function makedir_and_clean {
 
 function install {
 
-  export LD_LIBRARY_PATH=$openmpi_prefix/lib64:$openmpi_prefix/lib:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=$openmpi_prefix/lib:$LD_LIBRARY_PATH
   export PATH=$openmpi_prefix/bin:$PATH
   export OMPI_CC=$cc
   export OMPI_CXX=$cxx
@@ -67,7 +67,7 @@ function install {
   cd ${openmpi}
   section_banner "Checking"
   # --with-cuda=$cuda_dir
-  ./configure CC=$cc CXX=$cxx  --prefix=$openmpi_prefix
+  ./configure CC=$cc FC=$fcc CXX=$cxx  --prefix=$openmpi_prefix --disable-mpi-f90 --enable-mpirun-prefix-by-default
   res=$?
   exit_error $res
   section_banner "Making"
@@ -186,6 +186,7 @@ cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
 cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
 nvcc=`locate bin/nvcc | grep bin/nvcc$$ | tail -1`
 cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$$,,'`
+fcc=$HOME/bin/fortran
 
 openmpi="openmpi-1.6.5"
 opari="opari2-1.1.2"

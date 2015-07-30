@@ -87,10 +87,10 @@ MPICC := $(PROFILER) $(MPICC)
 MPICXX := $(PROFILER) $(MPICXX)
 LINK := $(PROFILER) $(MPICXX)
 
-CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic -O3 -Wall -Wextra
-CCFLAGS := -mavx -std=c99 -pedantic -O3 -Wall -Wextra
-MPICFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic $(OPENMP) -O3 $(arch) -Wall -W -fPIE
-MPICXXFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
+CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic -O3 -funroll-loops -Wall -Wextra
+CCFLAGS := -mavx -std=c99 -pedantic -O3 -funroll-loops -mfpmath=sse -Wall -Wextra
+MPICFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic -funroll-loops -mfpmath=sse $(OPENMP) -O3 $(arch) -Wall -W -fPIE
+MPICXXFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -funroll-loops -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
 LFLAGS := -m64 -fopenmp -Wl,-O3
 LIBS := -L$(NVDIR)/lib64 -L$(NVDIR)/lib -lcudart -lcuda
 
@@ -260,8 +260,8 @@ clean:
 	@echo "== Cleaning"
 	@echo "============================================================================"
 	@echo ""
-	@rm -rf $(OUTFILES) $(OBJECTS)
-	@rm -rf *~ core *.core example g500
+	$(Q)rm -rf $(OUTFILES) $(OBJECTS)
+	$(Q)rm -rf *~ core *.core example g500
 	@echo "--- Cleaning"
 
 example:  $(HEADERS) compression/example.cpp  $(COMPRESSION_OBJECTS)
