@@ -41,6 +41,7 @@ function install {
   export OMPI_CC=$cc
   export OMPI_CXX=$cxx
 
+  if [ 1 -eq 2]; then
   banner "OpenMPI"
   if [ ! -f ${openmpi}.tar.gz ]; then
     section_banner "Downloading"
@@ -50,7 +51,6 @@ function install {
   fi
   if [ ! -d ${openmpi} ]; then
     section_banner "Decompressing"
-    rm -rf ${openmpi}
     tar -xzvf ${openmpi}.tar.gz
   else
     cd ${openmpi}
@@ -87,7 +87,6 @@ function install {
   fi
   if [ ! -d  ${opari} ]; then
     section_banner "Decompressing"
-    rm -rf ${opari}
     tar -xzvf ${opari}.tar.gz
   else
     cd ${opari}
@@ -123,7 +122,6 @@ function install {
   fi
   if [ ! -d  ${cube} ]; then
     section_banner "Decompressing"
-    rm -rf ${cube}
     tar -xzvf ${cube}.tar.gz
   else
     cd ${cube}
@@ -149,7 +147,7 @@ function install {
   res=$?
   exit_error $res
   cd ..
-
+  fi
   banner "Score-P"
   if [ ! -f  ${scorep}.tar.gz ]; then
     section_banner "Downloading"
@@ -159,7 +157,6 @@ function install {
   fi
   if [ ! -d  ${scorep} ]; then
     section_banner "Decompressing"
-    rm -rf ${scorep}
     tar -xzvf ${scorep}.tar.gz
   else
     cd ${scorep}
