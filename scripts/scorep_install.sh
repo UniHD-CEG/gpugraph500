@@ -77,7 +77,7 @@ function install {
   res=$?
   exit_error $res
   cd ..
-
+  fi
   banner "Opari"
   if [ ! -f  ${opari}.tar.gz ]; then
     section_banner "Downloading"
@@ -99,7 +99,7 @@ function install {
   makedir $opari_prefix
   cd ${opari}
   section_banner "Checking"
-  ./configure CC=$cc CXX=$cxx  --prefix=$opari2_prefix
+  ./configure CC=$cc CXX=$cxx  --prefix=$opari_prefix
   res=$?
   exit_error $res
   section_banner "Making"
@@ -147,7 +147,7 @@ function install {
   res=$?
   exit_error $res
   cd ..
-  fi
+
   banner "Score-P"
   if [ ! -f  ${scorep}.tar.gz ]; then
     section_banner "Downloading"
@@ -169,7 +169,7 @@ function install {
   makedir $scorep_prefix
   cd ${scorep}
   section_banner "Checking"
-  ./configure CC=$cc CXX=$cxx --prefix=$scorep_prefix --with-cube=$cube_prefix --with-opari2=$opari2_prefix --with-cuda=$cuda_dir
+  ./configure CC=$cc CXX=$cxx --prefix=$scorep_prefix --with-cube=$cube_prefix --with-opari2=$opari_prefix --with-cuda=$cuda_dir
   res=$?
   exit_error $res
   section_banner "Making"
@@ -184,8 +184,8 @@ function install {
 
 cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
 cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
-nvcc=`locate bin/nvcc | grep bin/nvcc$$ | tail -1`
-cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$$,,'`
+nvcc=`locate bin/nvcc | grep bin/nvcc$ | tail -1`
+cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$,,'`
 
 openmpi="openmpi-1.6.5"
 opari="opari2-1.1.2"

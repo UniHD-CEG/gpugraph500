@@ -12,7 +12,7 @@ scorep_profiler_enable="no"
 scorep_custom="yes"
 scorep_custom_basedir=/home/jromera/distlibs/score_p
 use_avx_instructions="yes"
-enable_simd_compression="yes"
+enable_simd_compression="no"
 debug="no"
 quiet_output="yes"
 
