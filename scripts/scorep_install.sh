@@ -19,7 +19,7 @@ function banner {
   echo "============================================================================"
 }
 
-echo section_banner {
+function section_banner {
   local text="$1"
   echo
   echo "--- $text"
