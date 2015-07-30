@@ -25,17 +25,12 @@ function section_banner {
   echo "--- $text"
 }
 
-function makedir_and_clean {
+function makedir {
   local dir="$1"
   if [ ! -d $dir ]; then
     mkdir -p $dir
     res=$?
     exit_error $res
-  else
-    cd $dir
-    section_banner "Cleaning"
-    make clean 2> /dev/null
-    cd ..
   fi
 }
 
@@ -61,13 +56,15 @@ function install {
     cd ${openmpi}
     section_banner "Un-Installing"
     make uninstall 2> /dev/null
+    section_banner "Cleaning"
+    make clean 2> /dev/null
     cd ..
   fi
-  makedir_and_clean $openmpi_prefix
+  makedir $openmpi_prefix
   cd ${openmpi}
   section_banner "Checking"
   # --with-cuda=$cuda_dir
-  ./configure CC=$cc FC=$fcc CXX=$cxx  --prefix=$openmpi_prefix --disable-mpi-f90 --enable-mpirun-prefix-by-default
+  ./configure CC=$cc CXX=$cxx  --prefix=$openmpi_prefix --disable-mpi-f90 --enable-mpirun-prefix-by-default
   res=$?
   exit_error $res
   section_banner "Making"
@@ -96,9 +93,11 @@ function install {
     cd ${opari}
     section_banner "Un-Installing"
     make uninstall 2> /dev/null
+    section_banner "Cleaning"
+    make clean 2> /dev/null
     cd ..
   fi
-  makedir_and_clean $opari_prefix
+  makedir $opari_prefix
   cd ${opari}
   section_banner "Checking"
   ./configure CC=$cc CXX=$cxx  --prefix=$opari2_prefix
@@ -130,9 +129,11 @@ function install {
     cd ${cube}
     section_banner "Un-Installing"
     make uninstall 2> /dev/null
+    section_banner "Cleaning"
+    make clean 2> /dev/null
     cd ..
   fi
-  makedir_and_clean $cube_prefix
+  makedir $cube_prefix
   cd ${cube}
   section_banner "Checking"
   ./configure CC=$cc CXX=$cxx  --prefix=$cube_prefix --without-gui
@@ -164,9 +165,11 @@ function install {
     cd ${scorep}
     section_banner "Un-Installing"
     make uninstall 2> /dev/null
+    section_banner "Cleaning"
+    make clean 2> /dev/null
     cd ..
   fi
-  makedir_and_clean $scorep_prefix
+  makedir $scorep_prefix
   cd ${scorep}
   section_banner "Checking"
   ./configure CC=$cc CXX=$cxx --prefix=$scorep_prefix --with-cube=$cube_prefix --with-opari2=$opari2_prefix --with-cuda=$cuda_dir
@@ -186,7 +189,6 @@ cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
 cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
 nvcc=`locate bin/nvcc | grep bin/nvcc$$ | tail -1`
 cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$$,,'`
-fcc=$HOME/bin/fortran
 
 openmpi="openmpi-1.6.5"
 opari="opari2-1.1.2"

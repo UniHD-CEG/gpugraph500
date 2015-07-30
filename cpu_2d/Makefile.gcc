@@ -1,14 +1,16 @@
 # Makefile
 
-nvidia_architecture="auto"
+nvidia_architecture="fermi"
 nvidia_ptxas_otimize="no"
 openmp_on_cuda="no"
 openmp_on_cxx_mpi="no"
-scorep_profiler_enable="no"
 instrument_cuda="yes"
 instrument_cxx_mpi="yes"
 custom_openmpi="yes"
-custom_openmpi_path=/home/jromera/openmpi
+custom_openmpi_basedir=/home/jromera/openmpi
+scorep_profiler_enable="yes"
+scorep_custom="yes"
+scorep_custom_basedir=/home/jromera/scorep
 use_avx_instructions="yes"
 enable_simd_compression="yes"
 debug="no"
@@ -32,7 +34,12 @@ else
 endif
 
 ifeq ($(scorep_profiler_enable), "yes")
+ifeq ($(scorep_custom), "yes")
+	export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
+	PROFILER := $(scorep_custom_basedir)/bin/scorep
+else
 	PROFILER := scorep
+endif
 endif
 
 ifeq ($(openmp_on_cuda), "yes")
@@ -72,8 +79,8 @@ NVDIR := $(shell echo $(NVCC) | sed 's,/bin/nvcc$$,,')
 ifeq ($(custom_openmpi), "yes")
 	export OMPI_CC := $(CC)
 	export OMPI_CXX := $(CXX)
-	MPICC := $(custom_openmpi_path)/bin/mpicc
-	MPICXX := $(custom_openmpi_path)/bin/mpicxx
+	MPICC := $(custom_openmpi_basedir)/bin/mpicc
+	MPICXX := $(custom_openmpi_basedir)/bin/mpicxx
 else
 	MPICC := mpicc
 	MPICXX := mpicxx
