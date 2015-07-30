@@ -127,19 +127,17 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
     int64_t rowSlice, columnSlice;
     int64_t r_residuum, c_residuum;
     int64_t rSliceSize, cSliceSize;
-
     int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1 : 0);
 
     r_residuum = numAlg % R;
     rSliceSize = numAlg / R;
-
     if ((rowSlice = row / (rSliceSize + 1)) >= r_residuum) {
         //compute row slice, if the slice number is in the bigger intervals
         rowSlice = (row - r_residuum) / rSliceSize; //compute row slice, if the slice number is in the smaler intervals
     }
+
     c_residuum = numAlg % C;
     cSliceSize = numAlg / C;
-
     if ((columnSlice = column / (cSliceSize + 1)) >= c_residuum) {
             //compute column slice, if the slice number is in the bigger intervals
             columnSlice = (column - c_residuum) /
@@ -179,7 +177,6 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         int rank;
 
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
         // Compute own row and column id
         r = rank / C;
         c = rank % C;
