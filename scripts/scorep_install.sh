@@ -8,7 +8,7 @@ function exit_error {
   if [ $error -neq 0 ]; then
     echo "Error detected. Quitting..."
     exit 1
- fi
+  fi
 }
 
 function banner {
@@ -25,14 +25,26 @@ function section_banner {
   echo "--- $text"
 }
 
+function makedir_and_clean {
+  local dir="$1"
+  if [ ! -d $dir ]; then
+    mkdir -p $dir
+    res=$?
+    exit_error $res
+  else
+    cd $dir
+    section_banner "Cleaning"
+    make clean 2> /dev/null
+    cd ..
+  fi
+}
+
 function install {
 
-  export LD_LIBRARY_PATH=$apps/openmpi/lib64:$LD_LIBRARY_PATH
-  export PATH=$apps/openmpi/bin:$PATH
+  export LD_LIBRARY_PATH=$openmpi_prefix/lib64:$openmpi_prefix/lib:$LD_LIBRARY_PATH
+  export PATH=$openmpi_prefix/bin:$PATH
   export OMPI_CC=$cc
   export OMPI_CXX=$cxx
-
-  mkdir -p $apps &> /dev/null
 
   banner "OpenMPI"
   if [ ! -f ${openmpi}.tar.gz ]; then
@@ -46,9 +58,11 @@ function install {
     rm -rf ${openmpi}
     tar -xzvf ${openmpi}.tar.gz
   fi
+  makedir_and_clean $openmpi_prefix
   cd ${openmpi}
   section_banner "Checking"
-  ./configure CC=$cc CXX=$cxx  --prefix=$apps/openmpi --with-cuda=$cuda_dir
+  # --with-cuda=$cuda_dir
+  ./configure CC=$cc CXX=$cxx  --prefix=$openmpi_prefix
   res=$?
   exit_error $res
   section_banner "Making"
@@ -74,9 +88,10 @@ function install {
     rm -rf ${opari}
     tar -xzvf ${opari}.tar.gz
   fi
+  makedir_and_clean $opari_prefix
   cd ${opari}
   section_banner "Checking"
-  ./configure CC=$cc CXX=$cxx  --prefix=$apps/opari2
+  ./configure CC=$cc CXX=$cxx  --prefix=$opari2_prefix
   res=$?
   exit_error $res
   section_banner "Making"
@@ -102,9 +117,10 @@ function install {
     rm -rf ${cube}
     tar -xzvf ${cube}.tar.gz
   fi
+  makedir_and_clean $cube_prefix
   cd ${cube}
   section_banner "Checking"
-  ./configure CC=$cc CXX=$cxx  --prefix=$apps/cube --without-gui
+  ./configure CC=$cc CXX=$cxx  --prefix=$cube_prefix --without-gui
   res=$?
   exit_error $res
   section_banner "Making"
@@ -130,9 +146,10 @@ function install {
     rm -rf ${scorep}
     tar -xzvf ${scorep}.tar.gz
   fi
+  makedir_and_clean $scorep_prefix
   cd ${scorep}
   section_banner "Checking"
-  ./configure CC=$cc CXX=$cxx --prefix=$apps/score_p --with-cube=$apps/cube --with-opari2=$apps/opari2 --with-cuda=/usr/local/cuda
+  ./configure CC=$cc CXX=$cxx --prefix=$scorep_prefix --with-cube=$cube_prefix --with-opari2=$opari2_prefix --with-cuda=$cuda_dir
   res=$?
   exit_error $res
   section_banner "Making"
@@ -149,11 +166,17 @@ cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
 cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
 nvcc=`locate bin/nvcc | grep bin/nvcc$$ | tail -1`
 cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$$,,'`
-apps="$HOME/distlibs"
+
 openmpi="openmpi-1.6.5"
 opari="opari2-1.1.2"
 cube="cube-4.2.3"
 scorep="scorep-1.3"
+
+openmpi_prefix="$HOME/openmpi"
+opari_prefix="$HOME/opari2"
+cube_prefix="$HOME/cube"
+scorep_prefix="$HOME/scorep"
+
 
 install
 exit $?
