@@ -38,13 +38,17 @@ function install {
   if [ ! -f ${openmpi}.tar.gz ]; then
     section_banner "Downloading"
     wget http://www.open-mpi.org/software/ompi/v1.8/downloads/${openmpi}.tar.gz
+    res=$?
+    exit_error $res
   fi
-  section_banner "Decompressing"
-  rm -rf ${openmpi}
-  tar -xzvf ${openmpi}.tar.gz
+  if [ ! -d ${openmpi} ]; then
+    section_banner "Decompressing"
+    rm -rf ${openmpi}
+    tar -xzvf ${openmpi}.tar.gz
+  fi
   cd ${openmpi}
   section_banner "Checking"
-  ./configure --prefix=$apps/openmpi --with-cuda=/usr/local/cuda
+  ./configure --prefix=$apps/openmpi --with-cuda=$cuda_dir
   res=$?
   exit_error $res
   section_banner "Making"
@@ -62,10 +66,14 @@ function install {
   if [ ! -f  ${opari}.tar.gz ]; then
     section_banner "Downloading"
     wget http://www.vi-hps.org/upload/packages/opari2/${opari}.tar.gz
+    res=$?
+    exit_error $res
   fi
-  section_banner "Decompressing"
-  rm -rf ${opari}
-  tar -xzvf ${opari}.tar.gz
+  if [ ! -d  ${opari} ]; then
+    section_banner "Decompressing"
+    rm -rf ${opari}
+    tar -xzvf ${opari}.tar.gz
+  fi
   cd ${opari}
   section_banner "Checking"
   ./configure --prefix=$apps/opari2
@@ -86,10 +94,14 @@ function install {
   if [ ! -f  ${cube}.tar.gz ]; then
     section_banner "Downloading"
     wget http://apps.fz-juelich.de/scalasca/releases/cube/4.2/dist/${cube}.tar.gz
+    res=$?
+    exit_error $res
   fi
-  section_banner "Decompressing"
-  rm -rf ${cube}
-  tar -xzvf ${cube}.tar.gz
+  if [ ! -d  ${cube} ]; then
+    section_banner "Decompressing"
+    rm -rf ${cube}
+    tar -xzvf ${cube}.tar.gz
+  fi
   cd ${cube}
   section_banner "Checking"
   ./configure --prefix=$apps/cube --without-gui
@@ -110,10 +122,14 @@ function install {
   if [ ! -f  ${scorep}.tar.gz ]; then
     section_banner "Downloading"
   	wget http://www.vi-hps.org/upload/packages/scorep/${scorep}.tar.gz
+    res=$?
+    exit_error $res
   fi
-  section_banner "Decompressing"
-  rm -rf ${scorep}
-  tar -xzvf ${scorep}.tar.gz
+  if [ ! -d  ${scorep} ]; then
+    section_banner "Decompressing"
+    rm -rf ${scorep}
+    tar -xzvf ${scorep}.tar.gz
+  fi
   cd ${scorep}
   section_banner "Checking"
   ./configure --prefix=$apps/score_p --with-cube=$apps/cube --with-opari2=$apps/opari2 --with-cuda=/usr/local/cuda
@@ -131,6 +147,8 @@ function install {
 
 cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
 cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
+nvcc=`locate bin/nvcc | grep bin/nvcc$$ | tail -1)`
+cuda_dir=`echo $(NVCC) | sed 's,/bin/nvcc$$,,')`
 apps="$HOME/distlibs"
 openmpi="openmpi-1.6.5"
 opari="opari2-1.1.2"
