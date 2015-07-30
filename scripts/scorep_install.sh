@@ -77,7 +77,7 @@ function install {
   res=$?
   exit_error $res
   cd ..
-  fi
+
   banner "Opari"
   if [ ! -f  ${opari}.tar.gz ]; then
     section_banner "Downloading"
@@ -147,7 +147,7 @@ function install {
   res=$?
   exit_error $res
   cd ..
-
+  fi
   banner "Score-P"
   if [ ! -f  ${scorep}.tar.gz ]; then
     section_banner "Downloading"
@@ -190,7 +190,7 @@ cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$,,'`
 openmpi="openmpi-1.6.5"
 opari="opari2-1.1.2"
 cube="cube-4.2.3"
-scorep="scorep-1.3"
+scorep="scorep-1.4.2"
 
 openmpi_prefix="$HOME/openmpi"
 opari_prefix="$HOME/opari2"
