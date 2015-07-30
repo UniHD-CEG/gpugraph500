@@ -57,6 +57,11 @@ function install {
     section_banner "Decompressing"
     rm -rf ${openmpi}
     tar -xzvf ${openmpi}.tar.gz
+  else
+    cd ${openmpi}
+    section_banner "Un-Installing"
+    make uninstall 2> /dev/null
+    cd ..
   fi
   makedir_and_clean $openmpi_prefix
   cd ${openmpi}
@@ -87,6 +92,11 @@ function install {
     section_banner "Decompressing"
     rm -rf ${opari}
     tar -xzvf ${opari}.tar.gz
+  else
+    cd ${opari}
+    section_banner "Un-Installing"
+    make uninstall 2> /dev/null
+    cd ..
   fi
   makedir_and_clean $opari_prefix
   cd ${opari}
@@ -116,6 +126,11 @@ function install {
     section_banner "Decompressing"
     rm -rf ${cube}
     tar -xzvf ${cube}.tar.gz
+  else
+    cd ${cube}
+    section_banner "Un-Installing"
+    make uninstall 2> /dev/null
+    cd ..
   fi
   makedir_and_clean $cube_prefix
   cd ${cube}
@@ -145,6 +160,11 @@ function install {
     section_banner "Decompressing"
     rm -rf ${scorep}
     tar -xzvf ${scorep}.tar.gz
+  else
+    cd ${scorep}
+    section_banner "Un-Installing"
+    make uninstall 2> /dev/null
+    cd ..
   fi
   makedir_and_clean $scorep_prefix
   cd ${scorep}
@@ -154,7 +174,7 @@ function install {
   exit_error $res
   section_banner "Making"
   make clean
-  make -j 12
+  make -j12
   res=$?
   exit_error $res
   section_banner "Installing"

@@ -80,7 +80,7 @@ else
 endif
 
 ifeq ($(quiet_output), "yes")
-	hide := @@
+	Q = @
 endif
 
 MPICC := $(PROFILER) $(MPICC)
@@ -128,8 +128,8 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h
 	@echo ""
 	@echo "--- Compiling g500"
-	$(hide)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
-	@echo "MPICCX $<"
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
+	@echo "    MPICC      $<"
 
 bitpacking.o: compression/include/bitpacking.h compression/src/bitpacking.cpp
 ifeq ($(enable_simd_compression), "yes")
@@ -140,97 +140,97 @@ ifeq ($(enable_simd_compression), "yes")
 endif
 	@echo ""
 	@echo "--- Compiling Lemure/SIMDCompression"
-	$(hide)$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
-	@echo "CCX $<"
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
+	@echo "    CCX        $<"
 
 intersection.o: compression/include/intersection.h compression/src/intersection.cpp
-	@$(CXX) $(CXXFLAGS) -c compression/src/intersection.cpp -Icompression/include
-	@echo "CCX $<"
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/intersection.cpp -Icompression/include
+	@echo "    CCX        $<"
 
 benchintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
-	@$(CXX) $(CXXFLAGS) -o benchintersection compression/src/benchintersection.cpp intersection.o -Icompression/include
-	@echo "CCX $<"
+	$(Q)$(CXX) $(CXXFLAGS) -o benchintersection compression/src/benchintersection.cpp intersection.o -Icompression/include
+	@echo "    CCX        $<"
 
 likwidintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
-	@$(CXX) $(CXXFLAGS) -DLIKWID_MARKERS -pthread -o likwidintersection compression/src/benchintersection.cpp intersection.o -Icompression/include -llikwid
-	@echo "CCX $<"
+	$(Q)$(CXX) $(CXXFLAGS) -DLIKWID_MARKERS -pthread -o likwidintersection compression/src/benchintersection.cpp intersection.o -Icompression/include -llikwid
+	@echo "    CCX        $<"
 
 integratedbitpacking.o: compression/include/integratedbitpacking.h compression/src/integratedbitpacking.cpp
-	@$(CXX) $(CXXFLAGS) -c compression/src/integratedbitpacking.cpp -Icompression/include
-	@echo "CCX $<"
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/integratedbitpacking.cpp -Icompression/include
+	@echo "    CCX        $<"
 
 simdpackedsearch.o:  compression/src/simdpackedsearch.c
-	@$(CC) $(CCFLAGS) -c compression/src/simdpackedsearch.c
-	@echo "CC $<"
+	$(Q)$(CC) $(CCFLAGS) -c compression/src/simdpackedsearch.c
+	@echo "    CC         $<"
 
 simdpackedselect.o:  compression/src/simdpackedselect.c
-	@$(CC) $(CCFLAGS) -c compression/src/simdpackedselect.c
-	@echo "CC $<"
+	$(Q)$(CC) $(CCFLAGS) -c compression/src/simdpackedselect.c
+	@echo "    CC         $<"
 
 streamvbyte.o:  compression/src/streamvbyte.c
-	@$(CC) $(CCFLAGS) -c compression/src/streamvbyte.c
-	@echo "CC $<"
+	$(Q)$(CC) $(CCFLAGS) -c compression/src/streamvbyte.c
+	@echo "    CC         $<"
 
 varintdecode.o:  compression/src/varintdecode.c
-	@$(CC) $(CCFLAGS) -c compression/src/varintdecode.c
-	@echo "CC $<"
+	$(Q)$(CC) $(CCFLAGS) -c compression/src/varintdecode.c
+	@echo "    CC         $<"
 
 simdbitpacking.o: compression/include/simdbitpacking.h compression/src/simdbitpacking.cpp
-	@$(CXX) $(CXXFLAGS) -c compression/src/simdbitpacking.cpp -Icompression/include
-	@echo "CCX $<"
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/simdbitpacking.cpp -Icompression/include
+	@echo "    CCX        $<"
 
 usimdbitpacking.o: compression/include/usimdbitpacking.h compression/src/usimdbitpacking.cpp
-	@$(CXX) $(CXXFLAGS) -c compression/src/usimdbitpacking.cpp -Icompression/include
-	@echo "CCX $<"
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/usimdbitpacking.cpp -Icompression/include
+	@echo "    CCX        $<"
 
 frameofreference.o: compression/src/frameofreference.cpp $(HEADERS)
-	@$(CXX) $(CXXFLAGS) -c compression/src/frameofreference.cpp -Icompression/include
-	@echo "CCX $<"
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/frameofreference.cpp -Icompression/include
+	@echo "    CCX        $<"
 
 for.o: compression/src/for.c $(HEADERS)
-	@$(CC) $(CCFLAGS) -c compression/src/for.c -Icompression/include
-	@echo "CC $<"
+	$(Q)$(CC) $(CCFLAGS) -c compression/src/for.c -Icompression/include
+	@echo "    CC         $<"
 
 simdintegratedbitpacking.o: compression/include/simdintegratedbitpacking.h compression/include/delta.h compression/src/simdintegratedbitpacking.cpp
-	@$(CXX) $(CXXFLAGS) -c compression/src/simdintegratedbitpacking.cpp -Icompression/include
-	@echo "CCX $<"
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/simdintegratedbitpacking.cpp -Icompression/include
+	@echo "    CCX        $<"
 
 utils.o: generator/utils.c generator/splittable_mrg.h generator/graph_generator.h generator/user_settings.h generator/utils.h
-	@$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o utils.o generator/utils.c
-	@echo "MPICC $<"
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o utils.o generator/utils.c
+	@echo "    MPICC      $<"
 
 splittable_mrg.o: generator/splittable_mrg.c generator/mod_arith.h generator/user_settings.h generator/mod_arith_64bit.h generator/mod_arith_32bit.h \
 		generator/splittable_mrg.h generator/mrg_transitions.c
-	@$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o splittable_mrg.o generator/splittable_mrg.c
-	@echo "MPICC $<"
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o splittable_mrg.o generator/splittable_mrg.c
+	@echo "    MPICC      $<"
 
 make_graph.o: generator/make_graph.c generator/graph_generator.h generator/user_settings.h generator/utils.h generator/splittable_mrg.h
-	@$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o make_graph.o generator/make_graph.c
-	@echo "MPICC $<"
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o make_graph.o generator/make_graph.c
+	@echo "    MPICC      $<"
 
 graph_generator.o: generator/graph_generator.c generator/user_settings.h generator/splittable_mrg.h generator/graph_generator.h
-	@$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o graph_generator.o generator/graph_generator.c
-	@echo "MPICC $<"
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o graph_generator.o generator/graph_generator.c
+	@echo "    MPICC      $<"
 
 simplecpubfs.o: simplecpubfs.cpp simplecpubfs.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
-	@$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o simplecpubfs.o simplecpubfs.cpp
-	@echo "MPICXX $<"
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o simplecpubfs.o simplecpubfs.cpp
+	@echo "    MPICXX     $<"
 
 onesided.o: validate/onesided.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
-	@$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided.o validate/onesided.c
-	@echo "MPICC $<"
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided.o validate/onesided.c
+	@echo "    MPICC      $<"
 
 onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
-	@$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided_emul.o validate/onesided_emul.c
-	@echo "MPICC $<"
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided_emul.o validate/onesided_emul.c
+	@echo "    MPICC      $<"
 
 bitlevelfunctions.o: bitlevelfunctions.cpp bitlevelfunctions.h
-	@$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o bitlevelfunctions.o bitlevelfunctions.cpp
-	@echo "MPICXX $<"
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o bitlevelfunctions.o bitlevelfunctions.cpp
+	@echo "    MPICXX     $<"
 
 cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
-	@$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o cpubfs_bin.o cpubfs_bin.cpp
-	@echo "MPICXX $<"
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o cpubfs_bin.o cpubfs_bin.cpp
+	@echo "    MPICXX     $<"
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 	@echo ""
@@ -241,7 +241,8 @@ ifneq ($(enable_simd_compression), "yes")
 endif
 	@echo ""
 	@echo "--- Compiling CUDA"
-	$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin $(CXX) -Xcompiler $(arch),-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(PROFILER) $(NVCC) $(NVCCARGS) -c -ccbin $(CXX) -Xcompiler $(arch),-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,-std=c++11,$(CUDA_OPENMP),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	@echo "    NVCC       $<"
 
 g500:  $(OBJECTS)
 	@echo ""
@@ -250,8 +251,8 @@ g500:  $(OBJECTS)
 	@echo "============================================================================"
 	@echo ""
 	@echo "--- Linking"
-	@$(LINK) $(LFLAGS) -o $@ $(OBJECTS) $(OBJCOMP) $(LIBS)
-	@echo "MPICXX $<"
+	$(Q)$(LINK) $(LFLAGS) -o $@ $(OBJECTS) $(OBJCOMP) $(LIBS)
+	@echo "    MPICXX     $<"
 
 clean:
 	@echo ""
@@ -264,7 +265,7 @@ clean:
 	rm -rf *~ core *.core example g500
 
 example:  $(HEADERS) compression/example.cpp  $(COMPRESSION_OBJECTS)
-	@$(CXX) $(CXXFLAGS)  -o example compression/example.cpp  $(COMPRESSION_OBJECTS) -Icompression/include
-	@echo "CCX $<"
+	$(Q)$(CXX) $(CXXFLAGS)  -o example compression/example.cpp  $(COMPRESSION_OBJECTS) -Icompression/include
+	@echo "    CCX        $<"
 
 .PHONY: g500 clean
