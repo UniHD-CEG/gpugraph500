@@ -635,6 +635,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
+
         for (long i = 0; i < numberOfEdges; ++i) {
             packed_edge read = input[i];
 

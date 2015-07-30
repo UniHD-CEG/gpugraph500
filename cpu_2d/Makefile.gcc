@@ -133,7 +133,7 @@ ifeq ($(enable_simd_compression), "yes")
 	@echo "============================================================================"
 endif
 	@echo ""
-	@echo "--- Compiling Lemure/SIMDCompression Library"
+	@echo "--- Compiling Lemure/SIMDCompression"
 	$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
 
 intersection.o: compression/include/intersection.h compression/src/intersection.cpp
