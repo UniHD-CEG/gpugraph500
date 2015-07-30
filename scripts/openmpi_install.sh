@@ -67,7 +67,7 @@ cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
 cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
 nvcc=`locate bin/nvcc | grep bin/nvcc$$ | tail -1`
 cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$$,,'`
-apps="$HOMEi/openmpi"
+apps="$HOME/openmpi"
 openmpi="openmpi-1.6.5"
 
 install
