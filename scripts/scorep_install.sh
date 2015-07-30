@@ -48,7 +48,7 @@ function install {
   fi
   cd ${openmpi}
   section_banner "Checking"
-  ./configure --prefix=$apps/openmpi --with-cuda=$cuda_dir
+  ./configure CC=$cc CXX=$cxx  --prefix=$apps/openmpi --with-cuda=$cuda_dir
   res=$?
   exit_error $res
   section_banner "Making"
@@ -76,7 +76,7 @@ function install {
   fi
   cd ${opari}
   section_banner "Checking"
-  ./configure --prefix=$apps/opari2
+  ./configure CC=$cc CXX=$cxx  --prefix=$apps/opari2
   res=$?
   exit_error $res
   section_banner "Making"
@@ -104,7 +104,7 @@ function install {
   fi
   cd ${cube}
   section_banner "Checking"
-  ./configure --prefix=$apps/cube --without-gui
+  ./configure CC=$cc CXX=$cxx  --prefix=$apps/cube --without-gui
   res=$?
   exit_error $res
   section_banner "Making"
@@ -132,7 +132,7 @@ function install {
   fi
   cd ${scorep}
   section_banner "Checking"
-  ./configure --prefix=$apps/score_p --with-cube=$apps/cube --with-opari2=$apps/opari2 --with-cuda=/usr/local/cuda
+  ./configure CC=$cc CXX=$cxx --prefix=$apps/score_p --with-cube=$apps/cube --with-opari2=$apps/opari2 --with-cuda=/usr/local/cuda
   res=$?
   exit_error $res
   section_banner "Making"
@@ -147,8 +147,8 @@ function install {
 
 cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
 cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
-nvcc=`locate bin/nvcc | grep bin/nvcc$$ | tail -1)`
-cuda_dir=`echo $(NVCC) | sed 's,/bin/nvcc$$,,')`
+nvcc=`locate bin/nvcc | grep bin/nvcc$$ | tail -1`
+cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$$,,'`
 apps="$HOME/distlibs"
 openmpi="openmpi-1.6.5"
 opari="opari2-1.1.2"
