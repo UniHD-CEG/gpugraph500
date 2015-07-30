@@ -15,7 +15,10 @@ else
   echo "Using SCALE-FACTOR $MAX_SF"
   scale_factor=$MAX_SF
 fi
+mpirun=mpirun
+mpirun=/home/jromera/openmpi/bin/mpirun
+valgrind=
 
 date
-mpirun -np 16 -mca btl tcp,self ./../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 2
+$mpirun -np 16 $valgrind ./../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 2
 

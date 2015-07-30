@@ -35,3 +35,17 @@ eval/r-compare.sh
 *.pp.c
 **/*.pp.c
 **/*.pp.cpp
+CMakeFiles/
+**/CMakeFiles/
+.*
+**/.*
+example
+cpu_2d/benchintersection
+cpu_2d/benchsearch
+cpu_2d/testcodecs
+cpu_2d/testintegration
+cpu_2d/unit
+temp.tmp
+*.tgp
+eval/tmp.tmp
+*.scorep_init.c

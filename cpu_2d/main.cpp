@@ -3,17 +3,21 @@
  * Matthias Hauck, 2013
  *
  */
+
+
 #include "mpi.h"
 #include <cstring>
 #include <assert.h>
 #include <cmath>
-#if __cplusplus > 199711L  //C++11 active
-    #include <random>
-#endif
 #include <algorithm>
 #include "validate/validate.h"
 #include "generator/make_graph.h"
 #include "distmatrix2d.hh"
+
+#if __cplusplus > 199711L  //C++11 active
+    #include <random>
+#endif
+
 #ifdef _OPENCL
     #include "opencl/OCLrunner.hh"
     #include "opencl/opencl_bfs.h"
@@ -21,6 +25,12 @@
     #include "cuda/cuda_bfs.h"
 #else
     #include "cpubfs_bin.h"
+#endif
+
+#ifdef _SIMDCOMPRESS
+	#include "codecfactory.h"
+	#include "intersection.h"
+	using namespace SIMDCompressionLib;
 #endif
 
 struct statistic {
@@ -57,13 +67,16 @@ void outputIterationInstrumentedStatistics(statistic &valid_time_s, statistic &l
                                            statistic &lcolcom_s, statistic &lcolcom_share_s, statistic &lpredlistred_s,
                                            statistic &lpredlistred_share_s);
 void outputMatrixGenerationResults(int size, const int64_t &global_edges, double constr_time, long global_edges_wd);
+
 vtxtyp generateStartNode(const int64_t &vertices, std::knuth_b & generator);
+
 template <class T>
 statistic getStatistics(std::vector <T> &input);
+
 void printStat(statistic &input, const char *name, bool harmonic);
 
 void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
-                             double make_graph_time, int iterations, double totalBFSRunsTime);
+                             double make_graph_time, int iterations);
 
 void output32bitMatrixVerificationResults(bool allValues32, int rank);
 
@@ -88,9 +101,8 @@ int main(int argc, char **argv) {
     vtxtyp start, locstart, num_edges;
     double tstart, tstop;
     double rtstart, rtstop;
-    double startTotalBFSTimer, stopTotalBFSTimer;
     double make_graph_time, constr_time;
-    bool R_set = false, C_set = false, valid = true, allValues32 = true;
+    bool R_set = false, C_set = false, valid = true;
     int R, C, graph_gen = G500, size, rank;
     int level, this_valid;
     int next, maxiterations;
@@ -100,6 +112,7 @@ int main(int argc, char **argv) {
     std::vector <double> bfs_time;
     std::vector <long> nedge; //number of edges
     std::vector <double> teps;
+
 #ifdef INSTRUMENTED
     double lexp, lqueue, rowcom, colcom, predlistred;
     double gmax_lexp,gmax_lqueue, gmax_rowcom, gmax_colcom, gmax_predlistred;
@@ -121,6 +134,10 @@ int main(int argc, char **argv) {
 #ifdef _CUDA
     int gpus = 0;
     double queue_sizing = 1.20;
+#endif
+
+#ifdef _SIMDCOMPRESS
+    SIMDCompressionLib::IntegerCODEC &codec =  * SIMDCompressionLib::CODECFactory::getFromName("s4-bp128-dm");
 #endif
 
     MPI_Init(&argc, &argv);
@@ -145,6 +162,7 @@ int main(int argc, char **argv) {
     MPI_Bcast(&gpus      ,1,MPI_INT,0,MPI_COMM_WORLD);
     MPI_Bcast(&queue_sizing,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 #endif
+
     MPI_Bcast(&verbosity, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
     // Close unnecessary nodes
     if (R * C != size) {
@@ -191,8 +209,7 @@ int main(int argc, char **argv) {
     }
 
 #ifdef INSTRUMENTED
-    allValues32 = store.allValuesSmallerThan32Bits();
-    output32bitMatrixVerificationResults(allValues32, rank);
+    output32bitMatrixVerificationResults(store.allValuesSmallerThan32Bits(), rank);
 #endif
 
 #ifdef _OPENCL
@@ -203,16 +220,14 @@ int main(int argc, char **argv) {
 #else
     CPUBFS_bin runBfs(store, verbosity);
 #endif
-    tstop = MPI_Wtime();
 
+    tstop = MPI_Wtime();
     local_edges = store.getEdgeCount();
     MPI_Reduce(&local_edges, &global_edges, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
     constr_time = tstop - tstart;
-
     if (rank == 0) {
         outputMatrixGenerationResults(size, global_edges, constr_time, global_edges_wd);
     }
-
 
 #if INSTRUMENTED
     if (verbosity >= 16) {
@@ -228,6 +243,7 @@ int main(int argc, char **argv) {
         }
     }
 #endif
+
     // random number generator
 #if __cplusplus > 199711L
     std::knuth_b generator;
@@ -244,13 +260,14 @@ int main(int argc, char **argv) {
         while (iterations < num_of_iterations && giteration < maxiterations) {
             ++giteration;
 
-            // generate start node
+
 #if __cplusplus > 199711L
-            start = distribution(generator);
+    start = distribution(generator);
 #else
-            start = rand() % vertices;
+    start = rand() % vertices;
 #endif
 
+            // generate start node
             //skip already visited
             if (std::find(tries.begin(), tries.end(), start) != tries.end()) {
                 continue;
@@ -295,14 +312,11 @@ int main(int argc, char **argv) {
     // BFS runs start
     MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    startTotalBFSTimer = MPI_Wtime();
-
     for (int i = 0; i < iterations; ++i) {
-
         // BFS
         MPI_Barrier(MPI_COMM_WORLD);
         rtstart = MPI_Wtime();
+
 #ifdef INSTRUMENTED
         if(rank == 0){
             runBfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred);
@@ -316,7 +330,9 @@ int main(int argc, char **argv) {
             runBfs.runBFS(-1);
         }
 #endif
+
         rtstop = MPI_Wtime();
+
 #ifdef INSTRUMENTED
         MPI_Reduce(&lexp, &gmax_lexp, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
         MPI_Reduce(&lqueue, &gmax_lqueue, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -324,10 +340,12 @@ int main(int argc, char **argv) {
         MPI_Reduce(&colcom, &gmax_colcom, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
         MPI_Reduce(&predlistred, &gmax_predlistred, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 #endif
+
         if (rank == 0) {
             if (verbosity >= 1) {
                 printf("BFS Iteration %d: Finished in %fs\n", i, (rtstop - rtstart));
             }
+
 #ifdef INSTRUMENTED
             if(verbosity >= 1){
                 outputBfsRunIterationResults(rtstart, rtstop, gmax_lexp, gmax_lqueue, gmax_rowcom, gmax_colcom,
@@ -348,6 +366,7 @@ int main(int argc, char **argv) {
             lpredlistred.push_back(gmax_predlistred);
             lpredlistred_share.push_back(gmax_predlistred/(rtstop-rtstart));
 #endif
+
         }
         // Validation
         tstart = MPI_Wtime();
@@ -374,25 +393,26 @@ int main(int argc, char **argv) {
             bfs_time.push_back(rtstop - rtstart);
             nedge.push_back(num_edges);
             teps.push_back(num_edges / (rtstop - rtstart));
+
 #ifdef INSTRUMENTED
             valid_time.push_back(tstop - tstart);
 #endif
+
         }
     } // BFS runs end
     free(edgelist);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    stopTotalBFSTimer = MPI_Wtime();
 
     // Output statistics
     if (rank == 0) {
-        outputGeneralStatistics(scale, edgefactor, size, valid, make_graph_time, iterations, stopTotalBFSTimer - startTotalBFSTimer);
+        outputGeneralStatistics(scale, edgefactor, size, valid, make_graph_time, iterations);
+
 #ifdef _CUDA
         printf("gpus_per_process: %d\n", gpus);
         printf("total_gpus: %d\n", gpus * size);
 #endif
-        printf("construction_time: %2.3e\n", constr_time);
 
+        printf("construction_time: %2.3e\n", constr_time);
         statistic bfs_time_s = getStatistics(bfs_time);
         statistic nedge_s = getStatistics(nedge);
         statistic teps_s = getStatistics(teps);
@@ -419,13 +439,14 @@ int main(int argc, char **argv) {
                                               lrowcom_share_s, lcolcom_s, lcolcom_share_s, lpredlistred_s,
                                               lpredlistred_share_s);
 #endif
+
     }
     MPI_Finalize();
 }
 
 /**
  *
- * Methods implementation
+ * Functions implementation
  *
  */
 
@@ -449,14 +470,13 @@ void output32bitMatrixVerificationResults(bool allValues32, int rank) {
 }
 
 void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
-double make_graph_time, int iterations, double totalBFSTime) {
+double make_graph_time, int iterations) {
     printf("Validation: %s\n", (valid) ? "passed" : "failed!");
     printf("SCALE: %ld\n", scale);
     printf("edgefactor: %ld\n", edgefactor);
     printf("NBFS: %d\n", iterations);
     printf("graph_generation: %2.3e\n", make_graph_time);
     printf("num_mpi_processes: %d\n", size);
-    printf("Total BFS Runs time: %f\n", totalBFSTime);
 
 }
 
@@ -489,13 +509,11 @@ statistic &lpredlistred_share_s) {
     printStat(lpredlistred_share_s, "predecessor_list_reduction_share", true);
 }
 
-
 void outputIterationStatistics(statistic &bfs_time_s, statistic &nedge_s, statistic &teps_s) {
     printStat(bfs_time_s, "time", false);
     printStat(nedge_s, "nedge", false);
     printStat(teps_s, "TEPS", true);
 }
-
 
 void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C) {
     if (R_set && !C_set) {
@@ -576,6 +594,7 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
                     ++i;
                 }
             }
+
 #ifdef _CUDA
             }else if(!strcmp(argv[i], "-gpus")){
                 if(i+1 < argc){
@@ -598,6 +617,7 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
                     }
                  }
 #endif
+
         } else if (!strcmp(argv[i], "-v")) {
             /* Verbosity level:
              * 0: Suppress all unnessesary output
@@ -695,3 +715,4 @@ statistic getStatistics(std::vector <T> &input) {
     out.hstddev = (sqrt(qiv_dif) / (static_cast<double>(input.size()) - 1)) * out.hmean * out.hmean;
     return out;
 }
+

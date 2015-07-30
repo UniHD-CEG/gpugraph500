@@ -357,11 +357,11 @@ float intersectionratio) {
     if (sizeratio < 1) throw runtime_error("sizeratio should be larger or equal to 1");
     if (intersectionratio < 0) throw runtime_error("intersectionratio should be positive");
     if (intersectionratio > 1) throw runtime_error("intersectionratio cannot be larger than 1");
-    const uint32_t maxlenth = static_cast<uint32_t>(round(static_cast<float>(minlength) * sizeratio));
+    const uint32_t maxlenth = static_cast<uint32_t>(std::round(static_cast<float>(minlength) * sizeratio));
     if (maxlenth > Max)  throw runtime_error("I can't generate an array so large in such a small range.");
     if (maxlenth < minlength) throw runtime_error("something went wrong, possibly an overflow.");
     // we basically assume that, if we do nothing, intersections are very small
-    const uint32_t intersize = static_cast<uint32_t>(round(static_cast<float>(minlength) * intersectionratio));
+    const uint32_t intersize = static_cast<uint32_t>(std::round(static_cast<float>(minlength) * intersectionratio));
 
     vector<uint32_t> inter = gen.generate(intersize, Max);
     vector<uint32_t> smallest =  unite(gen.generate(static_cast<uint32_t>(minlength - inter.size()), Max), inter);
