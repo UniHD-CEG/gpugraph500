@@ -22,7 +22,7 @@ fi
 }
 
 function test_result {
-  local res=$1 
+  local res=$1
   local error=false
 
   if [ $res -ne 0 ]; then
@@ -34,7 +34,7 @@ function test_result {
 
 function get_size {
   local file=$1
- 
+
   size=`ls -l $file 2>/dev/null | awk '{ print $5 }'`
   res=$?
 
@@ -72,7 +72,7 @@ function update_progress {
     0)
       echo -en " [\]"
       tput cub 4
-      ;; 
+      ;;
   esac
 }
 
@@ -86,7 +86,7 @@ function cancel_job {
     scancel $jobid &> /dev/null
     squeue=`squeue | grep -i $jobid`
   fi
-    
+
   while [ ! "x$squeue" = "x" ]; do
     sleep 1s
     squeue=`squeue | grep -i $jobid`
@@ -102,21 +102,21 @@ function wait_and_process {
   local hasfinished=false
   local validation=""
   local initial_filesize=0
-  local increment=$(( $sf / 5 )) 
+  local increment=$(( $sf / 5 ))
   success="no"
   local modulus=$(( 6 + $increment))
 
-  if [ $sf -le 15 ]; then 
+  if [ $sf -le 15 ]; then
     local modulus=2
   elif [ $sf -le 20 ]; then
     local modulus=$(($increment - 1))
   else
-    local modulus=$((6 + $increment))    
+    local modulus=$((6 + $increment))
   fi
- 
+
   echo -n " "
   tput cub1
-  i=1    
+  i=1
   while [ ! -f $file ]; do
     sleep 1s
     update_progress $i
@@ -126,13 +126,13 @@ function wait_and_process {
   i=1
   while ! $hasfinished ; do
     if [ $(( $i % $modulus ))  -eq 0 ]; then
-        get_size $file current_filesize 
+        get_size $file current_filesize
         if [ $current_filesize -eq $initial_filesize ]; then
            hasfinished=true
         else
            get_size $file initial_filesize
         fi
-      fi 
+      fi
     sleep 1s
     i=$(($i + 1))
     update_progress $i
@@ -149,19 +149,19 @@ function wait_and_process {
 
 function print_header {
   local scale_factors="$1"
-  
+
   printf "\n"
   echo -ne "$green[ $checkmark ] = success"
-  echo -ne "   $red[ $fancyx ] = error"
+  echo -ne "   $red[ $fancyx ] = error / fail"
   echo -ne "   [ $fancyo ] = error / bug$nocolor"
   printf "\n%-20s" "script / sf"
   for sf in $scale_factors; do
     if [ $sf -lt 10 ]; then
       echo -n "  $sf"
-    else 
+    else
       echo -n " $sf"
     fi
-  done 
+  done
   echo ""
 }
 
@@ -179,12 +179,12 @@ function iterate {
   sbatch $script $sf &> $lock
   res=$?
 
-  test_result $res error 
+  test_result $res error
   jobid=`head -1 $lock | grep "Submitted batch" | sed -e 's/[^0-9]//g'`
 
   if $error || [ "x$jobid" = "x" ]; then
      echo -ne "  ${red}${fancyo}${nocolor}"
-  else 
+  else
      wait_and_process $jobid $sf success
      clean_char
      if [ "x$success" = "xyes" ] ; then
@@ -207,15 +207,15 @@ function main {
   rm -rf $lock
   tput civis
   for script in $scripts; do
-    print_script $script 
+    print_script $script
     for sf in $scale_factors; do
       iterate $script $sf $lock
     done
     echo ""
   done
-  echo "" 
-  tput cnorm 
-  
+  echo ""
+  tput cnorm
+
   rm -rf $lock
   exit 0
 }
@@ -227,7 +227,7 @@ function usage {
 
 number_regex='^[0-9]+$'
 if [ $# -ne 2 ] || [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ] || ! [[ $1 =~ $number_regex ]] || ! [[ $2 =~ $number_regex ]]; then
-  usage  
+  usage
   exit 1
 fi
 

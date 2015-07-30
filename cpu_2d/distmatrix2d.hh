@@ -200,7 +200,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
 
 /*
  * Setup of 2d partitioned adjacency matrix.
- * 1. Announce elements in each row(ignore selfloops)
+ * 1. Announce elements in each row (ignore selfloops)
  * 2. Compute intermediate row pointer and storage consume for columns
  * 3. Send edge list to owner
  * 4. Sort column indices
@@ -210,9 +210,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
 */
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
  void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_edge *input, int64_t numberOfEdges,
-
     bool undirected) {
-
 
     int64_t numAlg;
     int64_t dest;
@@ -232,15 +230,14 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
     //get max vtx
     for (vtxtyp i = 0; i < numberOfEdges; ++i) {
         packed_edge read = input[i];
-
         maxVertex = (maxVertex > read.v0) ? maxVertex : read.v0;
         maxVertex = (maxVertex > read.v1) ? maxVertex : read.v1;
     }
 
     MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
-    //because start at 0
+    // because start at 0
     globalNumberOfVertex += 1;
-    //row slice padding
+    // row slice padding
     if (PAD) {
         globalNumberOfVertex +=
         (globalNumberOfVertex % R > 0) ? R - globalNumberOfVertex % R : 0;
@@ -261,7 +258,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         row_elem[i] = 0;
     }
     // Bad implementation: To many communications
-    //reset outgoing send status
+    // reset outgoing send status
     for (int i = 0; i < outstanding_sends; ++i) {
         iqueue[i] = MPI_REQUEST_NULL;
     }
@@ -269,7 +266,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
     count_elementssend = 0;
     while (count_elementssend < numberOfEdges) {
         for (int i = 0; i < 10 && count_elementssend < numberOfEdges; ++i) {
-            //find free send buff;
+            // find free send buff;
             freeRqBuf = -1;
             for (int j = 0; j < outstanding_sends; ++j) {
                 MPI_Test(&(iqueue[(j + i) % outstanding_sends]), &flag, &status);
@@ -279,33 +276,30 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                 }
             }
 
-            //Send an element
+            // Send an element
             if (freeRqBuf > -1) {
                 //if(input[count_elementssend].v0 != input[count_elementssend].v1){
                 int64_t dest = computeOwner(input[count_elementssend].v0, input[count_elementssend].v1);
-                MPI_Issend(&(input[count_elementssend].v0), 1, MPI_LONG, dest, 0, MPI_COMM_WORLD,
-                    &(iqueue[freeRqBuf]));
+                MPI_Issend(&(input[count_elementssend].v0), 1, MPI_LONG, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
                 //}
                 ++count_elementssend;
             } else {
                 int gunfinished;
                 int someting_unfinshed = 1;
 
-                //Tell others that there is something unfinished
+                // Tell others that there is something unfinished
                 MPI_Allreduce(&someting_unfinshed, &gunfinished, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
             }
         }
 
         while (true) {
-            //Test if there is something to receive
-            MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
-                &flag, &status);
-            if (!flag) {// There is no package to receive
+            // Test if there is something to receive
+            MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+            if (!flag) { // There is no package to receive
                 break;
             }
 
-            MPI_Recv(&buf, 1, MPI_LONG, MPI_ANY_SOURCE, 0,
-                MPI_COMM_WORLD, &status);
+            MPI_Recv(&buf, 1, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
             ++row_elem[buf - row_start];
         }
     }
@@ -314,7 +308,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         count_elementssend = 0;
         while (count_elementssend < numberOfEdges) {
             for (int i = 0; i < 10 && count_elementssend < numberOfEdges; ++i) {
-                //find free send buff;
+                // find free send buff;
                 freeRqBuf = -1;
                 for (int j = 0; j < outstanding_sends; ++j) {
                     MPI_Test(&(iqueue[(j + i) % outstanding_sends]), &flag, &status);
@@ -324,7 +318,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                     }
                 }
 
-                //Send an element
+                // Send an element
                 if (freeRqBuf > -1) {
                     //if(input[count_elementssend].v0 != input[count_elementssend].v1){
                     int64_t dest = computeOwner(input[count_elementssend].v1, input[count_elementssend].v0);
@@ -335,16 +329,15 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                 } else {
                     someting_unfinshed = 1;
 
-                    //Tell others that there is something unfinished
+                    // Tell others that there is something unfinished
                     MPI_Allreduce(&someting_unfinshed, &gunfinished, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
                 }
             }
 
             while (true) {
-                //Test if there is something to receive
-                MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
-                    &flag, &status);
-                if (!flag) {// There is no package to receive
+                // Test if there is something to receive
+                MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+                if (!flag) { // There is no package to receive
                     break;
                 }
 
@@ -355,8 +348,8 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         }
     }
 
-    //All sends are started
-    //Receive rest
+    // All sends are started
+    // Receive rest
     while (true) {
         //find unfinished sends
         someting_unfinshed = 0;
@@ -372,6 +365,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         if (gunfinished == 0) {
             break;
         }
+
         while (true) {
             //Test if there is something to receive
             MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
@@ -385,7 +379,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         }
     };
 
-//2. Step
+//2. Compute intermediate row pointer and storage consume for columns
     //compute row index array(prefix scan)
     row_pointer[0] = 0;
     for (vtxtyp i = 1; i <= row_length; ++i) {
@@ -396,7 +390,8 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         row_elem[i] = 0;
     }
     column_index = new vtxtyp[row_pointer[row_length]];
-//3.
+
+//3. Send edge list to owner
     //reset outgoing send status
     for (int i = 0; i < outstanding_sends; ++i) {
         iqueue[i] = MPI_REQUEST_NULL;
@@ -405,7 +400,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
     count_elementssend = 0;
     while (count_elementssend < numberOfEdges) {
         for (int i = 0; i < 10 && count_elementssend < numberOfEdges; ++i) {
-            //find free send buff;
+            // find free send buff;
             freeRqBuf = -1;
             for (int j = 0; j < outstanding_sends; ++j) {
                 MPI_Test(&(iqueue[(j + i) % outstanding_sends]), &flag, &status);
@@ -414,7 +409,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                     break;
                 }
             }
-            //Send an edge
+            // Send an edge
             if (freeRqBuf > -1) {
                 send_buf[0] = input[count_elementssend].v0;
                 send_buf[1] = input[count_elementssend].v1;
@@ -427,16 +422,15 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
             } else {
                 someting_unfinshed = 1;
 
-                //Tell others that there is something unfinished
+                // Tell others that there is something unfinished
                 MPI_Allreduce(&someting_unfinshed, &gunfinished, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
             }
         }
 
         while (true) {
-            //Test if there is something to receive
-            MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
-                &flag, &status);
-            if (!flag) {// There is no package to receive
+            // Test if there is something to receive
+            MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+            if (!flag) { // There is no package to receive
                 break;
             }
 
@@ -452,7 +446,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         count_elementssend = 0;
         while (count_elementssend < numberOfEdges) {
             for (int i = 0; i < 10 && count_elementssend < numberOfEdges; ++i) {
-                //find free send buff;
+                // find free send buff;
                 freeRqBuf = -1;
                 for (int i = 0; i < outstanding_sends; ++i) {
                     MPI_Test(&(iqueue[i]), &flag, &status);
@@ -462,7 +456,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                     }
                 }
 
-                //Send an edge
+                // Send an edge
                 if (freeRqBuf > -1) {
                     send_buf[0] = input[count_elementssend].v1;
                     send_buf[1] = input[count_elementssend].v0;
@@ -473,14 +467,14 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                     ++count_elementssend;
                 } else {
                     someting_unfinshed = 1;
-                    //Tell others that there is something unfinished
+                    // Tell others that there is something unfinished
                     MPI_Allreduce(&someting_unfinshed, &gunfinished, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
                 }
             }
             while (true) {
-                //Test if there is something to receive
+                // Test if there is something to receive
                 MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
-                if (!flag) {// There is no package to receive
+                if (!flag) { // There is no package to receive
                     break;
                 }
 
@@ -491,10 +485,10 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
             }
         }
     }
-    //All sends are started
-    //Receive rest
+    // All sends are started
+    // Receive rest
     while (true) {
-        //find unfinished sends
+        // find unfinished sends
         int someting_unfinshed = 0;
 
         for (int i = 0; i < outstanding_sends; ++i) {
@@ -504,18 +498,19 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                 break;
             }
         }
-        //Ask other if there is something unfinished
+        // Ask other if there is something unfinished
         int gunfinished;
         MPI_Allreduce(&someting_unfinshed, &gunfinished, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
         if (gunfinished == 0)
             break;
 
         while (true) {
-            //Test if there is something to receive
+            // Test if there is something to receive
             MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD,
                 &flag, &status);
-            if (!flag) // There is no package to receive
+            if (!flag) { // There is no package to receive
                 break;
+            }
 
             MPI_Recv(buf2, 2, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
             int rstart = buf2[0] - row_start;
@@ -535,7 +530,8 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
                 (row_start + i), r, c, row_elem[i], row_pointer[i + 1] - row_pointer[i]);
         }
     }
-//4.
+
+//4. Sort column indices
     //sort edge list
 #ifdef _OPENMP
     #pragma omp parallel for
@@ -545,7 +541,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         std::sort(column_index + row_pointer[i], column_index + row_pointer[i + 1]);
     }
 
-//5.
+//5. Remove duplicate column indices
     // remove duplicates
     // The next section is very bad, because it use too much memory.
 #ifdef _OPENMP
@@ -555,7 +551,8 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
     for (vtxtyp i = 0; i < row_length; ++i) {
         rowtyp tmp_row_num = row_elem[i];
         //Search for duplicates in every row
-        for (rowtyp j = row_pointer[i] + 1; j < row_pointer[i + 1]; ++j) {
+        int rpointer = row_pointer[i + 1];
+        for (rowtyp j = row_pointer[i] + 1; j < rpointer; ++j) {
             if (column_index[j - 1] == column_index[j])
                 --tmp_row_num;
         }
@@ -587,7 +584,8 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
             tmp_column_index[next_elem] = column_index[row_pointer[i]];
         }
         ++next_elem;
-        for (rowtyp j = row_pointer[i] + 1; j < row_pointer[i + 1]; ++j) {
+        int rpointer = row_pointer[i + 1];
+        for (rowtyp j = row_pointer[i] + 1; j < rpointer; ++j) {
             if (column_index[j - 1] != column_index[j]) {
                 if (WOLO) {
                     tmp_column_index[next_elem] = column_index[j] - column_start;
