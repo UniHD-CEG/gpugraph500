@@ -49,3 +49,5 @@ temp.tmp
 *.tgp
 eval/tmp.tmp
 *.scorep_init.c
+eval/scorep-*
+eval/scorep_*
