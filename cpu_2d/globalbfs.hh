@@ -543,7 +543,8 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 			tstart = MPI_Wtime();
 #endif
 
-			static_cast<Derived*>(this)->reduce_fq_out(recv_fq_buff,static_cast<long>(count));
+			// @TODO:
+			// static_cast<Derived*>(this)->reduce_fq_out(recv_fq_buff,static_cast<long>(count));
 
 #ifdef INSTRUMENTED
 			tend = MPI_Wtime();
@@ -618,13 +619,13 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 				 store.getLocColLength(),
 				 fq_tp_type,
 				 col_comm
-
 #ifdef INSTRUMENTED
 				 ,lqueue
 #endif
-
 				 );
+
 	static_cast<Derived*>(this)->setModOutgoingFQ(recv_fq_buff,_outsize);
+
 
 #ifdef INSTRUMENTED
 	comtend = MPI_Wtime();
