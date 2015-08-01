@@ -510,7 +510,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 	while((1 << rounds) < store.getNumRowSl() ){
 		if((store.getLocalRowID() >> rounds) % 2 == 1){
 			FQ_T* startaddr_fq;
-			long _outsize;
+			int _outsize;
 			//comute recv addr
 			int recv_addr = (store.getLocalRowID() + store.getNumRowSl() - (1 << rounds)) % store.getNumRowSl();
 			//get fq to send
@@ -558,7 +558,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 	if(0 == store.getLocalRowID())
 	{
 		FQ_T* startaddr_fq;
-		long _outsize;
+		int _outsize;
 		//get fq to send
 
 #ifdef INSTRUMENTED
@@ -587,7 +587,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 #endif
 
 	} else {
-		long _outsize;
+		int _outsize;
 		MPI_Bcast(&_outsize, 1, MPI_LONG, 0, col_comm);
 		assert(_outsize <= recv_fq_buff_length);
 		MPI_Bcast(recv_fq_buff, _outsize, fq_tp_type, 0, col_comm);
