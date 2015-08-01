@@ -42,7 +42,7 @@ function install {
 
   if [ 1 -eq 2 ]; then
     :
-  fi
+
   banner "OpenMPI"
   if [ ! -f ${openmpi}.tar.gz ]; then
     section_banner "Downloading"
@@ -133,7 +133,7 @@ function install {
   make -j4 install
   exit_error $?
   cd ..
-
+  fi
   banner "Score-P"
   if [ ! -f  ${scorep}.tar.gz ]; then
     section_banner "Downloading"

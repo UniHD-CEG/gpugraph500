@@ -3,19 +3,23 @@
 nvidia_architecture="fermi"
 nvidia_ptxas_otimize="no"
 openmp_on_cuda="no"
-openmp_on_cxx_mpi="no"
+openmp_on_other_compilers="no"
 instrument_cuda="yes"
-instrument_cxx_mpi="yes"
+instrument_other_compilers="yes"
 custom_openmpi="yes"
 custom_openmpi_basedir=/home/jromera/openmpi
 scorep_profiler_enable="yes"
 scorep_custom="yes"
 scorep_custom_basedir=/home/jromera/scorep
 use_avx_instructions="yes"
-enable_simd_compression="yes"
+enable_simd_compression="no"
 debug="no"
 quiet_output="yes"
 
+CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
+CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
+NVCXX := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
+NVDIR := $(shell echo $(NVCXX) | sed 's,/bin/nvcc$$,,')
 
 ifeq ($(use_avx_instructions), "yes")
 	arch := -mavx
@@ -36,17 +40,22 @@ endif
 ifeq ($(scorep_profiler_enable), "yes")
 ifeq ($(scorep_custom), "yes")
 	export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
+	libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
+	libcudart_static_flag = -lcudart_static
 	PROFILER := $(scorep_custom_basedir)/bin/scorep
 else
 	PROFILER := scorep
 endif
+else
+	libcudart_static_path := -L$(NVDIR)/lib64
+	libcudart_static_flag = -lcudart
 endif
 
 ifeq ($(openmp_on_cuda), "yes")
 	CUDA_OPENMP := -fopenmp
 endif
 
-ifeq ($(openmp_on_cxx_mpi), "yes")
+ifeq ($(openmp_on_other_compilers), "yes")
 	OPENMP := -fopenmp
 endif
 
@@ -54,7 +63,7 @@ ifeq ($(instrument_cuda), "yes")
 	CUDA_INSTRUM := -DINSTRUMENTED
 endif
 
-ifeq ($(instrument_cxx_mpi), "yes")
+ifeq ($(instrument_other_compilers), "yes")
 	INSTRUMENTED := -DINSTRUMENTED
 endif
 
@@ -70,11 +79,6 @@ else
 	INCPATH := -I.
 	HEADERS :=
 endif
-
-CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
-CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
-NVCXX := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
-NVDIR := $(shell echo $(NVCXX) | sed 's,/bin/nvcc$$,,')
 
 ifeq ($(custom_openmpi), "yes")
 	export OMPI_CC := $(CC)
@@ -96,7 +100,7 @@ CCFLAGS := -mavx -std=c99 -pedantic -O3 -funroll-loops -mfpmath=sse -Wall -Wextr
 MPICFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic -funroll-loops -mfpmath=sse $(OPENMP) -O3 $(arch) -Wall -W -fPIE
 MPICXXFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -funroll-loops -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
 LFLAGS := -m64 -fopenmp -Wl,-O3
-LLIBS := -L$(NVDIR)/lib64 -L$(NVDIR)/lib -lcudart -lcuda
+LLIBS := $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda
 
 NVDIR := $(NVDIR)
 CXX := $(CXX)
@@ -150,7 +154,7 @@ ifeq ($(enable_simd_compression), "yes")
 	@echo "============================================================================"
 endif
 	@echo ""
-	@echo "--- Compiling Lemure/SIMDCompression"
+	@echo "--- Compiling Lemures/SIMDCompression"
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
 	@echo "    CCX       $@"
 
