@@ -490,6 +490,12 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 
 
 // 4) global expansion
+/* Failed to integrate this code*/
+
+// Regarding a later implementation: In globalbfs.hh commit 59ab747 lines
+// 395-475 is the column reduction code that I used in my thesis. This code
+// is much simpler then the new implementation.
+
 #ifdef INSTRUMENTED
 	comtstart = MPI_Wtime();
 	#endif
@@ -544,7 +550,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 #endif
 
 			// @TODO:
-			// static_cast<Derived*>(this)->reduce_fq_out(recv_fq_buff,static_cast<long>(count));
+			static_cast<Derived*>(this)->reduce_fq_out(recv_fq_buff,static_cast<long>(count), startaddr_fq, _outsize);
 
 #ifdef INSTRUMENTED
 			tend = MPI_Wtime();
@@ -631,6 +637,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 	comtend = MPI_Wtime();
 	colcom += comtend-comtstart;
 #endif
+/**/
 
 // 5) global fold
 #ifdef INSTRUMENTED
