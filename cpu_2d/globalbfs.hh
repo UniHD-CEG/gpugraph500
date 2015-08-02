@@ -446,7 +446,6 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 		}
 
 // 4) global expansion
-/*
 #ifdef INSTRUMENTED
 	comtstart = MPI_Wtime();
 	tstart = MPI_Wtime();
@@ -486,7 +485,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 	comtend = MPI_Wtime();
 	colcom += comtend-comtstart;
 #endif
-*/
+
 
 
 // 4) global expansion
@@ -496,6 +495,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 // 395-475 is the column reduction code that I used in my thesis. This code
 // is much simpler then the new implementation.
 
+/*
 #ifdef INSTRUMENTED
 	comtstart = MPI_Wtime();
 	#endif
@@ -513,14 +513,14 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 	// tree based reduce operation with messages of variable size
 	// root 0
 	int rounds = 0;
-	while((1 << rounds) < store.getNumRowSl() ){
+	while((1 << rounds) < store.getNumRowSl() ) {
 		if((store.getLocalRowID() >> rounds) % 2 == 1){
 			FQ_T* startaddr_fq;
 			int _outsize;
 			//comute recv addr
 			int recv_addr = (store.getLocalRowID() + store.getNumRowSl() - (1 << rounds)) % store.getNumRowSl();
 			//get fq to send
-			//
+
 #ifdef INSTRUMENTED
 			tstart = MPI_Wtime();
 #endif
@@ -550,7 +550,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 #endif
 
 			// @TODO:
-			static_cast<Derived*>(this)->reduce_fq_out(recv_fq_buff,static_cast<long>(count), startaddr_fq, _outsize);
+			static_cast<Derived*>(this)->reduce_fq_out(recv_fq_buff,static_cast<long>(count), startaddr_fq, recv_fq_buff_length);
 
 #ifdef INSTRUMENTED
 			tend = MPI_Wtime();
@@ -637,7 +637,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
 	comtend = MPI_Wtime();
 	colcom += comtend-comtstart;
 #endif
-/**/
+*/
 
 // 5) global fold
 #ifdef INSTRUMENTED
