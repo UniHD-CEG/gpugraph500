@@ -82,7 +82,7 @@ else
 endif
 
 ifeq ($(use_cuda), "yes")
-	CUDA_DEFINE := -D_CUDA
+	DEFINE_CUDA := -D_CUDA
 	bfs_object := cuda_bfs_cuda.o
 else
 	bfs_object :=  cpubfs_bin.o
