@@ -13,6 +13,7 @@
 #include <string.h>
 #include <functional>
 
+/*
 #ifdef _SIMDCOMPRESS
     #include "codecfactory.h"
     #include "intersection.h"
@@ -22,6 +23,7 @@
 #ifdef _SIMDCOMPRESS
     IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
 #endif
+*/
 
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
