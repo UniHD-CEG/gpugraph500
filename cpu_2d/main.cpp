@@ -17,14 +17,18 @@
     #include <random>
 #endif
 
-#ifdef _OPENCL
+#ifdef _CUDA
+    #include "cuda/cuda_bfs.h"
+#endif
+
+/*
+#elif defined _OPENCL
     #include "opencl/OCLrunner.hh"
     #include "opencl/opencl_bfs.h"
-#elif defined _CUDA
-    #include "cuda/cuda_bfs.h"
 #else
     #include "cpubfs_bin.h"
 #endif
+*/
 
 struct statistic {
     double min;
