@@ -8,11 +8,11 @@ instrument_cuda="yes"
 instrument_other_compilers="yes"
 custom_openmpi="yes"
 custom_openmpi_basedir=/home/jromera/openmpi
-scorep_profiler_enable="yes"
+scorep_profiler_enable="no"
 scorep_custom="yes"
 scorep_custom_basedir=/home/jromera/scorep
 use_avx_instructions="yes"
-enable_simd_compression="no"
+enable_simd_compression="yes"
 debug="no"
 quiet_output="yes"
 
@@ -99,7 +99,7 @@ CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic -O3 -funroll-loops -Wall -Wextr
 CCFLAGS := -mavx -std=c99 -pedantic -O3 -funroll-loops -mfpmath=sse -Wall -Wextra
 MPICFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic -funroll-loops -mfpmath=sse $(OPENMP) -O3 $(arch) -Wall -W -fPIE
 MPICXXFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -funroll-loops -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
-LFLAGS := -m64 -fopenmp -Wl,-O3
+LFLAGS := -m64 $(OPENMP) -Wl,-O3
 LLIBS := $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda
 
 NVDIR := $(NVDIR)
@@ -110,9 +110,9 @@ MPICXX := $(MPICXX)
 LINK := $(PROFILER) $(MPICXX)
 
 OUTFILES := $(shell ls *.o)
-SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c simplecpubfs.cpp validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp cpubfs_bin.cpp
 COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o intersection.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
-OBJECTS := cuda_bfs_cuda.o main.o utils.o splittable_mrg.o make_graph.o graph_generator.o simplecpubfs.o onesided.o onesided_emul.o bitlevelfunctions.o cpubfs_bin.o
+SOURCES := globalbfs.cpp main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c simplecpubfs.cpp validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp cpubfs_bin.cpp
+OBJECTS := cuda_bfs_cuda.o main.o utils.o splittable_mrg.o make_graph.o graph_generator.o globalbfs.o simplecpubfs.o onesided.o onesided_emul.o bitlevelfunctions.o cpubfs_bin.o
 
 ifeq ($(enable_simd_compression), "yes")
 	OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
@@ -154,7 +154,7 @@ ifeq ($(enable_simd_compression), "yes")
 	@echo "============================================================================"
 endif
 	@echo ""
-	@echo "--- Compiling Lemures/SIMDCompression"
+	@echo "--- Compiling Lemires/SIMDCompression"
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
 	@echo "    CCX       $@"
 
@@ -211,40 +211,44 @@ simdintegratedbitpacking.o: compression/include/simdintegratedbitpacking.h compr
 	@echo "    CCX       $@"
 
 utils.o: generator/utils.c generator/splittable_mrg.h generator/graph_generator.h generator/user_settings.h generator/utils.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o utils.o generator/utils.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ generator/utils.c
 	@echo "    MPICC     $@"
 
 splittable_mrg.o: generator/splittable_mrg.c generator/mod_arith.h generator/user_settings.h generator/mod_arith_64bit.h generator/mod_arith_32bit.h \
 		generator/splittable_mrg.h generator/mrg_transitions.c
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o splittable_mrg.o generator/splittable_mrg.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ generator/splittable_mrg.c
 	@echo "    MPICC     $@"
 
 make_graph.o: generator/make_graph.c generator/graph_generator.h generator/user_settings.h generator/utils.h generator/splittable_mrg.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o make_graph.o generator/make_graph.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ generator/make_graph.c
 	@echo "    MPICC     $@"
 
 graph_generator.o: generator/graph_generator.c generator/user_settings.h generator/splittable_mrg.h generator/graph_generator.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o graph_generator.o generator/graph_generator.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ generator/graph_generator.c
 	@echo "    MPICC     $@"
 
 simplecpubfs.o: simplecpubfs.cpp simplecpubfs.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o simplecpubfs.o simplecpubfs.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ simplecpubfs.cpp
 	@echo "    MPICXX    $@"
 
 onesided.o: validate/onesided.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided.o validate/onesided.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ validate/onesided.c
 	@echo "    MPICC     $@"
 
 onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o onesided_emul.o validate/onesided_emul.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ validate/onesided_emul.c
 	@echo "    MPICC     $@"
 
+globalbfs.o: globalbfs.hh
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ globalbfs.cpp
+	@echo "    MPICXX    $@"
+
 bitlevelfunctions.o: bitlevelfunctions.cpp bitlevelfunctions.h
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o bitlevelfunctions.o bitlevelfunctions.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ bitlevelfunctions.cpp
 	@echo "    MPICXX    $@"
 
 cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o cpubfs_bin.o cpubfs_bin.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ cpubfs_bin.cpp
 	@echo "    MPICXX    $@"
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu

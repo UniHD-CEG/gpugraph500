@@ -23,7 +23,7 @@
 template<class T>
 void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
              std::function<void(T, long, T*&, int& )>& get, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
-             T* recv_buff,
+             T *recv_buff,
              int& rsize, // size of the final result
              int ssize,  //size of the slice
              MPI_Datatype type,
@@ -38,7 +38,7 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
     //time mesurement
 #ifdef INSTRUMENTED
     double startTimeQueueProcessing;
-    double endTimeQueueProcessing ;
+    double endTimeQueueProcessing;
 #endif
 
     //step 1
@@ -60,7 +60,7 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
     startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-            reduce(0,ssize,recv_buff,psize_from);
+            reduce(0, ssize, recv_buff, psize_from);
 
 #ifdef INSTRUMENTED
     endTimeQueueProcessing = MPI_Wtime();
@@ -79,16 +79,16 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
 
 #ifdef INSTRUMENTED
     endTimeQueueProcessing = MPI_Wtime();
-    timeQueueProcessing += endTimeQueueProcessing -startTimeQueueProcessing;
+    timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
-            MPI_Send(send, psize_to, type, communicatorRank-1,1, comm);
+            MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
         }
     }
     const std::function<int (int)> newRank = [&residuum](int oldr) {
-        return (oldr < 2*residuum)? oldr/2 : oldr -residuum;
+        return (oldr < 2 * residuum)? oldr / 2 : oldr - residuum;
     };
     const std::function<int (int)> oldRank = [&residuum](int newr) {
-        return (newr <  residuum )? newr*2 : newr +residuum;
+        return (newr <  residuum )? newr * 2 : newr + residuum;
     };
 
     MPI_Status status;
@@ -97,7 +97,7 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
     T* send;
 
     if ((((communicatorRank & 1) == 0)
-        && (communicatorRank < 2*residuum)) || (communicatorRank >= 2*residuum)) {
+        && (communicatorRank < 2 * residuum)) || (communicatorRank >= 2 * residuum)) {
 
         int vrank;
         int currentSliceSize;
@@ -112,16 +112,16 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
         // get(offset, csize, send, psize_to);
 
         for (int it=0; it < intLdSize; ++it) {
-            lowerId = currentSliceSize/2;
+            lowerId = currentSliceSize / 2;
             upperId = currentSliceSize - lowerId;
 
-            if (((vrank >> it)&1)==0) { // even
+            if (((vrank >> it) & 1) == 0) { // even
 
 #ifdef INSTRUMENTED
     startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-                get(offset+lowerId, upperId, send, psizeTo);
+                get(offset + lowerId, upperId, send, psizeTo);
 
 #ifdef INSTRUMENTED
     endTimeQueueProcessing = MPI_Wtime();
@@ -171,7 +171,7 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
     startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-                reduce(offset+lowerId,upperId,recv_buff,psizeFrom);
+                reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
 
 #ifdef INSTRUMENTED
     endTimeQueueProcessing = MPI_Wtime();
@@ -192,7 +192,7 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
 
 #ifdef INSTRUMENTED
     endTimeQueueProcessing = MPI_Wtime();
-    timeQueueProcessing += endTimeQueueProcessing -startTimeQueueProcessing;
+    timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
 
     } else {
@@ -211,16 +211,16 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
     disps[lastTargetNode] = 0;
 
-    for (unsigned int slice=1; slice<power2intLdSize; ++slice) {
+    for (unsigned int slice=1; slice < power2intLdSize; ++slice) {
         unsigned int reversedSliceIDs = reverse(slice, intLdSize);
         unsigned int targetNode = oldRank(reversedSliceIDs);
         disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
         lastTargetNode = targetNode;
     }
 
-    //nodes without a partial resulty
+    //nodes without a partial result
     for (unsigned int node=0; node < residuum; ++node ) {
-        disps[2*node+1] = 0;
+        disps[2 * node + 1] = 0;
     }
 
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
