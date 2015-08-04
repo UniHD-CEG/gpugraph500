@@ -12,7 +12,7 @@ scorep_profiler_enable="no"
 scorep_custom="yes"
 scorep_custom_basedir=/home/jromera/scorep
 use_avx_instructions="yes"
-enable_simd_compression="yes"
+enable_simd_compression="no"
 debug="no"
 quiet_output="yes"
 use_cuda="yes"
@@ -120,8 +120,8 @@ LINK := $(PROFILER) $(MPICXX)
 
 OUTFILES := $(shell ls *.o)
 COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o intersection.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
-SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c $(bfs_implementation) validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp 
-OBJECTS := $(bfs_object) main.o utils.o splittable_mrg.o make_graph.o graph_generator.o globalbfs.o onesided.o onesided_emul.o bitlevelfunctions.o 
+SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c $(bfs_implementation) validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp
+OBJECTS := $(bfs_object) main.o utils.o splittable_mrg.o make_graph.o graph_generator.o globalbfs.o onesided.o onesided_emul.o bitlevelfunctions.o
 
 ifeq ($(enable_simd_compression), "yes")
 	OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
@@ -236,7 +236,7 @@ graph_generator.o: generator/graph_generator.c generator/user_settings.h generat
 	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ generator/graph_generator.c
 	@echo "    MPICC     $@"
 
-simplecpubfs.o: simplecpubfs.h simplecpubfs.cpp distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
+simplecpubfs.o: simplecpubfs.cpp simplecpubfs.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ simplecpubfs.cpp
 	@echo "    MPICXX    $@"
 
@@ -252,7 +252,7 @@ bitlevelfunctions.o: bitlevelfunctions.h bitlevelfunctions.cpp
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ bitlevelfunctions.cpp
 	@echo "    MPICXX    $@"
 
-cpubfs_bin.o: cpubfs_bin.h cpubfs_bin.cpp distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
+cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ cpubfs_bin.cpp
 	@echo "    MPICXX    $@"
 
