@@ -4,7 +4,6 @@
  *
  */
 
-
 #include "mpi.h"
 #include <cstring>
 #include <assert.h>
@@ -18,20 +17,15 @@
     #include <random>
 #endif
 
-#ifdef _OPENCL
+#ifdef _CUDA
+    #include "cuda/cuda_bfs.h"
+#elif defined _OPENCL
     #include "opencl/OCLrunner.hh"
     #include "opencl/opencl_bfs.h"
-#elif defined _CUDA
-    #include "cuda/cuda_bfs.h"
 #else
     #include "cpubfs_bin.h"
 #endif
 
-#ifdef _SIMDCOMPRESS
-	#include "codecfactory.h"
-	#include "intersection.h"
-	using namespace SIMDCompressionLib;
-#endif
 
 struct statistic {
     double min;
@@ -135,11 +129,11 @@ int main(int argc, char **argv) {
     int gpus = 0;
     double queue_sizing = 1.20;
 #endif
-
+/*
 #ifdef _SIMDCOMPRESS
     SIMDCompressionLib::IntegerCODEC &codec =  * SIMDCompressionLib::CODECFactory::getFromName("s4-bp128-dm");
 #endif
-
+*/
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);

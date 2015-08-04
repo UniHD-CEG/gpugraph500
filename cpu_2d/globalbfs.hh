@@ -14,6 +14,17 @@
 #include <functional>
 
 
+#ifdef _SIMDCOMPRESS
+    #include "codecfactory.h"
+    #include "intersection.h"
+    using namespace SIMDCompressionLib;
+#endif
+
+#ifdef _SIMDCOMPRESS
+    IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
+#endif
+
+
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
@@ -22,7 +33,7 @@ template<class Derived,
         class MType, // Bitmap mask
         class STORE> //Storage of Matrix
 class GlobalBFS {
-
+private:
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
@@ -31,7 +42,6 @@ class GlobalBFS {
                                 MType *&owenmap, MType *&tmpmap);
 
 protected:
-
     const STORE &store;
     typename STORE::vtxtyp *predecessor;
     MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
@@ -84,7 +94,6 @@ template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vtxtyp *&owen,
                                                                     typename STORE::vtxtyp *&tmp, MType *&owenmap,
                                                                     MType *&tmpmap) {
-
     MPI_Status status;
     int communicatorSize, communicatorRank, intLdSize, power2intLdSize, residuum;
     int psize = mask_size;
@@ -150,16 +159,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     };
 
     if ((((communicatorRank & 1) == 0) && (communicatorRank < 2 * residuum)) || (communicatorRank >= 2 * residuum)) {
-
-        int ssize, vrank, offset, lowers, uppers;
+        int ssize, vrank, offset, lowers, uppers, size;
 
         ssize = psize;
         vrank = newRank(communicatorRank);
         offset = 0;
 
+
         for (int it = 0; it < intLdSize; ++it) {
             lowers = ssize / 2; //lower slice size
             uppers = ssize - lowers; //upper slice size
+            size = lowers * mtypesize;
 
             if (((vrank >> it) & 1) == 0) {// even
                 //Transmission of the the bitmap
@@ -181,7 +191,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 int p = 0;
                 for (int i = 0; i < uppers; ++i) {
                     MType tmpm = tmpmap[i + offset + lowers];
-                    int size = lowers * mtypesize;
                     int index = (i + offset + lowers) * mtypesize;
                     while (tmpm != 0) {
                         int last = ffsl(tmpm) - 1;
@@ -191,9 +200,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     }
                 }
                 //Transmission of updates
-                MPI_Sendrecv(tmp + lowers * mtypesize, p, fq_tp_type,
+                MPI_Sendrecv(tmp + size, p, fq_tp_type,
                              oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
-                             tmp, lowers * mtypesize, fq_tp_type,
+                             tmp, size, fq_tp_type,
                              oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
                              col_comm, &status);
                 //Updates for own data
@@ -237,7 +246,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 //Transmission of updates
                 MPI_Sendrecv(tmp, p, fq_tp_type,
                              oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
-                             tmp + lowers * mtypesize, uppers * mtypesize, fq_tp_type,
+                             tmp + size, uppers * mtypesize, fq_tp_type,
                              oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
                              col_comm, &status);
 
@@ -246,10 +255,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 for (int i = 0; i < uppers; ++i) {
                     MType tmpm = tmpmap[offset + lowers + i];
                     int lindex = (i + offset + lowers) * mtypesize;
-                    int rindex = lowers * mtypesize;
                     while (tmpm != 0) {
                         int last = ffsl(tmpm) - 1;
-                        owen[lindex + last] = tmp[p + rindex];
+                        owen[lindex + last] = tmp[p + size];
                         ++p;
                         tmpm ^= (1 << last);
                     }
@@ -278,13 +286,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     }
     //nodes without a partial resulty
     for (unsigned int node = 0; node < residuum; ++node) {
-        sizes[2 * node + 1] = 0;
-        disps[2 * node + 1] = 0;
+        int index = 2 * node + 1;
+        sizes[index] = 0;
+        disps[index] = 0;
     }
     // Transmission of the final results
     MPI_Allgatherv(MPI_IN_PLACE, sizes[communicatorRank], fq_tp_type,
                    owen, &sizes[0], &disps[0], fq_tp_type, col_comm);
-
 }
 
 template<class Derived, class FQ_T, class MType, class STORE>
@@ -343,6 +351,11 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
     delete[] tmpmask;
 }
 
+template<class Derived, class FQ_T, class MType, class STORE>
+typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor() {
+    return predecessor;
+}
+
 /**********************************************************************************
  * BFS search:
  * 0) Node 0 sends start vertex to all nodes
@@ -353,17 +366,15 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
  * 4) global expansion
  * 5) global fold
  **********************************************************************************/
-
+  // <Derived, FQ_T, MType, STORE>
 #ifdef INSTRUMENTED
     template<class Derived,class FQ_T,class MType,class STORE>
-    void GlobalBFS<Derived,FQ_T,MType,STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
+    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
 #else
     template<class Derived, class FQ_T, class MType, class STORE>
     void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex)
 #endif
-
 {
-
 #ifdef INSTRUMENTED
     double tstart, tend;
     lexp =0;
@@ -560,9 +571,5 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
     }
 }
 
-template<class Derived, class FQ_T, class MType, class STORE>
-typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor() {
-    return predecessor;
-}
 
 #endif // GLOBALBFS_HH

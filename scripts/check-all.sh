@@ -154,7 +154,7 @@ function print_header {
   echo -ne "$green[ $checkmark ] = success"
   echo -ne "   $red[ $fancyx ] = error / fail"
   echo -ne "   [ $fancyo ] = error / bug$nocolor"
-  printf "\n%-20s" "script / sf"
+  printf "\n%-16s" "script / sf"
   for sf in $scale_factors; do
     if [ $sf -lt 10 ]; then
       echo -n "  $sf"
@@ -167,7 +167,7 @@ function print_header {
 
 function print_script {
   local script=`echo $1 | sed -e 's/\.rsh//'`
-  printf "%-20s" "$script"
+  printf "%-16s" "$script"
 }
 
 function iterate {
@@ -238,6 +238,12 @@ if [ $1 -gt $2 ]; then
   exit 1
 fi
 
+if [ $1 -eq 0 ]; then
+  usage
+  echo ""
+  echo "error: The value fo zero is not allowed"
+  exit 1
+fi
 
 set_colors "yes"
 main $1 $2
