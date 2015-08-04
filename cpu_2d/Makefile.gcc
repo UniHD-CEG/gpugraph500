@@ -12,9 +12,10 @@ scorep_profiler_enable="no"
 scorep_custom="yes"
 scorep_custom_basedir=/home/jromera/scorep
 use_avx_instructions="yes"
-enable_simd_compression="no"
+enable_simd_compression="yes"
 debug="no"
 quiet_output="yes"
+use_cuda="yes"
 
 CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
 CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
@@ -38,14 +39,14 @@ else
 endif
 
 ifeq ($(scorep_profiler_enable), "yes")
-ifeq ($(scorep_custom), "yes")
+  ifeq ($(scorep_custom), "yes")
 	export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
 	libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
 	libcudart_static_flag = -lcudart_static
 	PROFILER := $(scorep_custom_basedir)/bin/scorep
-else
+  else
 	PROFILER := scorep
-endif
+  endif
 else
 	libcudart_static_path := -L$(NVDIR)/lib64
 	libcudart_static_flag = -lcudart
@@ -79,6 +80,13 @@ else
 	INCPATH := -I.
 	HEADERS :=
 endif
+ifeq ($(use_cuda), "yes")
+	CUDA := -D_CUDA
+	bfs_object := cuda_bfs_cuda.o
+else
+	bfs_object :=  cpubfs_bin.o
+	bfs_implementation := cpubfs_bin.cpp
+endif
 
 ifeq ($(custom_openmpi), "yes")
 	export OMPI_CC := $(CC)
@@ -94,11 +102,11 @@ ifeq ($(quiet_output), "yes")
 	Q = @
 endif
 
-NVCXXFLAGS := $(arch),-m64,-pipe,-D_CUDA,$(CUDA_INSTRUM),-O3,$(CUDA_OPENMP)
+NVCXXFLAGS := $(arch),-m64,-pipe,$(CUDA),$(CUDA_INSTRUM),-O3,$(CUDA_OPENMP)
 CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic -O3 -funroll-loops -Wall -Wextra
 CCFLAGS := -mavx -std=c99 -pedantic -O3 -funroll-loops -mfpmath=sse -Wall -Wextra
-MPICFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c99 -pedantic -funroll-loops -mfpmath=sse $(OPENMP) -O3 $(arch) -Wall -W -fPIE
-MPICXXFLAGS := -m64 -pipe -D_CUDA $(DEFINES) -std=c++11 -funroll-loops -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
+MPICFLAGS := -m64 -pipe $(CUDA) $(DEFINES) -std=c99 -pedantic -funroll-loops -mfpmath=sse $(OPENMP) -O3 $(arch) -Wall -W -fPIE
+MPICXXFLAGS := -m64 -pipe $(CUDA) $(DEFINES) -std=c++11 -funroll-loops -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
 LFLAGS := -m64 $(OPENMP) -Wl,-O3
 LLIBS := $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda
 
@@ -111,8 +119,8 @@ LINK := $(PROFILER) $(MPICXX)
 
 OUTFILES := $(shell ls *.o)
 COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o intersection.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
-SOURCES := globalbfs.cpp main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c simplecpubfs.cpp validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp cpubfs_bin.cpp
-OBJECTS := cuda_bfs_cuda.o main.o globalbfs.o utils.o splittable_mrg.o make_graph.o graph_generator.o globalbfs.o simplecpubfs.o onesided.o onesided_emul.o bitlevelfunctions.o cpubfs_bin.o
+SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c $(bfs_implementation) validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp 
+OBJECTS := $(cuda_object) main.o utils.o splittable_mrg.o make_graph.o graph_generator.o globalbfs.o onesided.o onesided_emul.o bitlevelfunctions.o 
 
 ifeq ($(enable_simd_compression), "yes")
 	OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
@@ -154,7 +162,7 @@ ifeq ($(enable_simd_compression), "yes")
 	@echo "============================================================================"
 endif
 	@echo ""
-	@echo "--- Compiling Lemires/SIMDCompression"
+	@echo "--- Compiling SIMDCompression"
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
 	@echo "    CCX       $@"
 
@@ -227,7 +235,7 @@ graph_generator.o: generator/graph_generator.c generator/user_settings.h generat
 	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ generator/graph_generator.c
 	@echo "    MPICC     $@"
 
-simplecpubfs.o: globalbfs.hh globalbfs.cpp simplecpubfs.h simplecpubfs.cpp distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
+simplecpubfs.o: globalbfs.hh simplecpubfs.h simplecpubfs.cpp distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ simplecpubfs.cpp
 	@echo "    MPICXX    $@"
 
@@ -239,19 +247,15 @@ onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h validate/on
 	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ validate/onesided_emul.c
 	@echo "    MPICC     $@"
 
-globalbfs.o: globalbfs.hh globalbfs.cpp
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ globalbfs.cpp
-	@echo "    MPICXX    $@"
-
 bitlevelfunctions.o: bitlevelfunctions.h bitlevelfunctions.cpp
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ bitlevelfunctions.cpp
 	@echo "    MPICXX    $@"
 
-cpubfs_bin.o: globalbfs.hh globalbfs.cpp cpubfs_bin.h cpubfs_bin.cpp distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
+cpubfs_bin.o: globalbfs.hh cpubfs_bin.h cpubfs_bin.cpp distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ cpubfs_bin.cpp
 	@echo "    MPICXX    $@"
 
-cuda_bfs_cuda.o: globalbfs.hh globalbfs.cpp cuda/cuda_bfs.cu
+cuda_bfs_cuda.o: globalbfs.hh cuda/cuda_bfs.cu
 	@echo ""
 ifneq ($(enable_simd_compression), "yes")
 	@echo "============================================================================"
@@ -262,6 +266,7 @@ endif
 	@echo "--- Compiling CUDA/BFS"
 	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
+	@echo ""
 
 g500:  $(OBJECTS)
 	@echo ""
