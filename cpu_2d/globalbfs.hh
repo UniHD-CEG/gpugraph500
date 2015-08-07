@@ -154,7 +154,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     };
 
     if ((((communicatorRank & 1) == 0) && (communicatorRank < 2 * residuum)) || (communicatorRank >= 2 * residuum)) {
-        int ssize, vrank, offset, lowers, uppers, size;
+        int ssize, vrank, offset, lowers, uppers, size, index, ioffset;
 
         ssize = psize;
         vrank = newRank(communicatorRank);
@@ -168,7 +168,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
             if (((vrank >> it) & 1) == 0) {// even
                 //Transmission of the the bitmap
-                int ioffset;
                 MPI_Sendrecv(owenmap + offset, ssize, bm_type, oldRank((vrank + (1 << it)) & (power2intLdSize - 1)),
                              (it << 1) + 2,
                              tmpmap + offset, ssize, bm_type, oldRank((vrank + (1 << it)) & (power2intLdSize - 1)),
@@ -187,7 +186,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 int p = 0;
                 for (int i = 0; i < uppers; ++i) {
                     MType tmpm = tmpmap[i + offset + lowers];
-                    int index = (i + offset + lowers) * mtypesize;
+                    index = (i + offset + lowers) * mtypesize;
                     while (tmpm != 0) {
                         int last = ffsl(tmpm) - 1;
                         tmp[size + p] = owen[index + last];
@@ -205,7 +204,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 p = 0;
                 for (int i = 0; i < lowers; ++i) {
                     MType tmpm = tmpmap[offset + i];
-                    int index = (i + offset) * mtypesize;
+                    index = (i + offset) * mtypesize;
                     while (tmpm != 0) {
                         int last = ffsl(tmpm) - 1;
                         owen[index + last] = tmp[p];
@@ -281,8 +280,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         lastTargetNode = targetNode;
     }
     //nodes without a partial resulty
+    int index;
     for (unsigned int node = 0; node < residuum; ++node) {
-        int index = 2 * node + 1;
+        index = 2 * node + 1;
         sizes[index] = 0;
         disps[index] = 0;
     }
@@ -305,7 +305,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::setBackInqueue() { }
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
-    int mtypesize = 8 * sizeof(MType);
+    int mtypesize, store_col_length;
+
+    mtypesize = 8 * sizeof(MType);
+    store_col_length = store.getLocColLength();
 
 #ifdef _OPENMP
     #pragma omp parallel for
@@ -313,11 +316,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
     for (long i = 0; i < mask_size; ++i) {
         MType tmp = 0;
-        int index = i * mtypesize;
+        int jindex, iindex = i * mtypesize;
         for (long j = 0; j < mtypesize; ++j) {
-            if ((predecessor[index + j] != -1) &&
-                ((index + j) < store.getLocColLength()))
+            jindex = iindex + j;
+            if ((predecessor[jindex] != -1) && (jindex < store_col_length)) {
                 tmp |= 1 << j;
+            }
         }
         owenmask[i] = tmp;
     }
@@ -392,7 +396,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
-    lqueue += tend-tstart;
+    lqueue += tend - tstart;
 #endif
 
 // 2) Local expansion
@@ -407,7 +411,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
-    lexp += tend-tstart;
+    lexp += tend - tstart;
 #endif
 
 // 3) Test if anything is done
@@ -421,7 +425,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
-    lqueue += tend-tstart;
+    lqueue += tend - tstart;
 #endif
 
         MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
@@ -435,7 +439,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
-    lqueue += tend-tstart;
+    lqueue += tend - tstart;
 #endif
 
             // MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
@@ -446,7 +450,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
-    predlistred = tend-tstart;
+    predlistred = tend - tstart;
 #endif
 
             return; // There is nothing to do. Finish iteration.
@@ -462,7 +466,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
-    lqueue += tend-tstart;
+    lqueue += tend - tstart;
 #endif
 
         int _outsize; //really int, because mpi supports no long message sizes :(
@@ -512,7 +516,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
-    lqueue += tend-tstart;
+    lqueue += tend - tstart;
 #endif
 
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -526,7 +530,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
-    lqueue += tend-tstart;
+    lqueue += tend - tstart;
 #endif
 
             } else {
@@ -543,7 +547,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
-    lqueue += tend-tstart;
+    lqueue += tend - tstart;
 #endif
             }
         }
@@ -556,7 +560,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
-    lqueue += tend-tstart;
+    lqueue += tend - tstart;
 #endif
 
 #ifdef INSTRUMENTED
