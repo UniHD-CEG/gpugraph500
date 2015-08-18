@@ -176,7 +176,7 @@ function generate_r_plotcode {
     write_r "matriz <- matrix($labels_y, nrow = $num_labels_, ncol = $total_jobids, byrow = TRUE, \
         dimnames = list(c($val_list), \
         $labels_x))" $1
-    write_r "totals<-$labels_total_time" $1  
+    write_r "totals<-$labels_total_time" $1
     write_r "$plot" $1
     write_r "$totals_points" $1
     write_r "title(main = 'Execution on Fermi. Scale Factor $scale_factor', font.main = 4)" $1
@@ -185,8 +185,8 @@ function generate_r_plotcode {
 function build {
     echo ""
     ids="$1"
-    total_jobids=$2 
-    id="-`echo "$ids" | sed 's/ /-/g'`" 
+    total_jobids=$2
+    id="-`echo "$ids" | sed 's/ /-/g'`"
     common_sf=""
     common_gpus=""
     tasks_list=""
@@ -200,7 +200,9 @@ function build {
 
         if [ "x$common_sf" = "x" ]; then
             common_sf=$scale_factor
-        else
+        else ]; then
+                echo "Error. GPU number per node should be equal in all files."
+                exit 1
             if [ "$common_sf" != "$scale_factor" ]; then
                 echo "Error. Scale Factor should be equal in all files."
                 exit 1
@@ -209,9 +211,7 @@ function build {
         if [ "x$common_gpus" = "x" ]; then
             common_gpus=$gpus
         else
-            if [ "$common_gpus" != "$gpus" ]; then
-                echo "Error. GPU number per node should be equal in all files."
-                exit 1
+            if [ "$common_gpus" != "$gpus"
             fi
         fi
         id="$id-$i"

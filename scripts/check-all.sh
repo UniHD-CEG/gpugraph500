@@ -175,6 +175,7 @@ function iterate {
   local sf=$2
   local lock="$3"
   local error=false
+  jobid_sf_stat=""
 
   sbatch $script $sf &> $lock
   res=$?
@@ -184,16 +185,20 @@ function iterate {
 
   if $error || [ "x$jobid" = "x" ]; then
      echo -ne "  ${red}${fancyo}${nocolor}"
+     jobid_sf_stat="0_${sf}__0"
   else
      wait_and_process $jobid $sf success
      clean_char
      if [ "x$success" = "xyes" ] ; then
         echo -ne "  ${green}${checkmark}${nocolor}"
+        jobid_sf_stat="${jobid}_${sf}__1"
      else
         echo -ne "  ${red}${fancyx}${nocolor}"
+        jobid_sf_stat="${jobid}_${sf}__0"
      fi
      clean_char
   fi
+  eval "$4=$jobid_sf_stat"
 }
 
 function main {
@@ -202,19 +207,25 @@ function main {
   local lock=tmp.tmp
   local scripts=`ls o*.rsh`
   local scale_factors=`seq $min $max`
+  local index=0
 
   print_header "$scale_factors"
   rm -rf $lock
+  set -A status_list
   tput civis
   for script in $scripts; do
     print_script $script
     for sf in $scale_factors; do
-      iterate $script $sf $lock
+      iterate $script $sf $lock id_sf_stat
+      status_list[$index]=$id_sf_stat
+      ((index+=1))
     done
     echo ""
   done
   echo ""
   tput cnorm
+  echo ${status_list}
+  unset $status_list
 
   rm -rf $lock
   exit 0
