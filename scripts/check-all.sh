@@ -201,32 +201,68 @@ function iterate {
   eval "$4=$jobid_sf_stat"
 }
 
+function output_result_list {
+  local file=$1
+}
+
+function get_status {
+  stat=$1
+  stat_position=$((${#stat}-1))  
+  stat_last_char="${stat:$stat_position:1}"
+
+  eval "$2=$stat_last_char"
+}
+
 function main {
   local min=$1
   local max=$2
   local lock=tmp.tmp
   local scripts=`ls o*.rsh`
   local scale_factors=`seq $min $max`
-  local index=0
+  local status_array_length=0
+  local status_list=()
+  local rows=`echo $scripts | wc -w`
+  local columns=`echo $scale_factors | wc -w`
+  local valid_sf_list=""
 
   print_header "$scale_factors"
   rm -rf $lock
-  set -A status_list
+ 
   tput civis
   for script in $scripts; do
     print_script $script
     for sf in $scale_factors; do
       iterate $script $sf $lock id_sf_stat
-      status_list[$index]=$id_sf_stat
-      ((index+=1))
+      status_list[$status_array_length]=$id_sf_stat
+      ((status_array_length+=1))
     done
     echo ""
   done
   echo ""
   tput cnorm
-  echo ${status_list}
-  unset $status_list
 
+  local index=0
+  local row=0
+  local col=0
+  local temp_row_list=""
+  while [ $index -lt $status_array_length ]; do
+    # echo ${status_list[$index]}
+    get_status ${status_list[$((col * columns + row))]} st
+    echo "stat: $st"
+
+    # echo "col: $col row: $row cols: $columns rows: $rows index: $index fn:$((col * columns + row))"
+    ((index+=1))
+    if [ $(($index % $rows)) -eq 0 ]; then
+      ((row+=1))
+      col=0
+    else
+      ((col+=1))
+    fi
+  done
+ 
+
+  output_result_list "file"
+  status_list=()
   rm -rf $lock
   exit 0
 }
