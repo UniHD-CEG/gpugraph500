@@ -200,9 +200,7 @@ function build {
 
         if [ "x$common_sf" = "x" ]; then
             common_sf=$scale_factor
-        else ]; then
-                echo "Error. GPU number per node should be equal in all files."
-                exit 1
+        else
             if [ "$common_sf" != "$scale_factor" ]; then
                 echo "Error. Scale Factor should be equal in all files."
                 exit 1
@@ -211,7 +209,9 @@ function build {
         if [ "x$common_gpus" = "x" ]; then
             common_gpus=$gpus
         else
-            if [ "$common_gpus" != "$gpus"
+            if [ "$common_gpus" != "$gpus" ]; then
+            	echo "Error. GPU number per node should be equal in all files."
+                exit 1
             fi
         fi
         id="$id-$i"
