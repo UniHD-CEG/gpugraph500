@@ -201,13 +201,19 @@ function iterate {
   eval "$4=$jobid_sf_stat"
 }
 
-function output_result_list {
-  local file=$1
+function file_output_result_lists {
+  local joid_sf_list=$1
+  local sfs=$2
+  local x_labels=$3
+  local file=$4
+
+  echo "$file_output_result_lists"
+
 }
 
 function get_status {
   stat=$1
-  stat_position=$((${#stat}-1))  
+  stat_position=$((${#stat}-1))
   stat_last_char="${stat:$stat_position:1}"
 
   eval "$2=$stat_last_char"
@@ -220,20 +226,23 @@ function main {
   local scripts=`ls o*.rsh`
   local scale_factors=`seq $min $max`
   local status_array_length=0
-  local status_list=()
+  local status_array=()
   local rows=`echo $scripts | wc -w`
   local columns=`echo $scale_factors | wc -w`
-  local valid_sf_list=""
+  local tmp_jobid_list=""
+  local valid_jobid_list=""
+  local all_rows_valid=true
+  local tmp_jobid=""
 
   print_header "$scale_factors"
   rm -rf $lock
- 
+
   tput civis
   for script in $scripts; do
     print_script $script
     for sf in $scale_factors; do
       iterate $script $sf $lock id_sf_stat
-      status_list[$status_array_length]=$id_sf_stat
+      status_array[$status_array_length]=$id_sf_stat
       ((status_array_length+=1))
     done
     echo ""
@@ -246,23 +255,34 @@ function main {
   local col=0
   local temp_row_list=""
   while [ $index -lt $status_array_length ]; do
-    # echo ${status_list[$index]}
-    get_status ${status_list[$((col * columns + row))]} st
-    echo "stat: $st"
 
-    # echo "col: $col row: $row cols: $columns rows: $rows index: $index fn:$((col * columns + row))"
+    tmp_jobid=${status_array[$((col * columns + row))]}
+    get_status $tmp_jobid st
+    if [ $all_rows_valid ] && [ $st -eq 1 ]; then
+        tmp_jobid_list+=" $tmp_jobid"
+    else
+        all_rows_valid=false
+        tmp_jobid_list=""
+    fi
+
     ((index+=1))
     if [ $(($index % $rows)) -eq 0 ]; then
       ((row+=1))
       col=0
+      if [ $all_rows_valid ]; then
+          valid_jobid_list+=" $tmp_jobid_list"
+      else
+          all_rows_valid=true
+          tmp_jobid_list=""
+      fi
     else
       ((col+=1))
     fi
   done
- 
 
-  output_result_list "file"
-  status_list=()
+  file_output_result_lists "$valid_jobid_list" "a" "a" "a"
+
+  status_array=()
   rm -rf $lock
   exit 0
 }
