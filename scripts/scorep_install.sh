@@ -134,6 +134,36 @@ function install {
   exit_error $?
   cd ..
   fi
+  banner "TAU"
+  if [ ! -f  ${tau}.tar.gz ]; then
+    section_banner "Downloading"
+    wget https://www.cs.uoregon.edu/research/tau/tau_releases/${tau}.tar.gz
+    exit_error $?
+  fi
+  if [ ! -d  ${tau} ]; then
+    section_banner "Decompressing"
+    tar -xzvf ${tau}.tar.gz
+  else
+    cd ${tau}
+    section_banner "Un-Installing"
+    make -j4 uninstall 2> /dev/null
+    section_banner "Cleaning"
+    make -j4 clean 2> /dev/null
+    cd ..
+  fi
+  makedir $tau_prefix
+  cd ${tau}
+  section_banner "Checking"
+  ./configure -c++=g++ -cc=gcc -prefix=$tau_prefix -cuda=$cuda_prefix -openmp
+  exit_error $?
+  section_banner "Making"
+  make -j4
+  #exit_error $?
+  section_banner "Installing"
+  make -j4 install
+  exit_error $?
+  cd ..
+  fi
   banner "Score-P"
   if [ ! -f  ${scorep}.tar.gz ]; then
     section_banner "Downloading"
@@ -171,16 +201,19 @@ cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
 nvcc=`locate bin/nvcc | grep bin/nvcc$ | tail -1`
 cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$,,'`
 
+# these versions are compatible one with each other. 
+# Ubuntu 12. Aug 2015 
 openmpi="openmpi-1.6.5"
 opari="opari2-1.1.2"
 cube="cube-4.2.3"
 scorep="scorep-1.3"
+tau="tau-2.24.1"
 
 openmpi_prefix="$HOME/openmpi"
 opari_prefix="$HOME/opari2"
 cube_prefix="$HOME/cube"
 scorep_prefix="$HOME/scorep"
-
+tau_prefix="$HOME/tau"
 
 install
 exit $?
