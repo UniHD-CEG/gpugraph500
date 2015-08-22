@@ -134,6 +134,7 @@ function install {
   exit_error $?
   cd ..
   fi
+ 
   banner "TAU"
   if [ ! -f  ${tau}.tar.gz ]; then
     section_banner "Downloading"
@@ -152,18 +153,18 @@ function install {
     cd ..
   fi
   makedir $tau_prefix
-  cd ${tau}
+  cd $tau
   section_banner "Checking"
-  ./configure -c++=g++ -cc=gcc -prefix=$tau_prefix -cuda=$cuda_prefix -openmp
+  ./configure -c++=g++ -cc=gcc -prefix=$tau_prefix -cuda=$cuda_dir
   exit_error $?
-  section_banner "Making"
-  make -j4
-  #exit_error $?
-  section_banner "Installing"
+  section_banner "Making & Installing"
   make -j4 install
   exit_error $?
   cd ..
-  fi
+
+
+  if [ 1 -eq 2 ]; then
+  :
   banner "Score-P"
   if [ ! -f  ${scorep}.tar.gz ]; then
     section_banner "Downloading"
@@ -194,6 +195,7 @@ function install {
   section_banner "Installing"
   make -j4  install
   return $?
+  fi
 }
 
 cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
@@ -207,7 +209,7 @@ openmpi="openmpi-1.6.5"
 opari="opari2-1.1.2"
 cube="cube-4.2.3"
 scorep="scorep-1.3"
-tau="tau-2.24.1"
+tau="tau-2.24"
 
 openmpi_prefix="$HOME/openmpi"
 opari_prefix="$HOME/opari2"
