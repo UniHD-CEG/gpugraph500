@@ -175,6 +175,7 @@ function iterate {
   local sf=$2
   local lock="$3"
   local error=false
+  jobid_sf_stat=""
 
   sbatch $script $sf &> $lock
   res=$?
@@ -184,16 +185,38 @@ function iterate {
 
   if $error || [ "x$jobid" = "x" ]; then
      echo -ne "  ${red}${fancyo}${nocolor}"
+     jobid_sf_stat="0_${sf}__0"
   else
      wait_and_process $jobid $sf success
      clean_char
      if [ "x$success" = "xyes" ] ; then
         echo -ne "  ${green}${checkmark}${nocolor}"
+        jobid_sf_stat="${jobid}_${sf}__1"
      else
         echo -ne "  ${red}${fancyx}${nocolor}"
+        jobid_sf_stat="${jobid}_${sf}__0"
      fi
      clean_char
   fi
+  eval "$4=$jobid_sf_stat"
+}
+
+function file_output_result_lists {
+  local joid_sf_list=$1
+  local sfs=$2
+  local x_labels=$3
+  local file=$4
+
+  echo "$file_output_result_lists"
+
+}
+
+function get_status {
+  stat=$1
+  stat_position=$((${#stat}-1))
+  stat_last_char="${stat:$stat_position:1}"
+
+  eval "$2=$stat_last_char"
 }
 
 function main {
@@ -202,20 +225,64 @@ function main {
   local lock=tmp.tmp
   local scripts=`ls o*.rsh`
   local scale_factors=`seq $min $max`
+  local status_array_length=0
+  local status_array=()
+  local rows=`echo $scripts | wc -w`
+  local columns=`echo $scale_factors | wc -w`
+  local tmp_jobid_list=""
+  local valid_jobid_list=""
+  local all_rows_valid=true
+  local tmp_jobid=""
 
   print_header "$scale_factors"
   rm -rf $lock
+
   tput civis
   for script in $scripts; do
     print_script $script
     for sf in $scale_factors; do
-      iterate $script $sf $lock
+      iterate $script $sf $lock id_sf_stat
+      status_array[$status_array_length]=$id_sf_stat
+      ((status_array_length+=1))
     done
     echo ""
   done
   echo ""
   tput cnorm
 
+  local index=0
+  local row=0
+  local col=0
+  local temp_row_list=""
+  while [ $index -lt $status_array_length ]; do
+
+    tmp_jobid=${status_array[$((col * columns + row))]}
+    get_status $tmp_jobid st
+    if [ $all_rows_valid ] && [ $st -eq 1 ]; then
+        tmp_jobid_list+=" $tmp_jobid"
+    else
+        all_rows_valid=false
+        tmp_jobid_list=""
+    fi
+
+    ((index+=1))
+    if [ $(($index % $rows)) -eq 0 ]; then
+      ((row+=1))
+      col=0
+      if [ $all_rows_valid ]; then
+          valid_jobid_list+=" $tmp_jobid_list"
+      else
+          all_rows_valid=true
+          tmp_jobid_list=""
+      fi
+    else
+      ((col+=1))
+    fi
+  done
+
+  file_output_result_lists "$valid_jobid_list" "a" "a" "a"
+
+  status_array=()
   rm -rf $lock
   exit 0
 }
