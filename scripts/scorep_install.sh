@@ -209,7 +209,7 @@ openmpi="openmpi-1.6.5"
 opari="opari2-1.1.2"
 cube="cube-4.2.3"
 scorep="scorep-1.3"
-tau="tau-2.24"
+tau="tau-2.24.1"
 
 openmpi_prefix="$HOME/openmpi"
 opari_prefix="$HOME/opari2"
