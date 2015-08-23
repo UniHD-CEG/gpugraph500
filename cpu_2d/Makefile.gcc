@@ -41,7 +41,7 @@ endif
 
 ifeq ($(scorep_profiler_enable), "yes")
   ifeq ($(scorep_profiler_use_popm2_instrumentation), "yes")
-  	scorep_instrumentation_flag :=--pomp   
+  	scorep_instrumentation_flag :=--pomp
   endif
   ifeq ($(scorep_custom), "yes")
 	export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
@@ -51,6 +51,7 @@ ifeq ($(scorep_profiler_enable), "yes")
   else
 	PROFILER := scorep $(scorep_instrumentation_flag)
   endif
+  DEFINES += -D_SCOREP
 else
 	libcudart_static_path := -L$(NVDIR)/lib64
 	libcudart_static_flag = -lcudart
