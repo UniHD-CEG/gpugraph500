@@ -53,7 +53,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
     csr_problem = new Csr;
 
 #ifdef INSTRUMENTED
-   bfsGPU = new EnactorMultiGpu<Csr, true>;
+    bfsGPU = new EnactorMultiGpu<Csr, true>;
 #else
     bfsGPU = new EnactorMultiGpu<Csr, false>;
 #endif
