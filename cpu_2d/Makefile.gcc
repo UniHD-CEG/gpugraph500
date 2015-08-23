@@ -9,6 +9,7 @@ instrument_other_compilers="yes"
 custom_openmpi="yes"
 custom_openmpi_basedir=/home/jromera/openmpi
 scorep_profiler_enable="yes"
+scorep_profiler_use_popm2_instrumentation="yes"
 scorep_custom="yes"
 scorep_custom_basedir=/home/jromera/scorep
 use_avx_instructions="yes"
@@ -39,13 +40,16 @@ else
 endif
 
 ifeq ($(scorep_profiler_enable), "yes")
+  ifeq ($(scorep_profiler_use_popm2_instrumentation), "yes")
+  	scorep_instrumentation_flag := "--pomp"   
+  endif
   ifeq ($(scorep_custom), "yes")
 	export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
 	libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
 	libcudart_static_flag = -lcudart_static
-	PROFILER := $(scorep_custom_basedir)/bin/scorep
+	PROFILER := $(scorep_custom_basedir)/bin/scorep  $(scorep_instrumentation_flag)
   else
-	PROFILER := scorep
+	PROFILER := scorep $(scorep_instrumentation_flag)
   endif
 else
 	libcudart_static_path := -L$(NVDIR)/lib64
