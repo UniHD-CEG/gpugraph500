@@ -13,6 +13,9 @@
 #include <string.h>
 #include <functional>
 
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    #include "scorep/SCOREP_User.h"
+#endif
 
 #ifdef _SIMDCOMPRESS
     #include "codecfactory.h"

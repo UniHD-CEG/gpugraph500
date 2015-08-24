@@ -4,17 +4,18 @@ nvidia_architecture="fermi"
 nvidia_ptxas_otimize="no"
 openmp_on_cuda="no"
 openmp_on_other_compilers="no"
-instrument_cuda="yes"
-instrument_other_compilers="yes"
+manual_instrument_cuda="no"
+manual_instrument_other_compilers="yes"
 custom_openmpi="yes"
 custom_openmpi_basedir=/home/jromera/openmpi
 scorep_profiler_enable="yes"
+scorep_profiler_automatic_instrumentation="no"
 scorep_custom="yes"
 scorep_custom_basedir=/home/jromera/scorep
 use_avx_instructions="yes"
 enable_simd_compression="yes"
 debug="no"
-quiet_output="yes"
+quiet_output="no"
 use_cuda="yes"
 
 CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
@@ -39,14 +40,36 @@ else
 endif
 
 ifeq ($(scorep_profiler_enable), "yes")
-  ifeq ($(scorep_custom), "yes")
-	export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
-	libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
-	libcudart_static_flag = -lcudart_static
-	PROFILER := $(scorep_custom_basedir)/bin/scorep
-  else
-	PROFILER := scorep
-  endif
+	threads := pthread
+	#ifeq ($(openmp_on_cuda), "yes")
+	#	threads := none
+	#endif
+	#ifeq ($(openmp_on_other_compilers), "yes")
+	#	threads := none
+	#endif
+	scorep_instrumentation_flag :=--cuda --mpp=mpi --thread=$(threads) --nopdt
+	ifeq ($(scorep_custom), "yes")
+		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
+			# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html
+			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt
+			DEFINES := -D_SCOREP_USER_INSTRUMENTATION
+			SCOREP_CXXFLAGS := `scorep-config --cxxflags`
+			SCOREP_CXXFLAGS := `scorep-config --cxxflags | sed -e 's/-g//' | sed -e 's/-finstrument-functions//'`
+			SCOREP_LLIBS := `scorep-config --libs`
+			SCOREP_LFLAGS := `scorep-config --ldflags`
+
+		endif
+		export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
+		libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
+		libcudart_static_flag = -lcudart_static
+		PROFILER := scorep $(scorep_instrumentation_flag)
+	else
+		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
+			scorep_instrumentation_flag :=--pomp --cuda --mpp=mpi --thread=$(threads) --nopdt
+		endif
+		PROFILER := scorep $(scorep_instrumentation_flag)
+	endif
+	# NVCXX := $(PROFILER) $(NVCXX)
 else
 	libcudart_static_path := -L$(NVDIR)/lib64
 	libcudart_static_flag = -lcudart
@@ -60,11 +83,11 @@ ifeq ($(openmp_on_other_compilers), "yes")
 	OPENMP := -fopenmp
 endif
 
-ifeq ($(instrument_cuda), "yes")
+ifeq ($(manual_instrument_cuda), "yes")
 	CUDA_INSTRUM := -DINSTRUMENTED
 endif
 
-ifeq ($(instrument_other_compilers), "yes")
+ifeq ($(manual_instrument_other_compilers), "yes")
 	INSTRUMENTED := -DINSTRUMENTED
 endif
 
@@ -108,8 +131,8 @@ CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic -O3 -funroll-loops -Wall -Wextr
 CCFLAGS := -mavx -std=c99 -pedantic -O3 -funroll-loops -mfpmath=sse -Wall -Wextra
 MPICFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c99 -pedantic -funroll-loops -mfpmath=sse $(OPENMP) -O3 $(arch) -Wall -W -fPIE
 MPICXXFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c++11 -funroll-loops -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
-LFLAGS := -m64 $(OPENMP) -Wl,-O3
-LLIBS := $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda
+LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,-O3
+LLIBS := $(SCOREP_LLIBS) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda
 
 NVDIR := $(NVDIR)
 CXX := $(CXX)
@@ -152,7 +175,7 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h
 	@echo ""
 	@echo "--- Compiling g500"
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_CXXFLAGS) $(INCPATH) -o main.o main.cpp
 	@echo "    MPICC     $@"
 
 bitpacking.o: compression/include/bitpacking.h compression/src/bitpacking.cpp

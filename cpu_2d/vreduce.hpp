@@ -225,6 +225,18 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
 
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
+// std::cout << "sizes:" << std::endl;
+// for (int i=0; i<sizes.size();++i){
+// std::cout << sizes[i] << " ";
+// }
+// std::cout << std::endl;
+
+// std::cout << "disps:" << std::endl;
+// for (int i=0; i<disps.size();++i){
+// std::cout << disps[i] << " ";
+// }
+// std::cout << std::endl;
+
     MPI_Allgatherv(send, sizes[communicatorRank],
         type, recv_buff, &sizes[0],
         &disps[0], type, comm);
