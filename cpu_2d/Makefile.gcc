@@ -9,7 +9,7 @@ instrument_other_compilers="yes"
 custom_openmpi="yes"
 custom_openmpi_basedir=/home/jromera/openmpi
 scorep_profiler_enable="yes"
-scorep_profiler_use_popm2_instrumentation="no" # requires openmp
+scorep_profiler_automatic_instrumentation="no"
 scorep_custom="yes"
 scorep_custom_basedir=/home/jromera/scorep
 use_avx_instructions="yes"
@@ -40,20 +40,34 @@ else
 endif
 
 ifeq ($(scorep_profiler_enable), "yes")
-  ifeq ($(scorep_profiler_use_popm2_instrumentation), "yes")
-  	scorep_instrumentation_flag :=--pomp
-  endif
-  ifeq ($(scorep_custom), "yes")
-	export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
-	libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
-	libcudart_static_flag = -lcudart_static
-	PROFILER := $(scorep_custom_basedir)/bin/scorep $(scorep_instrumentation_flag)
-	SCOREP_FLAGS := -I$(scorep_custom_basedir)/include/scorep
-  else
-	PROFILER := scorep $(scorep_instrumentation_flag)
-	SCOREP_FLAGS := `scorep-config --cxxflags|sed -e 's/-g//' | sed -e 's/-finstrument-functions//'`
-  endif
-  DEFINES += -D_SCOREP
+	# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html
+	# mpi: 		--mpp=mpi
+	# shmem: 	--mpp=shmem/--mpp=none
+	# opencl:	--opencl/--noopencl
+	# openmp:	--thread=omp
+	# pthread:	--thread=pthread
+	# compiler:	--compiler/--nocompiler (default enabled)
+	# pdt:		--pdt/--nopdt
+	# pomp2:	--pomp/--nopomp
+	# manual:	--user/--nouser
+	ifeq ($(scorep_profiler_automatic_instrumentation), "yes")
+		scorep_instrumentation_flag :=--compiler
+		ifeq ($(scorep_custom), "yes")
+			export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
+			libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
+			libcudart_static_flag = -lcudart_static
+			PROFILER := $(scorep_custom_basedir)/bin/scorep $(scorep_instrumentation_flag)
+			SCOREP_FLAGS := -I$(scorep_custom_basedir)/include/scorep
+		else
+			PROFILER := scorep $(scorep_instrumentation_flag)
+			SCOREP_FLAGS := `scorep-config --cxxflags|sed -e 's/-g//' | sed -e 's/-finstrument-functions//'`
+		endif
+	else
+		scorep_instrumentation_flag :=--user --nocompiler
+		DEFINES += -D_SCOREP
+		PROFILER :=
+		SCOREP_FLAGS :=
+	endif
 else
 	libcudart_static_path := -L$(NVDIR)/lib64
 	libcudart_static_flag = -lcudart
