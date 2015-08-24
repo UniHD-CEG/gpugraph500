@@ -9,7 +9,7 @@ instrument_other_compilers="yes"
 custom_openmpi="yes"
 custom_openmpi_basedir=/home/jromera/openmpi
 scorep_profiler_enable="yes"
-scorep_profiler_use_popm2_instrumentation="yes"
+scorep_profiler_use_popm2_instrumentation="no" # requires openmp
 scorep_custom="yes"
 scorep_custom_basedir=/home/jromera/scorep
 use_avx_instructions="yes"
@@ -48,8 +48,10 @@ ifeq ($(scorep_profiler_enable), "yes")
 	libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
 	libcudart_static_flag = -lcudart_static
 	PROFILER := $(scorep_custom_basedir)/bin/scorep $(scorep_instrumentation_flag)
+	SCOREP_FLAGS := -I$(scorep_custom_basedir)/include/scorep
   else
 	PROFILER := scorep $(scorep_instrumentation_flag)
+	SCOREP_FLAGS := `scorep-config --cxxflags|sed -e 's/-g//' | sed -e 's/-finstrument-functions//'`
   endif
   DEFINES += -D_SCOREP
 else
@@ -157,7 +159,7 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h
 	@echo ""
 	@echo "--- Compiling g500"
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o main.o main.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) $(SCOREP_FLAGS) -o main.o main.cpp
 	@echo "    MPICC     $@"
 
 bitpacking.o: compression/include/bitpacking.h compression/src/bitpacking.cpp
@@ -281,7 +283,7 @@ g500:  $(OBJECTS)
 	@echo "============================================================================"
 	@echo ""
 	@echo "--- Linking"
-	$(Q)$(LINK) $(LFLAGS) -o $@ $(OBJECTS) $(OBJCOMP) $(LLIBS)
+	$(Q)$(LINK) $(LFLAGS) -o $@ $(OBJECTS) $(OBJCOMP) $(LLIBS) $(SCOREP_FLAGS)
 	@echo "    MPICXX    $@"
 
 clean:
