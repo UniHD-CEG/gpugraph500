@@ -19,11 +19,13 @@
 
 #ifdef _CUDA
     #include "cuda/cuda_bfs.h"
+/*
 #elif defined _OPENCL
     #include "opencl/OCLrunner.hh"
     #include "opencl/opencl_bfs.h"
 #else
     #include "cpubfs_bin.h"
+*/
 #endif
 
 
