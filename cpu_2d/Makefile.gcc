@@ -9,7 +9,7 @@ instrument_other_compilers="yes"
 custom_openmpi="yes"
 custom_openmpi_basedir=/home/jromera/openmpi
 scorep_profiler_enable="yes"
-scorep_profiler_automatic_instrumentation="no"
+scorep_profiler_automatic_instrumentation="yes"
 scorep_custom="yes"
 scorep_custom_basedir=/home/jromera/scorep
 use_avx_instructions="yes"
@@ -50,6 +50,7 @@ ifeq ($(scorep_profiler_enable), "yes")
 	# pdt:		--pdt/--nopdt
 	# pomp2:	--pomp/--nopomp
 	# manual:	--user/--nouser
+	# cuda:		--cuda/--nocuda
 	ifeq ($(scorep_profiler_automatic_instrumentation), "yes")
 		scorep_instrumentation_flag :=--compiler
 		ifeq ($(scorep_custom), "yes")
@@ -63,11 +64,15 @@ ifeq ($(scorep_profiler_enable), "yes")
 			SCOREP_FLAGS := `scorep-config --cxxflags|sed -e 's/-g//' | sed -e 's/-finstrument-functions//'`
 		endif
 	else
-		scorep_instrumentation_flag :=--user --nocompiler
-		DEFINES += -D_SCOREP
-		PROFILER :=
-		SCOREP_FLAGS :=
+		libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
+                libcudart_static_flag = -lcudart_static
+		scorep_instrumentation_flag :=
+		DEFINES += -D_SCOREP -DSCOREP_USER_ENABLE
+		PROFILER := 
+		SCOREP_FLAGS := -I$(scorep_custom_basedir)/include/scorep
 	endif
+	SCOREP_LFLAGS :=
+#`scorep-config --ldflags --static`
 else
 	libcudart_static_path := -L$(NVDIR)/lib64
 	libcudart_static_flag = -lcudart
@@ -297,7 +302,7 @@ g500:  $(OBJECTS)
 	@echo "============================================================================"
 	@echo ""
 	@echo "--- Linking"
-	$(Q)$(LINK) $(LFLAGS) -o $@ $(OBJECTS) $(OBJCOMP) $(LLIBS) $(SCOREP_FLAGS)
+	$(Q)$(LINK) $(LFLAGS) -o $@ $(OBJECTS) $(OBJCOMP) $(SCOREP_LFLAGS) $(LLIBS)
 	@echo "    MPICXX    $@"
 
 clean:
