@@ -387,8 +387,17 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
     colcom = 0;
 #endif
 
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_vertexbroadcast )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_vertexbroadcast, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
+#endif
+
 // 0) Node 0 sends start vertex to all nodes
     MPI_Bcast(&startVertex, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_END( BFSRUN_region_vertexbroadcast )
+#endif
 
 // 1) Nodes test, if they are responsible for this vertex and push it, if they are in there fq
 #ifdef INSTRUMENTED
