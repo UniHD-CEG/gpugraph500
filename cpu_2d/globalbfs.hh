@@ -366,8 +366,8 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
  *    if they are in there fq
  * 2) Local expansion
  * 3) Test if anything is done
- * 4) global expansion
- * 5) global fold
+ * 4) global expansion: Column Communication
+ * 5) global fold: Row Communication
  **********************************************************************************/
   // <Derived, FQ_T, MType, STORE>
 #ifdef INSTRUMENTED
@@ -388,15 +388,15 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_DEFINE( BFSRUN_region_vertexbroadcast )
-    SCOREP_USER_REGION_BEGIN( BFSRUN_region_vertexbroadcast, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_vertexBroadcast )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_vertexBroadcast, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
 // 0) Node 0 sends start vertex to all nodes
     MPI_Bcast(&startVertex, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_END( BFSRUN_region_vertexbroadcast )
+    SCOREP_USER_REGION_END( BFSRUN_region_vertexBroadcast )
 #endif
 
 // 1) Nodes test, if they are responsible for this vertex and push it, if they are in there fq
@@ -404,7 +404,16 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
     tstart = MPI_Wtime();
 #endif
 
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_nodesTest )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_nodesTest, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
+#endif
+
     static_cast<Derived *>(this)->setStartVertex(startVertex);
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_END( BFSRUN_region_nodesTest )
+#endif
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
@@ -419,7 +428,16 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
     tstart = MPI_Wtime();
 #endif
 
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_localExpansion )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_localExpansion, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
+#endif
+
         static_cast<Derived *>(this)->runLocalBFS();
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_END( BFSRUN_region_localExpansion )
+#endif
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
@@ -431,6 +449,11 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
+#endif
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_testSomethingHasBeenDone )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_testSomethingHasBeenDone, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
         anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
@@ -465,6 +488,10 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
     predlistred = tend - tstart;
 #endif
 
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_END( BFSRUN_region_testSomethingHasBeenDone )
+#endif
+
             return; // There is nothing to do. Finish iteration.
         }
 
@@ -472,6 +499,11 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #ifdef INSTRUMENTED
     comtstart = MPI_Wtime();
     tstart = MPI_Wtime();
+#endif
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_columnCommunication )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_columnCommunication, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
         static_cast<Derived *>(this)->getBackOutqueue();
@@ -504,6 +536,10 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_END( BFSRUN_region_columnCommunication )
+#endif
+
 #ifdef INSTRUMENTED
     comtend = MPI_Wtime();
     colcom += comtend-comtstart;
@@ -512,6 +548,11 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 // 5) global fold
 #ifdef INSTRUMENTED
     comtstart = MPI_Wtime();
+#endif
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_rowCommunication )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_rowCommunication, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
@@ -578,6 +619,10 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #ifdef INSTRUMENTED
     comtend = MPI_Wtime();
     rowcom += comtend - comtstart;
+#endif
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_END( BFSRUN_region_rowCommunication )
 #endif
         ++iter;
     }
