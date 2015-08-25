@@ -1,4 +1,28 @@
-# Makefile
+#
+# Makefile for GCC
+#
+#
+#
+# Possible Values
+#
+# nvidia_architecture 							= fermi | auto
+# nvidia_ptxas_otimize 							= yes | no
+# openmp_on_cuda 								= yes | no
+# openmp_on_other_compilers						= yes | no
+# manual_instrument_cuda						= yes | no
+# manual_instrument_other_compilers				= yes | no
+# custom_openmpi								= yes | no
+# custom_openmpi_basedir						= path
+# scorep_profiler_enable						= yes | no
+# scorep_profiler_automatic_instrumentation		= yes | no
+# scorep_custom									= yes | no
+# scorep_custom_basedir							= path
+# use_avx_instructions							= yes | no
+# enable_simd_compression						= yes | no
+# debug											= yes | no
+# quiet_output									= yes | no
+# use_cuda										= yes | no
+#
 
 nvidia_architecture="fermi"
 nvidia_ptxas_otimize="no"
@@ -17,6 +41,8 @@ enable_simd_compression="yes"
 debug="no"
 quiet_output="no"
 use_cuda="yes"
+
+
 
 CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
 CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
