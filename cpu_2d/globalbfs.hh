@@ -24,11 +24,6 @@
 #endif
 
 
-#ifdef _SCOREP_USER_INSTRUMENTATION
-    void scorep_instrumentation_begin(const char* regionname);
-    void scorep_instrumentation_end(const char* regionname);
-#endif
-
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
@@ -393,17 +388,15 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_begin("BFSRUN_region_vertexBroadcast");
-    // SCOREP_USER_REGION_DEFINE( BFSRUN_region_vertexBroadcast )
-    // SCOREP_USER_REGION_BEGIN( BFSRUN_region_vertexBroadcast, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_vertexBroadcast )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_vertexBroadcast, "BFSRUN_region_vertexBroadcast",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
 // 0) Node 0 sends start vertex to all nodes
     MPI_Bcast(&startVertex, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_end("BFSRUN_region_vertexBroadcast");
-    // SCOREP_USER_REGION_END( BFSRUN_region_vertexBroadcast )
+    SCOREP_USER_REGION_END( BFSRUN_region_vertexBroadcast )
 #endif
 
 // 1) Nodes test, if they are responsible for this vertex and push it, if they are in there fq
@@ -412,16 +405,14 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_begin("BFSRUN_region_nodesTest");
-    // SCOREP_USER_REGION_DEFINE( BFSRUN_region_nodesTest )
-    // SCOREP_USER_REGION_BEGIN( BFSRUN_region_nodesTest, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_nodesTest )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_nodesTest, "BFSRUN_region_nodesTest",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
     static_cast<Derived *>(this)->setStartVertex(startVertex);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_end("BFSRUN_region_nodesTest");
-    // SCOREP_USER_REGION_END( BFSRUN_region_nodesTest )
+    SCOREP_USER_REGION_END( BFSRUN_region_nodesTest )
 #endif
 
 #ifdef INSTRUMENTED
@@ -438,16 +429,14 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_begin("BFSRUN_region_localExpansion");
-    // SCOREP_USER_REGION_DEFINE( BFSRUN_region_localExpansion )
-    // SCOREP_USER_REGION_BEGIN( BFSRUN_region_localExpansion, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_localExpansion )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_localExpansion, "BFSRUN_region_localExpansion",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
         static_cast<Derived *>(this)->runLocalBFS();
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_end("BFSRUN_region_localExpansion");
-    // SCOREP_USER_REGION_END( BFSRUN_region_localExpansion )
+    SCOREP_USER_REGION_END( BFSRUN_region_localExpansion )
 #endif
 
 #ifdef INSTRUMENTED
@@ -463,9 +452,8 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_begin("BFSRUN_region_testSomethingHasBeenDone");
-    // SCOREP_USER_REGION_DEFINE( BFSRUN_region_testSomethingHasBeenDone )
-    // SCOREP_USER_REGION_BEGIN( BFSRUN_region_testSomethingHasBeenDone, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_testSomethingHasBeenDone )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_testSomethingHasBeenDone, "BFSRUN_region_testSomethingHasBeenDone",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
         anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
@@ -501,8 +489,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_end("BFSRUN_region_testSomethingHasBeenDone");
-    // SCOREP_USER_REGION_END( BFSRUN_region_testSomethingHasBeenDone )
+    SCOREP_USER_REGION_END( BFSRUN_region_testSomethingHasBeenDone )
 #endif
 
             return; // There is nothing to do. Finish iteration.
@@ -515,9 +502,8 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_begin("BFSRUN_region_columnCommunication");
-    // SCOREP_USER_REGION_DEFINE( BFSRUN_region_columnCommunication )
-    // SCOREP_USER_REGION_BEGIN( BFSRUN_region_columnCommunication, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_columnCommunication )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_columnCommunication, "BFSRUN_region_columnCommunication",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
         static_cast<Derived *>(this)->getBackOutqueue();
@@ -551,8 +537,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_end("BFSRUN_region_columnCommunication");
-    // SCOREP_USER_REGION_END( BFSRUN_region_columnCommunication )
+    SCOREP_USER_REGION_END( BFSRUN_region_columnCommunication )
 #endif
 
 #ifdef INSTRUMENTED
@@ -566,9 +551,8 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_begin("BFSRUN_region_rowCommunication");
-    // SCOREP_USER_REGION_DEFINE( BFSRUN_region_rowCommunication )
-    // SCOREP_USER_REGION_BEGIN( BFSRUN_region_rowCommunication, "GlobalBFS",SCOREP_USER_REGION_TYPE_COMMON )
+    SCOREP_USER_REGION_DEFINE( BFSRUN_region_rowCommunication )
+    SCOREP_USER_REGION_BEGIN( BFSRUN_region_rowCommunication, "BFSRUN_region_rowCommunication",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
@@ -638,22 +622,11 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    scorep_instrumentation_end("BFSRUN_region_rowCommunication");
-    // SCOREP_USER_REGION_END( BFSRUN_region_rowCommunication )
+    SCOREP_USER_REGION_END( BFSRUN_region_rowCommunication )
 #endif
         ++iter;
     }
 }
-
-
-#ifdef _SCOREP_USER_INSTRUMENTATION
-void scorep_instrumentation_begin(const char* regionname) {
-    SCOREP_USER_REGION_BY_NAME_BEGIN(regionname, SCOREP_USER_REGION_TYPE_COMMON)
-}
-void scorep_instrumentation_end(const char* regionname) {
-    SCOREP_USER_REGION_BY_NAME_END(regionname)
-}
-#endif
 
 
 #endif // GLOBALBFS_HH
