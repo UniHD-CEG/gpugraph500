@@ -19,6 +19,10 @@ mpirun=mpirun
 mpirun=/home/jromera/openmpi/bin/mpirun
 valgrind=valgrind
 
+if [ "x$SCALASCA_ENABLE_RUNTIME" = "xyes" ]; then
+  scalasca="scalasca -analyze -f filter.scorep -e scorep_g500_testreduce`date +"%F-%s"`"
+fi
+
 date
-$mpirun -np 9 --display-map ./../cpu_2d/g500 -s $scale_factor -C 3 -gpus 1 -qs 2.1
+$scalasca $mpirun -np 9 --display-map ./../cpu_2d/g500 -s $scale_factor -C 3 -gpus 1 -qs 2.1
 
