@@ -129,11 +129,7 @@ int main(int argc, char **argv) {
     int gpus = 0;
     double queue_sizing = 1.20;
 #endif
-/*
-#ifdef _SIMDCOMPRESS
-    SIMDCompressionLib::IntegerCODEC &codec =  * SIMDCompressionLib::CODECFactory::getFromName("s4-bp128-dm");
-#endif
-*/
+
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -203,7 +199,9 @@ int main(int argc, char **argv) {
     }
 
 #ifdef INSTRUMENTED
-    output32bitMatrixVerificationResults(store.allValuesSmallerThan32Bits(), rank);
+    if (verbosity >= 16) {
+        output32bitMatrixVerificationResults(store.allValuesSmallerThan32Bits(), rank);
+    }
 #endif
 
 #ifdef _OPENCL
