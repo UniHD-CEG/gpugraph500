@@ -5,42 +5,42 @@
 #
 # Possible Values
 #
-# nvidia_architecture 					= fermi | auto
-# nvidia_ptxas_otimize 					= yes | no
-# openmp_on_cuda 						= yes | no
-# openmp_on_other_compilers				= yes | no
-# manual_instrument_cuda				= yes | no
-# manual_instrument_other_compilers		= yes | no
-# custom_openmpi						= yes | no
-# custom_openmpi_basedir				= path
-# scorep_profiler_enable				= yes | no
+# nvidia_architecture 			= fermi | auto
+# nvidia_ptxas_otimize 			= yes | no
+# openmp_on_cuda 			= yes | no
+# openmp_on_other_compilers		= yes | no
+# manual_instrument_cuda		= yes | no
+# manual_instrument_other_compilers	= yes | no
+# custom_openmpi			= yes | no
+# custom_openmpi_basedir		= path
+# scorep_profiler_enable		= yes | no
 # scorep_profiler_automatic_instrument  = yes | no
-# scorep_custom							= yes | no
-# scorep_custom_basedir					= path
-# use_avx_instructions					= yes | no
-# enable_simd_compression				= yes | no
-# debug									= yes | no
-# quiet_output							= yes | no
-# use_cuda								= yes | no
-#
+# scorep_custom				= yes | no
+# scorep_custom_basedir			= path
+# use_avx_instructions			= yes | no
+# enable_simd_compression		= yes | no
+# debug					= yes | no
+# quiet_output				= yes | no
+# use_cuda				= yes | no
 
-nvidia_architecture="fermi"
-nvidia_ptxas_otimize="no"
-openmp_on_cuda="no"
-openmp_on_other_compilers="no"
-manual_instrument_cuda="no"
-manual_instrument_other_compilers="yes"
-custom_openmpi="yes"
-custom_openmpi_basedir=/home/jromera/openmpi
-scorep_profiler_enable="yes"
-scorep_profiler_automatic_instrumentation="no"
-scorep_custom="yes"
-scorep_custom_basedir=/home/jromera/scorep
-use_avx_instructions="yes"
-enable_simd_compression="yes"
-debug="no"
-quiet_output="no"
-use_cuda="yes"
+
+nvidia_architecture			:= "fermi"
+nvidia_ptxas_otimize			:= "no"
+openmp_on_cuda				:= "no"
+openmp_on_other_compilers		:= "no"
+manual_instrument_cuda			:= "no"
+manual_instrument_other_compilers	:= "yes"
+custom_openmpi				:= "yes"
+custom_openmpi_basedir			:= /home/jromera/openmpi
+scorep_profiler_enable			:= "yes"
+scorep_profiler_automatic_instrumentation :="no"
+scorep_custom				:= "yes"
+scorep_custom_basedir			:= /home/jromera/scorep
+use_avx_instructions			:= "yes"
+enable_simd_compression			:= "yes"
+debug					:= "no"
+quiet_output				:= "no"
+use_cuda				:= "yes"
 
 
 
@@ -77,7 +77,7 @@ ifeq ($(scorep_profiler_enable), "yes")
 	ifeq ($(scorep_custom), "yes")
 		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
 			# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html#manual_instrumentation
-			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access --nocompiler
+			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access
 			SCOREP_INSTRUMENTATION := -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
 			SCOREP_CPPFLAGS := `scorep-config --cppflags`
 			SCOREP_LLIBS := `scorep-config --libs`
@@ -89,7 +89,7 @@ ifeq ($(scorep_profiler_enable), "yes")
 		PROFILER := scorep $(scorep_instrumentation_flag)
 	else
 		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
-			scorep_instrumentation_flag :=--pomp --cuda --mpp=mpi --thread=$(threads) --nopdt
+			scorep_instrumentation_flag :=--pomp --cuda --mpp=mpi --thread=$(threads) --nopdt --nocompiler
 		endif
 		PROFILER := scorep $(scorep_instrumentation_flag)
 	endif
