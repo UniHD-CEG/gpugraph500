@@ -1,27 +1,85 @@
+#########################################################
+# Makefile - GCC
+#########################################################
 #
-# Makefile for GCC
 #
+# Configurable options:
 #
+# nvidia_architecture
+#  Values: fermi | auto
+# "use auto for generic code fermi, kepler.
+#  generated binary may become bigger"
 #
-# Possible Values
+# nvidia_ptxas_otimize
+#  Values: yes | no
+# "enables -O3 optimization on ptax cuda regiters"
 #
-# nvidia_architecture 			= fermi | auto
-# nvidia_ptxas_otimize 			= yes | no
-# openmp_on_cuda 			= yes | no
-# openmp_on_other_compilers		= yes | no
-# manual_instrument_cuda		= yes | no
-# manual_instrument_other_compilers	= yes | no
-# custom_openmpi			= yes | no
-# custom_openmpi_basedir		= path
-# scorep_profiler_enable		= yes | no
-# scorep_profiler_automatic_instrument  = yes | no
-# scorep_custom				= yes | no
-# scorep_custom_basedir			= path
-# use_avx_instructions			= yes | no
-# enable_simd_compression		= yes | no
-# debug					= yes | no
-# quiet_output				= yes | no
-# use_cuda				= yes | no
+# openmp_on_cuda
+#  Values: yes | no
+# "Hybrid execution mode. OpenMP threads are added to
+#  BFSruns processed with cuda"
+#
+# openmp_on_other_compilers
+#  Values: yes | no
+# "Hybrid execution mode. OpenMP threads are added to
+#  other high O() code"
+#
+# manual_instrument_cuda
+#  Values: yes | no
+# "prints out information on initialization"
+#
+# manual_instrument_other_compilers
+#  Values: yes | no
+# "prints out results/ statistics at the end"
+#
+# custom_openmpi
+#  Values: yes | no
+# "use user compiled openmpi instead of system's"
+#
+# custom_openmpi_basedir
+# Values: path
+#  "if previous option is set, absolute path to dir"
+#
+# scorep_profiler_enable
+#  Values: yes | no
+# "is scorep has been installed, enable it on code"
+#
+# scorep_profiler_automatic_instrument
+#  Values: yes | no
+# "this option set to no enables manual instrumentation,
+#  and reads the already added zones!
+#
+# scorep_custom
+#  Values: yes | no
+# "see open_mpi above. for scorep"
+#
+# scorep_custom_basedir
+# Values: path
+#  "see custom_openmpi_basedir option above"
+#
+# use_avx_instructions
+#  Values: yes | no
+#  "CPU SSExx and AMD compatibles (AVX) will be used
+#   to compile files"
+#
+# enable_simd_compression
+#  Values: yes | no
+#  "MPI packets will be sent compressed by using
+#   D. Lemire SIMDCompression library"
+#
+# debug
+#  Values: yes | no
+# "Provides extra data in runtime execution.
+#  recorded in slurm-xx.out file"
+#
+# quiet_output
+#  Values: yes | no
+# "Disable verbose on Make command execution"
+#
+# use_cuda
+#  Values: yes | no
+# "if cuda is disabled BFS runs are proccessed
+#  by CPU"
 
 
 nvidia_architecture			:= "fermi"
