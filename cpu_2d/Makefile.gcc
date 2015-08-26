@@ -77,9 +77,9 @@ ifeq ($(scorep_profiler_enable), "yes")
 	ifeq ($(scorep_custom), "yes")
 		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
 			# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html#manual_instrumentation
-			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --nocompiler
-			DEFINES := -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
-			SCOREP_CXXFLAGS := `scorep-config --cppflags`
+			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access
+			SCOREP_INSTRUMENTATION := -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
+			SCOREP_CPPFLAGS := `scorep-config --cppflags`
 			SCOREP_LLIBS := `scorep-config --libs`
 			SCOREP_LFLAGS := `scorep-config --ldflags`
 		endif
@@ -198,7 +198,7 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h
 	@echo ""
 	@echo "--- Compiling g500"
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_CXXFLAGS) $(INCPATH) -o main.o main.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_INSTRUMENTATION) $(SCOREP_CPPFLAGS) $(INCPATH) -o main.o main.cpp
 	@echo "    MPICC     $@"
 
 bitpacking.o: compression/include/bitpacking.h compression/src/bitpacking.cpp
