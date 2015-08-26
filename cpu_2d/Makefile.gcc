@@ -77,7 +77,7 @@ ifeq ($(scorep_profiler_enable), "yes")
 	ifeq ($(scorep_custom), "yes")
 		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
 			# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html#manual_instrumentation
-			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access
+			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access --nocompiler
 			SCOREP_INSTRUMENTATION := -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
 			SCOREP_CPPFLAGS := `scorep-config --cppflags`
 			SCOREP_LLIBS := `scorep-config --libs`
