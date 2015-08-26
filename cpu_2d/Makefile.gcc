@@ -131,11 +131,11 @@ ifeq ($(scorep_profiler_enable), "yes")
 	#ifeq ($(openmp_on_other_compilers), "yes")
 	#	threads := none
 	#endif
-	scorep_instrumentation_flag :=--cuda --mpp=mpi --thread=$(threads) --nopdt --instrument-filter
+	scorep_instrumentation_flag :=--cuda --mpp=mpi --thread=$(threads) --nopdt
 	ifeq ($(scorep_custom), "yes")
 		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
 			# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html#manual_instrumentation
-			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access
+			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access --instrument-filter="filter.scorep"
 			SCOREP_INSTRUMENTATION := -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
 			SCOREP_CPPFLAGS := `scorep-config --cppflags`
 			SCOREP_LLIBS := `scorep-config --libs`
