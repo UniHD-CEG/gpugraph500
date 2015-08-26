@@ -20,7 +20,7 @@ mpirun=/home/jromera/openmpi/bin/mpirun
 valgrind=valgrind
 
 if [ "x$SCALASCA_ENABLE_RUNTIME" = "xyes" ]; then
-  scalasca="scan -s"
+  scalasca="scalasca -analyze -f filter.scorep -e scorep_g500_testreduce`date +"%F-%s"`"
 fi
 
 date
