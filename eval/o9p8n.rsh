@@ -20,7 +20,7 @@ mpirun=/home/jromera/openmpi/bin/mpirun
 valgrind=valgrind
 
 if [ "x$SCALASCA_ENABLE_RUNTIME" = "xyes" ]; then
-  scalasca=scalasca -analyze
+  scalasca="scan -s"
 fi
 
 date
