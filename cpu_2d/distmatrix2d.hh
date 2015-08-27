@@ -704,7 +704,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
         owen_send_size[i] = owen_offset[i + 1] - owen_offset[i];
     }
     // send others sizes to receive sizes
-    printf("DEBUG:: MPI_Alltoallv - DistMatrix2d\n");
+   fprintf(stderr, "DEBUG:: MPI_Alltoallv - DistMatrix2d\n");
     MPI_Alltoall(owen_send_size, 1, MPI_INT, other_size, 1, MPI_INT, col_comm);
     // compute transmission offsets
     other_offset[0] = 0;
@@ -717,7 +717,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     packed_edge *coltransBuf = (packed_edge *) malloc(numberOfEdges * sizeof(packed_edge));
 
     // transmit data
-    printf("DEBUG:: MPI_Alltoallv - DistMatrix2d -  2\n");
+   fprintf(stderr, "DEBUG:: MPI_Alltoallv - DistMatrix2d -  2\n");
     MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, coltransBuf, other_size, other_offset,
         packedEdgeMPI, col_comm);
 
@@ -780,7 +780,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     packed_edge *rowtransBuf = (packed_edge *) malloc(other_offset[C] * sizeof(packed_edge));
 
     // transmit data
-    printf("DEBUG:: MPI_Alltoallv - DistMatrix2d - 3\n");
+   fprintf(stderr, "DEBUG:: MPI_Alltoallv - DistMatrix2d - 3\n");
     MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, rowtransBuf, other_size, other_offset,
         packedEdgeMPI, row_comm);
 
