@@ -609,10 +609,9 @@ public:
 
 
 		// exchange using MPI_Alltoallv
-		printf("DEBUG:: Start - MPI_Alltoallv\n");
+		printf("DEBUG:: MPI_Alltoallv - EnactorMultiNode\n");
 		MPI_Alltoallv(sendArray, sendCounts, sendDisp, MPI_INT, recvArray, recvCounts, recvDisp, MPI_INT, MPI_COMM_WORLD);
 		MPI_Alltoallv(sendArray2, sendCounts, sendDisp, MPI_INT, recvArray2, recvCounts, recvDisp, MPI_INT, MPI_COMM_WORLD);
-		printf("DEBUG:: End - MPI_Alltoallv\n");
 
 		for(int i=0; i<num_nodes; i++){
 			// its own
