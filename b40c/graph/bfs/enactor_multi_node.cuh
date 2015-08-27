@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright (c) 2010-2011, Duane Merrill.  All rights reserved.
  * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the NVIDIA CORPORATION nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -68,7 +68,7 @@ namespace bfs {
 
 /**
  * Multi-GPU out-of-core BFS implementation (BFS level grid launch)
- *  
+ *
  * Each iteration is performed by its own kernel-launch.
  *
  * All GPUs must be of the same SM architectural version (e.g., SM2.0).
@@ -354,8 +354,8 @@ protected:
 	//---------------------------------------------------------------------
 
 
-public: 	
-	
+public:
+
 	/**
 	 * Constructor
 	 */
@@ -391,7 +391,7 @@ public:
 
 
     /**
-     * Obtain statistics about the last BFS search enacted 
+     * Obtain statistics about the last BFS search enacted
      */
 	template <typename VertexId>
     void GetStatistics(
@@ -491,15 +491,15 @@ public:
 		int doneInt=0;
 		if(done)
 			doneInt = 1;
-			
-						
+
+
 		//rank 0 receives all the status and broadcast the result back to all the other nodes
 		//if rank 0, receives
 		int *receiveBuf = (int *)malloc(num_nodes*sizeof(int));
-	
-		//MPI_Gather - rank 0 gathers all status from other nodes	
+
+		//MPI_Gather - rank 0 gathers all status from other nodes
 		MPI_Gather(&doneInt, 1, MPI_INT, receiveBuf, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	
+
 		int ind = 0;
 		bool isAllDone = true;
 		//if world_rank is done, check for others
@@ -509,19 +509,19 @@ public:
 					isAllDone = false;
 					break;
 				}
-			}	
+			}
 		}
 		else{
 			isAllDone = false;
 		}
-		
+
 		if(isAllDone){
-			doneInt = 1;		
-		}			
+			doneInt = 1;
+		}
 
 		//MPI_Bcast - rank 0 broadcast the results to others
 		MPI_Bcast(&doneInt, 1, MPI_INT, 0, MPI_COMM_WORLD);
-		
+
 		//check for done
 		if(doneInt == 1)
 			return true;
@@ -544,7 +544,7 @@ public:
 		int *sendArray,  *recvArray;
 		int *sendArray2, *recvArray2;
 		int *sendDisp, *recvDisp;
-		int *sendCounts, *recvCounts;	
+		int *sendCounts, *recvCounts;
 		int sendBufferSize=0, recvBufferSize=0;
 
 		sendCounts = (int*)malloc(sizeof(int)*num_nodes);
@@ -559,7 +559,7 @@ public:
 		SizeT *peer_spine 			= (SizeT*) peer_control->spine.h_spine;
 
 		//iterate through all nodes
-		for(int i=0; i<num_nodes; i++){					
+		for(int i=0; i<num_nodes; i++){
 
 			SizeT queue_offset 	= peer_spine[bins_per_gpu * i * peer_control->partition_grid_size];
 			SizeT queue_oob 	= peer_spine[bins_per_gpu * (i + 1) * peer_control->partition_grid_size];
@@ -571,48 +571,51 @@ public:
 			sendCounts[i] = num_elements;
 			offsetArray[i]= queue_offset;
 		}
-		
+
 		// exchange num_elements using MPI_Alltoall
 		MPI_Alltoall(sendCounts, 1, MPI_INT, recvCounts, 1, MPI_INT, MPI_COMM_WORLD);
-			
+
 		// calculate displacements
 		sendDisp[0] = 0;
 		for(int i=1; i<num_nodes; i++){
 			sendDisp[i] = sendCounts[i-1] + sendDisp[i-1];
-		}		
+		}
 		recvDisp[0] = 0;
 		for(int i=1; i<num_nodes; i++){
 			recvDisp[i] = recvCounts[i-1] + recvDisp[i-1];
-		}		
-		
+		}
+
 		// calculate size of arrays
 		for(int i=0; i<num_nodes; i++){
 			sendBufferSize+=sendCounts[i];
 			recvBufferSize+=recvCounts[i];
 		}
-			
-		// allocate for send and receive total array		
+
+		// allocate for send and receive total array
 		sendArray =  (int*)malloc(sizeof(int)*sendBufferSize);
 		recvArray =  (int*)malloc(sizeof(int)*recvBufferSize);
 		sendArray2 = (int*)malloc(sizeof(int)*sendBufferSize);
 		recvArray2 = (int*)malloc(sizeof(int)*recvBufferSize);
 
-		for(int i=0; i<num_nodes; i++){	
+		for(int i=0; i<num_nodes; i++){
 			VertexId *hostd_keys= (VertexId*)malloc(sendCounts[i]*sizeof(VertexId));
 			VertexId *hostd_values= (VertexId*)malloc(sendCounts[i]*sizeof(VertexId));
 			//need to copy to the host before sending to other nodes
 			cudaMemcpy(hostd_keys,peer_slice->frontier_queues.d_keys[2]+offsetArray[i],sizeof(VertexId)*sendCounts[i],cudaMemcpyDeviceToHost);
 			cudaMemcpy(hostd_values,peer_slice->frontier_queues.d_values[2]+offsetArray[i],sizeof(VertexId)*sendCounts[i],cudaMemcpyDeviceToHost);
-			memcpy(sendArray+sendDisp[i],hostd_keys,sizeof(int)*sendCounts[i]);		
-			memcpy(sendArray2+sendDisp[i],hostd_values,sizeof(int)*sendCounts[i]);		
-		}	
-	
+			memcpy(sendArray+sendDisp[i],hostd_keys,sizeof(int)*sendCounts[i]);
+			memcpy(sendArray2+sendDisp[i],hostd_values,sizeof(int)*sendCounts[i]);
+		}
+
+
 		// exchange using MPI_Alltoallv
+		printf("DEBUG:: Start - MPI_Alltoallv\n");
 		MPI_Alltoallv(sendArray, sendCounts, sendDisp, MPI_INT, recvArray, recvCounts, recvDisp, MPI_INT, MPI_COMM_WORLD);
 		MPI_Alltoallv(sendArray2, sendCounts, sendDisp, MPI_INT, recvArray2, recvCounts, recvDisp, MPI_INT, MPI_COMM_WORLD);
+		printf("DEBUG:: End - MPI_Alltoallv\n");
 
 		for(int i=0; i<num_nodes; i++){
-			// its own 
+			// its own
 			if(i == world_rank){
 				util::CtaWorkDistribution<SizeT> work_decomposition;
 				work_decomposition.template Init<CopyPolicy::LOG_SCHEDULE_GRANULARITY>(
@@ -633,7 +636,7 @@ public:
 						peer_control->copy_kernel_stats);
 
 				if (DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
-					"EnactorMultiNode copy::Kernel failed ", __FILE__, __LINE__))) break;	
+					"EnactorMultiNode copy::Kernel failed ", __FILE__, __LINE__))) break;
 			}
 			// from other nodes
 			else{
@@ -644,7 +647,7 @@ public:
 						if (retval = util::B40CPerror(cudaMalloc((void**) &deviced_values,recvCounts[i]*sizeof(VertexId)),
 				"device cudaMalloc predecessor failed", __FILE__, __LINE__)) break;
 
-						cudaMemcpy(deviced_keys, recvArray+recvDisp[i],sizeof(VertexId)*recvCounts[i], cudaMemcpyHostToDevice);	
+						cudaMemcpy(deviced_keys, recvArray+recvDisp[i],sizeof(VertexId)*recvCounts[i], cudaMemcpyHostToDevice);
 						cudaMemcpy(deviced_values, recvArray+recvDisp[i],sizeof(VertexId)*recvCounts[i], cudaMemcpyHostToDevice);
 						// Contraction from peer GPU
 						two_phase::contract_atomic::Kernel<ContractPolicy>
@@ -669,7 +672,7 @@ public:
 						"EnactorMultiNode contract_atomic::Kernel failed ", __FILE__, __LINE__))) break;
 			}
 			peer_control->steal_index++;
-		}		
+		}
 		peer_control->queue_index++;
 		return retval;
 	}
@@ -942,12 +945,12 @@ public:
 				if(isBFSDone(done, world_rank, num_nodes))
 					break;
 				//nodeExchange(control_blocks, csr_problem, retval,num_nodes, world_rank, bins_per_gpu);
-				
+
 
 				retval = nodeExchange<typename CsrPolicy::CopyPolicy, typename CsrPolicy::ContractPolicy,CsrProblem>(control_blocks,csr_problem, retval,num_nodes, world_rank, bins_per_gpu);
 				if(retval)
 					break;
-			
+
 
 			}
 			if (retval) break;
@@ -1009,7 +1012,7 @@ public:
 		return cudaErrorInvalidDeviceFunction;
 	}
 
-    
+
 };
 
 
