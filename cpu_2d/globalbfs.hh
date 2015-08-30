@@ -559,21 +559,22 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
 #ifdef _SIMDCOMPRESS
-        if (_outsize > 64) {
-            std::vector<uint32_t> compressed_recv_fq_buff(recv_fq_buff, recv_fq_buff + _outsize);
-
-printf("original ----------\n");
+        if (_outsize > 512) {
+            std::vector<uint32_t>  compressed_recv_fq_buff(recv_fq_buff, recv_fq_buff + _outsize);
+/*
+printf("original ---------- %i\n",_outsize);
  for (int i=0;i< _outsize;++i){
 
-     printf("%l ", recv_fq_buff[i]);
+     printf("%i ", recv_fq_buff[i]);
  }
 printf("--------------------!\n");
-printf("copy ----------\n");
+printf("copy ---------- %i\n",_outsize);
  for (int i=0;i< _outsize;++i){
 
-     printf("%l ", compressed_recv_fq_buff[i]);
+     printf("%i ", compressed_recv_fq_buff[i]);
  }
 printf("--------------------!\n");
+*/
         }
 #endif
 
