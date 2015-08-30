@@ -180,7 +180,6 @@ void end_gather(gather* g) {
     recv_offsets[i + 1] = recv_offsets[i] + recv_counts[i];
   }
   MPI_Aint* restrict recv_data = (MPI_Aint*)xmalloc(recv_offsets[size] * sizeof(MPI_Aint));
-  fprintf(stderr, "DEBUG:: MPI_Alltoallv - One-sided 1\n");
   MPI_Alltoallv(remote_indices, send_counts, send_offsets, MPI_AINT, recv_data, recv_counts, recv_offsets, MPI_AINT, comm);
   char* restrict reply_data = xmalloc(recv_offsets[size] * elt_size);
   for (i = 0; i < (size_t)recv_offsets[size]; ++i) {
@@ -189,7 +188,6 @@ void end_gather(gather* g) {
   }
   free(recv_data);
   char* restrict recv_reply_data = xmalloc(send_offsets[size] * elt_size);
-  fprintf(stderr, "DEBUG:: MPI_Alltoallv - One-sided 2\n");
   MPI_Alltoallv(reply_data, recv_counts, recv_offsets, datatype, recv_reply_data, send_counts, send_offsets, datatype, comm);
   free(reply_data);
   for (i = 0; i < nrequests_max; ++i) {
@@ -328,7 +326,6 @@ void end_scatter_constant(scatter_constant* sc) {
     recv_offsets[i + 1] = recv_offsets[i] + recv_counts[i];
   }
   MPI_Aint* restrict recv_data = (MPI_Aint*)xmalloc(recv_offsets[size] * sizeof(MPI_Aint));
-  fprintf(stderr, "DEBUG:: MPI_Alltoallv - One-sided 3\n");
   MPI_Alltoallv(remote_indices, send_counts, send_offsets, MPI_AINT, recv_data, recv_counts, recv_offsets, MPI_AINT, comm);
   for (i = 0; i < (size_t)recv_offsets[size]; ++i) {
     assert (recv_data[i] >= 0 && recv_data[i] < (MPI_Aint) array_count);
@@ -475,7 +472,6 @@ void end_scatter(scatter* sc) {
   }
   MPI_Aint* restrict recv_indices = (MPI_Aint*)xmalloc(recv_offsets[size] * sizeof(MPI_Aint));
   char* restrict recv_data = (char*)xmalloc(recv_offsets[size] * elt_size);
-  fprintf(stderr, "DEBUG:: MPI_Alltoallv - One-sided 4\n");
   MPI_Alltoallv(remote_indices, send_counts, send_offsets, MPI_AINT, recv_indices, recv_counts, recv_offsets, MPI_AINT, comm);
   MPI_Alltoallv(send_data, send_counts, send_offsets, sc->datatype, recv_data, recv_counts, recv_offsets, sc->datatype, comm);
   for (i = 0; i < (size_t)recv_offsets[size]; ++i) {

@@ -536,6 +536,12 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
+printf("new package ----------\n");
+for (int i=0;i< _outsize;++i){
+    printf("%i ", recv_fq_buff[i]);
+}
+printf("----------------------!\n");
+
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_END( BFSRUN_region_columnCommunication )
 #endif
