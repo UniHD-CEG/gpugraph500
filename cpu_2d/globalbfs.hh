@@ -560,7 +560,17 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef _SIMDCOMPRESS
         if (_outsize > 512) {
-            std::vector<uint32_t>  compressed_recv_fq_buff(recv_fq_buff, recv_fq_buff + _outsize);
+            std::vector<uint32_t>  compressed_recv_fq_buff(_outsize + 1024);
+            size_t compressedsize = compressed_recv_fq_buff.size();
+            codec.encodeArray(recv_fq_buff, _outsize,
+                              compressed_recv_fq_buff.data(), compressedsize);
+
+            compressed_recv_fq_buff.resize(compressedsize);
+            compressed_recv_fq_buff.shrink_to_fit();
+
+            std::cout << setprecision(3);
+            std::cout << "You are using " << 32.0 * static_cast<double>(compressed_recv_fq_buff.size()) /
+                 _outsize << " bits per integer. " << std::endl;
 /*
 printf("original ---------- %i\n",_outsize);
  for (int i=0;i< _outsize;++i){
