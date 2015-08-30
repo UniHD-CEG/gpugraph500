@@ -538,7 +538,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 printf("new package ----------\n");
 for (int i=0;i< _outsize;++i){
-    printf("%i ", recv_fq_buff[i]);
+    printf("%l ", recv_fq_buff[i]);
 }
 printf("----------------------!\n");
 
