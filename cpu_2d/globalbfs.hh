@@ -13,6 +13,10 @@
 #include <string.h>
 #include <functional>
 
+#ifdef INSTRUMENTED
+    #include <chrono>
+#endif
+
 #ifdef _SCOREP_USER_INSTRUMENTATION
     #include "scorep/SCOREP_User.h"
 #endif
@@ -21,6 +25,24 @@
     #include "codecfactory.h"
     #include "intersection.h"
     using namespace SIMDCompressionLib;
+#endif
+
+#ifdef INSTRUMENTED
+    // measure cpu execution time with:
+    // std::cout << measure<>::execution(functor(dummy)) << std::endl;
+    template<typename TimeT = std::chrono::milliseconds>
+    struct measure
+    {
+        template<typename F, typename ...Args>
+        static typename TimeT::rep execution(F&& func, Args&&... args)
+        {
+            auto start = std::chrono::system_clock::now();
+            std::forward<decltype(func)>(func)(std::forward<Args>(args)...);
+            auto duration = std::chrono::duration_cast< TimeT>
+                                (std::chrono::system_clock::now() - start);
+            return duration.count();
+        }
+    };
 #endif
 
 
@@ -536,11 +558,13 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
-printf("new package ----------\n");
-for (int i=0;i< _outsize;++i){
-    printf("%l ", recv_fq_buff[i]);
-}
-printf("----------------------!\n");
+// printf("new package ----------\n");
+// for (int i=0;i< _outsize;++i){
+//     printf("%l ", recv_fq_buff[i]);
+// }
+// printf("----------------------!\n");
+
+
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_END( BFSRUN_region_columnCommunication )
