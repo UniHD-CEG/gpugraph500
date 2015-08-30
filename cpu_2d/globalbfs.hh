@@ -29,7 +29,7 @@
 
 #ifdef INSTRUMENTED
     // measure cpu execution time with:
-    // std::cout << measure<>::execution(functor(dummy)) << std::endl;
+    // std::cout << measure<>::execution(function(dummy)) << std::endl;
     template<typename TimeT = std::chrono::milliseconds>
     struct measure
     {
@@ -558,12 +558,24 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
-// printf("new package ----------\n");
-// for (int i=0;i< _outsize;++i){
-//     printf("%l ", recv_fq_buff[i]);
-// }
-// printf("----------------------!\n");
+#ifdef _SIMDCOMPRESS
+        if (_outsize > 64) {
+            std::vector<uint32_t> compressed_recv_fq_buff(recv_fq_buff, recv_fq_buff + _outsize);
 
+printf("original ----------\n");
+ for (int i=0;i< _outsize;++i){
+
+     printf("%l ", recv_fq_buff[i]);
+ }
+printf("--------------------!\n");
+printf("copy ----------\n");
+ for (int i=0;i< _outsize;++i){
+
+     printf("%l ", compressed_recv_fq_buff[i]);
+ }
+printf("--------------------!\n");
+        }
+#endif
 
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
