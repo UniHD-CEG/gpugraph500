@@ -91,11 +91,6 @@
 #          -fgcse-after-reload, -ftree-vectorize, -ftree-partial-pre and -fipa-cp-clone options, ...
 #           (https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options)
 #  "Optimization flags added to the compiler"
-#
-# code_optimization_use_m32
-#  Values: yes | no
-#  "whether or not swith to m64 arch."
-#  (https://software.intel.com/en-us/blogs/2012/09/26/gcc-x86-performance-hints)
 
 
 nvidia_architecture                       :="fermi"
