@@ -89,29 +89,35 @@
 #  Format: value, value, value
 #  Values: -funroll-loops, -finline-functions, -funswitch-loops, -fpredictive-commoning,
 #          -fgcse-after-reload, -ftree-vectorize, -ftree-partial-pre and -fipa-cp-clone options, ...
-#  			(https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options)
+#           (https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options)
 #  "Optimization flags added to the compiler"
+#
+#
+# code_optimization_simd_floatingpoint
+#  Values: yes | no
+#  "Whether or not use sse operations with math ops"
 
 
-nvidia_architecture			:= "all"
-nvidia_ptxas_otimize			:= "no"
-openmp_on_cuda				:= "no"
-openmp_on_other_compilers		:= "no"
-manual_instrument_cuda			:= "no"
-manual_instrument_other_compilers	:= "yes"
-custom_openmpi				:= "yes"
-custom_openmpi_basedir			:= /home/jromera/openmpi
-scorep_profiler_enable			:= "no"
+nvidia_architecture                       :="all"
+nvidia_ptxas_otimize                      :="no"
+openmp_on_cuda                            :="no"
+openmp_on_other_compilers                 :="no"
+manual_instrument_cuda                    :="no"
+manual_instrument_other_compilers         :="yes"
+custom_openmpi                            :="yes"
+custom_openmpi_basedir                    :=/home/jromera/openmpi
+scorep_profiler_enable                    :="no"
 scorep_profiler_automatic_instrumentation :="yes"
-scorep_custom				:= "yes"
-scorep_custom_basedir			:= /home/jromera/scorep
-use_avx_instructions			:= "yes"
-enable_simd_compression			:= "yes"
-debug					:= "no"
-quiet_output				:= "no"
-use_cuda				:= "yes"
-code_optimization_level		:=-O3
-code_optimization_flags		:=
+scorep_custom                             :="yes"
+scorep_custom_basedir                     :=/home/jromera/scorep
+use_avx_instructions                      :="no"
+enable_simd_compression                   :="yes"
+debug                                     :="no"
+quiet_output                              :="no"
+use_cuda                                  :="yes"
+code_optimization_level                   :=-O3
+code_optimization_flags                   :=
+code_optimization_simd_floatingpoint      :="yes"
 
 
 
@@ -121,11 +127,16 @@ NVCXX := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
 NVDIR := $(shell echo $(NVCXX) | sed 's,/bin/nvcc$$,,')
 
 
+ifeq ($(code_optimization_simd_floatingpoint), "yes")
+	fpmath_simd := -mfpmath=sse
+endif
+
+
 ifeq ($(use_avx_instructions), "yes")
 	arch := -mavx
 else
 ifeq ($(enable_simd_compression), "yes")
-	arch :=  -msse2
+	arch := -msse2
 else
 	arch := -march=native
 endif
@@ -151,32 +162,32 @@ endif
 
 ifeq ($(scorep_profiler_enable), "yes")
 	threads := pthread
-	#ifeq ($(openmp_on_cuda), "yes")
-	#	threads := none
-	#endif
-	#ifeq ($(openmp_on_other_compilers), "yes")
-	#	threads := none
-	#endif
-	scorep_instrumentation_flag :=--cuda --mpp=mpi --thread=$(threads) --nopdt
-	ifeq ($(scorep_custom), "yes")
-		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
-			# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html#manual_instrumentation
-			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access --instrument-filter="filter.scorep"
-			SCOREP_INSTRUMENTATION := -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
-			SCOREP_CPPFLAGS := `scorep-config --cppflags`
-			SCOREP_LLIBS := `scorep-config --libs`
-			SCOREP_LFLAGS := `scorep-config --ldflags`
-		endif
-		export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
-		libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
-		libcudart_static_flag = -lcudart_static
-		PROFILER := scorep $(scorep_instrumentation_flag)
-	else
-		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
-			scorep_instrumentation_flag :=--pomp --cuda --mpp=mpi --thread=$(threads) --nopdt --nocompiler
-		endif
-		PROFILER := scorep $(scorep_instrumentation_flag)
+	ifeq ($(openmp_on_cuda), "yes")
+		threads := omp
 	endif
+	ifeq ($(openmp_on_other_compilers), "yes")
+		threads := omp
+	endif
+	scorep_instrumentation_flag :=--cuda --mpp=mpi --thread=$(threads) --nopdt
+ifeq ($(scorep_custom), "yes")
+ifeq ($(scorep_profiler_automatic_instrumentation), "no")
+	# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html#manual_instrumentation
+	scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access --instrument-filter="filter.scorep"
+	SCOREP_INSTRUMENTATION := -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
+	SCOREP_CPPFLAGS := `scorep-config --cppflags`
+	SCOREP_LLIBS := `scorep-config --libs`
+	SCOREP_LFLAGS := `scorep-config --ldflags`
+endif
+	export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
+	libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
+	libcudart_static_flag = -lcudart_static
+	PROFILER := scorep $(scorep_instrumentation_flag)
+else
+ifeq ($(scorep_profiler_automatic_instrumentation), "no")
+	scorep_instrumentation_flag :=--pomp --cuda --mpp=mpi --thread=$(threads) --nopdt --nocompiler
+endif
+	PROFILER := scorep $(scorep_instrumentation_flag)
+endif
 else
 	libcudart_static_path := -L$(NVDIR)/lib64
 	libcudart_static_flag = -lcudart
@@ -236,7 +247,7 @@ endif
 NVCXXFLAGS := $(arch),-m64,-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(code_optimization_level),$(CUDA_OPENMP)
 CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic $(code_optimization_level) $(code_optimization_flags) -Wall -Wextra
 CCFLAGS := -mavx -std=c99 -pedantic $(code_optimization_level) $(code_optimization_flags) -mfpmath=sse -Wall -Wextra
-MPICFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c99 -pedantic $(code_optimization_flags) -mfpmath=sse $(OPENMP) $(code_optimization_level) $(arch) -Wall -W -fPIE
+MPICFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c99 -pedantic $(code_optimization_flags) $(fpmath_simd) $(OPENMP) $(code_optimization_level) $(arch) -Wall -W -fPIE
 MPICXXFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c++11 $(code_optimization_flags) -pedantic $(OPENMP) $(INSTRUMENTED) $(code_optimization_level) $(arch) -Wall -W -fPIE
 LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,$(code_optimization_level)
 LLIBS := $(SCOREP_LLIBS) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda
