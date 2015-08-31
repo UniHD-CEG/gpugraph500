@@ -562,16 +562,24 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 #ifdef _SIMDCOMPRESS
         if (_outsize > 512 && _outsize < 1024) {
             std::vector<uint32_t>  recv_fq_buff_32(recv_fq_buff, recv_fq_buff + _outsize);
-            std::vector<uint32_t>  compressed_recv_fq_buff_32(_outsize + 1024);
+            std::vector<uint32_t>  compressed_recv_fq_buff_32(_outsize);
             size_t compressedsize = compressed_recv_fq_buff_32.size();
-            codec.encodeArray(recv_fq_buff_32, _outsize,
-                              compressed_recv_fq_buff_32.data(), compressedsize);
 
+std::cout << "data(): ";
+for (auto i = recv_fq_buff_32.begin(); i != recv_fq_buff_32.end(); ++i) {
+    std::cout << *i << ' ';
+}
+std::cout << std::endl << "size(): " << recv_fq_buff_32.size() << std::endl;
+std::cout << "size2(): " << compressedsize << std::endl;
+
+            codec.encodeArray(recv_fq_buff_32.data(), recv_fq_buff_32.size(),
+                              compressed_recv_fq_buff_32.data(), compressedsize);
+/*
             compressed_recv_fq_buff_32.resize(compressedsize);
             compressed_recv_fq_buff_32.shrink_to_fit();
 
-            std::vector<uint64_t> compressed_recv_fq_buff_64(compressed_recv_fq_buff_32,
-                compressed_recv_fq_buff_32 + _outsize);
+            std::vector<uint64_t> compressed_recv_fq_buff_64(compressed_recv_fq_buff_32.begin(),
+                compressed_recv_fq_buff_32.end());
 
             std::cout << setprecision(3);
             std::cout << "You are using " << 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size()) /
@@ -582,13 +590,12 @@ printf("original ---------- %i\n",_outsize);
      printf("%i ", recv_fq_buff[i]);
  }
 printf("--------------------!\n");
-
 printf("copy ---------- %i\n",compressed_recv_fq_buff_64.size());
  for (int i=0;i< _outsize;++i){
      printf("%i ", compressed_recv_fq_buff_64[i]);
  }
 printf("--------------------!\n");
-
+*/
         }
 #endif
 
