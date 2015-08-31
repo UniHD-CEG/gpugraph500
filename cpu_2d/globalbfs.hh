@@ -12,7 +12,6 @@
 #include <ctgmath>
 #include <string.h>
 #include <functional>
-
 #ifdef INSTRUMENTED
     #include <chrono>
 #endif
@@ -45,6 +44,9 @@
     };
 #endif
 
+#ifdef _SIMDCOMPRESS
+    IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
+#endif
 
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
@@ -74,9 +76,6 @@ protected:
     MType *tmpmask;
     int64_t mask_size;
 
-#ifdef _SIMDCOMPRESS
-    IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
-#endif
 
     // Functions that have to be implemented by the children
     // void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
@@ -560,21 +559,25 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
 #ifdef _SIMDCOMPRESS
+
         if (_outsize > 512 && _outsize < 1024) {
-            std::vector<uint32_t>  recv_fq_buff_32(recv_fq_buff, recv_fq_buff + _outsize);
-            std::vector<uint32_t>  compressed_recv_fq_buff_32(_outsize);
+/*
+            // size_t N = 10 * 1000;
+            std::vector<uint32_t>  recv_fq_buff_32(_outsize);
+            for (uint32_t i = 0; i < _outsize; ++i) { recv_fq_buff_32[i] = 3 * i; }
+            std::vector<uint32_t>  compressed_recv_fq_buff_32(_outsize + 1024);
             size_t compressedsize = compressed_recv_fq_buff_32.size();
 
-std::cout << "data(): ";
+std::cout << std::endl << "data(): ";
 for (auto i = recv_fq_buff_32.begin(); i != recv_fq_buff_32.end(); ++i) {
     std::cout << *i << ' ';
 }
-std::cout << std::endl << "size(): " << recv_fq_buff_32.size() << std::endl;
-std::cout << "size2(): " << compressedsize << std::endl;
+std::cout << std::endl << "size(): " << recv_fq_buff_32.size() << " size2(): " << compressedsize << std::endl;
+
 
             codec.encodeArray(recv_fq_buff_32.data(), recv_fq_buff_32.size(),
                               compressed_recv_fq_buff_32.data(), compressedsize);
-/*
+
             compressed_recv_fq_buff_32.resize(compressedsize);
             compressed_recv_fq_buff_32.shrink_to_fit();
 
