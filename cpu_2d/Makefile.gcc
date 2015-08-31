@@ -7,8 +7,8 @@
 #
 # nvidia_architecture
 #  Values: fermi | auto
-# "use auto for generic code fermi, kepler.
-#  generated binary may become bigger"
+# "use auto for generic code: Fermi and Kepler.
+#  Generated binary may become bigger"
 #
 # nvidia_ptxas_otimize
 #  Values: yes | no
@@ -80,6 +80,18 @@
 #  Values: yes | no
 # "if cuda is disabled BFS runs are proccessed
 #  by CPU"
+#
+# code_optimization_level
+#  Values: -O3 | -O2 | -O1 | -O0
+#  "Compiler optimization level."
+#
+#
+# code_optimization_flags
+#  Format: value, value, value
+#  Values: -funroll-loops, -finline-functions, -funswitch-loops, -fpredictive-commoning,
+#          -fgcse-after-reload, -ftree-vectorize, -ftree-partial-pre and -fipa-cp-clone options, ...
+#  			(https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options)
+#  "Optimization flags added to the compiler"
 
 
 nvidia_architecture			:= "fermi"
@@ -99,6 +111,8 @@ enable_simd_compression			:= "yes"
 debug					:= "no"
 quiet_output				:= "no"
 use_cuda				:= "yes"
+code_optimization_level		:= -O2
+code_optimization_flags		:=
 
 
 
@@ -107,14 +121,15 @@ CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
 NVCXX := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
 NVDIR := $(shell echo $(NVCXX) | sed 's,/bin/nvcc$$,,')
 
+
 ifeq ($(use_avx_instructions), "yes")
 	arch := -mavx
 else
-	ifeq($(enable_simd_compression), "yes")
-		arch :=  -msse2
-	else
-		arch := -march=native
-	endif
+ifeq ($(enable_simd_compression), "yes")
+	arch :=  -msse2
+else
+	arch := -march=native
+endif
 endif
 
 ifeq ($(nvidia_ptxas_otimize), "yes")
@@ -211,12 +226,12 @@ ifeq ($(quiet_output), "yes")
 	Q = @
 endif
 
-NVCXXFLAGS := $(arch),-m64,-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),-O3,$(CUDA_OPENMP)
-CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic -O3 -funroll-loops -Wall -Wextra
-CCFLAGS := -mavx -std=c99 -pedantic -O3 -funroll-loops -mfpmath=sse -Wall -Wextra
-MPICFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c99 -pedantic -funroll-loops -mfpmath=sse $(OPENMP) -O3 $(arch) -Wall -W -fPIE
-MPICXXFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c++11 -funroll-loops -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
-LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,-O3
+NVCXXFLAGS := $(arch),-m64,-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(code_optimization_level),$(CUDA_OPENMP)
+CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic $(code_optimization_level) $(code_optimization_flags) -Wall -Wextra
+CCFLAGS := -mavx -std=c99 -pedantic $(code_optimization_level) $(code_optimization_flags) -mfpmath=sse -Wall -Wextra
+MPICFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c99 -pedantic $(code_optimization_flags) -mfpmath=sse $(OPENMP) $(code_optimization_level) $(arch) -Wall -W -fPIE
+MPICXXFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c++11 $(code_optimization_flags) -pedantic $(OPENMP) $(INSTRUMENTED) $(code_optimization_level) $(arch) -Wall -W -fPIE
+LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,$(code_optimization_level)
 LLIBS := $(SCOREP_LLIBS) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda
 
 NVDIR := $(NVDIR)
@@ -373,7 +388,7 @@ ifneq ($(enable_simd_compression), "yes")
 endif
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 $(code_optimization_level) -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 
