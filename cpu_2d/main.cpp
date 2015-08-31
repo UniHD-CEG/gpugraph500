@@ -204,6 +204,8 @@ int main(int argc, char **argv) {
     }
 #endif
 
+    assert(store.allValuesSmallerThan32Bits() == true);
+
 #ifdef _OPENCL
     OCLRunner oclrun;
     OpenCL_BFS runBfs(store, *oclrun);
