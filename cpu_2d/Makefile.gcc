@@ -110,7 +110,11 @@ NVDIR := $(shell echo $(NVCXX) | sed 's,/bin/nvcc$$,,')
 ifeq ($(use_avx_instructions), "yes")
 	arch := -mavx
 else
-	arch := -march=native
+	ifeq($(enable_simd_compression), "yes")
+		arch :=  -msse2
+	else
+		arch := -march=native
+	endif
 endif
 
 ifeq ($(nvidia_ptxas_otimize), "yes")
