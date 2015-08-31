@@ -23,11 +23,11 @@
 # "Hybrid execution mode. OpenMP threads are added to
 #  other high O() code"
 #
-# manual_instrument_cuda
+# manual_profiler_cuda
 #  Values: yes | no
 # "prints out information on initialization"
 #
-# manual_instrument_other_compilers
+# manual_profiler_other_compilers
 #  Values: yes | no
 # "prints out results/ statistics at the end"
 #
@@ -92,18 +92,18 @@
 #           (https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options)
 #  "Optimization flags added to the compiler"
 #
-#
-# code_optimization_simd_floatingpoint
+# code_optimization_use_m64
 #  Values: yes | no
-#  "Whether or not use sse operations with math ops"
+#  "whether or not swith to m64 arch."
+#  (https://software.intel.com/en-us/blogs/2012/09/26/gcc-x86-performance-hints)
 
 
 nvidia_architecture                       :="all"
 nvidia_ptxas_otimize                      :="no"
+manual_profiler_cuda                      :="no"
+manual_profiler_other_compilers           :="yes"
 openmp_on_cuda                            :="no"
 openmp_on_other_compilers                 :="no"
-manual_instrument_cuda                    :="no"
-manual_instrument_other_compilers         :="yes"
 custom_openmpi                            :="yes"
 custom_openmpi_basedir                    :=/home/jromera/openmpi
 scorep_profiler_enable                    :="no"
@@ -117,7 +117,7 @@ quiet_output                              :="no"
 use_cuda                                  :="yes"
 code_optimization_level                   :=-O3
 code_optimization_flags                   :=
-code_optimization_simd_floatingpoint      :="yes"
+code_optimization_use_m64                 :="no"
 
 
 
@@ -127,16 +127,17 @@ NVCXX := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
 NVDIR := $(shell echo $(NVCXX) | sed 's,/bin/nvcc$$,,')
 
 
-ifeq ($(code_optimization_simd_floatingpoint), "yes")
-	fpmath_simd := -mfpmath=sse
+ifeq ($(code_optimization_use_m64), "yes")
+	m_arch := -m64
+else
+	m_arch := -m32 --with-mfpmath=sse
 endif
-
 
 ifeq ($(use_avx_instructions), "yes")
 	arch := -mavx
 else
 ifeq ($(enable_simd_compression), "yes")
-	arch := -msse2
+	arch := -msse3
 else
 	arch := -march=native
 endif
@@ -161,7 +162,7 @@ endif
 endif
 
 ifeq ($(scorep_profiler_enable), "yes")
-	threads := pthread
+	threads := none
 	ifeq ($(openmp_on_cuda), "yes")
 		threads := omp
 	endif
@@ -201,11 +202,11 @@ ifeq ($(openmp_on_other_compilers), "yes")
 	OPENMP := -fopenmp
 endif
 
-ifeq ($(manual_instrument_cuda), "yes")
+ifeq ($(manual_profiler_cuda), "yes")
 	CUDA_INSTRUM := -DINSTRUMENTED
 endif
 
-ifeq ($(manual_instrument_other_compilers), "yes")
+ifeq ($(manual_profiler_other_compilers), "yes")
 	INSTRUMENTED := -DINSTRUMENTED
 endif
 
@@ -244,12 +245,12 @@ ifeq ($(quiet_output), "yes")
 	Q = @
 endif
 
-NVCXXFLAGS := $(arch),-m64,-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(code_optimization_level),$(CUDA_OPENMP)
-CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic $(code_optimization_level) $(code_optimization_flags) -Wall -Wextra
-CCFLAGS := -mavx -std=c99 -pedantic $(code_optimization_level) $(code_optimization_flags) -mfpmath=sse -Wall -Wextra
-MPICFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c99 -pedantic $(code_optimization_flags) $(fpmath_simd) $(OPENMP) $(code_optimization_level) $(arch) -Wall -W -fPIE
-MPICXXFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c++11 $(code_optimization_flags) -pedantic $(OPENMP) $(INSTRUMENTED) $(code_optimization_level) $(arch) -Wall -W -fPIE
-LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,$(code_optimization_level)
+CXXFLAGS := $(arch) -std=c++11  -Weffc++ -pedantic $(code_optimization_level) $(code_optimization_flags) -Wall -Wextra
+CCFLAGS := $(arch) -std=c99 -pedantic -m32 -mfpmath=sse $(code_optimization_level) $(code_optimization_flags) -Wall -Wextra
+MPICFLAGS := $(arch) -std=c99 -pedantic $(code_optimization_flags) $(m_arch) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) -Wall -Wextra
+MPICXXFLAGS := $(arch) -std=c++11 -pedantic $(code_optimization_level) $(code_optimization_flags) $(m_arch) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) -Wall -Wextra
+NVCXXFLAGS := $(arch),$(m_arch),$(code_optimization_level),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP)
+LFLAGS := $(m_arch) $(SCOREP_LFLAGS) $(OPENMP) -Wl,$(code_optimization_level)
 LLIBS := $(SCOREP_LLIBS) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda
 
 NVDIR := $(NVDIR)
