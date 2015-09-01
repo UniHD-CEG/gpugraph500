@@ -571,17 +571,18 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
             std::vector<uint32_t>  compressed_recv_fq_buff_32(_outsize + 1024);
             size_t compressedsize = compressed_recv_fq_buff_32.size();
 
+/*
 std::cout << std::endl << "data(): ";
 for (auto i = recv_fq_buff_32.begin(); i != recv_fq_buff_32.end(); ++i) {
     std::cout << *i << ' ';
 }
 std::cout << std::endl << "size(): " << recv_fq_buff_32.size() << " size2(): " << compressedsize << std::endl;
-
+*/
 
             codec.encodeArray(recv_fq_buff_32.data(), recv_fq_buff_32.size(),
                               compressed_recv_fq_buff_32.data(), compressedsize);
 
-/*
+
             compressed_recv_fq_buff_32.resize(compressedsize);
             compressed_recv_fq_buff_32.shrink_to_fit();
 
@@ -602,7 +603,7 @@ printf("copy ---------- %i\n",compressed_recv_fq_buff_64.size());
      printf("%i ", compressed_recv_fq_buff_64[i]);
  }
 printf("--------------------!\n");
-*/
+
         }
 #endif
 
