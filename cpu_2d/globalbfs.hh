@@ -45,7 +45,7 @@
 #endif
 
 #ifdef _SIMDCOMPRESS
-    IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
+    // IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
 #endif
 
 /*
@@ -560,8 +560,11 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef _SIMDCOMPRESS
 
-        if (_outsize > 512 && _outsize < 1024) {
-/*
+        if (_outsize > 32 && _outsize < 1024) {
+
+
+            IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
+
             // size_t N = 10 * 1000;
             std::vector<uint32_t>  recv_fq_buff_32(_outsize);
             for (uint32_t i = 0; i < _outsize; ++i) { recv_fq_buff_32[i] = 3 * i; }
@@ -578,6 +581,7 @@ std::cout << std::endl << "size(): " << recv_fq_buff_32.size() << " size2(): " <
             codec.encodeArray(recv_fq_buff_32.data(), recv_fq_buff_32.size(),
                               compressed_recv_fq_buff_32.data(), compressedsize);
 
+/*
             compressed_recv_fq_buff_32.resize(compressedsize);
             compressed_recv_fq_buff_32.shrink_to_fit();
 
