@@ -12,9 +12,6 @@
 #include <ctgmath>
 #include <string.h>
 #include <functional>
-#ifdef INSTRUMENTED
-    #include <chrono>
-#endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     #include "scorep/SCOREP_User.h"
@@ -27,26 +24,9 @@
 #endif
 
 #ifdef INSTRUMENTED
-    // measure cpu execution time with:
-    // std::cout << measure<>::execution(function(dummy)) << std::endl;
-    template<typename TimeT = std::chrono::milliseconds>
-    struct measure
-    {
-        template<typename F, typename ...Args>
-        static typename TimeT::rep execution(F&& func, Args&&... args)
-        {
-            auto start = std::chrono::system_clock::now();
-            std::forward<decltype(func)>(func)(std::forward<Args>(args)...);
-            auto duration = std::chrono::duration_cast< TimeT>
-                                (std::chrono::system_clock::now() - start);
-            return duration.count();
-        }
-    };
+    #include <chrono>
+    using namespace std::chrono;
 #endif
-
-//#ifdef _SIMDCOMPRESS
-    // IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
-//#endif
 
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
@@ -576,7 +556,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
         if (_outsize > 512) {
 
-            IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
+            char const *codec_name = "s4-bp128-dm";
+            IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
+            high_resolution_clock::time_point t1, t2;
 
             std::vector<uint32_t>  recv_fq_buff_32(recv_fq_buff, recv_fq_buff + _outsize);
             std::vector<uint32_t>  compressed_recv_fq_buff_32(_outsize + 1024);
@@ -585,8 +567,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
             size_t compressedsize = compressed_recv_fq_buff_32.size();
             size_t uncompressedsize = uncompressed_recv_fq_buff_32.size();
 
+            t1 = high_resolution_clock::now();
             codec.encodeArray(recv_fq_buff_32.data(), recv_fq_buff_32.size(),
-                              compressed_recv_fq_buff_32.data(), compressedsize);
+                                        compressed_recv_fq_buff_32.data(), compressedsize);
+            t2 = high_resolution_clock::now();
+            auto encode_time = chrono::duration_cast<chrono::microseconds>( t2 - t1 ).count();
+
 
             compressed_recv_fq_buff_32.resize(compressedsize);
             compressed_recv_fq_buff_32.shrink_to_fit();
@@ -594,8 +580,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
             std::vector<uint64_t> compressed_recv_fq_buff_64(compressed_recv_fq_buff_32.begin(),
                                 compressed_recv_fq_buff_32.end());
 
+            t1 = high_resolution_clock::now();
             codec.decodeArray(compressed_recv_fq_buff_32.data(),
-                              compressed_recv_fq_buff_32.size(), uncompressed_recv_fq_buff_32.data(), uncompressedsize);
+                                        compressed_recv_fq_buff_32.size(), uncompressed_recv_fq_buff_32.data(), uncompressedsize);
+            t2 = high_resolution_clock::now();
+            auto decode_time = chrono::duration_cast<chrono::microseconds>( t2 - t1 ).count();
 
             uncompressed_recv_fq_buff_32.resize(uncompressedsize);
             std::vector<uint64_t> uncompressed_recv_fq_buff_64(uncompressed_recv_fq_buff_32.begin(),
@@ -608,10 +597,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
             double compressedbits = 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size())
                                     / static_cast<double>(recv_fq_buff_32.size());
             double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
-            // printf("compression(SIMD)::rank[%02d]:: 32bits packed using %.2f (%02.2f%%)\n",
-            //             rank, compressedbits, compressratio);
-            printf("compression(SIMD)::rank[%02d]:: %02.3f%% compressed.\n",
-                         rank, compressratio);
+
+            printf("SIMD,codec %s. proccess: [%02d]. c/d: %3.1f/%3.1fms  %02.3f%% gained. \n",
+                         codec_name, rank, compressratio, encode_time, decode_time);
         }
 #endif
 #endif
