@@ -271,7 +271,7 @@ MPICXX := $(MPICXX)
 LINK := $(PROFILER) $(MPICXX)
 
 OUTFILES := $(shell ls *.o)
-COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o intersection.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
+COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
 SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c $(bfs_implementation) validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp
 OBJECTS := $(bfs_object) main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o
 
@@ -320,17 +320,17 @@ endif
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
 	@echo "    CCX       $@"
 
-intersection.o: compression/include/intersection.h compression/src/intersection.cpp
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/intersection.cpp -Icompression/include
-	@echo "    CCX       $@"
+#intersection.o: compression/include/intersection.h compression/src/intersection.cpp
+#	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/intersection.cpp -Icompression/include
+#	@echo "    CCX       $@"
 
-benchintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
-	$(Q)$(CXX) $(CXXFLAGS) -o benchintersection compression/src/benchintersection.cpp intersection.o -Icompression/include
-	@echo "    CCX       $@"
+#benchintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
+#	$(Q)$(CXX) $(CXXFLAGS) -o benchintersection compression/src/benchintersection.cpp intersection.o -Icompression/include
+#	@echo "    CCX       $@"
 
-likwidintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
-	$(Q)$(CXX) $(CXXFLAGS) -DLIKWID_MARKERS -pthread -o likwidintersection compression/src/benchintersection.cpp intersection.o -Icompression/include -llikwid
-	@echo "    CCX       $@"
+#likwidintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
+#	$(Q)$(CXX) $(CXXFLAGS) -DLIKWID_MARKERS -pthread -o likwidintersection compression/src/benchintersection.cpp intersection.o -Icompression/include -llikwid
+#	@echo "    CCX       $@"
 
 integratedbitpacking.o: compression/include/integratedbitpacking.h compression/src/integratedbitpacking.cpp
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/integratedbitpacking.cpp -Icompression/include
