@@ -12,6 +12,9 @@
 #include <ctgmath>
 #include <string.h>
 #include <functional>
+#ifdef INSTRUMENTED
+    #include <chrono>
+#endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     #include "scorep/SCOREP_User.h"
@@ -23,6 +26,27 @@
     using namespace SIMDCompressionLib;
 #endif
 
+#ifdef INSTRUMENTED
+    // measure cpu execution time with:
+    // std::cout << measure<>::execution(function(dummy)) << std::endl;
+    template<typename TimeT = std::chrono::milliseconds>
+    struct measure
+    {
+        template<typename F, typename ...Args>
+        static typename TimeT::rep execution(F&& func, Args&&... args)
+        {
+            auto start = std::chrono::system_clock::now();
+            std::forward<decltype(func)>(func)(std::forward<Args>(args)...);
+            auto duration = std::chrono::duration_cast< TimeT>
+                                (std::chrono::system_clock::now() - start);
+            return duration.count();
+        }
+    };
+#endif
+
+//#ifdef _SIMDCOMPRESS
+    // IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
+//#endif
 
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
@@ -34,9 +58,9 @@ template<class Derived,
 class GlobalBFS {
 private:
     MPI_Comm row_comm, col_comm;
+    int rank;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
-
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
 
@@ -51,9 +75,6 @@ protected:
     MType *owenmask;
     MType *tmpmask;
     int64_t mask_size;
-#ifdef _SIMDCOMPRESS
-    IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
-#endif
 
     // Functions that have to be implemented by the children
     // void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
@@ -72,21 +93,62 @@ protected:
     void generatOwenMask();
 
 public:
-    GlobalBFS(STORE &_store);
+    /**
+     * Constructor & destructor declaration
+     */
+    GlobalBFS(STORE &_store, int _rank);
     ~GlobalBFS();
+
+    typename STORE::vtxtyp *getPredecessor();
 
 #ifdef INSTRUMENTED
     void runBFS(typename STORE::vtxtyp startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred);
 #else
     void runBFS(typename STORE::vtxtyp startVertex);
 #endif
-
-    typename STORE::vtxtyp *getPredecessor();
 };
+
+
+/**
+ * Constructor implementation
+ */
+template<class Derived, class FQ_T, class MType, class STORE>
+GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : store(_store) {
+    int mtypesize = 8 * sizeof(MType);
+    // Split communicator into row and column communicator
+    // Split by row, rank by column
+    MPI_Comm_split(MPI_COMM_WORLD, store.getLocalRowID(), store.getLocalColumnID(), &row_comm);
+    // Split by column, rank by row
+    MPI_Comm_split(MPI_COMM_WORLD, store.getLocalColumnID(), store.getLocalRowID(), &col_comm);
+
+    fold_fq_props = store.getFoldProperties();
+
+    mask_size = (store.getLocColLength() / mtypesize) +
+                ((store.getLocColLength() % mtypesize > 0) ? 1 : 0);
+    owenmask = new MType[mask_size];
+    tmpmask = new MType[mask_size];
+    rank = _rank;
+}
+
+/**
+ * Destructor implementation
+ */
+template<class Derived, class FQ_T, class MType, class STORE>
+GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
+    delete[] owenmask;
+    delete[] tmpmask;
+}
+
+/**
+ * Getpredecessor
+ */
+template<class Derived, class FQ_T, class MType, class STORE>
+typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor() {
+    return predecessor;
+}
 
 /*
  * Bitmap compression on predecessor reduction
- *
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vtxtyp *&owen,
@@ -330,34 +392,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     }
 }
 
-template<class Derived, class FQ_T, class MType, class STORE>
-GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store) {
-    int mtypesize = 8 * sizeof(MType);
-    // Split communicator into row and column communicator
-    // Split by row, rank by column
-    MPI_Comm_split(MPI_COMM_WORLD, store.getLocalRowID(), store.getLocalColumnID(), &row_comm);
-    // Split by column, rank by row
-    MPI_Comm_split(MPI_COMM_WORLD, store.getLocalColumnID(), store.getLocalRowID(), &col_comm);
 
-    fold_fq_props = store.getFoldProperties();
-
-    mask_size = (store.getLocColLength() / mtypesize) +
-                ((store.getLocColLength() % mtypesize > 0) ? 1 : 0);
-    owenmask = new MType[mask_size];
-    tmpmask = new MType[mask_size];
-}
-
-
-template<class Derived, class FQ_T, class MType, class STORE>
-GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
-    delete[] owenmask;
-    delete[] tmpmask;
-}
-
-template<class Derived, class FQ_T, class MType, class STORE>
-typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor() {
-    return predecessor;
-}
 
 /**********************************************************************************
  * BFS search:
@@ -535,6 +570,52 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
         );
 
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
+
+#ifdef _SIMDCOMPRESS
+#ifdef _SIMDCOMPRESSBENCHMARK
+
+        if (_outsize > 512) {
+
+            IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
+
+            std::vector<uint32_t>  recv_fq_buff_32(recv_fq_buff, recv_fq_buff + _outsize);
+            std::vector<uint32_t>  compressed_recv_fq_buff_32(_outsize + 1024);
+            std::vector<uint32_t>  uncompressed_recv_fq_buff_32(_outsize);
+
+            size_t compressedsize = compressed_recv_fq_buff_32.size();
+            size_t uncompressedsize = uncompressed_recv_fq_buff_32.size();
+
+            codec.encodeArray(recv_fq_buff_32.data(), recv_fq_buff_32.size(),
+                              compressed_recv_fq_buff_32.data(), compressedsize);
+
+            compressed_recv_fq_buff_32.resize(compressedsize);
+            compressed_recv_fq_buff_32.shrink_to_fit();
+
+            std::vector<uint64_t> compressed_recv_fq_buff_64(compressed_recv_fq_buff_32.begin(),
+                                compressed_recv_fq_buff_32.end());
+
+            codec.decodeArray(compressed_recv_fq_buff_32.data(),
+                              compressed_recv_fq_buff_32.size(), uncompressed_recv_fq_buff_32.data(), uncompressedsize);
+
+            uncompressed_recv_fq_buff_32.resize(uncompressedsize);
+            std::vector<uint64_t> uncompressed_recv_fq_buff_64(uncompressed_recv_fq_buff_32.begin(),
+                uncompressed_recv_fq_buff_32.end());
+
+            assert (_outsize == uncompressedsize &&
+                    std::equal(uncompressed_recv_fq_buff_64.begin(),
+                        uncompressed_recv_fq_buff_64.end(), recv_fq_buff));
+
+            double compressedbits = 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size())
+                                    / static_cast<double>(recv_fq_buff_32.size());
+            double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
+            // printf("compression(SIMD)::rank[%02d]:: 32bits packed using %.2f (%02.2f%%)\n",
+            //             rank, compressedbits, compressratio);
+            printf("compression(SIMD)::rank[%02d]:: %02.3f%% compressed.\n",
+                         rank, compressratio);
+        }
+#endif
+#endif
+
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_END( BFSRUN_region_columnCommunication )

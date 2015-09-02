@@ -1072,6 +1072,7 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
  */
 template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
  bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesSmallerThan32Bits() const {
+
     const rowtyp *rowp = this->getRowPointer();
     const vtxtyp *columnp = this->getColumnIndex();
     bool allSmaller = true;

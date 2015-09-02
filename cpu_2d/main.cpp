@@ -204,13 +204,15 @@ int main(int argc, char **argv) {
     }
 #endif
 
+    assert(store.allValuesSmallerThan32Bits() == true);
+
 #ifdef _OPENCL
     OCLRunner oclrun;
     OpenCL_BFS runBfs(store, *oclrun);
 #elif defined _CUDA
-    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity);
+    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, rank);
 #else
-    CPUBFS_bin runBfs(store, verbosity);
+    CPUBFS_bin runBfs(store, verbosity, rank);
 #endif
 
     tstop = MPI_Wtime();

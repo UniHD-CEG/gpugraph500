@@ -6,9 +6,8 @@
 # Configurable options:
 #
 # nvidia_architecture
-#  Values: fermi | auto
-# "use auto for generic code fermi, kepler.
-#  generated binary may become bigger"
+#  Values: fermi | kepler | maxwell | all
+# "use all for generic code: Fermi and Kepler.
 #
 # nvidia_ptxas_otimize
 #  Values: yes | no
@@ -24,11 +23,11 @@
 # "Hybrid execution mode. OpenMP threads are added to
 #  other high O() code"
 #
-# manual_instrument_cuda
+# manual_profiler_cuda
 #  Values: yes | no
 # "prints out information on initialization"
 #
-# manual_instrument_other_compilers
+# manual_profiler_other_compilers
 #  Values: yes | no
 # "prints out results/ statistics at the end"
 #
@@ -67,6 +66,11 @@
 #  "MPI packets will be sent compressed by using
 #   D. Lemire SIMDCompression library"
 #
+# enable_simd_compression_benchmark
+#  Values: yes | no
+#  "shows statistics of compression rate, time of compression
+#   decompression for each codec at Lemire's library"
+#
 # debug
 #  Values: yes | no
 # "Provides extra data in runtime execution.
@@ -80,25 +84,40 @@
 #  Values: yes | no
 # "if cuda is disabled BFS runs are proccessed
 #  by CPU"
+#
+# code_optimization_level
+#  Values: O4 | O3 | O2 | O1 | O0
+#  "Compiler optimization level."
+#
+#
+# code_optimization_flags
+#  Format: value, value, value
+#  Values: -funroll-loops, -finline-functions, -funswitch-loops, -fpredictive-commoning,
+#          -fgcse-after-reload, -ftree-vectorize, -ftree-partial-pre and -fipa-cp-clone options, ...
+#           (https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options)
+#  "Optimization flags added to the compiler"
 
 
-nvidia_architecture			:= "fermi"
-nvidia_ptxas_otimize			:= "no"
-openmp_on_cuda				:= "no"
-openmp_on_other_compilers		:= "no"
-manual_instrument_cuda			:= "no"
-manual_instrument_other_compilers	:= "yes"
-custom_openmpi				:= "yes"
-custom_openmpi_basedir			:= /home/jromera/openmpi
-scorep_profiler_enable			:= "yes"
+nvidia_architecture                       :="fermi"
+nvidia_ptxas_otimize                      :="no"
+manual_profiler_cuda                      :="no"
+manual_profiler_other_compilers           :="yes"
+openmp_on_cuda                            :="no"
+openmp_on_other_compilers                 :="no"
+custom_openmpi                            :="yes"
+custom_openmpi_basedir                    :=/home/jromera/openmpi
+scorep_profiler_enable                    :="no"
 scorep_profiler_automatic_instrumentation :="yes"
-scorep_custom				:= "yes"
-scorep_custom_basedir			:= /home/jromera/scorep
-use_avx_instructions			:= "yes"
-enable_simd_compression			:= "yes"
-debug					:= "no"
-quiet_output				:= "no"
-use_cuda				:= "yes"
+scorep_custom                             :="yes"
+scorep_custom_basedir                     :=/home/jromera/scorep
+use_avx_instructions                      :="no"
+enable_simd_compression                   :="yes"
+enable_simd_compression_benchmark         :="yes"
+debug                                     :="no"
+quiet_output                              :="no"
+use_cuda                                  :="yes"
+code_optimization_level                   :="O4"
+code_optimization_flags                   :=-funroll-loops -flto
 
 
 
@@ -107,50 +126,84 @@ CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
 NVCXX := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
 NVDIR := $(shell echo $(NVCXX) | sed 's,/bin/nvcc$$,,')
 
+
+ifeq ($(code_optimization_level), "O4")
+	o_level := -O3 -ffast-math
+	o_level_nvcc := -O3
+endif
+ifeq ($(code_optimization_level), "O3")
+	o_level := -O3
+	o_level_nvcc := -O3
+endif
+ifeq ($(code_optimization_level), "O2")
+	o_level := -O2
+	o_level_nvcc := -O2
+endif
+ifeq ($(code_optimization_level), "O1")
+	o_level := -O1
+	o_level_nvcc := -O1
+endif
+
+
 ifeq ($(use_avx_instructions), "yes")
 	arch := -mavx
 else
+ifeq ($(enable_simd_compression), "yes")
+	arch := -msse4
+else
 	arch := -march=native
 endif
+endif
+
 
 ifeq ($(nvidia_ptxas_otimize), "yes")
 	PTXAS := --ptxas-options="-O3"
 endif
 
+
+ifeq ($(nvidia_architecture), "all")
+	NV_ARCHITECTURE := $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+else
 ifeq ($(nvidia_architecture), "fermi")
 	NV_ARCHITECTURE := $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
 else
-	NV_ARCHITECTURE := $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+ifeq ($(nvidia_architecture), "kepler")
+	NV_ARCHITECTURE := $(PTXAS) -arch=sm_35
+else
+	NV_ARCHITECTURE := $(PTXAS) -arch=sm_52
+endif
+endif
 endif
 
+
 ifeq ($(scorep_profiler_enable), "yes")
-	threads := pthread
-	#ifeq ($(openmp_on_cuda), "yes")
-	#	threads := none
-	#endif
-	#ifeq ($(openmp_on_other_compilers), "yes")
-	#	threads := none
-	#endif
-	scorep_instrumentation_flag :=--cuda --mpp=mpi --thread=$(threads) --nopdt
-	ifeq ($(scorep_custom), "yes")
-		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
-			# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html#manual_instrumentation
-			scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access --instrument-filter="filter.scorep"
-			SCOREP_INSTRUMENTATION := -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
-			SCOREP_CPPFLAGS := `scorep-config --cppflags`
-			SCOREP_LLIBS := `scorep-config --libs`
-			SCOREP_LFLAGS := `scorep-config --ldflags`
-		endif
-		export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
-		libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
-		libcudart_static_flag = -lcudart_static
-		PROFILER := scorep $(scorep_instrumentation_flag)
-	else
-		ifeq ($(scorep_profiler_automatic_instrumentation), "no")
-			scorep_instrumentation_flag :=--pomp --cuda --mpp=mpi --thread=$(threads) --nopdt --nocompiler
-		endif
-		PROFILER := scorep $(scorep_instrumentation_flag)
+	threads := none
+	ifeq ($(openmp_on_cuda), "yes")
+		threads := omp
 	endif
+	ifeq ($(openmp_on_other_compilers), "yes")
+		threads := omp
+	endif
+	scorep_instrumentation_flag :=--cuda --mpp=mpi --thread=$(threads) --nopdt
+ifeq ($(scorep_custom), "yes")
+ifeq ($(scorep_profiler_automatic_instrumentation), "no")
+	# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html#manual_instrumentation
+	scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access --instrument-filter="filter.scorep"
+	SCOREP_INSTRUMENTATION := -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
+	SCOREP_CPPFLAGS := `scorep-config --cppflags`
+	SCOREP_LLIBS := `scorep-config --libs`
+	SCOREP_LFLAGS := `scorep-config --ldflags`
+endif
+	export LD_LIBRARY_PATH := $(scorep_custom_basedir)/lib::$(LD_LIBRARY_PATH)
+	libcudart_static_path := -L"`locate libcudart_static.a | tail -1 | sed -e 's,/libcudart_static.a,,'`"
+	libcudart_static_flag = -lcudart_static
+	PROFILER := scorep $(scorep_instrumentation_flag)
+else
+ifeq ($(scorep_profiler_automatic_instrumentation), "no")
+	scorep_instrumentation_flag :=--pomp --cuda --mpp=mpi --thread=$(threads) --nopdt --nocompiler
+endif
+	PROFILER := scorep $(scorep_instrumentation_flag)
+endif
 else
 	libcudart_static_path := -L$(NVDIR)/lib64
 	libcudart_static_flag = -lcudart
@@ -164,11 +217,11 @@ ifeq ($(openmp_on_other_compilers), "yes")
 	OPENMP := -fopenmp
 endif
 
-ifeq ($(manual_instrument_cuda), "yes")
+ifeq ($(manual_profiler_cuda), "yes")
 	CUDA_INSTRUM := -DINSTRUMENTED
 endif
 
-ifeq ($(manual_instrument_other_compilers), "yes")
+ifeq ($(manual_profiler_other_compilers), "yes")
 	INSTRUMENTED := -DINSTRUMENTED
 endif
 
@@ -180,6 +233,9 @@ ifeq ($(enable_simd_compression), "yes")
 	DEFINES += -D_SIMDCOMPRESS
 	INCPATH := -I. -Icompression/include
 	HEADERS := $(shell ls compression/include/*h)
+ifeq ($(enable_simd_compression_benchmark), "yes")
+	DEFINES += -D_SIMDCOMPRESSBENCHMARK
+endif
 else
 	INCPATH := -I.
 	HEADERS :=
@@ -207,12 +263,13 @@ ifeq ($(quiet_output), "yes")
 	Q = @
 endif
 
-NVCXXFLAGS := $(arch),-m64,-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),-O3,$(CUDA_OPENMP)
-CXXFLAGS := -mavx -std=c++11  -Weffc++ -pedantic -O3 -funroll-loops -Wall -Wextra
-CCFLAGS := -mavx -std=c99 -pedantic -O3 -funroll-loops -mfpmath=sse -Wall -Wextra
-MPICFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c99 -pedantic -funroll-loops -mfpmath=sse $(OPENMP) -O3 $(arch) -Wall -W -fPIE
-MPICXXFLAGS := -m64 -pipe $(DEFINE_CUDA) $(DEFINES) -std=c++11 -funroll-loops -pedantic $(OPENMP) $(INSTRUMENTED) -O3 $(arch) -Wall -W -fPIE
-LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,-O3
+
+CXXFLAGS := $(arch) -std=c++11  -Weffc++ -pedantic -m64 $(o_level) $(code_optimization_flags) -Wall -Wextra
+CCFLAGS := $(arch) -std=c99 -pedantic -m64 $(o_level) $(code_optimization_flags) -Wall -Wextra
+MPICFLAGS := $(arch) -std=c99 -pedantic -m64 -mfpmath=sse $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) -Wall -Wextra
+MPICXXFLAGS := $(arch) -std=c++11 -pedantic -m64 $(o_level) $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) -Wall -Wextra
+NVCXXFLAGS := $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP)
+LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,$(o_level)
 LLIBS := $(SCOREP_LLIBS) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda
 
 NVDIR := $(NVDIR)
@@ -223,13 +280,14 @@ MPICXX := $(MPICXX)
 LINK := $(PROFILER) $(MPICXX)
 
 OUTFILES := $(shell ls *.o)
-COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o intersection.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
+COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
 SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c $(bfs_implementation) validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp
 OBJECTS := $(bfs_object) main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o
 
 ifeq ($(enable_simd_compression), "yes")
 	OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
 endif
+
 
 all: clean g500
 
@@ -269,18 +327,6 @@ endif
 	@echo ""
 	@echo "--- Compiling SIMDCompression"
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
-	@echo "    CCX       $@"
-
-intersection.o: compression/include/intersection.h compression/src/intersection.cpp
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/intersection.cpp -Icompression/include
-	@echo "    CCX       $@"
-
-benchintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
-	$(Q)$(CXX) $(CXXFLAGS) -o benchintersection compression/src/benchintersection.cpp intersection.o -Icompression/include
-	@echo "    CCX       $@"
-
-likwidintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
-	$(Q)$(CXX) $(CXXFLAGS) -DLIKWID_MARKERS -pthread -o likwidintersection compression/src/benchintersection.cpp intersection.o -Icompression/include -llikwid
 	@echo "    CCX       $@"
 
 integratedbitpacking.o: compression/include/integratedbitpacking.h compression/src/integratedbitpacking.cpp
@@ -369,7 +415,7 @@ ifneq ($(enable_simd_compression), "yes")
 endif
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -use_fast_math -m64 -O3 -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -m64 $(o_level_nvcc) -use_fast_math -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 
