@@ -96,9 +96,9 @@ public:
     ~GlobalBFS();
 
 #ifdef INSTRUMENTED
-    void runBFS(typename STORE::vtxtyp startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred);
+    void runBFS(typename STORE::vtxtyp startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred, int rank);
 #else
-    void runBFS(typename STORE::vtxtyp startVertex);
+    void runBFS(typename STORE::vtxtyp startVertex, int rank);
 #endif
 
     typename STORE::vtxtyp *getPredecessor();
@@ -395,7 +395,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
     void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred, int rank)
 #else
     template<class Derived, class FQ_T, class MType, class STORE>
-    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex)
+    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, int rank)
 #endif
 {
 #ifdef INSTRUMENTED
@@ -587,7 +587,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
             assert (_outsize == l_v.size() &&
                     std::equal(uncompressed_recv_fq_buff_64.begin(),
-                        uncompressed_recv_fq_buff_64.end(), recv_fq_buff, same_pred);
+                        uncompressed_recv_fq_buff_64.end(), recv_fq_buff, same_pred));
 
             std::cout << setprecision(3);
             std::cout << "You are using " << 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size()) /
