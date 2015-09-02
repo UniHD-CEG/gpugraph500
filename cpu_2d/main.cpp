@@ -212,7 +212,7 @@ int main(int argc, char **argv) {
 #elif defined _CUDA
     CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, rank);
 #else
-    CPUBFS_bin runBfs(store, verbosity);
+    CPUBFS_bin runBfs(store, verbosity, rank);
 #endif
 
     tstop = MPI_Wtime();
