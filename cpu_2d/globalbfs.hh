@@ -44,9 +44,9 @@
     };
 #endif
 
-#ifdef _SIMDCOMPRESS
+//#ifdef _SIMDCOMPRESS
     // IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
-#endif
+//#endif
 
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
@@ -63,6 +63,7 @@ private:
 
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
+    int rank;
 
 protected:
     const STORE &store;
@@ -94,7 +95,7 @@ protected:
     void generatOwenMask();
 
 public:
-    GlobalBFS(STORE &_store);
+    GlobalBFS(STORE &_store, int rank);
     ~GlobalBFS();
 
 #ifdef INSTRUMENTED
@@ -562,48 +563,38 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
         if (_outsize > 512 && _outsize < 1024) {
 
+            IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
 
-            IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
 
-   
             std::vector<uint32_t>  recv_fq_buff_32(recv_fq_buff, recv_fq_buff + _outsize);
-            // for (uint32_t i = 0; i < _outsize; ++i) { recv_fq_buff_32[i] = 3 * i; }
             std::vector<uint32_t>  compressed_recv_fq_buff_32(_outsize + 1024);
-            size_t compressedsize = compressed_recv_fq_buff_32.size();
+            std::vector<uint32_t>  uncompressed_recv_fq_buff_32(_outsize);
 
-/*
-std::cout << std::endl << "data(): ";
-for (auto i = recv_fq_buff_32.begin(); i != recv_fq_buff_32.end(); ++i) {
-    std::cout << *i << ' ';
-}
-std::cout << std::endl << "size(): " << recv_fq_buff_32.size() << " size2(): " << compressedsize << std::endl;
-*/
+            size_t compressedsize = compressed_recv_fq_buff_32.size();
+            size_t uncompressedsize = uncompressed_recv_fq_buff_32.size();
 
             codec.encodeArray(recv_fq_buff_32.data(), recv_fq_buff_32.size(),
                               compressed_recv_fq_buff_32.data(), compressedsize);
-
-
             compressed_recv_fq_buff_32.resize(compressedsize);
             compressed_recv_fq_buff_32.shrink_to_fit();
 
             std::vector<uint64_t> compressed_recv_fq_buff_64(compressed_recv_fq_buff_32.begin(),
-                compressed_recv_fq_buff_32.end());
+                                compressed_recv_fq_buff_32.end());
 
-            std::cout << setprecision(3);
-            std::cout << "You are using " << 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size()) /
-                 static_cast<double>(recv_fq_buff_32.size()) << " bits per integer. " << std::endl;
+            codec.decodeArray(compressed_recv_fq_buff_32.data(),
+                              compressed_recv_fq_buff_32.size(), uncompressed_recv_fq_buff_32.data(), uncompressedsize);
 
-    std::vector<uint32_t> uncompressed_recv_fq_buff_32(_outsize);
-    size_t uncompressedsize = uncompressed_recv_fq_buff_32.size();
-    //
-    codec.decodeArray(compressed_recv_fq_buff_32.data(),
-                      compressed_recv_fq_buff_32.size(), uncompressed_recv_fq_buff_32.data(), uncompressedsize);
-    uncompressed_recv_fq_buff_32.resize(uncompressedsize);
+            uncompressed_recv_fq_buff_32.resize(uncompressedsize);
             std::vector<uint64_t> uncompressed_recv_fq_buff_64(uncompressed_recv_fq_buff_32.begin(),
                 uncompressed_recv_fq_buff_32.end());
 
+            assert (_outsize == l_v.size() &&
+                    std::equal(uncompressed_recv_fq_buff_64.begin(),
+                        uncompressed_recv_fq_buff_64.end(), recv_fq_buff, same_pred);
 
-f (uncompressed_recv_fq_buff_64 != recv_fq_buff) throw runtime_error("error:: compression check failed.");
+            std::cout << setprecision(3);
+            std::cout << "You are using " << 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size()) /
+                 static_cast<double>(recv_fq_buff_32.size()) << " bits per 32bits integer. " << std::endl;
 }
 #endif
 
