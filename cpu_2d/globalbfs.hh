@@ -58,7 +58,6 @@ template<class Derived,
 class GlobalBFS {
 private:
     MPI_Comm row_comm, col_comm;
-    int rank;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
@@ -93,7 +92,7 @@ protected:
     void generatOwenMask();
 
 public:
-    GlobalBFS(STORE &_store, int rank);
+    GlobalBFS(STORE &_store);
     ~GlobalBFS();
 
 #ifdef INSTRUMENTED
@@ -394,7 +393,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
   // <Derived, FQ_T, MType, STORE>
 #ifdef INSTRUMENTED
     template<class Derived,class FQ_T,class MType,class STORE>
-    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
+    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred, int rank)
 #else
     template<class Derived, class FQ_T, class MType, class STORE>
     void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex)

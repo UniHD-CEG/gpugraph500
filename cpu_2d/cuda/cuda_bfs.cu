@@ -12,8 +12,8 @@
 #endif
 
 
-CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int rank) :
-        GlobalBFS<CUDA_BFS, vtxtyp, unsigned char, MatrixT>(_store, rank),
+CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity) :
+        GlobalBFS<CUDA_BFS, vtxtyp, unsigned char, MatrixT>(_store),
         verbosity(_verbosity),
         queue_sizing(_queue_sizing),
         vmask(0)

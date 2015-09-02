@@ -68,7 +68,7 @@ class CUDA_BFS : public GlobalBFS<CUDA_BFS,
 public:
     typedef DistMatrix2d<vtxtyp, rowtyp, true, 1, true> MatrixT;
 
-    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity);
+    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int mpi_rank);
     ~CUDA_BFS();
 
     void getBackPredecessor();
