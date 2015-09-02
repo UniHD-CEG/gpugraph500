@@ -320,18 +320,6 @@ endif
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
 	@echo "    CCX       $@"
 
-#intersection.o: compression/include/intersection.h compression/src/intersection.cpp
-#	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/intersection.cpp -Icompression/include
-#	@echo "    CCX       $@"
-
-#benchintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
-#	$(Q)$(CXX) $(CXXFLAGS) -o benchintersection compression/src/benchintersection.cpp intersection.o -Icompression/include
-#	@echo "    CCX       $@"
-
-#likwidintersection: intersection.o compression/src/benchintersection.cpp compression/include/synthetic.h compression/include/timer.h
-#	$(Q)$(CXX) $(CXXFLAGS) -DLIKWID_MARKERS -pthread -o likwidintersection compression/src/benchintersection.cpp intersection.o -Icompression/include -llikwid
-#	@echo "    CCX       $@"
-
 integratedbitpacking.o: compression/include/integratedbitpacking.h compression/src/integratedbitpacking.cpp
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/integratedbitpacking.cpp -Icompression/include
 	@echo "    CCX       $@"
