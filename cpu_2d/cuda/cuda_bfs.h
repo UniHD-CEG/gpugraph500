@@ -36,7 +36,8 @@ typedef unsigned int rowtyp;
 class CUDA_BFS : public GlobalBFS<CUDA_BFS,
         vtxtyp,
         unsigned char,
-        DistMatrix2d<vtxtyp, rowtyp, true, 1, true>  // use local ids
+        DistMatrix2d<vtxtyp, rowtyp, true, 1, true>,  // use local ids
+        int
 > {
     typedef unsigned char MType;
 
@@ -68,7 +69,7 @@ class CUDA_BFS : public GlobalBFS<CUDA_BFS,
 public:
     typedef DistMatrix2d<vtxtyp, rowtyp, true, 1, true> MatrixT;
 
-    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity);
+    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int rank);
     ~CUDA_BFS();
 
     void getBackPredecessor();

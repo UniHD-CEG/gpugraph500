@@ -394,7 +394,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
     template<class Derived,class FQ_T,class MType,class STORE>
     void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred, int rank)
 #else
-    template<class Derived, class FQ_T, class MType, class STORE>
+    template<class Derived, class FQ_T, class MType, class STORE, int rank>
     void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, int rank)
 #endif
 {
