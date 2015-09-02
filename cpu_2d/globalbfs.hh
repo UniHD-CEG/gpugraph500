@@ -585,9 +585,9 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
             std::vector<uint64_t> uncompressed_recv_fq_buff_64(uncompressed_recv_fq_buff_32.begin(),
                 uncompressed_recv_fq_buff_32.end());
 
-            assert (_outsize == l_v.size() &&
+            assert (_outsize == uncompressedsize &&
                     std::equal(uncompressed_recv_fq_buff_64.begin(),
-                        uncompressed_recv_fq_buff_64.end(), recv_fq_buff, same_pred));
+                        uncompressed_recv_fq_buff_64.end(), recv_fq_buff));
 
             std::cout << setprecision(3);
             std::cout << "You are using " << 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size()) /
