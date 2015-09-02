@@ -66,6 +66,11 @@
 #  "MPI packets will be sent compressed by using
 #   D. Lemire SIMDCompression library"
 #
+# enable_simd_compression_benchmark
+#  Values: yes | no
+#  "shows statistics of compression rate, time of compression
+#   decompression for each codec at Lemire's library"
+#
 # debug
 #  Values: yes | no
 # "Provides extra data in runtime execution.
@@ -107,6 +112,7 @@ scorep_custom                             :="yes"
 scorep_custom_basedir                     :=/home/jromera/scorep
 use_avx_instructions                      :="no"
 enable_simd_compression                   :="yes"
+enable_simd_compression_benchmark         :="yes"
 debug                                     :="no"
 quiet_output                              :="no"
 use_cuda                                  :="yes"
@@ -227,6 +233,9 @@ ifeq ($(enable_simd_compression), "yes")
 	DEFINES += -D_SIMDCOMPRESS
 	INCPATH := -I. -Icompression/include
 	HEADERS := $(shell ls compression/include/*h)
+ifeq ($(enable_simd_compression_benchmark), "yes")
+	DEFINES += -D_SIMDCOMPRESSBENCHMARK
+endif
 else
 	INCPATH := -I.
 	HEADERS :=
