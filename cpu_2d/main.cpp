@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
     OCLRunner oclrun;
     OpenCL_BFS runBfs(store, *oclrun);
 #elif defined _CUDA
-    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity);
+    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, rank);
 #else
     CPUBFS_bin runBfs(store, verbosity);
 #endif
