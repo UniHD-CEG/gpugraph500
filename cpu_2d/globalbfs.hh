@@ -572,11 +572,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
 #ifdef _SIMDCOMPRESS
+#ifdef _SIMDCOMPRESSBENCHMARK
 
-        if (_outsize > 512 && _outsize < 1024) {
+        if (_outsize > 512) {
 
             IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
-
 
             std::vector<uint32_t>  recv_fq_buff_32(recv_fq_buff, recv_fq_buff + _outsize);
             std::vector<uint32_t>  compressed_recv_fq_buff_32(_outsize + 1024);
@@ -587,6 +587,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
             codec.encodeArray(recv_fq_buff_32.data(), recv_fq_buff_32.size(),
                               compressed_recv_fq_buff_32.data(), compressedsize);
+
             compressed_recv_fq_buff_32.resize(compressedsize);
             compressed_recv_fq_buff_32.shrink_to_fit();
 
@@ -604,10 +605,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                     std::equal(uncompressed_recv_fq_buff_64.begin(),
                         uncompressed_recv_fq_buff_64.end(), recv_fq_buff));
 
-            std::cout << setprecision(3);
-            std::cout << "You are using " << 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size()) /
-                 static_cast<double>(recv_fq_buff_32.size()) << " bits per 32bits integer. " << std::endl;
+            double compressedbits = 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size())
+                                    / static_cast<double>(recv_fq_buff_32.size());
+            double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
+            // printf("compression(SIMD)::rank[%02d]:: 32bits packed using %.2f (%02.2f%%)\n",
+            //             rank, compressedbits, compressratio);
+            printf("compression(SIMD)::rank[%02d]:: %02.3f%% compressed.\n",
+                         rank, compressratio);
         }
+#endif
 #endif
 
 
