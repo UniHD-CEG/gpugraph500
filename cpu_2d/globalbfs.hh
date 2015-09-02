@@ -352,7 +352,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 }
 
 template<class Derived, class FQ_T, class MType, class STORE>
-GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, mpi_rank) : store(_store) {
+GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int mpi_rank) : store(_store) {
     int mtypesize = 8 * sizeof(MType);
     // Split communicator into row and column communicator
     // Split by row, rank by column
