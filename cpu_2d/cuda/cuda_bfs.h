@@ -10,10 +10,8 @@
     namespace b40c {
         namespace graph {
             namespace bfs {
-
                 template<typename _VertexId, typename _SizeT, bool MARK_PREDECESSORS>
                 struct CsrProblem;
-
                 template<typename Csr, bool INSTRUMENT>
                 class EnactorMultiGpu;
             }
@@ -36,8 +34,7 @@ typedef unsigned int rowtyp;
 class CUDA_BFS : public GlobalBFS<CUDA_BFS,
         vtxtyp,
         unsigned char,
-        DistMatrix2d<vtxtyp, rowtyp, true, 1, true>,  // use local ids
-        int
+        DistMatrix2d<vtxtyp, rowtyp, true, 1, true>  // use local ids
 > {
     typedef unsigned char MType;
 
@@ -69,7 +66,7 @@ class CUDA_BFS : public GlobalBFS<CUDA_BFS,
 public:
     typedef DistMatrix2d<vtxtyp, rowtyp, true, 1, true> MatrixT;
 
-    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int rank);
+    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank);
     ~CUDA_BFS();
 
     void getBackPredecessor();

@@ -58,6 +58,7 @@ template<class Derived,
 class GlobalBFS {
 private:
     MPI_Comm row_comm, col_comm;
+    int rank;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
@@ -92,21 +93,62 @@ protected:
     void generatOwenMask();
 
 public:
-    GlobalBFS(STORE &_store);
+    /**
+     * Constructor & destructor declaration
+     */
+    GlobalBFS(STORE &_store, int _rank);
     ~GlobalBFS();
 
-#ifdef INSTRUMENTED
-    void runBFS(typename STORE::vtxtyp startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred, int rank);
-#else
-    void runBFS(typename STORE::vtxtyp startVertex, int rank);
-#endif
-
     typename STORE::vtxtyp *getPredecessor();
+
+#ifdef INSTRUMENTED
+    void runBFS(typename STORE::vtxtyp startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred);
+#else
+    void runBFS(typename STORE::vtxtyp startVertex);
+#endif
 };
+
+
+/**
+ * Constructor implementation
+ */
+template<class Derived, class FQ_T, class MType, class STORE>
+GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : store(_store) {
+    int mtypesize = 8 * sizeof(MType);
+    // Split communicator into row and column communicator
+    // Split by row, rank by column
+    MPI_Comm_split(MPI_COMM_WORLD, store.getLocalRowID(), store.getLocalColumnID(), &row_comm);
+    // Split by column, rank by row
+    MPI_Comm_split(MPI_COMM_WORLD, store.getLocalColumnID(), store.getLocalRowID(), &col_comm);
+
+    fold_fq_props = store.getFoldProperties();
+
+    mask_size = (store.getLocColLength() / mtypesize) +
+                ((store.getLocColLength() % mtypesize > 0) ? 1 : 0);
+    owenmask = new MType[mask_size];
+    tmpmask = new MType[mask_size];
+    rank = _rank;
+}
+
+/**
+ * Destructor implementation
+ */
+template<class Derived, class FQ_T, class MType, class STORE>
+GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
+    delete[] owenmask;
+    delete[] tmpmask;
+}
+
+/**
+ * Getpredecessor
+ */
+template<class Derived, class FQ_T, class MType, class STORE>
+typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor() {
+    return predecessor;
+}
 
 /*
  * Bitmap compression on predecessor reduction
- *
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vtxtyp *&owen,
@@ -350,34 +392,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     }
 }
 
-template<class Derived, class FQ_T, class MType, class STORE>
-GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store) {
-    int mtypesize = 8 * sizeof(MType);
-    // Split communicator into row and column communicator
-    // Split by row, rank by column
-    MPI_Comm_split(MPI_COMM_WORLD, store.getLocalRowID(), store.getLocalColumnID(), &row_comm);
-    // Split by column, rank by row
-    MPI_Comm_split(MPI_COMM_WORLD, store.getLocalColumnID(), store.getLocalRowID(), &col_comm);
 
-    fold_fq_props = store.getFoldProperties();
-
-    mask_size = (store.getLocColLength() / mtypesize) +
-                ((store.getLocColLength() % mtypesize > 0) ? 1 : 0);
-    owenmask = new MType[mask_size];
-    tmpmask = new MType[mask_size];
-}
-
-
-template<class Derived, class FQ_T, class MType, class STORE>
-GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
-    delete[] owenmask;
-    delete[] tmpmask;
-}
-
-template<class Derived, class FQ_T, class MType, class STORE>
-typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor() {
-    return predecessor;
-}
 
 /**********************************************************************************
  * BFS search:
@@ -392,10 +407,10 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
   // <Derived, FQ_T, MType, STORE>
 #ifdef INSTRUMENTED
     template<class Derived,class FQ_T,class MType,class STORE>
-    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred, int rank)
+    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
 #else
-    template<class Derived, class FQ_T, class MType, class STORE, int rank>
-    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, int rank)
+    template<class Derived, class FQ_T, class MType, class STORE>
+    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex)
 #endif
 {
 #ifdef INSTRUMENTED
@@ -592,7 +607,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
             std::cout << setprecision(3);
             std::cout << "You are using " << 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size()) /
                  static_cast<double>(recv_fq_buff_32.size()) << " bits per 32bits integer. " << std::endl;
-}
+        }
 #endif
 
 
