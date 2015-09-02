@@ -560,14 +560,14 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 
 #ifdef _SIMDCOMPRESS
 
-        if (_outsize > 32 && _outsize < 1024) {
+        if (_outsize > 512 && _outsize < 1024) {
 
 
             IntegerCODEC &codec =  * CODECFactory::getFromName("s4-bp128-dm");
 
-            // size_t N = 10 * 1000;
-            std::vector<uint32_t>  recv_fq_buff_32(_outsize);
-            for (uint32_t i = 0; i < _outsize; ++i) { recv_fq_buff_32[i] = 3 * i; }
+   
+            std::vector<uint32_t>  recv_fq_buff_32(recv_fq_buff, recv_fq_buff + _outsize);
+            // for (uint32_t i = 0; i < _outsize; ++i) { recv_fq_buff_32[i] = 3 * i; }
             std::vector<uint32_t>  compressed_recv_fq_buff_32(_outsize + 1024);
             size_t compressedsize = compressed_recv_fq_buff_32.size();
 
@@ -593,18 +593,18 @@ std::cout << std::endl << "size(): " << recv_fq_buff_32.size() << " size2(): " <
             std::cout << "You are using " << 32.0 * static_cast<double>(compressed_recv_fq_buff_32.size()) /
                  static_cast<double>(recv_fq_buff_32.size()) << " bits per integer. " << std::endl;
 
-printf("original ---------- %i\n",_outsize);
- for (int i=0;i< _outsize;++i){
-     printf("%i ", recv_fq_buff[i]);
- }
-printf("--------------------!\n");
-printf("copy ---------- %i\n",compressed_recv_fq_buff_64.size());
- for (int i=0;i< _outsize;++i){
-     printf("%i ", compressed_recv_fq_buff_64[i]);
- }
-printf("--------------------!\n");
+    std::vector<uint32_t> uncompressed_recv_fq_buff_32(_outsize);
+    size_t uncompressedsize = uncompressed_recv_fq_buff_32.size();
+    //
+    codec.decodeArray(compressed_recv_fq_buff_32.data(),
+                      compressed_recv_fq_buff_32.size(), uncompressed_recv_fq_buff_32.data(), uncompressedsize);
+    uncompressed_recv_fq_buff_32.resize(uncompressedsize);
+            std::vector<uint64_t> uncompressed_recv_fq_buff_64(uncompressed_recv_fq_buff_32.begin(),
+                uncompressed_recv_fq_buff_32.end());
 
-        }
+
+f (uncompressed_recv_fq_buff_64 != recv_fq_buff) throw runtime_error("error:: compression check failed.");
+}
 #endif
 
 
