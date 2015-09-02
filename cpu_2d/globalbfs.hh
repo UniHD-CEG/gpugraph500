@@ -58,12 +58,11 @@ template<class Derived,
 class GlobalBFS {
 private:
     MPI_Comm row_comm, col_comm;
+    int rank;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
-
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
-    int rank;
 
 protected:
     const STORE &store;
@@ -76,7 +75,6 @@ protected:
     MType *owenmask;
     MType *tmpmask;
     int64_t mask_size;
-
 
     // Functions that have to be implemented by the children
     // void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
@@ -354,7 +352,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 }
 
 template<class Derived, class FQ_T, class MType, class STORE>
-GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store) {
+GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, mpi_rank) : store(_store) {
     int mtypesize = 8 * sizeof(MType);
     // Split communicator into row and column communicator
     // Split by row, rank by column
@@ -368,6 +366,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
                 ((store.getLocColLength() % mtypesize > 0) ? 1 : 0);
     owenmask = new MType[mask_size];
     tmpmask = new MType[mask_size];
+    rank = mpi_rank;
 }
 
 
