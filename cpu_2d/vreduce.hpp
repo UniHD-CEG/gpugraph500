@@ -201,8 +201,8 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
     }
 
     // Transmission of the final results
-    std::vector<int> sizes(communicatorSize);
-    std::vector<int> disps(communicatorSize);
+    int32_t sizes = new int32_t[communicatorSize];
+    int32_t disps = new int32_t[communicatorSize];
 
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, &sizes[0], 1, MPI_INT, comm);
@@ -240,6 +240,10 @@ void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start,
     MPI_Allgatherv(send, sizes[communicatorRank],
         type, recv_buff, &sizes[0],
         &disps[0], type, comm);
+
+    delete[] sizes;
+    delete[] disps;
+
 }
 
 #endif // VREDUCE_HPP
