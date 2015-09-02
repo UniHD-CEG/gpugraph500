@@ -235,6 +235,7 @@ ifeq ($(enable_simd_compression), "yes")
 	HEADERS := $(shell ls compression/include/*h)
 ifeq ($(enable_simd_compression_benchmark), "yes")
 	DEFINES += -D_SIMDCOMPRESSBENCHMARK
+	LLIBC := -static-libstdc++
 endif
 else
 	INCPATH := -I.
@@ -270,7 +271,7 @@ MPICFLAGS := $(arch) -std=c99 -pedantic -m64 -mfpmath=sse $(code_optimization_fl
 MPICXXFLAGS := $(arch) -std=c++11 -pedantic -m64 $(o_level) $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) -Wall -Wextra
 NVCXXFLAGS := $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP)
 LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,$(o_level)
-LLIBS := $(SCOREP_LLIBS) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda
+LLIBS := $(SCOREP_LLIBS) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
 
 NVDIR := $(NVDIR)
 CXX := $(CXX)
