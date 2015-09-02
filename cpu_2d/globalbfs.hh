@@ -571,7 +571,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
             codec.encodeArray(recv_fq_buff_32.data(), recv_fq_buff_32.size(),
                                         compressed_recv_fq_buff_32.data(), compressedsize);
             t2 = high_resolution_clock::now();
-            auto encode_time = chrono::duration_cast<chrono::microseconds>( t2 - t1 ).count();
+            auto encode_time = chrono::duration_cast<chrono::nanoseconds>( t2 - t1 ).count();
 
 
             compressed_recv_fq_buff_32.resize(compressedsize);
@@ -584,7 +584,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
             codec.decodeArray(compressed_recv_fq_buff_32.data(),
                                         compressed_recv_fq_buff_32.size(), uncompressed_recv_fq_buff_32.data(), uncompressedsize);
             t2 = high_resolution_clock::now();
-            auto decode_time = chrono::duration_cast<chrono::microseconds>( t2 - t1 ).count();
+            auto decode_time = chrono::duration_cast<chrono::nanoseconds>( t2 - t1 ).count();
 
             uncompressed_recv_fq_buff_32.resize(uncompressedsize);
             std::vector<uint64_t> uncompressed_recv_fq_buff_64(uncompressed_recv_fq_buff_32.begin(),
@@ -598,8 +598,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                                     / static_cast<double>(recv_fq_buff_32.size());
             double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
 
-            printf("SIMD,codec %s. proccess: [%02d]. c/d: %3.1f/%3.1fms  %02.3f%% gained. \n",
-                         codec_name, rank, compressratio, encode_time, decode_time);
+            printf("SIMD.codec: %s, rank: %02d, c/d: %04ld/%04ldus, %02.3f%% gained\n",
+                         codec_name, rank, encode_time, decode_time, compressratio);
         }
 #endif
 #endif
