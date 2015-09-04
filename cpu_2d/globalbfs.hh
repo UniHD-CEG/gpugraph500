@@ -43,7 +43,7 @@ private:
     std::vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
-    void benchmarkCompression(int _outsize, unit64_t *recv_fq_buff, int rank) const;
+    void benchmarkCompression(int _outsize, uint64_t *recv_fq_buff, int rank) const;
 
 protected:
     const STORE &store;
@@ -676,7 +676,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     }
 }
 
-void GlobalBFS<Derived, FQ_T, MType, STORE>::benchmarkCompression(int _outsize, unit64_t *recv_fq_buff, int rank) const {
+template<class Derived, class FQ_T, class MType, class STORE>
+void GlobalBFS<Derived, FQ_T, MType, STORE>::benchmarkCompression(int _outsize, uint64_t *recv_fq_buff, int rank) const {
     if (_outsize > 512) {
 
         char const *codec_name = "s4-bp128-dm";
