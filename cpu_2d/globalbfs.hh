@@ -715,7 +715,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
         compressed_fq_32.resize(compressedsize);
         compressed_fq_32.shrink_to_fit();
-        compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
+
+        // TODO: Expensive Operation
+        compressed_fq_64.reserve(compressed_fq_32.size());
+        std::copy(compressed_fq_32.begin(), compressed_fq_32.end(), back_inserter(compressed_fq_64));
     }
 }
 #endif
