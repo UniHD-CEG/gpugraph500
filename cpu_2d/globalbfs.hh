@@ -695,8 +695,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         uncompressed_fq_32.resize(uncompressedsize);
 
         // TODO: Expensive Operation
-        compressed_fq_64.reserve(compressed_fq_32.size());
-        std::copy(compressed_fq_32.begin(), compressed_fq_32.end(), back_inserter(compressed_fq_64));
+        uncompressed_fq_64.reserve(uncompressed_fq_32.size());
+        std::copy(uncompressed_fq_32.begin(), uncompressed_fq_32.end(), back_inserter(uncompressed_fq_64));
     }
 }
 #endif
