@@ -47,9 +47,9 @@ private:
     void SIMDbenchmarkCompression(int fq_size, long long int *fq, int rank) const;
 
     void SIMDcompression(IntegerCODEC &codec, long long int *fq, int fq_size,
-                            std::vector<uint64_t> &compressed_fq_64, size_t &compressedsize);
+                            std::vector<uint64_t> &compressed_fq_64, size_t &compressedsize) const;
     void SIMDdecompression(IntegerCODEC &codec, std::vector<uint64_t> &compressed_fq_64, int fq_size,
-                            std::vector<uint64_t> &uncompressed_fq_64, size_t &uncompressedsize);
+                            std::vector<uint64_t> &uncompressed_fq_64, size_t &uncompressedsize) const;
     void SIMDverifyCompression(long long int *fq, int fq_size,
                             std::vector<uint64_t> &uncompressed_fq_64, size_t uncompressedsize) const;
 
@@ -681,7 +681,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
                                                                 std::vector<uint64_t> &compressed_fq_64,
                                                                 int fq_size,
                                                                 std::vector<uint64_t> &uncompressed_fq_64,
-                                                                size_t &uncompressedsize) {
+                                                                size_t &uncompressedsize) const {
     if (fq_size > 512) {
 
         // TODO: Expensive Operation
@@ -708,7 +708,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
                                                       long long int *fq,
                                                       int fq_size,
                                                       std::vector<uint64_t> &compressed_fq_64,
-                                                      size_t &compressedsize) {
+                                                      size_t &compressedsize) const {
     if (fq_size > 512) {
         // TODO: Expensive Operation
         std::vector<uint32_t> fq_32(fq, fq + fq_size);
