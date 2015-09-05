@@ -47,9 +47,9 @@ private:
     void SIMDbenchmarkCompression(int fq_size, long long int *fq, int rank) const;
 
     void SIMDcompression(IntegerCODEC &codec, long long int *fq, int fq_size,
-                            std::vector<uint64_t> &compressed_fq_64, size_t &compressedsize) const;
+                            std::vector<uint64_t> &compressed_fq_64, size_t &compressedsize);
     void SIMDdecompression(IntegerCODEC &codec, std::vector<uint64_t> &compressed_fq_64, int fq_size,
-                            std::vector<uint64_t> &uncompressed_fq_64, size_t &uncompressedsize) const;
+                            std::vector<uint64_t> &uncompressed_fq_64, size_t &uncompressedsize);
     void SIMDverifyCompression(long long int *fq, int fq_size,
                             std::vector<uint64_t> &uncompressed_fq_64, size_t uncompressedsize) const;
 
@@ -564,7 +564,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
 #ifdef _SIMDCOMPRESS
-#ifdef _SIMDCOMPRESSBENCHMARK
+#ifndef _SIMDCOMPRESSBENCHMARK
 
         SIMDbenchmarkCompression(_outsize, recv_fq_buff, rank);
 #else
@@ -681,7 +681,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
                                                                 std::vector<uint64_t> &compressed_fq_64,
                                                                 int fq_size,
                                                                 std::vector<uint64_t> &uncompressed_fq_64,
-                                                                size_t &uncompressedsize) const {
+                                                                size_t &uncompressedsize) {
     if (fq_size > 512) {
 
         // TODO: Expensive Operation
@@ -708,7 +708,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
                                                       long long int *fq,
                                                       int fq_size,
                                                       std::vector<uint64_t> &compressed_fq_64,
-                                                      size_t &compressedsize) const {
+                                                      size_t &compressedsize) {
     if (fq_size > 512) {
         // TODO: Expensive Operation
         std::vector<uint32_t> fq_32(fq, fq + fq_size);
