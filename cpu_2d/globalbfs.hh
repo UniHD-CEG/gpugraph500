@@ -43,8 +43,13 @@ private:
     std::vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
-    void benchmarkCompression(int _outsize, long long int *recv_fq_buff, int rank) const;
 
+    void SIMDbenchmarkCompression(int _outsize, long long int *recv_fq_buff, int rank) const;
+    void SIMDcompression(int _outsize, const IntegerCODEC &codec, long long int *recv_fq_buff) const;
+    void SIMDdecompression(int _outsize, const IntegerCODEC &codec, std::vector<uint64_t> &uncompressed_recv_fq_buff_64,
+                           size_t &uncompressedsize) const;
+    void SIMDverifyCompression(int _outsize, size_t uncompressedsize, long long int *_recv_fq_buff,
+                            std::vector<uint64_t> uncompressed_recv_fq_buff_64) const;
 protected:
     const STORE &store;
     typename STORE::vtxtyp *predecessor;
@@ -88,13 +93,6 @@ public:
     void runBFS(typename STORE::vtxtyp startVertex);
 #endif
 
-    void SIMDCompression(int _outsize, const IntegerCODEC &codec, long long int *recv_fq_buff) const;
-
-    void SIMDVerifyCompression(int _outsize, size_t uncompressedsize, long long int *_recv_fq_buff,
-                               unnamed uncompressed_recv_fq_buff_64) const;
-
-    void SIMDDecompression(int _outsize, const IntegerCODEC &codec, unnamed &uncompressed_recv_fq_buff_64,
-                           size_t &uncompressedsize) const;
 };
 
 
@@ -563,16 +561,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
 
-        benchmarkCompression(_outsize, recv_fq_buff, rank);
+        SIMDbenchmarkCompression(_outsize, recv_fq_buff, rank);
 #else
 
         char const *codec_name = "s4-bp128-dm";
         IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
 
-        SIMDCompression(_outsize, IntegerCODEC &codec, recv_fq_buff);
-        SIMDDecompression(_outsize, codec, uncompressed_recv_fq_buff_64,
+        SIMDcompression(_outsize, IntegerCODEC &codec, recv_fq_buff);
+        SIMDdecompression(_outsize, codec, uncompressed_recv_fq_buff_64,
                                           uncompressedsize);
-        SIMDVerifyCompression(_outsize, uncompressedsize,
+        SIMDverifyCompression(_outsize, uncompressedsize,
                               _recv_fq_buff,
                               uncompressed_recv_fq_buff_64);
 #endif
@@ -673,7 +671,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 #ifdef _SIMDCOMPRESS
 template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDDecompression(int _outsize, const IntegerCODEC &codec,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(int _outsize, const IntegerCODEC &codec,
                                                            std::vector <uint64_t> &uncompressed_recv_fq_buff_64,
                                                            size_t &uncompressedsize) const {
     if (_outsize > 512) {
@@ -690,7 +688,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDDecompression(int _outsize, con
 
 #ifdef _SIMDCOMPRESS
 template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDVerifyCompression(int _outsize, size_t &uncompressedsize,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(int _outsize, size_t &uncompressedsize,
                                                                long long int *_recv_fq_buff,
                                                                std::vector <uint64_t> &uncompressed_recv_fq_buff_64) const {
     if (_outsize > 512) {
@@ -703,7 +701,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDVerifyCompression(int _outsize,
 
 #ifdef _SIMDCOMPRESS
 template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDCompression(const IntegerCODEC &codec,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(const IntegerCODEC &codec,
                                                       long long int *_recv_fq_buff,
                                                       int _outsize,
                                                       std::vector<uint32_t> &_compressed_recv_fq_buff_32,
@@ -724,7 +722,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDCompression(const IntegerCODEC 
 
 #ifdef _SIMDCOMPRESS
 template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::benchmarkCompression(int _outsize, long long int *_recv_fq_buff, int _rank) const {
+void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(int _outsize, long long int *_recv_fq_buff, int _rank) const {
 
     if (_outsize > 512) {
         char const *codec_name = "s4-bp128-dm";
