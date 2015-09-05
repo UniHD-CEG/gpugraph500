@@ -684,7 +684,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(const IntegerCODE
                                                                 size_t uncompressedsize) const {
     if (fq_size > 512) {
         // TODO: Expensive Operation
-        std::vector<uint32_t> compressed_fq_32(compressed_fq_64.begin(), compressed_fq_64.end());
+        std::vector<uint32_t> compressed_fq_32;
+        compressed_fq_32.reserve(compressed_fq_64.size());
+        std::copy(compressed_fq_64.begin(), compressed_fq_64.end(), back_inserter(compressed_fq_32));
+
         std::vector<uint32_t> uncompressed_fq_32(fq_size);
         uncompressedsize = uncompressed_fq_32.size();
         codec.decodeArray(compressed_fq_32.data(),
