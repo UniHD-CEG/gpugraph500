@@ -43,13 +43,15 @@ private:
     std::vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
-
+#ifdef _SIMDCOMPRESS
     void SIMDbenchmarkCompression(int _outsize, long long int *recv_fq_buff, int rank) const;
     void SIMDcompression(int _outsize, const IntegerCODEC &codec, long long int *recv_fq_buff) const;
     void SIMDdecompression(int _outsize, const IntegerCODEC &codec, std::vector<uint64_t> &uncompressed_recv_fq_buff_64,
                            size_t &uncompressedsize) const;
     void SIMDverifyCompression(int _outsize, size_t uncompressedsize, long long int *_recv_fq_buff,
                             std::vector<uint64_t> uncompressed_recv_fq_buff_64) const;
+#endif
+
 protected:
     const STORE &store;
     typename STORE::vtxtyp *predecessor;
