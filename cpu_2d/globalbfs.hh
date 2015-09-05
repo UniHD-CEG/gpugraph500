@@ -49,6 +49,7 @@ private:
     void SIMDcompression(const IntegerCODEC &codec, long long int *fq, int fq_size,
                             std::vector<uint64_t> &compressed_fq_64, size_t &compressedsize) const;
     void SIMDdecompression(const IntegerCODEC &codec, std::vector<uint64_t> &compressed_fq_64, int fq_size,
+
                             std::vector<uint64_t> &uncompressed_fq_64, size_t uncompressedsize) const;
     void SIMDverifyCompression(long long int *fq, int fq_size,
                             std::vector<uint64_t> &uncompressed_fq_64, size_t uncompressedsize) const;
@@ -678,7 +679,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef _SIMDCOMPRESS
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(const IntegerCODEC &codec,
-                                                                std::vector<uint64_t> &compressed_fq_64,
+                                                                std::vector<uint64_t> compressed_fq_64,
                                                                 int fq_size,
                                                                 std::vector<uint64_t> &uncompressed_fq_64,
                                                                 size_t &uncompressedsize) const {
@@ -726,7 +727,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(const IntegerCODEC 
 
         std::vector<uint32_t> compressed_fq_32(fq_size + 1024);
         compressedsize = compressed_fq_32.size();
-        codec.encodeArray(fq_32.data(), cfq_32.size(), compressed_fq_32.data(), compressedsize);
+        codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
         compressed_fq_32.resize(compressedsize);
         compressed_fq_32.shrink_to_fit();
         compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
