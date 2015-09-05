@@ -447,6 +447,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     lqueue += tend - tstart;
 #endif
 
+
+#ifdef _SIMDCOMPRESS
+        IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
+        std::vector<uint64_t> compressed_fq_64;
+        std::vector<uint64_t> uncompressed_fq_64;
+        size_t uncompressedsize;
+        size_t compressedsize;
+#endif
+
 // 2) Local expansion
     int iter = 0;
     while (true) {
@@ -559,28 +568,23 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef INSTRUMENTED
                  ,lqueue
 #endif
-        );
+                );
 
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
-#ifdef _SIMDCOMPRESS
-#ifndef _SIMDCOMPRESSBENCHMARK
-
-        SIMDbenchmarkCompression(_outsize, recv_fq_buff, rank);
-#else
-        IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
-        std::vector<uint64_t> compressed_fq_64;
-        std::vector<uint64_t> uncompressed_fq_64;
-        size_t uncompressedsize;
-        size_t compressedsize;
-
-        SIMDcompression(codec, recv_fq_buff, _outsize, compressed_fq_64, compressedsize);
-        SIMDdecompression(codec, compressed_fq_64, _outsize, uncompressed_fq_64, uncompressedsize);
-        SIMDverifyCompression(recv_fq_buff, _outsize, uncompressed_fq_64, uncompressedsize);
-
-
-#endif
-#endif
+// #ifdef _SIMDCOMPRESS
+// #ifdef _SIMDCOMPRESSBENCHMARK
+        // SIMDbenchmarkCompression(_outsize, recv_fq_buff, rank);
+// #endif
+        // IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
+        // std::vector<uint64_t> compressed_fq_64;
+        // std::vector<uint64_t> uncompressed_fq_64;
+        // size_t uncompressedsize;
+        // size_t compressedsize;
+        // SIMDcompression(codec, recv_fq_buff, _outsize, compressed_fq_64, compressedsize);
+        // SIMDdecompression(codec, compressed_fq_64, _outsize, uncompressed_fq_64, uncompressedsize);
+        // SIMDverifyCompression(recv_fq_buff, _outsize, uncompressed_fq_64, uncompressedsize);
+// #endif
 
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
@@ -619,14 +623,36 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     lqueue += tend - tstart;
 #endif
 
-                MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+#ifdef _SIMDCOMPRESS
+#ifdef _SIMDCOMPRESSBENCHMARK
+                SIMDbenchmarkCompression(outsize, startaddr, rank);
+                SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
+#endif
+                // IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
+                // std::vector<uint64_t> compressed_fq_64;
+                // std::vector<uint64_t> uncompressed_fq_64;
+                // size_t uncompressedsize;
+                // size_t compressedsize;
+                SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
+                // SIMDdecompression(codec, compressed_fq_64, _outsize, uncompressed_fq_64, uncompressedsize);
+                // SIMDverifyCompression(recv_fq_buff, _outsize, uncompressed_fq_64, uncompressedsize);
+#endif
+
+                // MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
+                // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+                MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
+                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
+
+#ifdef _SIMDCOMPRESS
+                SIMDdecompression(codec, compressed_fq_64, _outsize, uncompressed_fq_64, uncompressedsize);
+                SIMDverifyCompression(recv_fq_buff, _outsize, startaddr, outsize);
+#endif
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
-
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
+
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
