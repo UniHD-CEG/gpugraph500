@@ -628,13 +628,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 SIMDbenchmarkCompression(startaddr, outsize, rank);
                 SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
 #endif
-                // SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
+                SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
 #endif
 
                 // MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+#ifdef _SIMDCOMPRESS
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
+#endif
 
 #ifdef _SIMDCOMPRESS
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
