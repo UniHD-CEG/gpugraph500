@@ -462,8 +462,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
         // size_t uncompressedsize;
         // size_t compressedsize;
         IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
-        long log int *compressed_fq_64;
-        long log int *uncompressed_fq_64;
+        long long int *compressed_fq_64;
+        long long int *uncompressed_fq_64;
         int uncompressedsize;
         int compressedsize;
 #endif
