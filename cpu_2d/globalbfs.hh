@@ -19,7 +19,6 @@
 
 #ifdef _SIMDCOMPRESS
     #include "codecfactory.h"
-    #include "intersection.h"
     using namespace SIMDCompressionLib;
 #endif
 
@@ -669,6 +668,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 // }
 // std::cout << std::endl;
                     SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+std::cout << std::endl;
+std::cout << "Original" << std::endl;
+for (int i=0; i < outsize; ++i) {
+    std::cout << startaddr[i] << " ";
+}
+std::cout << std::endl;
+std::cout << std::endl;
+std::cout << "Uncompressed" << std::endl;
+for (size_t i=0; i < uncompressedsize; ++i) {
+    std::cout << uncompressed_fq_64[i] << " ";
+}
+std::cout << std::endl;
                     // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
                 }
 #endif
@@ -768,17 +779,20 @@ template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec,
                                     FQ_T *compressed_fq_64, int size,
                                     FQ_T *&uncompressed_fq_64, size_t &uncompressedsize) const {
-    if (size > 512) {
-        uint32_t *compressed_fq_32 = new uint32_t[size];
-        uint32_t *uncompressed_fq_32 = new uint32_t[size];
-
+    uint32_t *compressed_fq_32 = new uint32_t[size];
+    uint32_t *uncompressed_fq_32 = new uint32_t[size];
+    try {
         allocateAndCopyArrayInt64toUint32(compressed_fq_64, compressed_fq_32, size);
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         allocateAndCopyArrayUint32toInt64(uncompressed_fq_32, uncompressed_fq_64, uncompressedsize);
-
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
-    } else {
+    } catch (const logic_error& e) {
+        std::cout << e.what();
+        // prevent memory leak
+        delete[] compressed_fq_32;
+        delete[] uncompressed_fq_32;
+        // there was no compression. Compression of In array was not worthed due to size.
         uncompressedsize = size;
         uncompressed_fq_64 = compressed_fq_64;
     }
@@ -847,11 +861,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 // }
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, int size, FQ_T *uncompressed_fq_64, size_t uncompressedsize) const {
-    if (size > 512) {
+//     if (size > 512) {
         bool equal = compareArrays(fq, uncompressed_fq_64, size, uncompressedsize);
         // assert (size == uncompressedsize);
         assert(equal);
-    }
+//     }
 }
 #endif
 
@@ -860,7 +874,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, int
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(FQ_T *fq, int size, int _rank) const {
 
-    if (size > 512) {
+     if (size > 512) {
         char const *codec_name = "s4-bp128-dm";
         IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
         high_resolution_clock::time_point time_0, time_1;
@@ -893,7 +907,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(FQ_T *fq, 
         double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
         double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
         printf("SIMD.codec: %s, rank: %02d, c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name, _rank, encode_time, decode_time, compressratio);
-    }
+     }
 }
 #endif
 
