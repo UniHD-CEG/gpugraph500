@@ -46,13 +46,21 @@ private:
 #ifdef _SIMDCOMPRESS
     void SIMDbenchmarkCompression(long long int *fq, int fq_size, int rank) const;
 
-    void SIMDcompression(IntegerCODEC &codec, long long int *fq, int fq_size,
-                            std::vector<uint64_t> &compressed_fq_64, size_t &compressedsize) const;
-    void SIMDdecompression(IntegerCODEC &codec, std::vector<uint64_t> &compressed_fq_64, int fq_size,
-                            std::vector<uint64_t> &uncompressed_fq_64, size_t &uncompressedsize) const;
-    void SIMDverifyCompression(long long int *fq, int fq_size,
-                            std::vector<uint64_t> &uncompressed_fq_64, size_t uncompressedsize) const;
+    // void SIMDcompression(IntegerCODEC &codec, long long int *fq, int fq_size,
+    //                         std::vector<uint64_t> &compressed_fq_64, size_t &compressedsize) const;
+    // void SIMDdecompression(IntegerCODEC &codec, std::vector<uint64_t> &compressed_fq_64, int fq_size,
+    //                         std::vector<uint64_t> &uncompressed_fq_64, size_t &uncompressedsize) const;
+    void SIMDdecompression(IntegerCODEC &codec, long long int *&compressed_fq_64, int fq_size,
+                            long long int *&uncompressed_fq_64, int &uncompressedsize) const;
 
+    void SIMDcompression(IntegerCODEC &codec, long long int *fq, int fq_size, long long int *&compressed_fq_64,
+                            int &compressedsize) const;
+
+    // void SIMDverifyCompression(long long int *fq, int fq_size,
+    //                         std::vector<uint64_t> &uncompressed_fq_64, size_t uncompressedsize) const;
+    void convertIntArray64to32(long long int *buffer64, int *&buffer32, int size) const;
+
+    void convertIntArray32to64(long long int *buffer32, int *&buffer64, int size) const;
 #endif
 
 protected:
@@ -449,11 +457,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 
 #ifdef _SIMDCOMPRESS
-        IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
-        std::vector<uint64_t> compressed_fq_64;
-        std::vector<uint64_t> uncompressed_fq_64;
-        size_t uncompressedsize;
-        size_t compressedsize;
+        // std::vector<uint64_t> compressed_fq_64;
+        // std::vector<uint64_t> uncompressed_fq_64;
+        // size_t uncompressedsize;
+        // size_t compressedsize;
+        IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
+        long log int *compressed_fq_64;
+        long log int *uncompressed_fq_64;
+        int uncompressedsize;
+        int compressedsize;
 #endif
 
 // 2) Local expansion
@@ -697,12 +709,35 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 }
 
 #ifdef _SIMDCOMPRESS
+// template<class Derived, class FQ_T, class MType, class STORE>
+// void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec,
+//                                                                 std::vector<uint64_t> &compressed_fq_64,
+//                                                                 int fq_size,
+//                                                                 std::vector<uint64_t> &uncompressed_fq_64,
+//                                                                 size_t &uncompressedsize) const {
+//     if (fq_size > 512) {
+
+//         // TODO: Expensive Operation
+//         std::vector<uint32_t> uncompressed_fq_32(fq_size);
+//         std::vector<uint32_t> compressed_fq_32;
+//         compressed_fq_32.reserve(compressed_fq_64.size());
+//         std::copy(compressed_fq_64.begin(), compressed_fq_64.end(), back_inserter(compressed_fq_32));
+//         uncompressedsize = uncompressed_fq_32.size();
+//         codec.decodeArray(compressed_fq_32.data(),
+//                           compressed_fq_32.size(), uncompressed_fq_32.data(), uncompressedsize);
+//         uncompressed_fq_32.resize(uncompressedsize);
+
+//         // TODO: Expensive Operation
+//         uncompressed_fq_64.reserve(uncompressed_fq_32.size());
+//         std::copy(uncompressed_fq_32.begin(), uncompressed_fq_32.end(), back_inserter(uncompressed_fq_64));
+//     }
+// }
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec,
-                                                                std::vector<uint64_t> &compressed_fq_64,
+                                                                long long int *&compressed_fq_64,
                                                                 int fq_size,
-                                                                std::vector<uint64_t> &uncompressed_fq_64,
-                                                                size_t &uncompressedsize) const {
+                                                                long long int *&uncompressed_fq_64,
+                                                                int &uncompressedsize) const {
     if (fq_size > 512) {
 
         // TODO: Expensive Operation
@@ -723,17 +758,40 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 #endif
 
 
+
 #ifdef _SIMDCOMPRESS
+// template<class Derived, class FQ_T, class MType, class STORE>
+// void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec,
+//                                                       long long int *fq,
+//                                                       int fq_size,
+//                                                       std::vector<uint64_t> &compressed_fq_64,
+//                                                       size_t &compressedsize) const {
+//     if (fq_size > 512) {
+//         // TODO: Expensive Operation
+//         std::vector<uint32_t> fq_32(fq, fq + fq_size);
+//         std::vector<uint32_t> compressed_fq_32(fq_size + 1024);
+//         compressedsize = compressed_fq_32.size();
+//         codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
+//         compressed_fq_32.resize(compressedsize);
+//         compressed_fq_32.shrink_to_fit();
+
+//         // TODO: Expensive Operation
+//         compressed_fq_64.reserve(compressed_fq_32.size());
+//         std::copy(compressed_fq_32.begin(), compressed_fq_32.end(), back_inserter(compressed_fq_64));
+//     }
+// }
+
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec,
                                                       long long int *fq,
                                                       int fq_size,
-                                                      std::vector<uint64_t> &compressed_fq_64,
-                                                      size_t &compressedsize) const {
+                                                      long long int *&compressed_fq_64,
+                                                      int &compressedsize) const {
     if (fq_size > 512) {
         // TODO: Expensive Operation
         std::vector<uint32_t> fq_32(fq, fq + fq_size);
         std::vector<uint32_t> compressed_fq_32(fq_size + 1024);
+
         compressedsize = compressed_fq_32.size();
         codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
         compressed_fq_32.resize(compressedsize);
@@ -747,18 +805,55 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 #endif
 
 
+
+
+
+// #ifdef _SIMDCOMPRESS
+// template<class Derived, class FQ_T, class MType, class STORE>
+// void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(long long int *fq,
+//                                                                     int fq_size,
+//                                                                     std::vector <uint64_t> &uncompressed_fq_64,
+//                                                                     size_t uncompressedsize) const {
+//     if (fq_size > 512) {
+//         assert(fq_size == uncompressedsize &&
+//                std::equal(uncompressed_fq_64.begin(), uncompressed_fq_64.end(), fq));
+//     }
+// }
+
+// template<class Derived, class FQ_T, class MType, class STORE>
+// void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(long long int *fq,
+//                                                                    long long int *uncompressed_fq_64,
+//                                                                    int size) const {
+//     if (size > 512) {
+//         assert(fq == uncompressedsize);
+//     }
+// }
+// #endif
+
+
+
 #ifdef _SIMDCOMPRESS
-template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(long long int *fq,
-                                                                    int fq_size,
-                                                                    std::vector <uint64_t> &uncompressed_fq_64,
-                                                                    size_t uncompressedsize) const {
-    if (fq_size > 512) {
-        assert(fq_size == uncompressedsize &&
-               std::equal(uncompressed_fq_64.begin(), uncompressed_fq_64.end(), fq));
+void convertIntArray64to32(long long int *buffer64, int *&buffer32, int size) const {
+    buffer32 = new int[size];
+    // assumed (tested in main.cpp) that long integers are < 32 bits size
+    // O(N)
+    for (int i=0; i < size; ++i) {
+        buffer32[i] = static_cast<int> buffer64[i];
+    }
+}
+
+void convertIntArray32to64(long long int *buffer32, int *&buffer64, int size) const {
+    buffer64 = new long long int[size];
+    // O(N)
+    for (int i=0; i < size; ++i) {
+        buffer64[i] = static_cast<long long int> buffer32[i];
     }
 }
 #endif
+
+
+
+
 
 
 #ifdef _SIMDCOMPRESS
