@@ -51,16 +51,16 @@ private:
     // void SIMDdecompression(IntegerCODEC &codec, std::vector<uint64_t> &compressed_fq_64, int fq_size,
     //                         std::vector<uint64_t> &uncompressed_fq_64, size_t &uncompressedsize) const;
     void SIMDdecompression(IntegerCODEC &codec, long long int *compressed_fq_64, int size,
-                            long long int *&uncompressed_fq_64, size_t &uncompressedsize) const;
+                            long long int *&uncompressed_fq_64, int &uncompressedsize) const;
 
-    void SIMDcompression(IntegerCODEC &codec, long long int *fq, int size, size_t *&compressed_fq_64,
+    void SIMDcompression(IntegerCODEC &codec, long long int *fq, int size, long long int *&compressed_fq_64,
                             int &compressedsize) const;
 
     // void SIMDverifyCompression(long long int *fq, int fq_size,
     //                         std::vector<uint64_t> &uncompressed_fq_64, size_t uncompressedsize) const;
-    void copyIntArray64to32(long long int *buffer64, int *&buffer32, int size) const;
+    void allocateAndCopyIntArray64to32(long long int *buffer64, int *&buffer32, int size) const;
 
-    void copyIntArray32to64(int *buffer32, long long int *&buffer64, int size) const;
+    void allocateAndCopyIntArray32to64(int *buffer32, long long int *&buffer64, int size) const;
 #endif
 
 protected:
@@ -464,8 +464,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
         IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
         long long int *compressed_fq_64;
         long long int *uncompressed_fq_64;
-        size_t uncompressedsize;
-        size_t compressedsize;
+        int uncompressedsize;
+        int compressedsize;
 #endif
 
 // 2) Local expansion
@@ -511,7 +511,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     lqueue += tend - tstart;
 #endif
 
-        MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+        MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI _LOR, MPI_COMM_WORLD);
         if (!anynewnodes_global) {
 
 #ifdef INSTRUMENTED
@@ -638,20 +638,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
                 SIMDbenchmarkCompression(startaddr, outsize, rank);
-                SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
+                //SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
 #endif
-                SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
+                //SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
 #endif
 
                 // MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
-#ifdef _SIMDCOMPRESS
-                MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
-#endif
+// #ifdef _SIMDCOMPRESS
+//                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
+//                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
+// #endif
 
 #ifdef _SIMDCOMPRESS
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                //SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
 #endif
 
@@ -735,15 +735,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec,
                                     long long int *compressed_fq_64, int size,
-                                    long long int *&uncompressed_fq_64, size_t &uncompressedsize) const {
+                                    long long int *&uncompressed_fq_64, int &uncompressedsize) const {
     if (size > 512) {
-        int *compressed_fq_32 = new int[size];
-        int *uncompressed_fq_32 = new int[size];
-        copyIntArray64to32(compressed_fq_64, compressed_fq_32, size);
+        uint32_t *compressed_fq_32 = new uint32_t[size];
+        uint32_t *uncompressed_fq_32 = new uint32_t[size];
+
+        allocateAndCopyIntArray64to32(compressed_fq_64, compressed_fq_32, size);
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
-        copyIntArray32to64(uncompressed_fq_32, uncompressed_fq_64, uncompressedsize);
-        delete compressed_fq_32;
-        delete uncompressed_fq_32;
+        allocateAndCopyIntArray32to64(uncompressed_fq_32, uncompressed_fq_64, uncompressedsize);
+
+        delete[] compressed_fq_32;
+        delete[] uncompressed_fq_32;
     }
 }
 #endif
@@ -775,16 +777,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec,
                                 long long int *fq, int size, long long int *&compressed_fq_64,
-                                size_t &compressedsize) const {
+                                int &compressedsize) const {
     if (size > 512) {
-        int *fq_32;
-        int *compressed_fq_32 = new int[size];
-        copyIntArray64to32(fq, fq_32, size)
-        compressedsize = compressed_fq_32.size();
-        codec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
-        copyIntArray32to64(compressed_fq_32, compressed_fq_64, compressedsize);
-        delete fq_32;
-        delete compressed_fq_32;
+        uint32_t *fq_32;
+        uint32_t *compressed_fq_32 = new uint32_t[size];
+
+        allocateAndCopyIntArray64to32(fq, fq_32, size)
+        codec.encodeArray(fq_32, size, compressed_fq_32, size);
+        allocateAndCopyIntArray32to64(compressed_fq_32, compressed_fq_64, compressedsize);
+
+        delete[] fq_32;
+        delete[] compressed_fq_32;
     }
 }
 #endif
@@ -818,8 +821,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 
 
 #ifdef _SIMDCOMPRESS
-void copyIntArray64to32(long long int *buffer64, int *&buffer32, int size) {
-    buffer32 = new int[size];
+void allocateAndCopyIntArray64to32(long long int *buffer64, uint32_t *&buffer32, int size) {
+    buffer32 = new uint32_t[size];
     // assumed (tested in main.cpp) that long integers are < 32 bits size
     // O(N)
     for (int i=0; i < size; ++i) {
@@ -827,7 +830,7 @@ void copyIntArray64to32(long long int *buffer64, int *&buffer32, int size) {
     }
 }
 
-void copyIntArray32to64(int *buffer32, long long int *&buffer64, int size) {
+void allocateAndCopyIntArray32to64(uint32_t *buffer32, long long int *&buffer64, int size) {
     buffer64 = new long long int[size];
     // O(N)
     for (int i=0; i < size; ++i) {
