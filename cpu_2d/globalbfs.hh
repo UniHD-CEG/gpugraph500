@@ -46,7 +46,7 @@ private:
 
     void allocateAndCopyArrayInt64toUint32(FQ_T *buffer64, uint32_t *&buffer32, size_t size) const;
     void allocateAndCopyArrayUint32toInt64(uint32_t *buffer32, FQ_T *&buffer64, size_t size) const;
-    // bool compareArrays(FQ_T *array1, FQ_T *array2, int size1) const;
+    bool compareArrays(FQ_T *array1, FQ_T *array2, int size1, size_t size2) const;
 
 #ifdef _SIMDCOMPRESS
     void SIMDbenchmarkCompression(FQ_T *fq, int fq_size, int rank) const;
@@ -650,10 +650,27 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
-                SIMDbenchmarkCompression(startaddr, outsize, rank);
-                SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
+                if (rank == 0) {
+                    SIMDbenchmarkCompression(startaddr, outsize, rank);
+                }
 #endif
-                SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
+                if (rank == 0) {
+                    SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
+// std::cout << std::endl;
+// std::cout << "Original" << std::endl;
+// for (int i=0; i < outsize; ++i) {
+//     std::cout << startaddr[i] << " ";
+// }
+// std::cout << std::endl;
+// std::cout << std::endl;
+// std::cout << "Compressed" << std::endl;
+// for (size_t i=0; i < compressedsize; ++i) {
+//     std::cout << compressed_fq_64[i] << " ";
+// }
+// std::cout << std::endl;
+                    SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                    // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
+                }
 #endif
 
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -663,12 +680,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 //                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
 // #endif
 
-// #ifdef _SIMDCOMPRESS
-//                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-//                 if (rank == 0) {
-//                       SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
-//                 }
-// #endif
+#ifdef _SIMDCOMPRESS
+                if (rank == 0) {
+                    // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                    // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
+                }
+#endif
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
@@ -761,6 +778,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
+    } else {
+        uncompressedsize = size;
+        uncompressed_fq_64 = compressed_fq_64;
     }
 }
 #endif
@@ -803,6 +823,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 
         delete[] fq_32;
         delete[] compressed_fq_32;
+    } else {
+        compressed_fq_64 = fq;
+        compressedsize = size;
     }
 }
 #endif
@@ -825,8 +848,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, int size, FQ_T *uncompressed_fq_64, size_t uncompressedsize) const {
     if (size > 512) {
-        // bool equal = compareArrays(fq, uncompressed_fq_64, size);
-        assert (size == uncompressedsize);
+        bool equal = compareArrays(fq, uncompressed_fq_64, size, uncompressedsize);
+        // assert (size == uncompressedsize);
+        assert(equal);
     }
 }
 #endif
@@ -873,16 +897,28 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(FQ_T *fq, 
 }
 #endif
 
-// template<class Derived, class FQ_T, class MType, class STORE>
-// bool GlobalBFS<Derived, FQ_T, M// Type, STORE>::compareArrays(FQ_T *array1, FQ_T *array2, int size1) const {
-//     // Max: O(N)
-//     // Min: O(1)
-//     bool equal = true;
-//     for (int i=0; equal && i < size1; ++i) {
-//         if (array1[i] != array2[i]) { equal = false; }
-//     }
-//     return equal;
-// }
+template<class Derived, class FQ_T, class MType, class STORE>
+bool GlobalBFS<Derived, FQ_T, MType, STORE>::compareArrays(FQ_T *array1, FQ_T *array2, int size1, size_t size2) const {
+ //    std::cout << std::endl;
+ //    std::cout << "Original" << std::endl;
+ //    for (int i=0; i < size1; ++i) {
+ //        std::cout << array1[i] << " ";
+ //    }
+ //    std::cout << std::endl;
+ //    std::cout << "Decompressed" << std::endl;
+ //    for (int i=0; i < size2; ++i) {
+ //        std::cout << array2[i] << " ";
+ //    }
+ //    std::cout << std::endl;
+
+    // Max: O(N)
+    // Min: O(1)
+    bool equal = (size1 == size2);
+    for (int i=0; equal && i < size1; ++i) {
+        if (array1[i] != array2[i]) { equal = false; }
+    }
+    return equal;
+}
 
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::allocateAndCopyArrayInt64toUint32(FQ_T *buffer64, uint32_t *&buffer32, size_t size) const {
