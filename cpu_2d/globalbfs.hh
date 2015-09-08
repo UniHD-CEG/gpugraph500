@@ -657,7 +657,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 //     std::cout << compressed_fq_64[i] << " ";
 // }
 // std::cout << std::endl;
-                    SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                    //SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
 // std::cout << std::endl;
 // std::cout << "Original" << std::endl;
 // for (int i=0; i < outsize; ++i) {
@@ -670,7 +670,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 //     std::cout << uncompressed_fq_64[i] << " ";
 // }
 // std::cout << std::endl;
-                    SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
+                    //SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
                 }
 #endif
 
@@ -783,7 +783,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
     uint32_t *uncompressed_fq_32 = new uint32_t[size];
     try {
         allocateAndCopyArrayInt64toUint32(compressed_fq_64, compressed_fq_32, size);
-        codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
+        IntegerCODEC &integercodec = *CODECFactory::getFromName("s4-bp128-dm");
+        integercodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         allocateAndCopyArrayUint32toInt64(uncompressed_fq_32, uncompressed_fq_64, uncompressedsize);
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
@@ -847,7 +848,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         uint32_t *compressed_fq_32 = new uint32_t[size];
 
         allocateAndCopyArrayInt64toUint32(fq, fq_32, size);
-        codec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
+        IntegerCODEC &integercodec = *CODECFactory::getFromName("s4-bp128-dm");
+        integercodec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
         allocateAndCopyArrayUint32toInt64(compressed_fq_32, compressed_fq_64, compressedsize);
 
         delete[] fq_32;

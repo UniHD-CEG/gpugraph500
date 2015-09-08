@@ -32,7 +32,7 @@ public:
         size_t nvalue1 = nvalue;
         codec1.encodeArray(in, roundedlength, out, nvalue1);
 
-std::cout << "compositecodec.h::" << roundedlength << length << nvalue << nvalue1 << std::endl;
+std::cout << "compositecodec.h:: " << roundedlength << " " << length << " " << nvalue << " " << nvalue1 << std::endl;
 
         if (roundedlength < length) {
             ASSERT(nvalue >= nvalue1, nvalue << " " << nvalue1);

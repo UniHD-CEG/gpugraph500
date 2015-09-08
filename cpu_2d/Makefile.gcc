@@ -58,8 +58,7 @@
 #
 # use_avx_instructions
 #  Values: yes | no
-#  "CPU SSExx and AMD compatibles (AVX) will be used
-#   to compile files"
+#  "CPU SSExx and AMD compatible AVX will be used"
 #
 # enable_simd_compression
 #  Values: yes | no
@@ -92,10 +91,10 @@
 #
 # code_optimization_flags
 #  Format: value value value (separated by spaces)
-#  Values: -funroll-loops, -flto, -finline-functions, -funswitch-loops, -fpredictive-commoning,
-#          -fgcse-after-reload, -ftree-vectorize, -ftree-partial-pre and -fipa-cp-clone options, ...
+#  Values: -funroll-loops -flto -finline-functions -funswitch-loops -fpredictive-commoning
+#          -fgcse-after-reload -ftree-vectorize -ftree-partial-pre -fipa-cp-clone options ...
 #           (https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options)
-#  "Optimization flags added to the compiler"
+#  "Optimization flags added to compiler"
 
 
 nvidia_architecture                       :="fermi"
@@ -110,13 +109,13 @@ scorep_profiler_enable                    :="no"
 scorep_profiler_automatic_instrumentation :="yes"
 scorep_custom                             :="yes"
 scorep_custom_basedir                     :=/home/jromera/scorep
-use_avx_instructions                      :="no"
+use_avx_instructions                      :="yes"
 enable_simd_compression                   :="yes"
 enable_simd_compression_benchmark         :="yes"
 debug                                     :="no"
 quiet_output                              :="no"
 use_cuda                                  :="yes"
-code_optimization_level                   :="O3"
+code_optimization_level                   :="O4"
 code_optimization_flags                   :=-funroll-loops -flto
 
 
