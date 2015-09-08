@@ -804,6 +804,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         std::cout << "Decompression. Copying buffer 1" << std::endl;
         allocateAndCopyArrayInt64toUint32(compressed_fq_64, compressed_fq_32, size);
         uncompressedsize = size;
+
+std::cout << std::endl;
+std::cout << "Decompress:: compressed original 64" << std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << compressed_fq_64[i] << " ";
+}
+std::cout << std::endl;
+std::cout << "Decompress:: compressed original 32" << std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << compressed_fq_32[i] << " ";
+}
+
         std::cout << "Decompression. codec" << std::endl;
         IntegerCODEC &integercodec = *CODECFactory::getFromName("s4-bp128-dm");
         std::cout << "Decompression. decodeArray" << std::endl;
