@@ -607,16 +607,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     SCOREP_USER_REGION_BEGIN( BFSRUN_region_rowCommunication, "BFSRUN_region_rowCommunication",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
+#ifdef _SIMDCOMPRESS
+        IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
+#endif
+
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
              it != fold_fq_props.end(); ++it) {
 
 
 #ifdef _SIMDCOMPRESS
-                IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
-                size_t uncompressedsize;
-                size_t compressedsize;
-                FQ_T *compressed_fq_64;
-                FQ_T *uncompressed_fq_64;
+            size_t uncompressedsize;
+            size_t compressedsize;
+            FQ_T *compressed_fq_64;
+            FQ_T *uncompressed_fq_64;
 #endif
 
             if (it->sendColSl == store.getLocalColumnID()) {
@@ -655,18 +658,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 // }
 // std::cout << std::endl;
                     SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-std::cout << std::endl;
-std::cout << "Original" << std::endl;
-for (int i=0; i < outsize; ++i) {
-    std::cout << startaddr[i] << " ";
-}
-std::cout << std::endl;
-std::cout << std::endl;
-std::cout << "Uncompressed" << std::endl;
-for (size_t i=0; i < uncompressedsize; ++i) {
-    std::cout << uncompressed_fq_64[i] << " ";
-}
-std::cout << std::endl;
+// std::cout << std::endl;
+// std::cout << "Original" << std::endl;
+// for (int i=0; i < outsize; ++i) {
+//     std::cout << startaddr[i] << " ";
+// }
+// std::cout << std::endl;
+// std::cout << std::endl;
+// std::cout << "Uncompressed" << std::endl;
+// for (size_t i=0; i < uncompressedsize; ++i) {
+//     std::cout << uncompressed_fq_64[i] << " ";
+// }
+// std::cout << std::endl;
                     SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
                 }
 #endif
@@ -717,8 +720,10 @@ std::cout << std::endl;
 
 
 #ifdef _SIMDCOMPRESS
+            if (rank == 0) {
                 delete[] compressed_fq_64;
                 delete[] uncompressed_fq_64;
+            }
 #endif
 
         }
