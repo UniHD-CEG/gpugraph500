@@ -608,7 +608,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
 #ifdef _SIMDCOMPRESS
-        IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
+        // IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
 #endif
 
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
@@ -640,7 +640,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
                 if (rank == 0) {
-                    SIMDbenchmarkCompression(startaddr, outsize, rank);
+                    // SIMDbenchmarkCompression(startaddr, outsize, rank);
                 }
 #endif
                 if (rank == 0) {
@@ -847,7 +847,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         uint32_t *fq_32;
         uint32_t *compressed_fq_32 = new uint32_t[size];
 
+std::cout << std::endl;
+std::cout << "Compress:: original" << std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << fq[i] << " ";
+}
         allocateAndCopyArrayInt64toUint32(fq, fq_32, size);
+
+std::cout << std::endl;
+std::cout << "decompress:: Copy" << std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << fq_32[i] << " ";
+}
+std::cout << std::endl;
+
         IntegerCODEC &integercodec = *CODECFactory::getFromName("s4-bp128-dm");
         integercodec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
         allocateAndCopyArrayUint32toInt64(compressed_fq_32, compressed_fq_64, compressedsize);
