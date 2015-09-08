@@ -609,9 +609,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
              it != fold_fq_props.end(); ++it) {
-            if (it->sendColSl == store.getLocalColumnID()) {
-                FQ_T *startaddr;
-                int outsize;
+
 
 #ifdef _SIMDCOMPRESS
                 IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
@@ -620,6 +618,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 FQ_T *compressed_fq_64;
                 FQ_T *uncompressed_fq_64;
 #endif
+
+            if (it->sendColSl == store.getLocalColumnID()) {
+                FQ_T *startaddr;
+                int outsize;
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
@@ -694,10 +696,6 @@ std::cout << std::endl;
     lqueue += tend - tstart;
 #endif
 
-#ifdef _SIMDCOMPRESS
-                // delete[] compressed_fq_64;
-                // delete[] uncompressed_fq_64;
-#endif
 
             } else {
                 int outsize;
@@ -716,6 +714,13 @@ std::cout << std::endl;
     lqueue += tend - tstart;
 #endif
             }
+
+
+#ifdef _SIMDCOMPRESS
+                delete[] compressed_fq_64;
+                delete[] uncompressed_fq_64;
+#endif
+
         }
 
 #ifdef INSTRUMENTED
@@ -899,6 +904,7 @@ template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(FQ_T *fq, int size, int _rank) const {
 
      if (size > 512) {
+        std::cout << "--- Start Benchmark" << std::endl;
         char const *codec_name = "s4-bp128-dm";
         IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
         high_resolution_clock::time_point time_0, time_1;
@@ -931,6 +937,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(FQ_T *fq, 
         double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
         double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
         printf("SIMD.codec: %s, rank: %02d, c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name, _rank, encode_time, decode_time, compressratio);
+        std::cout << "End Benchmark -----" << std::endl;
      }
 }
 #endif
