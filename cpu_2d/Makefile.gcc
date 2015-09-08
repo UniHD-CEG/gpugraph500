@@ -91,8 +91,8 @@
 #
 #
 # code_optimization_flags
-#  Format: value, value, value
-#  Values: -funroll-loops, -finline-functions, -funswitch-loops, -fpredictive-commoning,
+#  Format: value value value (separated by spaces)
+#  Values: -funroll-loops, -flto, -finline-functions, -funswitch-loops, -fpredictive-commoning,
 #          -fgcse-after-reload, -ftree-vectorize, -ftree-partial-pre and -fipa-cp-clone options, ...
 #           (https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options)
 #  "Optimization flags added to the compiler"
@@ -116,7 +116,7 @@ enable_simd_compression_benchmark         :="yes"
 debug                                     :="no"
 quiet_output                              :="no"
 use_cuda                                  :="yes"
-code_optimization_level                   :="O4"
+code_optimization_level                   :="O3"
 code_optimization_flags                   :=-funroll-loops -flto
 
 
