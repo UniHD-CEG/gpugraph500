@@ -797,13 +797,18 @@ template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec,
                                     FQ_T *compressed_fq_64, int size,
                                     FQ_T *&uncompressed_fq_64, size_t &uncompressedsize) const {
+    std::cout << "Starting Decompression." << std::endl;
     uint32_t *compressed_fq_32 = new uint32_t[size];
     uint32_t *uncompressed_fq_32 = new uint32_t[size];
     try {
+        std::cout << "Decompression. Copying buffer 1" << std::endl;
         allocateAndCopyArrayInt64toUint32(compressed_fq_64, compressed_fq_32, size);
         uncompressedsize = size;
+        std::cout << "Decompression. codec" << std::endl;
         IntegerCODEC &integercodec = *CODECFactory::getFromName("s4-bp128-dm");
+        std::cout << "Decompression. decodeArray" << std::endl;
         integercodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
+        std::cout << "Decompression. Copying buffer 2" << std::endl;
         allocateAndCopyArrayUint32toInt64(uncompressed_fq_32, uncompressed_fq_64, uncompressedsize);
 std::cout << "inside try {}. deleting buffers";
         delete[] compressed_fq_32;
@@ -833,7 +838,7 @@ for (int i=0; i < uncompressedsize; ++i) {
     std::cout << uncompressed_fq_64[i] << " ";
 }
 std::cout << std::endl;
-std::cout << "Decompressing. original size: " << size << " compressed size: " << compressedsize << " NO DECOMPRESSION" << std::endl;
+std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << " NO DECOMPRESSION" << std::endl;
 
     }
 }
@@ -874,6 +879,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
                                 FQ_T *fq, int size, FQ_T *&compressed_fq_64,
                                 size_t &compressedsize) const {
     if (size > 512) {
+        std::cout << "Starting Compression. " << std::endl;
         uint32_t *fq_32;
         uint32_t *compressed_fq_32 = new uint32_t[size];
 
@@ -882,6 +888,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 // for (int i=0; i < size; ++i) {
 //     std::cout << fq[i] << " ";
 // }
+        std::cout << "Compression. Copying buffer 1" << std::endl;
+
         allocateAndCopyArrayInt64toUint32(fq, fq_32, size);
 
 // std::cout << std::endl;
@@ -890,10 +898,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 //     std::cout << fq_32[i] << " ";
 // }
 // std::cout << std::endl;
+        std::cout << "Compression. codec" << std::endl;
 
         compressedsize = size;
         IntegerCODEC &integercodec = *CODECFactory::getFromName("s4-bp128-dm");
+        std::cout << "Compression. arrayEncode" << std::endl;
         integercodec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
+        std::cout << "Compression. Copying buffer 2" << std::endl;
+
         allocateAndCopyArrayUint32toInt64(compressed_fq_32, compressed_fq_64, compressedsize);
 
         std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize << std::endl;
