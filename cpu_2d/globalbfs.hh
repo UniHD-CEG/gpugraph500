@@ -783,9 +783,23 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
         // there was no compression. Compression of In array was not worthed due to size.
+std::cout << std::endl;
+std::cout << "decompress:: original compressed" << std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << compressed_fq_64[i] << " ";
+}
+std::cout << std::endl;
         uncompressed_fq_64 = new FQ_T[size];
-        std::copy(compressed_fq_32 , compressed_fq_32 + size, uncompressed_fq_64);
+        std::copy(compressed_fq_64 , compressed_fq_64 + size, uncompressed_fq_64);
         uncompressedsize = size;
+
+std::cout << std::endl;
+std::cout << "decompress:: Copy" << std::endl;
+for (int i=0; i < uncompressedsize; ++i) {
+    std::cout << uncompressed_fq_64[i] << " ";
+}
+std::cout << std::endl;
+
     }
 }
 #endif
@@ -829,9 +843,22 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         delete[] fq_32;
         delete[] compressed_fq_32;
     } else {
+std::cout << std::endl;
+std::cout << "Compress:: original" << std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << fq[i] << " ";
+}
         compressed_fq_64 = new FQ_T[size];
         std::copy(fq , fq + size, compressed_fq_64);
         compressedsize = size;
+
+std::cout << std::endl;
+std::cout << "decompress:: Copy" << std::endl;
+for (int i=0; i < compressedsize; ++i) {
+    std::cout << compressed_fq_64[i] << " ";
+}
+std::cout << std::endl;
+
     }
 }
 #endif
