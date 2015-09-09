@@ -855,10 +855,11 @@ std::cout << "data2. c_size: " << compressedsize << " uc_size: " << size << std:
         std::copy(compressed_fq_32.begin(), compressed_fq_32.end(), back_inserter(compressed_fq_64));
 std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize  << std::endl;
     } else {
-        // compressed_fq_64(fq, fq + size);
         compressed_fq_64.reserve(size);
         std::copy(fq, fq+size, back_inserter(compressed_fq_64));
         compressedsize = compressed_fq_64.size();
+
+
         // compressed_fq_64.reserve(size);
         // std::copy(fq, fq+size, compressed_fq_64);
         // compressedsize = compressed_fq_64.size();
@@ -877,6 +878,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
     try {
 std::cout << "decompress1 " << std::endl;
         // TODO: Expensive Operation
+        if (uncompressedsize == 0 || size == 0) {
+            throw std::logic_error("sized 0 array decompression.");
+        }
         std::vector<uint32_t> uncompressed_fq_32(uncompressedsize);
 std::cout << "d1 " << std::endl;
         std::vector<uint32_t> compressed_fq_32;
@@ -908,6 +912,7 @@ std::cout << "decompress:: original compressed " << size << " " << compressed_fq
         uncompressedsize = compressed_fq_64.size();
         uncompressed_fq_64.reserve(uncompressedsize);
         std::copy(compressed_fq_64.begin(), compressed_fq_64.end(), back_inserter(uncompressed_fq_64));
+
         // uncompressed_fq_64(compressed_fq_64.begin(), compressed_fq_64.end());
         // uncompressedsize = uncompressed_fq_64.size();
 std::cout << "inside catch {}. Exception launched. original buffer copied";
