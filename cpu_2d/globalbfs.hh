@@ -23,9 +23,11 @@
 #endif
 
 #ifdef INSTRUMENTED
+    #include <unistd.h>
     #include <chrono>
     using namespace std::chrono;
 #endif
+
 
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
@@ -59,6 +61,7 @@ private:
 
     void SIMDverifyCompression(FQ_T *fq, int size, std::vector<FQ_T> &uncompressed_fq_64, size_t uncompressedsize) const;
 
+
     // void SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size, FQ_T *&uncompressed_fq_64,
     //                             size_t &uncompressedsize) const;
     //
@@ -66,6 +69,10 @@ private:
     //
     // void SIMDverifyCompression(FQ_T *fq, int size, FQ_T *uncompressed_fq_64, size_t uncompressedsize) const;
 
+#endif
+
+#ifdef INSTRUMENTED
+    size_t getTotalSystemMemory();
 #endif
 
 protected:
@@ -620,8 +627,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
         // FQ_T *compressed_fq_64, *uncompressed_fq_64;
         std::vector<FQ_T> compressed_fq_64;
         std::vector<FQ_T> uncompressed_fq_64;
+#ifdef INSTRUMENTED
+        size_t freemem;
 #endif
-
+#endif
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
              it != fold_fq_props.end(); ++it) {
 
@@ -656,6 +665,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                     // compressed_fq_64 = new FQ_T[outsize+2048];
                     uncompressedsize = static_cast<size_t>(outsize);
                     SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
+#ifdef INSTRUMENTED
+                    freemem=getTotalSystemMemory();
+                    printf("free memory=%lu\n", freemem);
+#endif
 // std::cout << std::endl;
 // std::cout << "Original" << std::endl;
 // for (int i=0; i < outsize; ++i) {
@@ -670,6 +683,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 // std::cout << std::endl;
                     // uncompressed_fq_64 = new FQ_T[compressedsize];
                     SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+#ifdef INSTRUMENTED
+                    freemem=getTotalSystemMemory();
+                    printf("free memory=%lu\n", freemem);
+#endif
 // std::cout << std::endl;
 // std::cout << "Original" << std::endl;
 // for (int i=0; i < outsize; ++i) {
@@ -1228,6 +1245,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, int
 // //         buffer64[i] = static_cast<FQ_T>(buffer32[i]);
 // //     }
 // }
+
+
+
+#endif
+
+#ifdef INSTRUMENTED
+    template<class Derived, class FQ_T, class MType, class STORE>
+    size_t GlobalBFS<Derived, FQ_T, MType, STORE>::getTotalSystemMemory() {
+        long pages = sysconf(_SC_PHYS_PAGES);
+        long page_size = sysconf(_SC_PAGE_SIZE);
+        return pages * page_size;
+    }
 #endif
 
 #endif // GLOBALBFS_HH
