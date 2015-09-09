@@ -1000,40 +1000,130 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, int
  * benchmarks compression. Implemented with std::vectors
  *
  */
+// template<class Derived, class FQ_T, class MType, class STORE>
+// void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(FQ_T *fq, int size, int _rank) const {
+//
+//      if (size > 512) {
+//         char const *codec_name = "s4-bp128-dm";
+//         IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
+//         high_resolution_clock::time_point time_0, time_1;
+//         std::vector<uint32_t>  fq_32(fq, fq + size);
+//         std::vector<uint32_t>  compressed_fq_32(size + 1024);
+//         std::vector<uint32_t>  uncompressed_fq_32(size);
+//         size_t compressedsize = compressed_fq_32.size();
+//         size_t uncompressedsize = uncompressed_fq_32.size();
+//
+//         time_0 = high_resolution_clock::now();
+//         codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
+//         time_1 = high_resolution_clock::now();
+//         auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1-time_0).count();
+//         compressed_fq_32.resize(compressedsize);
+//         compressed_fq_32.shrink_to_fit();
+//
+//         // TODO: Expensive Operation
+//         std::vector<uint64_t> compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
+//
+//         time_0 = high_resolution_clock::now();
+//         codec.decodeArray(compressed_fq_32.data(), compressed_fq_32.size(), uncompressed_fq_32.data(), uncompressedsize);
+//         time_1 = high_resolution_clock::now();
+//         auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1-time_0).count();
+//         uncompressed_fq_32.resize(uncompressedsize);
+//
+//         // TODO: Expensive Operation
+//         std::vector<uint64_t> uncompressed_fq_64(uncompressed_fq_32.begin(), uncompressed_fq_32.end());
+//
+//         assert (size == uncompressedsize && std::equal(uncompressed_fq_64.begin(), uncompressed_fq_64.end(), fq));
+//         double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
+//         double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
+//         printf("SIMD.codec: %s, rank: %02d, c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name, _rank, encode_time, decode_time, compressratio);
+//      }
+// }
+/**
+ * benchmarks compression. Implemented with std::vectors
+ *
+ */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(FQ_T *fq, int size, int _rank) const {
 
      if (size > 512) {
         char const *codec_name = "s4-bp128-dm";
         IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
-        high_resolution_clock::time_point time_0, time_1;
-        std::vector<uint32_t>  fq_32(fq, fq + size);
-        std::vector<uint32_t>  compressed_fq_32(size + 1024);
-        std::vector<uint32_t>  uncompressed_fq_32(size);
-        size_t compressedsize = compressed_fq_32.size();
-        size_t uncompressedsize = uncompressed_fq_32.size();
+        std::cout << "Starting Compression. " << std::endl;
+        uint32_t *fq_32;
+        uint32_t *compressed_fq_32 = new uint32_t[size+2048];
 
-        time_0 = high_resolution_clock::now();
-        codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
-        time_1 = high_resolution_clock::now();
-        auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1-time_0).count();
-        compressed_fq_32.resize(compressedsize);
-        compressed_fq_32.shrink_to_fit();
+        std::cout << "Compression. Copying buffer 1" << std::endl;
 
-        // TODO: Expensive Operation
-        std::vector<uint64_t> compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
+        fq_32 = new uint32_t[size];
+        std::copy((FQ_T *)fq, (FQ_T *)(fq+size), (uint32_t *)fq_32);
 
-        time_0 = high_resolution_clock::now();
-        codec.decodeArray(compressed_fq_32.data(), compressed_fq_32.size(), uncompressed_fq_32.data(), uncompressedsize);
-        time_1 = high_resolution_clock::now();
-        auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1-time_0).count();
-        uncompressed_fq_32.resize(uncompressedsize);
+        std::cout << "Compression. codec" << std::endl;
 
-        // TODO: Expensive Operation
-        std::vector<uint64_t> uncompressed_fq_64(uncompressed_fq_32.begin(), uncompressed_fq_32.end());
+        compressedsize = size+2048;
+        IntegerCODEC &integercodec = *CODECFactory::getFromName("s4-bp128-dm");
+        std::cout << "Compression. arrayEncode" << std::endl;
+        integercodec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
+        std::cout << "Compression. Copying buffer 2" << std::endl;
 
-        assert (size == uncompressedsize && std::equal(uncompressed_fq_64.begin(), uncompressed_fq_64.end(), fq));
-        double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
+        compressed_fq_64 = new FQ_T[size];
+        std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+size), (FQ_T *)compressed_fq_64);
+
+        std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize << std::endl;
+
+        delete[] fq_32;
+        delete[] compressed_fq_32;
+
+
+
+        std::cout << "Starting Decompression." << std::endl;
+        // uint32_t *compressed_fq_32 = new uint32_t[size];
+        uint32_t *compressed_fq_32;
+        uint32_t *uncompressed_fq_32 = new uint32_t[size];
+        std::cout << "Decompression. Copying buffer 1. compressed size: " << size << std::endl;
+        // allocateAndCopyArrayInt64toUint32(compressed_fq_64, compressed_fq_32, size);
+        compressed_fq_32 = new uint32_t[size];
+        std::copy((FQ_T *)compressed_fq_64, (FQ_T *)(compressed_fq_64+size), (uint32_t *)compressed_fq_32);
+
+        uncompressedsize = size;
+
+std::cout << std::endl;
+std::cout << "Decompress:: compressed original 64" << std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << compressed_fq_64[i] << " ";
+}
+std::cout << std::endl;
+std::cout << "Decompress:: compressed original 32" << std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << compressed_fq_32[i] << " ";
+}
+
+        std::cout << "Decompression. codec" << std::endl;
+        IntegerCODEC &integercodec = *CODECFactory::getFromName("s4-bp128-dm");
+        std::cout << "Decompression. decodeArray" << std::endl;
+        integercodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
+        std::cout << "Decompression. Copying buffer 2" << std::endl;
+        // allocateAndCopyArrayUint32toInt64(uncompressed_fq_32, uncompressed_fq_64, uncompressedsize);
+        compressed_fq_64 = new FQ_T[size];
+        std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+size), (FQ_T *)compressed_fq_64);
+
+std::cout << "inside try {}. deleting buffers";
+        delete[] compressed_fq_32;
+        delete[] uncompressed_fq_32;
+std::cout << "inside try {}. buffers deleted";
+
+
+        assert (size == uncompressedsize);
+        bool equal = (size == uncompressedsize) && compareArrays(fq, uncompressed_fq_64, size, uncompressedsize);
+        if (equal) {
+            std::cout << "verification: compression-decompression OK." << std::endl;
+        } else {
+            std::cout << "verification: compression-decompression ERROR." << std::endl;
+        }
+        assert(equal);
+
+        encode_time=0.0;
+        decode_time=0.0;
+        double compressedbits = 32.0 * static_cast<double>(compressedsize) / static_cast<double>(size);
         double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
         printf("SIMD.codec: %s, rank: %02d, c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name, _rank, encode_time, decode_time, compressratio);
      }
