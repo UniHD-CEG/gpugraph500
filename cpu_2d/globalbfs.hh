@@ -654,7 +654,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
                 if (rank == 0) {
                     // compressed_fq_64 = new FQ_T[outsize+2048];
-                    // SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
+                    SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
 // std::cout << std::endl;
 // std::cout << "Original" << std::endl;
 // for (int i=0; i < outsize; ++i) {
@@ -668,7 +668,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 // }
 // std::cout << std::endl;
                     // uncompressed_fq_64 = new FQ_T[compressedsize];
-                    // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                    SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
 // std::cout << std::endl;
 // std::cout << "Original" << std::endl;
 // for (int i=0; i < outsize; ++i) {
