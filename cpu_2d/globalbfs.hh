@@ -789,8 +789,10 @@ std::cout << "benchmark " << std::endl;
         std::vector<uint32_t>  uncompressed_fq_32(size);
         size_t compressedsize = compressed_fq_32.size();
         size_t uncompressedsize = uncompressed_fq_32.size();
+std::cout << "dataBENCH1. c_size: " << compressedsize << " uc_size: " << uncompressedsize << std::endl;
         time_0 = high_resolution_clock::now();
         codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
+std::cout << "dataBENCH2. c_size: " << compressedsize << " uc_size: " << uncompressedsize << std::endl;
         time_1 = high_resolution_clock::now();
         auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1-time_0).count();
         compressed_fq_32.resize(compressedsize);
@@ -798,6 +800,7 @@ std::cout << "benchmark " << std::endl;
         // TODO: Expensive Operation
         std::vector<FQ_T> compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
         time_0 = high_resolution_clock::now();
+std::cout << "dataBENCH3. c_size: " << compressed_fq_32.size() << " uc_size: " << uncompressedsize << std::endl;
         codec.decodeArray(compressed_fq_32.data(), compressed_fq_32.size(), uncompressed_fq_32.data(), uncompressedsize);
         time_1 = high_resolution_clock::now();
         auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1-time_0).count();
@@ -824,7 +827,9 @@ std::cout << "compress " << std::endl;
         std::vector<uint32_t> fq_32(fq, fq + size);
         std::vector<uint32_t> compressed_fq_32(size + 1024);
         compressedsize = compressed_fq_32.size();
+std::cout << "data1. c_size: " << compressedsize << " uc_size: " << size << std::endl;
         codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
+std::cout << "data2. c_size: " << compressedsize << " uc_size: " << size << std::endl;
         compressed_fq_32.resize(compressedsize);
         compressed_fq_32.shrink_to_fit();
         // TODO: Expensive Operation
@@ -832,8 +837,14 @@ std::cout << "compress " << std::endl;
         std::copy(compressed_fq_32.begin(), compressed_fq_32.end(), back_inserter(compressed_fq_64));
 std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize  << std::endl;
     } else {
-        compressed_fq_64(fq, fq + size);
+        // compressed_fq_64(fq, fq + size);
+        compressed_fq_64.reserve(size);
+        std::copy(fq, fq+size, back_inserter(compressed_fq_64));
         compressedsize = compressed_fq_64.size();
+        // compressed_fq_64.reserve(size);
+        // std::copy(fq, fq+size, compressed_fq_64);
+        // compressedsize = compressed_fq_64.size();
+        // assert(size == compressedsize);
 std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize << " NO COMPRESSION" << std::endl;
     }
 }
@@ -849,26 +860,38 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 std::cout << "decompress1 " << std::endl;
         // TODO: Expensive Operation
         std::vector<uint32_t> uncompressed_fq_32(size);
+std::cout << "d1 " << std::endl;
         std::vector<uint32_t> compressed_fq_32;
+std::cout << "d2 " << std::endl;
         compressed_fq_32.reserve(compressed_fq_64.size());
+std::cout << "d3 " << std::endl;
         std::copy(compressed_fq_64.begin(), compressed_fq_64.end(), back_inserter(compressed_fq_32));
+std::cout << "d4 " << std::endl;
         uncompressedsize = uncompressed_fq_32.size();
+std::cout << "d5 " << std::endl;
+
+std::cout << "data. c_size: " << compressed_fq_32.size() << " uc_size: " << uncompressedsize << std::endl;
+
         codec.decodeArray(compressed_fq_32.data(),
                           compressed_fq_32.size(), uncompressed_fq_32.data(), uncompressedsize);
+std::cout << "d6 " << std::endl;
         uncompressed_fq_32.resize(uncompressedsize);
+std::cout << "d7 " << std::endl;
         // TODO: Expensive Operation
         uncompressed_fq_64.reserve(uncompressed_fq_32.size());
+std::cout << "d8 " << std::endl;
         std::copy(uncompressed_fq_32.begin(), uncompressed_fq_32.end(), back_inserter(uncompressed_fq_64));
 std::cout << "Decompressing. original size: " << size << " decompressed size: " << uncompressedsize << std::endl;
     } catch (const logic_error& e) {
+        std::cout << e.what() << std::endl;
         // there was no compression. Compression of In array was not worthed due to size.
 std::cout << "decompress2 " << std::endl;
 std::cout << "decompress:: original compressed " << size << " " << compressed_fq_64.size() << std::endl;
-        // uncompressedsize = size;
-        // uncompressed_fq_64.reserve(compressed_fq_64.size());
-        // std::copy(compressed_fq_64.begin(), compressed_fq_64.end(), back_inserter(uncompressed_fq_64));
-        uncompressed_fq_64(compressed_fq_64.begin(), compressed_fq_64.end());
-        uncompressedsize = uncompressed_fq_64.size();
+        uncompressedsize = compressed_fq_64.size();
+        uncompressed_fq_64.reserve(uncompressedsize);
+        std::copy(compressed_fq_64.begin(), compressed_fq_64.end(), back_inserter(uncompressed_fq_64));
+        // uncompressed_fq_64(compressed_fq_64.begin(), compressed_fq_64.end());
+        // uncompressedsize = uncompressed_fq_64.size();
 std::cout << "inside catch {}. Exception launched. original buffer copied";
 std::cout << std::endl;
 std::cout << "decompress:: Copy" << std::endl;
