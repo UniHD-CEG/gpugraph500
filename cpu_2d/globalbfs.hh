@@ -51,7 +51,7 @@ private:
 
     void SIMDbenchmarkCompression(FQ_T *fq, int size, int rank) const;
 
-    void SIMDcompression(IntegerCODEC &codec, FQ_T *fq, int size, std::vector<FQ_T> &compressed_fq_64,
+    void SIMDcompression(IntegerCODEC &codec, FQ_T *fq, size_t &size, std::vector<FQ_T> &compressed_fq_64,
                                     size_t &compressedsize) const;
 
     void SIMDdecompression(IntegerCODEC &codec, std::vector<FQ_T> &compressed_fq_64, size_t size,
@@ -654,7 +654,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
                 if (rank == 0) {
                     // compressed_fq_64 = new FQ_T[outsize+2048];
-                    SIMDcompression(codec, startaddr, outsize, compressed_fq_64, compressedsize);
+                    uncompressedsize = static_cast<size_t>(outsize);
+                    SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 // std::cout << std::endl;
 // std::cout << "Original" << std::endl;
 // for (int i=0; i < outsize; ++i) {
@@ -819,7 +820,7 @@ std::cout << "dataBENCH3. c_size: " << compressed_fq_32.size() << " uc_size: " <
  * SIMD compression. Implemented with std::vectors.
  */
 template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *fq, int size, std::vector<FQ_T> &compressed_fq_64,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *fq, size_t &size, std::vector<FQ_T> &compressed_fq_64,
                                                 size_t &compressedsize) const {
     if (size > 512) {
 std::cout << "compress " << std::endl;
@@ -859,7 +860,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
     try {
 std::cout << "decompress1 " << std::endl;
         // TODO: Expensive Operation
-        std::vector<uint32_t> uncompressed_fq_32(size);
+        std::vector<uint32_t> uncompressed_fq_32(uncompressedsize);
 std::cout << "d1 " << std::endl;
         std::vector<uint32_t> compressed_fq_32;
 std::cout << "d2 " << std::endl;
