@@ -617,6 +617,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                                                                             it != fold_fq_props.end(); ++it) {
 
 
+#ifdef _SIMDCOMPRESS
+            compressedsize=0;
+            uncompressedsize=0;
+#endif
+
             if (it->sendColSl == store.getLocalColumnID()) {
                 FQ_T *startaddr;
                 int outsize;
@@ -653,10 +658,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 #endif
 
-#ifndef _SIMDCOMPRESS
+#ifdef _SIMDCOMPRESS
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(compresseddata, compressedsize, fq_tp_type, it->sendColSl, row_comm);
+                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
                 // outsize_compressed= static_cast<long>(compressedsize);
                 // MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
