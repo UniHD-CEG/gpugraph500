@@ -640,11 +640,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
-                if (rank == 0) {
+                // if (rank == 0) {
                     SIMDbenchmarkCompression(startaddr, outsize, rank);
-                }
+                // }
 #endif
-                if (rank == 0) {
+                // if (rank == 0) {
                     // compressed_fq_64 = new FQ_T[outsize+2048];
                     uncompressedsize = static_cast<size_t>(outsize);
                     SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
@@ -653,30 +653,36 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                     // freemem=getTotalSystemMemory();
                     // printf("free memory=%lu\n", freemem);
 #endif
-
-                    // uncompressed_fq_64 = new FQ_T[compressedsize];
-                    SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                    // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                    // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
 #ifdef INSTRUMENTED
                     // TODO: more debugging for mem leaks is recommended
                     // freemem=getTotalSystemMemory();
                     // printf("free memory=%lu\n", freemem);
 #endif
-                    // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
-                }
+                // }
 #endif
 
+#ifdef _SIMDCOMPRESS
+                // MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
+                // MPI_Bcast(&uncompressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
+                // MPI_Bcast(compressed_fq_64.data(), compressedsize, fq_tp_type, it->sendColSl, row_comm);
+                int outsize_compressed = static_cast<long>(compressedsize);
+                // MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
-// #ifdef _SIMDCOMPRESS
-//                MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
-//                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
-// #endif
+#else
+                MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
+                MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+#endif
 
 #ifdef _SIMDCOMPRESS
-                if (rank == 0) {
+                // if (rank == 0) {
                     // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                     // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
-                }
+                    // startaddr = uncompressed_fq_64.data();
+                    // outsize = static_cast<int>(uncompressedsize);
+                // }
 #endif
 
 #ifdef INSTRUMENTED
