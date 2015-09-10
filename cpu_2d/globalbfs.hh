@@ -623,6 +623,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
+
+std::cout << "getOutgoingFQ" << std::endl;
+
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
 
 #ifdef INSTRUMENTED
@@ -632,7 +635,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
-
                 SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
                 uncompressedsize = static_cast<size_t>(outsize);
@@ -640,12 +642,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 freemem=getTotalSystemMemory();
-                printf("free memory: %lu\n, rank: %d", freemem, rank);
+                printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
                 // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
-
 #endif
+
 
 #ifdef _SIMDCOMPRESS
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -669,13 +671,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 freemem=getTotalSystemMemory();
-                printf("free memory: %lu\n, rank: %d", freemem, rank);
+                printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
 #endif
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
+
+std::cout << "setIncommingFQ" << std::endl;
+
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
 
 
@@ -687,27 +692,34 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
             } else {
 
 #ifdef _SIMDCOMPRESS
-// #ifdef _SIMDCOMPRESSBENCHMARK
-//                 SIMDbenchmarkCompression(recv_fq_buff, outsize, rank);
-// #endif
-//                 uncompressedsize = static_cast<size_t>(outsize);
-//                 SIMDcompression(codec, recv_fq_buff, uncompressedsize, compressed_fq_64, compressedsize);
-// #ifdef INSTRUMENTED
-//                 // TODO: more debugging for mem leaks is recommended
-//                 freemem=getTotalSystemMemory();
-//                 printf("free memory: %lu\n, rank: %d", freemem, rank);
-// #endif
                 int outsize, compressedsize;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
+std::cout << std::endl << std::endl;
+std::cout << "data received:: originalsize: " << outsize << " compressedsize: " << compressedsize << std::endl;
+
                 assert(outsize <= recv_fq_buff_length);
                 MPI_Bcast(recv_fq_buff, outsize, fq_tp_type, it->sendColSl, row_comm);
-std::cout << "data received:: originalsize: " << outsize << " compressedsize: " << compressedsize << std::endl;
+
 std::cout << "data: " << std::endl;
 for (int i=0; i < outsize; ++i) {
     std::cout << recv_fq_buff[i] << " ";
 }
-std::cout << std::endl;
+std::cout << std::endl << std::endl;
+
+#ifdef _SIMDCOMPRESSBENCHMARK
+                SIMDbenchmarkCompression(recv_fq_buff, outsize, rank);
+#endif
+                // uncompressedsize = static_cast<size_t>(outsize);
+                // SIMDcompression(codec, recv_fq_buff, uncompressedsize, compressed_fq_64, compressedsize);
+                uncompressedsize = static_cast<size_t>(outsize);
+                SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
+                recv_fq_buff = uncompressed_fq_64;
+#ifdef INSTRUMENTED
+                // TODO: more debugging for mem leaks is recommended
+                freemem=getTotalSystemMemory();
+                printf("free memory: %lu\n, rank: %d", freemem, rank);
+#endif
 
 #else
                 int outsize;
@@ -719,6 +731,8 @@ std::cout << std::endl;
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
+
+std::cout << "setIncommingFQ" << std::endl;
 
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
 
@@ -740,6 +754,8 @@ std::cout << std::endl;
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
+
+std::cout << "setBackInqueue" << std::endl;
 
         static_cast<Derived *>(this)->setBackInqueue();
 
