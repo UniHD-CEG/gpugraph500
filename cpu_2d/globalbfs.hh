@@ -624,13 +624,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 
             if (it->sendColSl == store.getLocalColumnID()) {
+std::cout << "brach 1 of IF" << std::endl;
+
                 FQ_T *startaddr;
                 int outsize;
+
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
 
+std::cout << "getOutgoingFQ" << std::endl;
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
 
 #ifdef INSTRUMENTED
@@ -641,11 +645,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
                 // if (rank == 0) {
+std::cout << "SIMDbenchmarkCompression" << std::endl;
+
                     SIMDbenchmarkCompression(startaddr, outsize, rank);
                 // }
 #endif
                 // if (rank == 0) {
                     // compressed_fq_64 = new FQ_T[outsize+2048];
+
+std::cout << "SIMDcompression" << std::endl;
+
                     uncompressedsize = static_cast<size_t>(outsize);
                     SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 #ifdef INSTRUMENTED
@@ -667,20 +676,24 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 // MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(&uncompressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(compressed_fq_64.data(), compressedsize, fq_tp_type, it->sendColSl, row_comm);
-                int outsize_compressed = static_cast<int>(compressedsize);
+                int outsize_compressed=1; // = static_cast<long>(compressedsize);
 
-printf("[%d]: Before Bcast, outsize is %d\n", it->sendColSl, outsize);
+std::cout << "MPI_Bcast" << std::endl;
+
+printf("[%d]: Before Bcast, outsize_compressed is %li\n", it->sendColSl, outsize_compressed);
+                MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
+printf("[%d]: After Bcast, outsize_compressed is %li\n", it->sendColSl, outsize_compressed);
+
+
+printf("[%d]: Before Bcast, outsize is %li\n", it->sendColSl, outsize);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-printf("[%d]: After Bcast, outsize is %d\n", it->sendColSl, outsize);
-
-printf("[%d]: Before Bcast, outsize_compressed is %d\n", it->sendColSl, outsize_compressed);
-                MPI_Bcast(&outsize_compressed, 1, MPI_INT, it->sendColSl, row_comm);
-printf("[%d]: After Bcast, outsize_compressed is %d\n", it->sendColSl, outsize_compressed);
+printf("[%d]: After Bcast, outsize is %li\n", it->sendColSl, outsize);
 
                 MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+
 #else
-                MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+                // MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
+                // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
 #endif
 
 #ifdef _SIMDCOMPRESS
@@ -695,6 +708,8 @@ printf("[%d]: After Bcast, outsize_compressed is %d\n", it->sendColSl, outsize_c
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
+std::cout << "setIncommingFQ" << std::endl;
+
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
 
 
@@ -703,11 +718,12 @@ printf("[%d]: After Bcast, outsize_compressed is %d\n", it->sendColSl, outsize_c
     lqueue += tend - tstart;
 #endif
 
-std::cout << "brach 1 of IF" << std::endl;
-
             } else {
+
 std::cout << "brach 2 of IF" << std::endl;
                 int outsize;
+                int outsize_compressed=1;
+                MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 assert(outsize <= recv_fq_buff_length);
                 MPI_Bcast(recv_fq_buff, outsize, fq_tp_type, it->sendColSl, row_comm);
@@ -715,6 +731,8 @@ std::cout << "brach 2 of IF" << std::endl;
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
+
+std::cout << "setIncommingFQ" << std::endl;
 
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
 
