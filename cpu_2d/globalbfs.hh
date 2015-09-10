@@ -624,8 +624,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 
             if (it->sendColSl == store.getLocalColumnID()) {
-std::cout << "brach 1 of IF" << std::endl;
-
                 FQ_T *startaddr;
                 int outsize;
 
@@ -633,8 +631,6 @@ std::cout << "brach 1 of IF" << std::endl;
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
-
-std::cout << "getOutgoingFQ" << std::endl;
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
 
 #ifdef INSTRUMENTED
@@ -644,72 +640,50 @@ std::cout << "getOutgoingFQ" << std::endl;
 
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
-                // if (rank == 0) {
-std::cout << "SIMDbenchmarkCompression" << std::endl;
 
-                    SIMDbenchmarkCompression(startaddr, outsize, rank);
-                // }
+                SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
-                // if (rank == 0) {
-                    // compressed_fq_64 = new FQ_T[outsize+2048];
-
-std::cout << "SIMDcompression" << std::endl;
-
-                    uncompressedsize = static_cast<size_t>(outsize);
-                    SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
+                // compressed_fq_64 = new FQ_T[outsize+2048];
+                uncompressedsize = static_cast<size_t>(outsize);
+                SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 #ifdef INSTRUMENTED
-                    // TODO: more debugging for mem leaks is recommended
-                    // freemem=getTotalSystemMemory();
-                    // printf("free memory=%lu\n", freemem);
+                // TODO: more debugging for mem leaks is recommended
+                // freemem=getTotalSystemMemory();
+                // printf("free memory=%lu\n", freemem);
 #endif
-                    // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                    // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
+                // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
 #ifdef INSTRUMENTED
-                    // TODO: more debugging for mem leaks is recommended
-                    // freemem=getTotalSystemMemory();
-                    // printf("free memory=%lu\n", freemem);
+                // TODO: more debugging for mem leaks is recommended
+                // freemem=getTotalSystemMemory();
+                // printf("free memory=%lu\n", freemem);
 #endif
-                // }
 #endif
 
 #ifdef _SIMDCOMPRESS
-                // MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                // MPI_Bcast(&uncompressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                // MPI_Bcast(compressed_fq_64.data(), compressedsize, fq_tp_type, it->sendColSl, row_comm);
-                long outsize_compressed= static_cast<long>(compressedsize);
-
-std::cout << "MPI_Bcast" << std::endl;
-
-printf("[%d]: Before Bcast, outsize_compressed is %li\n", it->sendColSl, outsize_compressed);
-                MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
-printf("[%d]: After Bcast, outsize_compressed is %li\n", it->sendColSl, outsize_compressed);
-
-
-printf("[%d]: Before Bcast, outsize is %li\n", it->sendColSl, outsize);
+                MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-printf("[%d]: After Bcast, outsize is %li\n", it->sendColSl, outsize);
-
-                MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
-
-#else
+                MPI_Bcast(compressed_fq_64.data(), compressedsize, fq_tp_type, it->sendColSl, row_comm);
+                // long outsize_compressed= static_cast<long>(compressedsize);
+                // MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+
+#else
+                MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
+                MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
 #endif
 
 #ifdef _SIMDCOMPRESS
-                // if (rank == 0) {
-                    // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                    // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
-                    // startaddr = uncompressed_fq_64.data();
-                    // outsize = static_cast<int>(uncompressedsize);
-                // }
+                // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                // SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
+                // startaddr = uncompressed_fq_64.data();
+                // outsize = static_cast<int>(uncompressedsize);
 #endif
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
-std::cout << "setIncommingFQ" << std::endl;
-
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
 
 
@@ -719,11 +693,9 @@ std::cout << "setIncommingFQ" << std::endl;
 #endif
 
             } else {
-
-std::cout << "brach 2 of IF" << std::endl;
                 int outsize;
-                int outsize_compressed=1;
-                MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
+                int compressedsize=1;
+                MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 assert(outsize <= recv_fq_buff_length);
                 MPI_Bcast(recv_fq_buff, outsize, fq_tp_type, it->sendColSl, row_comm);
@@ -732,8 +704,6 @@ std::cout << "brach 2 of IF" << std::endl;
     tstart = MPI_Wtime();
 #endif
 
-std::cout << "setIncommingFQ" << std::endl;
-
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
 
 #ifdef INSTRUMENTED
@@ -741,8 +711,6 @@ std::cout << "setIncommingFQ" << std::endl;
     lqueue += tend - tstart;
 #endif
             }
-std::cout << "ended IF" << std::endl;
-
 #ifdef _SIMDCOMPRESS
             /**
              * Memory cleanup for compression implementated wioth dynamic memory
