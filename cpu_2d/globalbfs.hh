@@ -667,9 +667,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 // MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(&uncompressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(compressed_fq_64.data(), compressedsize, fq_tp_type, it->sendColSl, row_comm);
-                int outsize_compressed = static_cast<long>(compressedsize);
-                // MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
+                int outsize_compressed = static_cast<int>(compressedsize);
+
+printf("[%d]: Before Bcast, outsize is %d\n", it->sendColSl, outsize);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
+printf("[%d]: After Bcast, outsize is %d\n", it->sendColSl, outsize);
+
+printf("[%d]: Before Bcast, outsize_compressed is %d\n", it->sendColSl, outsize_compressed);
+                MPI_Bcast(&outsize_compressed, 1, MPI_INT, it->sendColSl, row_comm);
+printf("[%d]: After Bcast, outsize_compressed is %d\n", it->sendColSl, outsize_compressed);
+
                 MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
 #else
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -696,8 +703,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     lqueue += tend - tstart;
 #endif
 
+std::cout << "brach 1 of IF" << std::endl;
 
             } else {
+std::cout << "brach 2 of IF" << std::endl;
                 int outsize;
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 assert(outsize <= recv_fq_buff_length);
@@ -714,6 +723,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     lqueue += tend - tstart;
 #endif
             }
+std::cout << "ended IF" << std::endl;
 
 #ifdef _SIMDCOMPRESS
             /**
