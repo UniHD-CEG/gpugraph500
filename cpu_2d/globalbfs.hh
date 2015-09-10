@@ -896,7 +896,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         compressed_fq_64 = new FQ_T[size];
         std::copy((FQ_T *)fq , (FQ_T *)(fq + size), (FQ_T *)compressed_fq_64);
         // compressed_fq_64 = fq;
-        // compressedsize = size;
+        compressedsize = size;
     }
 }
 
