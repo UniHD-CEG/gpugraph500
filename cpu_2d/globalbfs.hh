@@ -620,7 +620,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 #endif
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
-             it != fold_fq_props.end(); ++it) {
+                                                                            it != fold_fq_props.end(); ++it) {
 
 
             if (it->sendColSl == store.getLocalColumnID()) {
@@ -676,7 +676,7 @@ std::cout << "SIMDcompression" << std::endl;
                 // MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(&uncompressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(compressed_fq_64.data(), compressedsize, fq_tp_type, it->sendColSl, row_comm);
-                int outsize_compressed=1; // = static_cast<long>(compressedsize);
+                long outsize_compressed= static_cast<long>(compressedsize);
 
 std::cout << "MPI_Bcast" << std::endl;
 
