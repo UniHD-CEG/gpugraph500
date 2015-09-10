@@ -637,7 +637,7 @@ std::cout << "getOutgoingFQ" << std::endl;
 
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
-                SIMDbenchmarkCompression(startaddr, outsize, rank);
+                // SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
                 uncompressedsize = static_cast<size_t>(outsize);
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
@@ -692,7 +692,7 @@ std::cout << "setIncommingFQ" << std::endl;
 #endif
 
             } else {
-std::cout << "----------------------- IF-BRANCH-1" << std::endl;
+std::cout << "----------------------- IF-BRANCH-2" << std::endl;
 
 
 #ifdef _SIMDCOMPRESS
@@ -707,7 +707,7 @@ std::cout << "data received:: originalsize: " << outsize << " compressedsize: " 
 
 
 #ifdef _SIMDCOMPRESSBENCHMARK
-                SIMDbenchmarkCompression(recv_fq_buff, outsize, rank);
+                // SIMDbenchmarkCompression(recv_fq_buff, outsize, rank);
 #endif
                 // uncompressedsize = static_cast<size_t>(outsize);
                 // SIMDcompression(codec, recv_fq_buff, uncompressedsize, compressed_fq_64, compressedsize);
@@ -715,9 +715,9 @@ std::cout << "data received:: originalsize: " << outsize << " compressedsize: " 
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 recv_fq_buff = uncompressed_fq_64;
 
-std::cout << "data: " << std::endl;
-for (int i=0; i < outsize; ++i) {
-    std::cout << recv_fq_buff[i] << " ";
+std::cout << "data: (" << uncompressedsize << "elems.)"<< std::endl;
+for (int i=0; i < uncompressedsize; ++i) {
+    std::cout << uncompressed_fq_64[i] << " ";
 }
 std::cout << std::endl << std::endl;
 
