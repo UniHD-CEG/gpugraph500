@@ -718,7 +718,7 @@ std::cout << std::endl << std::endl;
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 freemem=getTotalSystemMemory();
-                printf("free memory: %lu\n, rank: %d", freemem, rank);
+                printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
 
 #else
@@ -913,9 +913,9 @@ std::cout << "Compressing. original size: " << size << " compressed size: " << c
         delete[] fq_32;
         delete[] compressed_fq_32;
     } else {
-        compressed_fq_64 = new FQ_T[size];
-        std::copy((FQ_T *)fq , (FQ_T *)(fq + size), (FQ_T *)compressed_fq_64);
-        // compressed_fq_64 = fq;
+        // compressed_fq_64 = new FQ_T[size];
+        // std::copy((FQ_T *)fq , (FQ_T *)(fq + size), (FQ_T *)compressed_fq_64);
+        compressed_fq_64 = fq;
         compressedsize = size;
         std::cout << "Compressing. Original size: " << size << " compressed size: " << compressedsize << " [NO COMPRESSION]"<< std::endl;
     }
@@ -944,9 +944,9 @@ std::cout << "Compressing. original size: " << size << " compressed size: " << u
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
     } else {
-        uncompressed_fq_64 = new FQ_T[size];
-        std::copy(compressed_fq_64 , compressed_fq_64+size, uncompressed_fq_64);
-        // uncompressed_fq_64 = compressed_fq_64;
+        // uncompressed_fq_64 = new FQ_T[size];
+        // std::copy(compressed_fq_64 , compressed_fq_64+size, uncompressed_fq_64);
+        uncompressed_fq_64 = compressed_fq_64;
         uncompressedsize = size;
 std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << " NO DECOMPRESSION" << std::endl;
     }
