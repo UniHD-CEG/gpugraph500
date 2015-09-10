@@ -675,10 +675,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
 #ifdef _SIMDCOMPRESS
-                // SIMDdecompression(codec, compresseddata, compressedsize, uncompressed_fq_64, uncompressedsize);
+                uncompressedsize = static_cast<size_t>(outsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 // SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
-                // startaddr = uncompressed_fq_64.data();
-                // outsize = static_cast<int>(uncompressedsize);
+                startaddr = uncompressed_fq_64;
+
 #endif
 
 #ifdef INSTRUMENTED
@@ -715,14 +716,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
             /**
              * Memory cleanup for compression implementated wioth dynamic memory
              */
-            if (compressedsize > 0) {
-                delete[] compressed_fq_64;
-                compressedsize=0;
-            }
-            if (uncompressedsize > 0) {
-                delete[] uncompressed_fq_64;
-                uncompressedsize=0;
-            }
+            // if (compressedsize > 0) {
+            //     delete[] compressed_fq_64;
+            //     compressedsize=0;
+            // }
+            // if (uncompressedsize > 0) {
+            //     delete[] uncompressed_fq_64;
+            //     uncompressedsize=0;
+            // }
 #endif
         }
 
@@ -824,11 +825,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, std::vector<FQ_T> &compressed_fq_64, size_t size,
                                                 std::vector<FQ_T> &uncompressed_fq_64, size_t &uncompressedsize) const {
-    try {
+    if (uncompressedsize > 512) {
         // TODO: Expensive Operation
-        if (uncompressedsize == 0 || size == 0) {
-            throw std::logic_error("sized 0 array decompression.");
-        }
         std::vector<uint32_t> uncompressed_fq_32(uncompressedsize);
         std::vector<uint32_t> compressed_fq_32;
         compressed_fq_32.reserve(compressed_fq_64.size());
@@ -841,8 +839,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         // TODO: Expensive Operation
         uncompressed_fq_64.reserve(uncompressed_fq_32.size());
         std::copy(uncompressed_fq_32.begin(), uncompressed_fq_32.end(), back_inserter(uncompressed_fq_64));
-    } catch (const logic_error& e) {
-        std::cout << e.what() << std::endl;
+    } else {
         // TODO: Expensive. Use resize and preinitialize ouside the method
         // there was no compression. Compression of In array was not worthed due to size.
         uncompressedsize = compressed_fq_64.size();
@@ -913,9 +910,9 @@ template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size,
                                                                 FQ_T *&uncompressed_fq_64, size_t &uncompressedsize) const {
 
-    uint32_t *compressed_fq_32 = new uint32_t[size];
-    uint32_t *uncompressed_fq_32 = new uint32_t[uncompressedsize];
-    try {
+    if (uncompressedsize > 512) {
+        uint32_t *uncompressed_fq_32 = new uint32_t[uncompressedsize];
+        uint32_t *compressed_fq_32 = new uint32_t[size];
         std::cout << "Decompression. Copying buffer 1. compressed size: " << size << std::endl;
         std::copy((FQ_T *)compressed_fq_64, (FQ_T *)(compressed_fq_64+size), (uint32_t *)compressed_fq_32);
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
@@ -925,9 +922,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
 
-    } catch (const logic_error& e) {
-        delete[] compressed_fq_32;
-        delete[] uncompressed_fq_32;
+    } else {
         // there was no compression. Compression of In array was not worthed due to size.
         uncompressed_fq_64 = new FQ_T[size];
         std::copy(compressed_fq_64 , compressed_fq_64+size, uncompressed_fq_64);
