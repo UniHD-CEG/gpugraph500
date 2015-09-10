@@ -877,26 +877,22 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         uint32_t *fq_32;
         uint32_t *compressed_fq_32 = new uint32_t[size];
 
-        std::cout << "Compression. Copying buffer 1" << std::endl;
-
         fq_32 = new uint32_t[size];
         std::copy((FQ_T *)fq, (FQ_T *)(fq+size), (uint32_t *)fq_32);
-
         compressedsize = size;
         codec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
-
         compressed_fq_64 = new FQ_T[compressedsize];
         std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+compressedsize), (FQ_T *)compressed_fq_64);
-        std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize << std::endl;
+std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize << std::endl;
+
         delete[] fq_32;
         delete[] compressed_fq_32;
-
     } else {
-        std::cout << "Compressing. Original size: " << size << " compressed size: " << compressedsize << " [NO COMPRESSION]"<< std::endl;
         compressed_fq_64 = new FQ_T[size];
         std::copy((FQ_T *)fq , (FQ_T *)(fq + size), (FQ_T *)compressed_fq_64);
         // compressed_fq_64 = fq;
         compressedsize = size;
+        std::cout << "Compressing. Original size: " << size << " compressed size: " << compressedsize << " [NO COMPRESSION]"<< std::endl;
     }
 }
 
@@ -913,21 +909,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
     if (uncompressedsize > 512) {
         uint32_t *uncompressed_fq_32 = new uint32_t[uncompressedsize];
         uint32_t *compressed_fq_32 = new uint32_t[size];
-        std::cout << "Decompression. Copying buffer 1. compressed size: " << size << std::endl;
+
         std::copy((FQ_T *)compressed_fq_64, (FQ_T *)(compressed_fq_64+size), (uint32_t *)compressed_fq_32);
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
-
         compressed_fq_64 = new FQ_T[size];
         std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+size), (FQ_T *)compressed_fq_64);
+std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize << std::endl;
+
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
-
     } else {
-        // there was no compression. Compression of In array was not worthed due to size.
         uncompressed_fq_64 = new FQ_T[size];
         std::copy(compressed_fq_64 , compressed_fq_64+size, uncompressed_fq_64);
         // uncompressed_fq_64 = compressed_fq_64;
-        // uncompressedsize = size;
+        uncompressedsize = size;
 std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << " NO DECOMPRESSION" << std::endl;
     }
 }
