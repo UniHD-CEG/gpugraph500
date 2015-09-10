@@ -612,13 +612,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
         size_t freemem;
 #endif
 #endif
+
+        int outsize;
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
                                                                             it != fold_fq_props.end(); ++it) {
 
             if (it->sendColSl == store.getLocalColumnID()) {
                 FQ_T *startaddr;
-                int outsize;
 
+std::cout << "----------------------- IF-BRANCH-1" << std::endl;
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
@@ -641,8 +643,8 @@ std::cout << "getOutgoingFQ" << std::endl;
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
-                freemem=getTotalSystemMemory();
-                printf("free memory: %lu, rank: %d\n", freemem, rank);
+                // freemem=getTotalSystemMemory();
+                // printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
                 // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
@@ -670,8 +672,8 @@ std::cout << "getOutgoingFQ" << std::endl;
                 startaddr = uncompressed_fq_64;
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
-                freemem=getTotalSystemMemory();
-                printf("free memory: %lu, rank: %d\n", freemem, rank);
+                // freemem=getTotalSystemMemory();
+                // printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
 #endif
 
@@ -690,6 +692,8 @@ std::cout << "setIncommingFQ" << std::endl;
 #endif
 
             } else {
+std::cout << "----------------------- IF-BRANCH-1" << std::endl;
+
 
 #ifdef _SIMDCOMPRESS
                 int outsize, compressedsize;
@@ -701,11 +705,6 @@ std::cout << "data received:: originalsize: " << outsize << " compressedsize: " 
                 assert(outsize <= recv_fq_buff_length);
                 MPI_Bcast(recv_fq_buff, outsize, fq_tp_type, it->sendColSl, row_comm);
 
-std::cout << "data: " << std::endl;
-for (int i=0; i < outsize; ++i) {
-    std::cout << recv_fq_buff[i] << " ";
-}
-std::cout << std::endl << std::endl;
 
 #ifdef _SIMDCOMPRESSBENCHMARK
                 SIMDbenchmarkCompression(recv_fq_buff, outsize, rank);
@@ -715,10 +714,17 @@ std::cout << std::endl << std::endl;
                 uncompressedsize = static_cast<size_t>(outsize);
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 recv_fq_buff = uncompressed_fq_64;
+
+std::cout << "data: " << std::endl;
+for (int i=0; i < outsize; ++i) {
+    std::cout << recv_fq_buff[i] << " ";
+}
+std::cout << std::endl << std::endl;
+
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
-                freemem=getTotalSystemMemory();
-                printf("free memory: %lu, rank: %d\n", freemem, rank);
+                // freemem=getTotalSystemMemory();
+                // printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
 
 #else
@@ -743,10 +749,13 @@ std::cout << "setIncommingFQ" << std::endl;
             }
 #ifdef _SIMDCOMPRESS
             /**
-             * Memory cleanup for compression implementated wioth dynamic memory
+             * Memory cleanup
              */
-            //     delete[] compressed_fq_64;
-            //     delete[] uncompressed_fq_64;
+            // TODO: refactor-export-to-method
+            if (outsize > 512) {
+                 // delete[] compressed_fq_64;
+                 // delete[] uncompressed_fq_64;
+             }
 #endif
         }
 
@@ -939,7 +948,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         compressed_fq_64 = new FQ_T[size];
         std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+size), (FQ_T *)compressed_fq_64);
-std::cout << "Compressing. original size: " << size << " compressed size: " << uncompressedsize << std::endl;
+std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << std::endl;
 
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
