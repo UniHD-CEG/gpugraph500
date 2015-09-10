@@ -608,19 +608,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
         FQ_T *compressed_fq_64, *uncompressed_fq_64;
         // std::vector<FQ_T> compressed_fq_64;
         // std::vector<FQ_T> uncompressed_fq_64;
-        // FQ_T *compresseddata;
 #ifdef INSTRUMENTED
         size_t freemem;
 #endif
 #endif
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
                                                                             it != fold_fq_props.end(); ++it) {
-
-
-#ifdef _SIMDCOMPRESS
-            compressedsize=0;
-            uncompressedsize=0;
-#endif
 
             if (it->sendColSl == store.getLocalColumnID()) {
                 FQ_T *startaddr;
@@ -646,16 +639,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
-                // freemem=getTotalSystemMemory();
-                // printf("free memory=%lu\n", freemem);
+                freemem=getTotalSystemMemory();
+                printf("free memory: %lu\n, rank: %d", freemem, rank);
 #endif
                 // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
-#ifdef INSTRUMENTED
-                // TODO: more debugging for mem leaks is recommended
-                // freemem=getTotalSystemMemory();
-                // printf("free memory=%lu\n", freemem);
-#endif
+
 #endif
 
 #ifdef _SIMDCOMPRESS
@@ -668,8 +657,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
 
 #else
-                int compressedsize=1;
-                MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
 #endif
@@ -679,7 +666,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 // SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
                 startaddr = uncompressed_fq_64;
-
+#ifdef INSTRUMENTED
+                // TODO: more debugging for mem leaks is recommended
+                freemem=getTotalSystemMemory();
+                printf("free memory: %lu\n, rank: %d", freemem, rank);
+#endif
 #endif
 
 #ifdef INSTRUMENTED
@@ -694,12 +685,36 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
             } else {
-                int outsize;
-                int compressedsize=1;
+
+#ifdef _SIMDCOMPRESS
+// #ifdef _SIMDCOMPRESSBENCHMARK
+//                 SIMDbenchmarkCompression(recv_fq_buff, outsize, rank);
+// #endif
+//                 uncompressedsize = static_cast<size_t>(outsize);
+//                 SIMDcompression(codec, recv_fq_buff, uncompressedsize, compressed_fq_64, compressedsize);
+// #ifdef INSTRUMENTED
+//                 // TODO: more debugging for mem leaks is recommended
+//                 freemem=getTotalSystemMemory();
+//                 printf("free memory: %lu\n, rank: %d", freemem, rank);
+// #endif
+                int outsize, compressedsize;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 assert(outsize <= recv_fq_buff_length);
                 MPI_Bcast(recv_fq_buff, outsize, fq_tp_type, it->sendColSl, row_comm);
+std::cout << "data received:: originalsize: " << outsize << " compressedsize: " << compressedsize << std::endl;
+std::cout << "data: " << std::endl;
+for (int i=0; i < outsize; ++i) {
+    std::cout << recv_fq_buff[i] << " ";
+}
+std::cout << std::endl;
+
+#else
+                int outsize;
+                MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
+                assert(outsize <= recv_fq_buff_length);
+                MPI_Bcast(recv_fq_buff, outsize, fq_tp_type, it->sendColSl, row_comm);
+#endif
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
@@ -716,14 +731,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
             /**
              * Memory cleanup for compression implementated wioth dynamic memory
              */
-            // if (compressedsize > 0) {
             //     delete[] compressed_fq_64;
-            //     compressedsize=0;
-            // }
-            // if (uncompressedsize > 0) {
             //     delete[] uncompressed_fq_64;
-            //     uncompressedsize=0;
-            // }
 #endif
         }
 
@@ -914,7 +923,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         compressed_fq_64 = new FQ_T[size];
         std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+size), (FQ_T *)compressed_fq_64);
-std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize << std::endl;
+std::cout << "Compressing. original size: " << size << " compressed size: " << uncompressedsize << std::endl;
 
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
