@@ -71,7 +71,7 @@ $ make -f Makefile.gcc
 $ cd ../eval
 ```
 
-#### Test scenarios
+#### Test Scenarios
 
 Test scenarios are in the folder `eval/`
 
@@ -85,7 +85,7 @@ SBatch relevant Test-cases in the previous list are:
 
 
 
-#### Run a test
+#### Run a Test
 
 Ensure that the Slurm queue is empty
 
@@ -176,7 +176,7 @@ Looking at your resulting Sbatch trace you may see:
 
 **"Validation: failed"** / or an output trace similar to the one below:
 
-The issue seems to be related with compiler version errors. The version of the compiler used for the CUDA code may not be meeted. See the Requirements section above.
+The issue seems to be related with compiler version errors. The version of the compiler used for the CUDA code may not be met. See the Requirements section above.
 
 ```
 $ cat slurm-JOBID.out
@@ -210,16 +210,14 @@ invalid_level
 
 ## Troubleshooting
 
-- Problem: In the .out file of Slurm/ Sbatch execution I get the text:  
-
+- Problem: In the .out file of Slurm/ Sbatch execution I get the text:
 ```
 S=C=A=N: Abort: No SCOREP instrumentation found in target ../cpu_2d/g500
 ```  
 
 - Solution:
-The instrumentation is activated for the runtime execution (i.e: the binary is being run prefixed with scalasca)
+The instrumentation is activated for the runtime execution (i.e: the binary is being run prefixed with scalasca).
 Disable it with:
-
 ```
 $ export G500_ENABLE_RUNTIME_SCALASCA=no
 ```
