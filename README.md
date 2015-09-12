@@ -23,11 +23,11 @@ Available repositories are: (Replace the token **Your_Bitbucket_User**)
 * https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git **(Updated weekly)**
 
 ```
-$ # REPLACE the token Your_Bitbucket_User
+$ REPLACE the token Your_Bitbucket_User
 $ git clone https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git
 $ git checkout -b architectural_tuning
 $ git pull origin architectural_tuning
-​```
+```
 
 #### Setting up the environment
 
@@ -36,7 +36,7 @@ $ git pull origin architectural_tuning
 Add this text to your ~/.bashrc
 
 ```
-# UPDATE NEXT LINE
+UPDATE NEXT LINE
 export CUDA_PATH=/usr/local/cuda-7.0
 export PATH=$CUDA_PATH/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_PATH/lib64:$CUDA_PATH/lib:$CUDA_PATH/extras/CUPTI/lib64:$CUDA_PATH/extras/CUPTI/lib:$LD_LIBRARY_PATH
@@ -46,7 +46,7 @@ export LD_LIBRARY_PATH=$CUDA_PATH/lib64:$CUDA_PATH/lib:$CUDA_PATH/extras/CUPTI/l
 
 
 ```
-# Adjust next line to your actual path
+Adjust next line to your actual path
 export EXTOLL_HOME=/extoll2
 if [ -d /extoll2 ]; then
        source $EXTOLL_HOME/extoll_env.bash
@@ -167,7 +167,6 @@ Adjacency Matrix setup.
 1.283049e+08 unique edge(s) processed in 18.308235s (7.008041 Medges/s on 4 processor(s))
 [../b40c/graph/bfs/csr_problem_2d.cuh, 697] CsrProblem cudaMalloc frontier_queues.d_values failed (CUDA error 2: out of memory)
 [cuda/cuda_bfs.cu, 486] Reset error. (CUDA error 2: out of memory)
---------------------------------------------------------------------------
 MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD
 with errorcode 1.
 ```
@@ -241,19 +240,16 @@ Update .bashrc's variables
 
 ```
 $ cat >> ~/.bashrc << EOF
-# CUBE
+
 export LD_LIBRARY_PATH=$HOME/cube/lib:$LD_LIBRARY_PATH
 export PATH=$HOME/cube/bin:$PATH
 
-# Score-P
 export LD_LIBRARY_PATH=$HOME/scorep/lib:$LD_LIBRARY_PATH
 export PATH=$HOME/scorep/bin:$PATH
 
-#Scalasca
 export LD_LIBRARY_PATH=$HOME/scalasca/lib:$LD_LIBRARY_PATH
 export PATH=$HOME/scalasca/bin:$PATH
 
-# OpenMPI
 export MPI_PATH=/home/jromera/openmpi
 
 export PATH=$MPI_PATH/bin:$CUDA_PATH/bin:$PATH
@@ -271,14 +267,9 @@ export SCOREP_TOTAL_MEMORY=12M
 export SCOREP_VERBOSE=no
 export SCOREP_PROFILING_MAX_CALLPATH_DEPTH=330
 
-# G500
 export G500_ENABLE_RUNTIME_SCALASCA=yes
 EOF
-```
-## External Resources
-
-https://www.rstudio.com/products/RStudio/
-
+```   
 
 ## License
 
@@ -286,12 +277,13 @@ This code contains a subset of Duane Merrill's BC40 repository
 of GPU-related functions, including his BFS implementation used
 in the paper, Scalable Graph Traversals.
 
-All copyrights reserved to their original owners.
+All copyrights reserved to their original owners.  
 
+## External Resources
 
+https://www.rstudio.com/products/RStudio/
 
-
-## [Goggle Test Framework](https://code.google.com/p/googletest/)
+#### [Goggle Test Framework](https://code.google.com/p/googletest/)
 
 To install the package in ~/usr/gtest/ as shared libraries, together with sample build as well:
 
