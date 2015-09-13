@@ -1,48 +1,4 @@
-<!-- TOC depth:6 withLinks:1 updateOnSave:1 orderedList:0 -->
-
-- [BFS Application](#bfs-application)
-  - [Requirements](#requirements)
-  - [Installation, Setup and Execution of the BFS code](#installation-setup-and-execution-of-the-bfs-code)
-    - [Downloading](#downloading)
-    - [Setting up the environment](#setting-up-the-environment)
-    - [Building](#building)
-      - [Makefile Configuration](#makefile-configuration)
-
-    - [Test Scenarios](#test-scenarios)
-
-  - [Runing tests](#runing-tests)
-
-- [Automation Scripts](#automation-scripts)
-  - [List of scripts](#list-of-scripts)
-  - [Installing scripts](#installing-scripts)
-  - [Script r-ify.sh](#script-r-ifysh)
-    - [Description](#description)
-    - [Execution](#execution)
-
-  - [Script r-compare.sh](#script-r-comparesh)
-    - [Description](#description)
-    - [Execution](#execution)
-
-  - [Script check-all.sh](#script-check-allsh)
-    - [Description](#description)
-    - [Execution](#execution)
-
-  - [Script scorep_install.sh](#script-scorepinstallsh)
-    - [Description](#description)
-    - [Execution](#execution)
-
-- [Other](#other)
-  - [Profiling and Tracing](#profiling-and-tracing)
-  - [Current Limitations](#current-limitations)
-    - [Out-Of-Memory errors and CUDA memory size limitations:](#out-of-memory-errors-and-cuda-memory-size-limitations)
-    - [Validation errors for the BFS runs](#validation-errors-for-the-bfs-runs)
-
-  - [Troubleshooting](#troubleshooting)
-  - [About this document](#about-this-document)
-  - [License](#license)
-  - [External Resources](#external-resources)
-  - <!-- /TOC -->
-
+[TOC]
 
 # BFS Application
 ## Requirements
@@ -189,10 +145,10 @@ Submitted batch job 425
 ## Installing scripts
 Scripts are located under the `scripts/` folder
 
-To install
-- r-ify.sh
-- r-compare.sh
-- check-all.sh
+To install  
+- r-ify.sh  
+- r-compare.sh  
+- check-all.sh  
 
 Run:
 
@@ -206,8 +162,8 @@ $ ln -s ../scripts/check-all.sh check-all.sh
 $ chmod u+x *.sh
 ```
 
-To install (Useful for Profiling and Tracing)
-- scorep_install.sh
+To install (Useful for Profiling and Tracing)  
+- scorep_install.sh  
 
 Run:
 
@@ -264,9 +220,9 @@ This will run the tests with format `o*.rsh` in the `eval/` folfer for Scale Fac
 
 ## Script scorep_install.sh
 ### Description
-This script Download, Uncompress, Builds and Install locally Score-P, Scalasca and CUBE, and a compatible version of OpenMPI. This script is configurable. The configuration may be changed editing the script.  
+This script downloads, decompress, builds and installs Score-P, Scalasca and CUBE locally. Optionally it installs also a compatible version of OpenMPI.<br>This script is configurable. The configuration may be changed editing the script.  
 
-Root priviledges are not required to run the script.
+Root priviledges are not required to perform the installation.
 
 ### Execution
 
@@ -281,7 +237,7 @@ This BFS application allows the code to be instrumented in Zones using Score-P w
 
 These tools may be installed locally (No privileged user is needed) using the scorep_install.sh aforementioned.
 
-The names of the instrumentable Zones are listed below. Others may be added if needed.
+The names of the instrumentable Zones are listed below. Other Zones may be added if needed.
 
 ```
 BFSRUN_region_vertexBroadcast
