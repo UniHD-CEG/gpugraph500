@@ -1,26 +1,61 @@
+<!-- TOC depth:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-## About this document
+- [BFS Application](#bfs-application)
+  - [Requirements](#requirements)
+  - [Installation, Setup and Execution of the BFS code](#installation-setup-and-execution-of-the-bfs-code)
+    - [Downloading](#downloading)
+    - [Setting up the environment](#setting-up-the-environment)
+    - [Building](#building)
+      - [Makefile Configuration](#makefile-configuration)
 
-* Version 1.0
-* Last revision: 11th August 2015
+    - [Test Scenarios](#test-scenarios)
 
+  - [Runing tests](#runing-tests)
+
+- [Automation Scripts](#automation-scripts)
+  - [List of scripts](#list-of-scripts)
+  - [Installing scripts](#installing-scripts)
+  - [Script r-ify.sh](#script-r-ifysh)
+    - [Description](#description)
+    - [Execution](#execution)
+
+  - [Script r-compare.sh](#script-r-comparesh)
+    - [Description](#description)
+    - [Execution](#execution)
+
+  - [Script check-all.sh](#script-check-allsh)
+    - [Description](#description)
+    - [Execution](#execution)
+
+  - [Script scorep_install.sh](#script-scorepinstallsh)
+    - [Description](#description)
+    - [Execution](#execution)
+
+- [Other](#other)
+  - [Profiling and Tracing](#profiling-and-tracing)
+  - [Current Limitations](#current-limitations)
+    - [Out-Of-Memory errors and CUDA memory size limitations:](#out-of-memory-errors-and-cuda-memory-size-limitations)
+    - [Validation errors for the BFS runs](#validation-errors-for-the-bfs-runs)
+
+  - [Troubleshooting](#troubleshooting)
+  - [About this document](#about-this-document)
+  - [License](#license)
+  - [External Resources](#external-resources)
+  - <!-- /TOC -->
+
+
+# BFS Application
 ## Requirements
+- Compiler with std c++11 support (e.g GNU C/C++ v4.8.1+)
+- UNIX-like OS with CUDA 6+ support
 
-* Compiler with std c++11 support (e.g GNU C/C++ v4.8.1+)
-* UNIX-like OS with CUDA 6+ support
-
-
-## Installation, setup and Execution
-
-#### Downloading
-
-Create an account in https://bitbucket.org
-Request access for bfs_multinode repository
+## Installation, Setup and Execution of the BFS code
+### Downloading
+Create an account in [https://bitbucket.org](https://bitbucket.org) Request access for bfs_multinode repository
 
 Available repositories are: (Replace the token **Your_Bitbucket_User**)
-
-* https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git **(Updated daily)**
-* https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git **(Updated weekly)**
+- [https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git) **(Updated daily)**
+- [https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git) **(Updated weekly)**
 
 ```
 $ REPLACE the token Your_Bitbucket_User
@@ -29,8 +64,7 @@ $ git checkout -b architectural_tuning
 $ git pull origin architectural_tuning
 ```
 
-#### Setting up the environment
-
+### Setting up the environment
 1. Add CUDA libraries and binaries to your path:
 
 Add this text to your ~/.bashrc
@@ -42,8 +76,7 @@ export PATH=$CUDA_PATH/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_PATH/lib64:$CUDA_PATH/lib:$CUDA_PATH/extras/CUPTI/lib64:$CUDA_PATH/extras/CUPTI/lib:$LD_LIBRARY_PATH
 ```
 
-2. In case of using EXTOLL add these lines to your ~/.bashrc
-
+1. In case of using EXTOLL add these lines to your ~/.bashrc
 
 ```
 Adjust next line to your actual path
@@ -60,33 +93,74 @@ if [ -d /extoll2 ]; then
 fi
 ```
 
-#### Compiling
+### Building
+The code to compile is in the folder `cpu_2d/`. It is built using `Make`.
 
-The code to compile is in the folder `cpu_2d/`
+The currently available Makefiles are:
+- Makefile.gcc
+- Makefile.gcc.keeneland
+
+The Makefiles in the list below are currently being developed:
+- Makefile.Intel
+- Makefile.cpu
+
+The file `Makefile` is a symbolic link to the Makefile.___ being used. It may be created/edited using:
 
 ```
-$ ssh creek01
 $ cd bfs_multinode/cpu_2d
-$ make -f Makefile.gcc
+$ rm -f Makefile
+$ ln -s Makefile.gcc Makefile
+```
+
+```
+$ cd bfs_multinode/cpu_2d
+$ make
 $ cd ../eval
 ```
 
-#### Test Scenarios
+#### Makefile Configuration
+The Makefiles in the `cpu_2d/` folder are configurable. Edit the Makefile file to access the documentation for the variables. The documentation is placed in the header of the file.
 
+The default variables/ values for Makefile.gcc.Keeneland are:
+
+```
+nvidia_architecture                       :="auto"
+nvidia_ptxas_otimize                      :="no"
+manual_profiler_cuda                      :="no"
+manual_profiler_other_compilers           :="yes"
+openmp_on_cuda                            :="no"
+openmp_on_other_compilers                 :="no"
+custom_openmpi                            :="no"
+custom_openmpi_basedir                    :=/home/CHANGE_ME/openmpi
+scorep_profiler_enable                    :="no"
+scorep_profiler_automatic_instrumentation :="yes"
+scorep_custom                             :="yes"
+scorep_custom_basedir                     :=/home/CHANGE_ME/scorep
+use_avx_instructions                      :="yes"
+enable_simd_compression                   :="yes"
+enable_simd_compression_benchmark         :="no"
+debug                                     :="no"
+quiet_output                              :="no"
+use_cuda                                  :="yes"
+code_optimization_level                   :="O4"
+code_optimization_flags                   :=-funroll-loops -flto
+```
+
+### Test Scenarios
 Test scenarios are in the folder `eval/`
 
 SBatch relevant Test-cases in the previous list are:
-
 - o4p2n-roptim.rsh [SCALE_FACTOR]
-- o4p2n-roptim.rsh [SCALE_FACTOR]
-- o4p2n-roptim.rsh [SCALE_FACTOR]
+- o4p2n-coptim.rsh [SCALE_FACTOR]
+- o4p2n-noptim.rsh [SCALE_FACTOR]
 - o9p8n.rsh [SCALE_FACTOR]
 - o16p8n.rsh [SCALE_FACTOR]
 
+The name in these files explains what they do. For example:
 
+The part "4p2n" indicates 4 Processes will be run in 2 Nodes. These scripts are run through Slurm. "16p8n" would indicate 16 processes distributed in 8 Nodes.
 
-#### Run a Test
-
+## Runing tests
 Ensure that the Slurm queue is empty
 
 ```
@@ -105,20 +179,53 @@ $ sbatch o4p2n_noptim.rsh 21
 Submitted batch job 425
 ```
 
+# Automation Scripts
+## List of scripts
+- r-ify.sh
+- r-compare.sh
+- check-all.sh
+- scorep_install.sh
 
-## Visualizing Results
-
-
-#### Generate R-code
-
+## Installing scripts
 Scripts are located under the `scripts/` folder
+
+To install
+- r-ify.sh
+- r-compare.sh
+- check-all.sh
+
+Run:
 
 ```
 $ cd bfs_multinode
 $ # Make a symlink from eval to the script file
 $ cd eval
 $ ln -s ../scripts/r-ify.sh r-ify.sh
-$ chmod u+x r-ify.sh
+$ ln -s ../scripts/r-compare.sh r-compare.sh
+$ ln -s ../scripts/check-all.sh check-all.sh
+$ chmod u+x *.sh
+```
+
+To install (Useful for Profiling and Tracing)
+- scorep_install.sh
+
+Run:
+
+```
+cp scripts/scorep_install.sh ~
+cd ~  
+chmod u+x scorep_install.sh
+./scorep_install.sh
+...
+```
+
+## Script r-ify.sh
+### Description
+It uses the execution traces to generate R-code. This R-code (once run) shows the time meassurements of the Phases of the BFS code. This script uses result files with same Scale Factor. The results are represented as a Barplot.
+
+### Execution
+
+```
 $ ./r-ify.sh 423 424 425
 
 -> File slurm-423.out. Validation passed (Tasks: 4, GPUS/Task: 1, Scale Factor: 21).
@@ -130,18 +237,116 @@ Enter a total 3 label(s) between quoutes. Separate them with spaces: "4p2n-Ropti
 -> R-Code successfully generated.
 ```
 
-
-
-#### Create a graphic
-
-
 Open the file `file-423-424-425.r` with your R editor and run the code.
 
+## Script r-compare.sh
+### Description
+As the previous script, this also uses the execution traces to generate R-code. This differs from the previous one in that it can compare several files from several Scale Factors. Results are visualized as a Lineplot.
+
+### Execution
+
+```
+$ ./r-ify.sh
+(to be completed)
+```
+
+## Script check-all.sh
+### Description
+This script automatizes the execution of tests for different Scale Factors.
+
+### Execution
+
+```
+$ check-all.sh 15 30
+```
+
+This will run the tests with format `o*.rsh` in the `eval/` folfer for Scale Factors 15 to 30. Process is shown in ncurses-like format.
+
+## Script scorep_install.sh
+### Description
+This script Download, Uncompress, Builds and Install locally Score-P, Scalasca and CUBE, and a compatible version of OpenMPI. This script is configurable. The configuration may be changed editing the script.  
+
+Root priviledges are not required to run the script.
+
+### Execution
+
+```
+$ cd $HOME
+$ ./scorep_install.sh
+```
+
+# Other
+## Profiling and Tracing
+This BFS application allows the code to be instrumented in Zones using Score-P with very low overhead. This requires Score-P and Scalasca to be installed in the system. The results may be analyzed either visually (using CUBE) or through console using `scorep-score`     
+
+These tools may be installed locally (No privileged user is needed) using the scorep_install.sh aforementioned.
+
+The names of the instrumentable Zones are listed below. Others may be added if needed.
+
+```
+BFSRUN_region_vertexBroadcast
+BFSRUN_region_nodesTest
+BFSRUN_region_localExpansion
+BFSRUN_region_testSomethingHasBeenDone
+BFSRUN_region_columnCommunication
+BFSRUN_region_rowCommunication
+```
+
+The first step is to update the system variables. This may be done either on .bashrc or in a separate script.  
+
+Update the paths in the variables below
+
+```
+$ cat >> ~/.bashrc << EOF
+export G500_ENABLE_RUNTIME_SCALASCA=yes  
+
+export SCOREP_CUDA_BUFFER=48M
+export SCOREP_CUDA_ENABLE=no
+export SCOREP_ENABLE_PROFILING=true
+export SCOREP_ENABLE_TRACING=false
+export SCOREP_PROFILING_FORMAT=CUBE4
+export SCOREP_TOTAL_MEMORY=12M
+export SCOREP_VERBOSE=no
+export SCOREP_PROFILING_MAX_CALLPATH_DEPTH=330  
+
+export LD_LIBRARY_PATH=$HOME/cube/lib:$LD_LIBRARY_PATH
+export PATH=$HOME/cube/bin:$PATH  
+
+export LD_LIBRARY_PATH=$HOME/scorep/lib:$LD_LIBRARY_PATH
+export PATH=$HOME/scorep/bin:$PATH  
+
+export LD_LIBRARY_PATH=$HOME/scalasca/lib:$LD_LIBRARY_PATH
+export PATH=$HOME/scalasca/bin:$PATH  
+
+export MPI_PATH=/home/jromera/openmpi
+export PATH=$MPI_PATH/bin:$CUDA_PATH/bin:$PATH  
+
+export LD_LIBRARY_PATH=$MPI_PATH/lib:$CUDA_PATHo/lib64:$CUDA_PATHo/lib64/stubs:$CUDA_PATHo/lib:$CUDA_PATHo/extras/CUPTI/lib64:$CUDA_PATHo/extras/CUPTI/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$HOME/scorep/lib:$LD_LIBRARY_PATH
+export PATH=$HOME/scorep/bin:$PATH
+EOF
+```
+
+The variable `G500_ENABLE_RUNTIME_SCALASCA` set to yes will enable the required runtime instrumentor of Scalasca.
+
+Results will be stored on a folder with format `scorep-*` in the `/eval` folder.
+
+To instrument graphically with CUBE run:
+
+```
+$ cd eval/scorep-____FOLDER_NAME____
+$ cube profile.cubex
+```
+
+To instrument through the console run:
+
+```
+$ cd eval/scorep-____FOLDER_NAME____
+$ scorep-score -r profile.cubex
+```
 
 ## Current Limitations
-
-#### Out-Of-Memory errors and CUDA memory size limitations:
-
+### Out-Of-Memory errors and CUDA memory size limitations:
 For some high Score-Factors (e.g 22 as of the day of writing this guide), the resulting Slurm trace will be:
 
 ```
@@ -170,8 +375,8 @@ Adjacency Matrix setup.
 MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD
 with errorcode 1.
 ```
-#### Validation errors for the BFS runs
 
+### Validation errors for the BFS runs
 Looking at your resulting Sbatch trace you may see:
 
 **"Validation: failed"** / or an output trace similar to the one below:
@@ -209,109 +414,30 @@ invalid_level
 ```
 
 ## Troubleshooting
-
 - Problem: In the .out file of Slurm/ Sbatch execution I get the text:
-```
-S=C=A=N: Abort: No SCOREP instrumentation found in target ../cpu_2d/g500
-```  
+
+  ```
+  S=C=A=N: Abort: No SCOREP instrumentation found in target ../cpu_2d/g500
+  ```
 
 - Solution:
-The instrumentation is activated for the runtime execution (i.e: the binary is being run prefixed with scalasca).
-Disable it with:
-```
-$ export G500_ENABLE_RUNTIME_SCALASCA=no
-```
 
-## Profiling and Tracing
+  The instrumentation is activated for the runtime execution (i.e: the binary is being run prefixed with scalasca).
 
-Install Score-P, scalasca and CUBE locally
+  Disable it with:
 
-```
-cp scripts/scorep_install.sh ~
-cd ~  
-chmod u+x scorep_install.sh
-./scorep_install.sh
-...
-```
+  ```
+  $ export G500_ENABLE_RUNTIME_SCALASCA=no
+  ```
 
-Update .bashrc's variables  
-
-```
-$ cat >> ~/.bashrc << EOF
-
-export LD_LIBRARY_PATH=$HOME/cube/lib:$LD_LIBRARY_PATH
-export PATH=$HOME/cube/bin:$PATH
-
-export LD_LIBRARY_PATH=$HOME/scorep/lib:$LD_LIBRARY_PATH
-export PATH=$HOME/scorep/bin:$PATH
-
-export LD_LIBRARY_PATH=$HOME/scalasca/lib:$LD_LIBRARY_PATH
-export PATH=$HOME/scalasca/bin:$PATH
-
-export MPI_PATH=/home/jromera/openmpi
-
-export PATH=$MPI_PATH/bin:$CUDA_PATH/bin:$PATH
-export LD_LIBRARY_PATH=$MPI_PATH/lib:$CUDA_PATHo/lib64:$CUDA_PATHo/lib64/stubs:$CUDA_PATHo/lib:$CUDA_PATHo/extras/CUPTI/lib64:$CUDA_PATHo/extras/CUPTI/lib:$LD_LIBRARY_PATH
-
-export LD_LIBRARY_PATH=$HOME/scorep/lib:$LD_LIBRARY_PATH
-export PATH=$HOME/scorep/bin:$PATH
-
-export SCOREP_CUDA_BUFFER=48M
-export SCOREP_CUDA_ENABLE=no
-export SCOREP_ENABLE_PROFILING=true
-export SCOREP_ENABLE_TRACING=false
-export SCOREP_PROFILING_FORMAT=CUBE4
-export SCOREP_TOTAL_MEMORY=12M
-export SCOREP_VERBOSE=no
-export SCOREP_PROFILING_MAX_CALLPATH_DEPTH=330
-
-export G500_ENABLE_RUNTIME_SCALASCA=yes
-EOF
-```   
+## About this document
+- Version 1.0
+- Last revision: 12th August 2015
 
 ## License
-
-This code contains a subset of Duane Merrill's BC40 repository
-of GPU-related functions, including his BFS implementation used
-in the paper, Scalable Graph Traversals.
+This code contains a subset of Duane Merrill's BC40 repository of GPU-related functions, including his BFS implementation used in the paper, Scalable Graph Traversals.
 
 All copyrights reserved to their original owners.  
 
 ## External Resources
-
-https://www.rstudio.com/products/RStudio/
-
-#### [Goggle Test Framework](https://code.google.com/p/googletest/)
-
-To install the package in ~/usr/gtest/ as shared libraries, together with sample build as well:
-
-    $ mkdir ~/temp
-    $ cd ~/temp
-    $ wget http://googletest.googlecode.com/files/gtest-1.7.0.zip
-    $ unzip gtest-1.7.0.zip
-    $ cd gtest-1.7.0
-    $ mkdir mybuild
-    $ cd mybuild
-    $ cmake -DBUILD_SHARED_LIBS=ON -Dgtest_build_samples=ON -G"Unix Makefiles" ..
-    $ make
-    $ cp -r ../include/gtest ~/usr/gtest/include/
-    $ cp lib*.so ~/usr/gtest/lib
-
-
-To validate the installation, use the following test.cpp as a simple test example:
-
-    	#include <gtest/gtest.h>
-    	TEST(MathTest, TwoPlusTwoEqualsFour) {
-    		EXPECT_EQ(2 + 2, 4);
-    	}
-
-    	int main(int argc, char **argv) {
-    		::testing::InitGoogleTest( &argc, argv );
-    		return RUN_ALL_TESTS();
-    	}
-
-To compile the test:
-
-        $ export GTEST_HOME=~/usr/gtest
-        $ export LD_LIBRARY_PATH=$GTEST_HOME/lib:$LD_LIBRARY_PATH
-        $ g++ -I test.cpp $GTEST_HOME/include -L $GTEST_HOME/lib -lgtest -lgtest_main -lpthread
+[https://www.rstudio.com/products/RStudio/](https://www.rstudio.com/products/RStudio/)
