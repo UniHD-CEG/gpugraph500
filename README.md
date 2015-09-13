@@ -75,9 +75,9 @@ $ cd ../eval
 ```
 
 #### Makefile Configuration
-The Makefiles in the `cpu_2d/` folder are configurable. Edit the Makefile file to access the documentation for the variables. The documentation is placed in the header of the file.
+The Makefiles in the `cpu_2d/` folder are configurable. Edit the Makefile file to access the documentation of the variables. The documentation is placed in the header of the file.
 
-The default variables/ values for Makefile.gcc.Keeneland are:
+The default variables-values for Makefile.gcc.keeneland are:
 
 ```
 nvidia_architecture                       :="auto"
@@ -105,12 +105,12 @@ code_optimization_flags                   :=-funroll-loops -flto
 ### Test Scenarios
 Test scenarios are in the folder `eval/`
 
-SBatch relevant Test-cases in the previous list are:
-- o4p2n-roptim.rsh [SCALE_FACTOR]
-- o4p2n-coptim.rsh [SCALE_FACTOR]
-- o4p2n-noptim.rsh [SCALE_FACTOR]
-- o9p8n.rsh [SCALE_FACTOR]
-- o16p8n.rsh [SCALE_FACTOR]
+Sbatch relevant Test-cases in the previous list are:  
+- o4p2n-roptim.rsh [SCALE_FACTOR]  
+- o4p2n-coptim.rsh [SCALE_FACTOR]  
+- o4p2n-noptim.rsh [SCALE_FACTOR]  
+- o9p8n.rsh [SCALE_FACTOR]  
+- o16p8n.rsh [SCALE_FACTOR]  
 
 The name in these files explains what they do. For example:
 
@@ -216,7 +216,7 @@ This script automatizes the execution of tests for different Scale Factors.
 $ check-all.sh 15 30
 ```
 
-This will run the tests with format `o*.rsh` in the `eval/` folfer for Scale Factors 15 to 30. Process is shown in ncurses-like format.
+This will run the tests with format `o*.rsh` in the `eval/` folder for Scale Factors 15 to 30. Process is shown in ncurses-like format.
 
 ## Script scorep_install.sh
 ### Description
