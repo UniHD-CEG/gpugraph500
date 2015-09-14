@@ -174,8 +174,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     //step 2
     if (communicatorRank < 2 * residuum) {
         if ((communicatorRank & 1) == 0) { // even
-            MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank + 1, 0,
-                         tmpmap, psize, bm_type, communicatorRank + 1, 0,
+            MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank + 1, 0, tmpmap, psize, bm_type, communicatorRank + 1, 0,
                          col_comm, &status);
             for (int i = 0; i < psize; ++i) {
                 tmpmap[i] &= ~owenmap[i];
@@ -518,7 +517,9 @@ std::cout << " are there anynewnodes? " << anynewnodes << std::endl;
 #endif
 
         MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+
 std::cout << " allreduce complete for rank " << rank << std::endl;
+
         if (!anynewnodes_global) {
 
 std::cout << " no new nodes " << std::endl;
@@ -677,8 +678,8 @@ std::cout << " 1run getOutgoingFQ" << std::endl;
 #ifdef _SIMDCOMPRESSBENCHMARK
                 // SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
-                uncompressedsize = static_cast<size_t>(outsize);
-                SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
+                /// uncompressedsize = static_cast<size_t>(outsize);
+                /// SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 std::cout << " 1compress has been run " << std::endl;
 
 #ifdef INSTRUMENTED
@@ -692,6 +693,8 @@ std::cout << " 1compress has been run " << std::endl;
 
 
 #ifdef _SIMDCOMPRESS
+                int compressedsize=outsize;
+                compressed_fq_64 = startaddr;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
@@ -699,8 +702,8 @@ std::cout << " 1compress has been run " << std::endl;
                 // MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
-std::cout << " 1bcasted compressed package " << std::endl;
-std::cout << " 1received in communicator " << it->sendColSl << std::endl;
+/// std::cout << " 1bcasted compressed package " << std::endl;
+/// std::cout << " 1received in communicator " << it->sendColSl << std::endl;
 
 #else
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -708,12 +711,15 @@ std::cout << " 1received in communicator " << it->sendColSl << std::endl;
 #endif
 
 #ifdef _SIMDCOMPRESS
-                uncompressedsize = static_cast<size_t>(outsize);
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                /// uncompressedsize = static_cast<size_t>(outsize);
+                /// SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
 std::cout << " 1decompressed pqackage " << std::endl;
 
                 // SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
-                startaddr = uncompressed_fq_64;
+                /// startaddr = uncompressed_fq_64;
+                /// outsize = uncompressedsize;
+                startaddr = compressed_fq_64;
+                outsize = compressedsize;
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 // freemem=getTotalSystemMemory();
@@ -747,16 +753,15 @@ std::cout << "----------------------- IF-BRANCH-2" << std::endl;
 std::cout << " 2pre receiving package " << std::endl;
 
 #ifdef _SIMDCOMPRESS
-                int outsize, compressedsize;
+                int outsize, compressedsize=1;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-std::cout << " 2received in communicator " << it->sendColSl << std::endl;
-
-std::cout << std::endl << std::endl;
-std::cout << "2data received:: originalsize: " << outsize << " compressedsize: " << compressedsize << std::endl;
-
                 assert(outsize <= recv_fq_buff_length);
                 MPI_Bcast(recv_fq_buff, outsize, fq_tp_type, it->sendColSl, row_comm);
+
+std::cout << " 2received in communicator " << it->sendColSl << std::endl;
+std::cout << std::endl << std::endl;
+std::cout << "2data received:: originalsize: " << outsize << " compressedsize: " << compressedsize << std::endl;
 std::cout << " 2package received " << std::endl;
 
 
@@ -768,9 +773,10 @@ std::cout << " 2before decompression " << std::endl;
 
                 // uncompressedsize = static_cast<size_t>(outsize);
                 // SIMDcompression(codec, recv_fq_buff, uncompressedsize, compressed_fq_64, compressedsize);
-                uncompressedsize = static_cast<size_t>(outsize);
-                SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
+                /// uncompressedsize = static_cast<size_t>(outsize);
+                /// SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 recv_fq_buff = uncompressed_fq_64;
+                /// outsize = uncompressedsize;
 
 std::cout << " 2after decompression. ready to print " << std::endl;
 
