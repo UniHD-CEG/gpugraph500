@@ -678,8 +678,8 @@ std::cout << " 1run getOutgoingFQ" << std::endl;
 #ifdef _SIMDCOMPRESSBENCHMARK
                 // SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
-                /// uncompressedsize = static_cast<size_t>(outsize);
-                /// SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
+                uncompressedsize = static_cast<size_t>(outsize);
+                SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 std::cout << " 1compress has been run " << std::endl;
 
 #ifdef INSTRUMENTED
@@ -693,8 +693,10 @@ std::cout << " 1compress has been run " << std::endl;
 
 
 #ifdef _SIMDCOMPRESS
-                int compressedsize=outsize;
-                compressed_fq_64 = startaddr;
+
+std::cout << " 1sending packet with size: " << compressedsize << " / " << outsize << std::endl;
+
+                /// compressed_fq_64 = startaddr;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
@@ -711,15 +713,17 @@ std::cout << " 1compress has been run " << std::endl;
 #endif
 
 #ifdef _SIMDCOMPRESS
-                /// uncompressedsize = static_cast<size_t>(outsize);
-                /// SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                uncompressedsize = static_cast<size_t>(outsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
 std::cout << " 1decompressed pqackage " << std::endl;
 
                 // SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
-                /// startaddr = uncompressed_fq_64;
-                /// outsize = uncompressedsize;
-                startaddr = compressed_fq_64;
-                outsize = compressedsize;
+                startaddr = uncompressed_fq_64;
+                outsize = uncompressedsize;
+std::cout << " 1decompressed packet of size: " <<compressedsize << " / " << outsize << std::endl;
+
+                /// startaddr = compressed_fq_64;
+                /// outsize = compressedsize;
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 // freemem=getTotalSystemMemory();
@@ -753,11 +757,13 @@ std::cout << "----------------------- IF-BRANCH-2" << std::endl;
 std::cout << " 2pre receiving package " << std::endl;
 
 #ifdef _SIMDCOMPRESS
-                int outsize, compressedsize=1;
+                int outsize, compressedsize;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 assert(outsize <= recv_fq_buff_length);
-                MPI_Bcast(recv_fq_buff, outsize, fq_tp_type, it->sendColSl, row_comm);
+                MPI_Bcast(recv_fq_buff, compressedsize, fq_tp_type, it->sendColSl, row_comm);
+
+std::cout << " 2decompressed packet of size: " << compressedsize << " / " << outsize << std::endl;
 
 std::cout << " 2received in communicator " << it->sendColSl << std::endl;
 std::cout << std::endl << std::endl;
@@ -773,19 +779,21 @@ std::cout << " 2before decompression " << std::endl;
 
                 // uncompressedsize = static_cast<size_t>(outsize);
                 // SIMDcompression(codec, recv_fq_buff, uncompressedsize, compressed_fq_64, compressedsize);
-                /// uncompressedsize = static_cast<size_t>(outsize);
-                /// SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
+                uncompressedsize = static_cast<size_t>(outsize);
+                SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 recv_fq_buff = uncompressed_fq_64;
-                /// outsize = uncompressedsize;
+                outsize = uncompressedsize;
+
+std::cout << " 2sizes after decompression: " << compressedsize << " / " << outsize << std::endl;
 
 std::cout << " 2after decompression. ready to print " << std::endl;
-
+/*
 std::cout << "2data: (" << uncompressedsize << "elems.)"<< std::endl;
 for (int i=0; i < uncompressedsize; ++i) {
     std::cout << uncompressed_fq_64[i] << " ";
 }
 std::cout << std::endl << std::endl;
-
+*/
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 // freemem=getTotalSystemMemory();
