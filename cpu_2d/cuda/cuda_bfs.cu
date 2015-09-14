@@ -40,8 +40,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
 
     fq_tp_type = MPI_INT64_T;
     bm_type = MPI_UNSIGNED_CHAR;
-    recv_fq_buff_length = static_cast<vtxtyp>
-    (std::max(store.getLocRowLength(), store.getLocColLength()) * queue_sizing);
+    recv_fq_buff_length = static_cast<vtxtyp>(std::max(store.getLocRowLength(), store.getLocColLength()) * queue_sizing);
     //recv_fq_buff = new vtxtyp[recv_fq_buff_length];
     cudaHostAlloc(&recv_fq_buff, recv_fq_buff_length * sizeof(vtxtyp), cudaHostAllocDefault);
     //multipurpose buffer
@@ -101,9 +100,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
     Csr::GraphSlice *gs_other;
     for (int gpu = 0; gpu < num_gpus; ++gpu) {
         gs = csr_problem->graph_slices[gpu];
-        for (int other_gpu = (gpu + 1) % num_gpus;
-             other_gpu != gpu;
-             other_gpu = (other_gpu + 1) % num_gpus) {
+        for (int other_gpu = (gpu + 1) % num_gpus; other_gpu != gpu; other_gpu = (other_gpu + 1) % num_gpus) {
             gs_other = csr_problem->graph_slices[other_gpu];
             // Set device
             if (b40c::util::B40CPerror(cudaSetDevice(gs->gpu),
@@ -153,20 +150,15 @@ void CUDA_BFS::reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr, i
     if((errorCode=checkQueue.checkCol(startaddr, insize))!= CheckQueue<vtxtyp>::ErrorCode::Valid){
         std::cerr << "(" <<store.getLocalRowID() << ":" <<store.getLocalColumnID() << ") ";
         switch(errorCode){
-            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
-            std::cerr << "Recieved queue with invalid length";
+            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:std::cerr << "Recieved queue with invalid length";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
-            std::cerr << "Recieved queue with ids out of range";
+            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:std::cerr << "Recieved queue with ids out of range";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
-            std::cerr << "Recieved not sorted queue";
+            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:std::cerr << "Recieved not sorted queue";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
-            std::cerr << "Recieved queue with duplicate ids";
+            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:std::cerr << "Recieved queue with duplicate ids";
             break;
-            default:
-            std::cerr << "Recieved invalid queue";
+            default:std::cerr << "Recieved invalid queue";
         }
         std::cerr << " from source node." << std::endl;
     }
@@ -276,20 +268,15 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, 
     if((errorCode=checkQueue.checkCol(start_local, end_local-start_local))!= CheckQueue<vtxtyp>::ErrorCode::Valid){
         std::cerr << "(" <<store.getLocalRowID() << ":" <<store.getLocalColumnID() << ") ";
         switch(errorCode){
-            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
-            std::cerr << "Select queue with invalid length";
+            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:std::cerr << "Select queue with invalid length";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
-            std::cerr << "Select queue with ids out of range";
+            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:std::cerr << "Select queue with ids out of range";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
-            std::cerr << "Select not sorted queue";
+            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:std::cerr << "Select not sorted queue";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
-            std::cerr << "Select queue with duplicate ids";
+            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:std::cerr << "Select queue with duplicate ids";
             break;
-            default:
-            std::cerr << "Select invalid queue";
+            default:std::cerr << "Select invalid queue";
         }
         std::cerr << "." << std::endl;
     }

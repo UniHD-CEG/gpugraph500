@@ -679,6 +679,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
 
+
 if (outsize > 212 && outsize < 412) {
     std::cout << "1 ORIGINAL: (" << outsize << "elems.) **************"<< std::endl;
     for (int i=0; i < outsize; ++i) {
@@ -703,6 +704,7 @@ if (outsize > 212 && outsize < 412) {
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
 
+/*
 if (outsize > 212 && outsize < 412) {
     std::cout << "1 DECOMPRESSED: (" << outsize << "elems.) **************"<< std::endl;
     for (int i=0; i < outsize; ++i) {
@@ -710,7 +712,7 @@ if (outsize > 212 && outsize < 412) {
     }
     std::cout << std::endl << std::endl;
 }
-
+*/
 #endif
 
 
@@ -731,8 +733,8 @@ if (outsize > 212 && outsize < 412) {
                 assert (compressedsize <= outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
 
-std::cout << "Verify transfer: " << std::endl;
-                SIMDverifyCompression(startaddr, uncompressed_fq_64, uncompressedsize);
+//std::cout << "Verify transfer: " << std::endl;
+//                SIMDverifyCompression(startaddr, uncompressed_fq_64, uncompressedsize);
 
                 startaddr = uncompressed_fq_64;
                 outsize = uncompressedsize;
@@ -809,7 +811,7 @@ if (outsize > 212 && outsize < 412) {
 // std::cout << " 2sizes after decompression: " << compressedsize << " / " << outsize << std::endl;
 
 // std::cout << " 2after decompression. ready to print " << std::endl;
-
+/*
 if (outsize > 212 && outsize < 412) {
     std::cout << "2 DECOMPRESSED: (" << uncompressedsize << "elems.)"<< std::endl;
     for (int i=0; i < uncompressedsize; ++i) {
@@ -817,6 +819,7 @@ if (outsize > 212 && outsize < 412) {
     }
     std::cout << std::endl << std::endl;
 }
+*/
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 // freemem=getTotalSystemMemory();
@@ -1079,6 +1082,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, FQ_
 
      if (uncompressedsize > 212 && uncompressedsize < 412) {
 //     if (uncompressedsize == -1) {
+
+    std::cout << "1 CHECK_ORIGINAL: (" << uncompressedsize << "elems.) **************"<< std::endl;
+    for (int i=0; i < outsize; ++i) {
+        std::cout << startaddr[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
+
+    std::cout << "1 CHECK_DECOMPRESSED: (" << uncompressedsize << "elems.) **************"<< std::endl;
+    for (int i=0; i < outsize; ++i) {
+        std::cout << uncompressed_fq_64[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
 
         if (std::equal(uncompressed_fq_64, uncompressed_fq_64 + uncompressedsize, fq)) {
             std::cout << "verification: compression-decompression OK." << std::endl;
