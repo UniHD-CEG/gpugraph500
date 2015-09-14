@@ -697,18 +697,16 @@ if (outsize > 212 && outsize < 412) {
                 // freemem=getTotalSystemMemory();
                 // printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
-                // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                // SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
 #endif
 
 
 #ifdef _SIMDCOMPRESS
 
-std::cout << " 1sending packet with size: " << compressedsize << " / " << outsize << std::endl;
-                /// compressed_fq_64 = startaddr;
+// std::cout << " 1sending packet with size: " << compressedsize << " / " << outsize << std::endl;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
                 // outsize_compressed= static_cast<long>(compressedsize);
                 // MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -724,15 +722,17 @@ std::cout << " 1sending packet with size: " << compressedsize << " / " << outsiz
 
 #ifdef _SIMDCOMPRESS
                 uncompressedsize = static_cast<size_t>(outsize);
+                assert (uncompressedsize == outsize);
+                assert (compressedsize <= outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-// std::cout << " 1decompressed pqackage " << std::endl;
 
+std::cout << " Verify transfer: " << std::endl;
                 SIMDverifyCompression(startaddr, uncompressed_fq_64, uncompressedsize);
 
                 startaddr = uncompressed_fq_64;
                 outsize = uncompressedsize;
 
-std::cout << " 1decompressed packet of size: " <<compressedsize << " / " << outsize << std::endl;
+// std::cout << " 1decompressed packet of size: " <<compressedsize << " / " << outsize << std::endl;
 
 
 if (outsize > 212 && outsize < 412) {
@@ -1072,8 +1072,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, FQ_
 
      if (uncompressedsize > 212 && uncompressedsize < 412) {
 //     if (uncompressedsize == -1) {
-        bool equal = std::equal(uncompressed_fq_64, uncompressed_fq_64 + uncompressedsize, fq);
-        if (equal) {
+
+        if (std::equal(uncompressed_fq_64, uncompressed_fq_64 + uncompressedsize, fq)) {
             std::cout << "verification: compression-decompression OK." << std::endl;
         } else {
             std::cout << "verification: compression-decompression ERROR." << std::endl;
