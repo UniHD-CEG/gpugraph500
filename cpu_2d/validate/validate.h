@@ -321,12 +321,14 @@ template<class MatrixT>
           if((d0 - d1 > 1 || d1 - d0 > 1) ){
             valid_level = 0;
             // TODO: uncomment.
-            /// fprintf(stderr,"(%ld:%ld) Edge [%ld(%ld):%ld(%ld)] with wrong levels: %hd %hd\n",
+/*
+            fprintf(stderr,"(%ld:%ld) Edge [%ld(%ld):%ld(%ld)] with wrong levels: %hd %hd\n",
               store.getLocalRowID(),
               store.getLocalColumnID(),
               edge.v0,static_cast<long>(store.globaltolocalRow(edge.v0)),
               edge.v1,static_cast<long>(store.globaltolocalCol(edge.v1)),
               d0,d1);
+*/
           }
 
           // mark if there is an edge from each vertex to its claimed

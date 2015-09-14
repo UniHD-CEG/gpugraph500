@@ -679,12 +679,13 @@ std::cout << " 1run getOutgoingFQ" << std::endl;
                 SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
 
-
-std::cout << "1 ORIGINAL: (" << outsize << "elems.) **************"<< std::endl;
-for (int i=0; i < outsize; ++i) {
-    std::cout << startaddr[i] << " ";
+if (outsize > 512 && outsize < 812) {
+    std::cout << "1 ORIGINAL: (" << outsize << "elems.) **************"<< std::endl;
+    for (int i=0; i < outsize; ++i) {
+        std::cout << startaddr[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
 }
-std::cout << std::endl << std::endl;
 
                 uncompressedsize = static_cast<size_t>(outsize);
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
@@ -732,12 +733,13 @@ std::cout << " 1decompressed pqackage " << std::endl;
 std::cout << " 1decompressed packet of size: " <<compressedsize << " / " << outsize << std::endl;
 
 
-std::cout << "1 DECOMPRESSED: (" << outsize << "elems.) **************"<< std::endl;
-for (int i=0; i < outsize; ++i) {
-    std::cout << startaddr[i] << " ";
+if (outsize > 512 && outsize < 812) {
+    std::cout << "1 DECOMPRESSED: (" << outsize << "elems.) **************"<< std::endl;
+    for (int i=0; i < outsize; ++i) {
+        std::cout << startaddr[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
 }
-std::cout << std::endl << std::endl;
-
                 /// startaddr = compressed_fq_64;
                 /// outsize = compressedsize;
 #ifdef INSTRUMENTED
