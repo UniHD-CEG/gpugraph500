@@ -56,7 +56,7 @@ private:
                                 size_t &compressedsize) const;
     void SIMDdecompression(IntegerCODEC &codec, std::vector<FQ_T> &compressed_fq_64, size_t size,
                                 std::vector<FQ_T> &uncompressed_fq_64, size_t &uncompressedsize) const;
-    // void SIMDverifyCompression(FQ_T *fq, int size, std::vector<FQ_T> &uncompressed_fq_64, size_t uncompressedsize) const;
+    void SIMDverifyCompression(FQ_T *fq, std::vector<FQ_T> &uncompressed_fq_64, size_t uncompressedsize) const;
     /* Dynamic memory implementations */
     void SIMDcompression(IntegerCODEC &codec, FQ_T *fq, size_t &size, FQ_T *&compressed_fq_64, size_t &compressedsize) const;
     void SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size, FQ_T *&uncompressed_fq_64,
@@ -482,7 +482,7 @@ std::cout << " start crazy loop " << std::endl;
 
         static_cast<Derived *>(this)->runLocalBFS();
 
-std::cout << " runlocalbfs " << std::endl;
+// std::cout << " runlocalbfs " << std::endl;
 
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
@@ -518,11 +518,11 @@ std::cout << " are there anynewnodes? " << anynewnodes << std::endl;
 
         MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
 
-std::cout << " allreduce complete for rank " << rank << std::endl;
+// std::cout << " allreduce complete for rank " << rank << std::endl;
 
         if (!anynewnodes_global) {
 
-std::cout << " no new nodes " << std::endl;
+// std::cout << " no new nodes " << std::endl;
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
@@ -530,7 +530,7 @@ std::cout << " no new nodes " << std::endl;
 
             static_cast<Derived *>(this)->getBackPredecessor();
 
-std::cout << " obtained back predecesor " << std::endl;
+// std::cout << " obtained back predecesor " << std::endl;
 
 
 #ifdef INSTRUMENTED
@@ -544,7 +544,7 @@ std::cout << " obtained back predecesor " << std::endl;
                                    recv_fq_buff, // have to be changed for bitmap queue
                                    owenmask, tmpmask);
 
-std::cout << " created and sent bitmap " << std::endl;
+// std::cout << " created and sent bitmap " << std::endl;
 
 
 #ifdef INSTRUMENTED
@@ -556,7 +556,7 @@ std::cout << " created and sent bitmap " << std::endl;
     SCOREP_USER_REGION_END( BFSRUN_region_testSomethingHasBeenDone )
 #endif
 
-std::cout << " end of crazy loop.- no new nodes " << std::endl;
+// std::cout << " end of crazy loop.- no new nodes " << std::endl;
 
             return; // There is nothing to do. Finish iteration.
         }
@@ -577,7 +577,7 @@ std::cout << " end of crazy loop.- no new nodes " << std::endl;
 
         static_cast<Derived *>(this)->getBackOutqueue();
 
-std::cout << " run getBackOutqueue " << std::endl;
+// std::cout << " run getBackOutqueue " << std::endl;
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
@@ -593,7 +593,7 @@ std::cout << " run getBackOutqueue " << std::endl;
                 std::bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
                           static_cast<Derived *>(this), _1, _2, _3, _4);
 
-std::cout << " run two functions. preparing for vreduce " << std::endl;
+// std::cout << " run two functions. preparing for vreduce " << std::endl;
 
 
         vreduce(reduce, get,
@@ -609,11 +609,11 @@ std::cout << " run two functions. preparing for vreduce " << std::endl;
                 );
 
 
-std::cout << " run vreduce " << std::endl;
+// std::cout << " run vreduce " << std::endl;
 
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
-std::cout << " run setModOutgoingFQ " << std::endl;
+// std::cout << " run setModOutgoingFQ " << std::endl;
 
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
@@ -650,22 +650,22 @@ std::cout << " run setModOutgoingFQ " << std::endl;
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
                                                                             it != fold_fq_props.end(); ++it) {
 
-std::cout << " iterating FQ. folding " << std::endl;
+// std::cout << " iterating FQ. folding " << std::endl;
 
 
             if (it->sendColSl == store.getLocalColumnID()) {
                 FQ_T *startaddr;
 
-std::cout << " 1the communicator is a column " << std::endl;
+// std::cout << " 1the communicator is a column " << std::endl;
 
 
-std::cout << "----------------------- IF-BRANCH-1" << std::endl;
+// std::cout << "----------------------- IF-BRANCH-1" << std::endl;
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
 
-std::cout << " 1run getOutgoingFQ" << std::endl;
+// std::cout << " 1run getOutgoingFQ" << std::endl;
 
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
 
@@ -689,7 +689,7 @@ if (outsize > 212 && outsize < 412) {
 
                 uncompressedsize = static_cast<size_t>(outsize);
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
-std::cout << " 1compress has been run " << std::endl;
+// std::cout << " 1compress has been run " << std::endl;
 
 
 #ifdef INSTRUMENTED
@@ -755,7 +755,7 @@ if (outsize > 212 && outsize < 412) {
     tstart = MPI_Wtime();
 #endif
 
-std::cout << " 1pre run setIncommingFQ" << std::endl;
+// std::cout << " 1pre run setIncommingFQ" << std::endl;
 
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
 
@@ -765,16 +765,16 @@ std::cout << " 1pre run setIncommingFQ" << std::endl;
     lqueue += tend - tstart;
 #endif
 
-std::cout << " 1end of for " << std::endl;
+// std::cout << " 1end of for " << std::endl;
 
             } else {
 
-std::cout << " 2the communicator is a row " << std::endl;
+// std::cout << " 2the communicator is a row " << std::endl;
 
 
-std::cout << "----------------------- IF-BRANCH-2" << std::endl;
+// std::cout << "----------------------- IF-BRANCH-2" << std::endl;
 
-std::cout << " 2pre receiving package " << std::endl;
+// std::cout << " 2pre receiving package " << std::endl;
 
 #ifdef _SIMDCOMPRESS
                 int outsize, compressedsize;
@@ -791,7 +791,7 @@ std::cout << " 2received in communicator " << it->sendColSl << std::endl;
 std::cout << std::endl << std::endl;
 std::cout << "2data received:: originalsize: " << outsize << " compressedsize: " << compressedsize << std::endl;
 
-std::cout << " 2before decompression " << std::endl;
+// std::cout << " 2before decompression " << std::endl;
 
                 // uncompressedsize = static_cast<size_t>(outsize);
                 // SIMDcompression(codec, recv_fq_buff, uncompressedsize, compressed_fq_64, compressedsize);
@@ -800,9 +800,9 @@ std::cout << " 2before decompression " << std::endl;
                 recv_fq_buff = uncompressed_fq_64;
                 outsize = uncompressedsize;
 
-std::cout << " 2sizes after decompression: " << compressedsize << " / " << outsize << std::endl;
+// std::cout << " 2sizes after decompression: " << compressedsize << " / " << outsize << std::endl;
 
-std::cout << " 2after decompression. ready to print " << std::endl;
+// std::cout << " 2after decompression. ready to print " << std::endl;
 
 /*
 std::cout << "2 DECOMPRESSED: (" << uncompressedsize << "elems.)"<< std::endl;
@@ -828,7 +828,7 @@ std::cout << std::endl << std::endl;
     tstart = MPI_Wtime();
 #endif
 
-std::cout << "2run setIncommingFQ" << std::endl;
+// std::cout << "2run setIncommingFQ" << std::endl;
 
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
 
@@ -837,7 +837,7 @@ std::cout << "2run setIncommingFQ" << std::endl;
     lqueue += tend - tstart;
 #endif
 
-std::cout << " 2end of row communication " << std::endl;
+// std::cout << " 2end of row communication " << std::endl;
 
             }
 #ifdef _SIMDCOMPRESS
@@ -857,7 +857,7 @@ std::cout << " 2end of row communication " << std::endl;
     tstart = MPI_Wtime();
 #endif
 
-std::cout << " outside for. prerunning setBackInqueue" << std::endl;
+// std::cout << " outside for. prerunning setBackInqueue" << std::endl;
 
         static_cast<Derived *>(this)->setBackInqueue();
 
@@ -876,7 +876,7 @@ std::cout << " outside for. prerunning setBackInqueue" << std::endl;
 #endif
         ++iter;
 
-std::cout << " ready to reloop the crazy loop " << std::endl;
+// std::cout << " ready to reloop the crazy loop " << std::endl;
 
 
     }
@@ -983,16 +983,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 /**
  * SIMD compression/decompression verification. Implementation for std::vectors
  */
-/*
+
 template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, int size, std::vector <FQ_T> &uncompressed_fq_64,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, std::vector <FQ_T> &uncompressed_fq_64,
                                                                     size_t uncompressedsize) const {
      if (size > 512) {
-        assert(size == uncompressedsize &&
-               std::equal(uncompressed_fq_64.begin(), uncompressed_fq_64.end(), fq));
+        if (std::equal(uncompressed_fq_64.begin(), uncompressed_fq_64.end(), fq)) {
+            std::cout << "verification: compression-decompression OK." << std::endl;
+        } else {
+            std::cout << "verification: compression-decompression ERROR." << std::endl;
+        }
     }
 }
-*/
 
 
 
@@ -1005,7 +1007,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, int
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *fq, size_t &size, FQ_T *&compressed_fq_64,
                                                                                                         size_t &compressedsize) const {
-     if (size > 212 && size < 412) {
+     // if (size > 212 && size < 412) {
+     if (size == -1) {
         uint32_t *fq_32;
         uint32_t *compressed_fq_32 = new uint32_t[size];
 
@@ -1038,7 +1041,8 @@ template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size,
                                                                 FQ_T *&uncompressed_fq_64, size_t &uncompressedsize) const {
 
-     if (uncompressedsize > 212 && uncompressedsize < 412) {
+//     if (uncompressedsize > 212 && uncompressedsize < 412) {
+     if (uncompressedsize == -1) {
         uint32_t *uncompressed_fq_32 = new uint32_t[uncompressedsize];
         uint32_t *compressed_fq_32 = new uint32_t[size];
 
@@ -1066,14 +1070,16 @@ std::cout << "Decompressing. original size: " << size << " compressed size: " <<
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, FQ_T *uncompressed_fq_64, size_t uncompressedsize) const {
-     if (uncompressedsize > 212 && uncompressedsize < 412) {
+
+//     if (uncompressedsize > 212 && uncompressedsize < 412) {
+     if (uncompressedsize == -1) {
         bool equal = std::equal(uncompressed_fq_64, uncompressed_fq_64 + uncompressedsize, fq);
         if (equal) {
             std::cout << "verification: compression-decompression OK." << std::endl;
         } else {
             std::cout << "verification: compression-decompression ERROR." << std::endl;
         }
-        assert(equal);
+        // assert(equal);
      }
 }
 
