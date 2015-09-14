@@ -1084,13 +1084,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, FQ_
 //     if (uncompressedsize == -1) {
 
     std::cout << "1 CHECK_ORIGINAL: (" << uncompressedsize << "elems.) **************"<< std::endl;
-    for (int i=0; i < outsize; ++i) {
-        std::cout << startaddr[i] << " ";
+    for (int i=0; i < uncompressedsize; ++i) {
+        std::cout << fq[i] << " ";
     }
     std::cout << std::endl << std::endl;
 
     std::cout << "1 CHECK_DECOMPRESSED: (" << uncompressedsize << "elems.) **************"<< std::endl;
-    for (int i=0; i < outsize; ++i) {
+    for (int i=0; i < uncompressedsize; ++i) {
         std::cout << uncompressed_fq_64[i] << " ";
     }
     std::cout << std::endl << std::endl;
