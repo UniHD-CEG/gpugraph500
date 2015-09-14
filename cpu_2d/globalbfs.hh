@@ -698,7 +698,7 @@ if (outsize > 212 && outsize < 412) {
                 // printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                SIMDverifyCompression(startaddr, outsize, uncompressed_fq_64, uncompressedsize);
+                SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
 #endif
 
 
@@ -795,21 +795,23 @@ if (outsize > 212 && outsize < 412) {
                 // uncompressedsize = static_cast<size_t>(outsize);
                 // SIMDcompression(codec, recv_fq_buff, uncompressedsize, compressed_fq_64, compressedsize);
                 uncompressedsize = static_cast<size_t>(outsize);
+                assert(uncompressedsize == outsize);
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 recv_fq_buff = uncompressed_fq_64;
                 outsize = uncompressedsize;
+
 
 // std::cout << " 2sizes after decompression: " << compressedsize << " / " << outsize << std::endl;
 
 // std::cout << " 2after decompression. ready to print " << std::endl;
 
-/*
-std::cout << "2 DECOMPRESSED: (" << uncompressedsize << "elems.)"<< std::endl;
-for (int i=0; i < uncompressedsize; ++i) {
-    std::cout << uncompressed_fq_64[i] << " ";
+if (outsize > 212 && outsize < 412) {
+    std::cout << "2 DECOMPRESSED: (" << uncompressedsize << "elems.)"<< std::endl;
+    for (int i=0; i < uncompressedsize; ++i) {
+        std::cout << uncompressed_fq_64[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
 }
-std::cout << std::endl << std::endl;
-*/
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 // freemem=getTotalSystemMemory();
