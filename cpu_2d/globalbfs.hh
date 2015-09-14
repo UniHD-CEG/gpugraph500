@@ -470,6 +470,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
  */
     while (true) {
 
+std::cout << " start crazy loop " << std::endl;
+
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
@@ -480,6 +482,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
         static_cast<Derived *>(this)->runLocalBFS();
+
+std::cout << " runlocalbfs " << std::endl;
+
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_END( BFSRUN_region_localExpansion )
@@ -504,19 +509,28 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
         anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
 
+std::cout << " are there anynewnodes? " << anynewnodes << std::endl;
+
+
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     lqueue += tend - tstart;
 #endif
 
         MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+std::cout << " allreduce complete for rank " << rank << std::endl;
         if (!anynewnodes_global) {
+
+std::cout << " no new nodes " << std::endl;
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
 
             static_cast<Derived *>(this)->getBackPredecessor();
+
+std::cout << " obtained back predecesor " << std::endl;
+
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
@@ -529,6 +543,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                                    recv_fq_buff, // have to be changed for bitmap queue
                                    owenmask, tmpmask);
 
+std::cout << " created and sent bitmap " << std::endl;
+
+
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     predlistred = tend - tstart;
@@ -537,6 +554,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_END( BFSRUN_region_testSomethingHasBeenDone )
 #endif
+
+std::cout << " end of crazy loop.- no new nodes " << std::endl;
 
             return; // There is nothing to do. Finish iteration.
         }
@@ -553,7 +572,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     SCOREP_USER_REGION_BEGIN( BFSRUN_region_columnCommunication, "BFSRUN_region_columnCommunication",SCOREP_USER_REGION_TYPE_COMMON )
 #endif
 
+
+
         static_cast<Derived *>(this)->getBackOutqueue();
+
+std::cout << " run getBackOutqueue " << std::endl;
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
@@ -569,6 +592,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 std::bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
                           static_cast<Derived *>(this), _1, _2, _3, _4);
 
+std::cout << " run two functions. preparing for vreduce " << std::endl;
+
+
         vreduce(reduce, get,
                 recv_fq_buff,
                 _outsize,
@@ -581,7 +607,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
                 );
 
+
+std::cout << " run vreduce " << std::endl;
+
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
+
+std::cout << " run setModOutgoingFQ " << std::endl;
+
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_END( BFSRUN_region_columnCommunication )
@@ -617,8 +649,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
                                                                             it != fold_fq_props.end(); ++it) {
 
+std::cout << " iterating FQ. folding " << std::endl;
+
+
             if (it->sendColSl == store.getLocalColumnID()) {
                 FQ_T *startaddr;
+
+std::cout << " 1the communicator is a column " << std::endl;
+
 
 std::cout << "----------------------- IF-BRANCH-1" << std::endl;
 
@@ -626,7 +664,7 @@ std::cout << "----------------------- IF-BRANCH-1" << std::endl;
     tstart = MPI_Wtime();
 #endif
 
-std::cout << "getOutgoingFQ" << std::endl;
+std::cout << " 1run getOutgoingFQ" << std::endl;
 
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
 
@@ -641,6 +679,8 @@ std::cout << "getOutgoingFQ" << std::endl;
 #endif
                 uncompressedsize = static_cast<size_t>(outsize);
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
+std::cout << " 1compress has been run " << std::endl;
+
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 // freemem=getTotalSystemMemory();
@@ -659,6 +699,8 @@ std::cout << "getOutgoingFQ" << std::endl;
                 // MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+std::cout << " 1bcasted compressed package " << std::endl;
+std::cout << " 1received in communicator " << it->sendColSl << std::endl;
 
 #else
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -668,6 +710,8 @@ std::cout << "getOutgoingFQ" << std::endl;
 #ifdef _SIMDCOMPRESS
                 uncompressedsize = static_cast<size_t>(outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+std::cout << " 1decompressed pqackage " << std::endl;
+
                 // SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
                 startaddr = uncompressed_fq_64;
 #ifdef INSTRUMENTED
@@ -681,7 +725,7 @@ std::cout << "getOutgoingFQ" << std::endl;
     tstart = MPI_Wtime();
 #endif
 
-std::cout << "setIncommingFQ" << std::endl;
+std::cout << " 1pre run setIncommingFQ" << std::endl;
 
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
 
@@ -691,31 +735,46 @@ std::cout << "setIncommingFQ" << std::endl;
     lqueue += tend - tstart;
 #endif
 
+std::cout << " 1end of for " << std::endl;
+
             } else {
+
+std::cout << " 2the communicator is a row " << std::endl;
+
+
 std::cout << "----------------------- IF-BRANCH-2" << std::endl;
 
+std::cout << " 2pre receiving package " << std::endl;
 
 #ifdef _SIMDCOMPRESS
                 int outsize, compressedsize;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
+std::cout << " 2received in communicator " << it->sendColSl << std::endl;
+
 std::cout << std::endl << std::endl;
-std::cout << "data received:: originalsize: " << outsize << " compressedsize: " << compressedsize << std::endl;
+std::cout << "2data received:: originalsize: " << outsize << " compressedsize: " << compressedsize << std::endl;
 
                 assert(outsize <= recv_fq_buff_length);
                 MPI_Bcast(recv_fq_buff, outsize, fq_tp_type, it->sendColSl, row_comm);
+std::cout << " 2package received " << std::endl;
 
 
 #ifdef _SIMDCOMPRESSBENCHMARK
                 // SIMDbenchmarkCompression(recv_fq_buff, outsize, rank);
 #endif
+
+std::cout << " 2before decompression " << std::endl;
+
                 // uncompressedsize = static_cast<size_t>(outsize);
                 // SIMDcompression(codec, recv_fq_buff, uncompressedsize, compressed_fq_64, compressedsize);
                 uncompressedsize = static_cast<size_t>(outsize);
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 recv_fq_buff = uncompressed_fq_64;
 
-std::cout << "data: (" << uncompressedsize << "elems.)"<< std::endl;
+std::cout << " 2after decompression. ready to print " << std::endl;
+
+std::cout << "2data: (" << uncompressedsize << "elems.)"<< std::endl;
 for (int i=0; i < uncompressedsize; ++i) {
     std::cout << uncompressed_fq_64[i] << " ";
 }
@@ -738,7 +797,7 @@ std::cout << std::endl << std::endl;
     tstart = MPI_Wtime();
 #endif
 
-std::cout << "setIncommingFQ" << std::endl;
+std::cout << "2run setIncommingFQ" << std::endl;
 
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
 
@@ -746,6 +805,9 @@ std::cout << "setIncommingFQ" << std::endl;
     tend = MPI_Wtime();
     lqueue += tend - tstart;
 #endif
+
+std::cout << " 2end of row communication " << std::endl;
+
             }
 #ifdef _SIMDCOMPRESS
             /**
@@ -764,7 +826,7 @@ std::cout << "setIncommingFQ" << std::endl;
     tstart = MPI_Wtime();
 #endif
 
-std::cout << "setBackInqueue" << std::endl;
+std::cout << " outside for. prerunning setBackInqueue" << std::endl;
 
         static_cast<Derived *>(this)->setBackInqueue();
 
@@ -782,6 +844,10 @@ std::cout << "setBackInqueue" << std::endl;
     SCOREP_USER_REGION_END( BFSRUN_region_rowCommunication )
 #endif
         ++iter;
+
+std::cout << " ready to reloop the crazy loop " << std::endl;
+
+
     }
 }
 
