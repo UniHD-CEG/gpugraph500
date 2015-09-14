@@ -705,11 +705,10 @@ std::cout << " 1compress has been run " << std::endl;
 #ifdef _SIMDCOMPRESS
 
 std::cout << " 1sending packet with size: " << compressedsize << " / " << outsize << std::endl;
-
                 /// compressed_fq_64 = startaddr;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+                // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
                 // outsize_compressed= static_cast<long>(compressedsize);
                 // MPI_Bcast(&outsize_compressed, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -783,7 +782,7 @@ std::cout << " 2pre receiving package " << std::endl;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 assert(outsize <= recv_fq_buff_length);
-                MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+                // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
                 MPI_Bcast(recv_fq_buff, compressedsize, fq_tp_type, it->sendColSl, row_comm);
 
 std::cout << " 2decompressed packet of size: " << compressedsize << " / " << outsize << std::endl;
