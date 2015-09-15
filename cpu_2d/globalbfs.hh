@@ -680,11 +680,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
 if (rank == 0) {
+
                 uncompressedsize = static_cast<std::size_t>(outsize);
+/*
 if (uncompressedsize > (1 << 32)) {
     std::cerr << "wrong size: " << uncompressedsize << std::endl;
 }
-                assert (uncompressedsize < (1 << 32));
+                assert (uncompressedsize < (1 >> 32));
+*/
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 }
 #ifdef INSTRUMENTED
