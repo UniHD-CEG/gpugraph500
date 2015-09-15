@@ -689,32 +689,30 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 // printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
 
-                uncompressedsize = static_cast<std::size_t>(outsize);
-                assert (uncompressedsize == outsize);
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
+                // uncompressedsize = static_cast<std::size_t>(outsize);
+                // assert (uncompressedsize == outsize);
+                // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                // SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
 
 #endif
 
 
-#ifndef _SIMDCOMPRESS
-/*
-                assert (compressedsize > (1 << 32));
-                assert (uncompressedsize > (1 << 32));
+#ifdef _SIMDCOMPRESS
+                // assert (compressedsize > (1 << 32));
+                // assert (uncompressedsize > (1 << 32));
 
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
-*/
 #else
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
 #endif
 
 #ifdef _SIMDCOMPRESS
-/*
-                assert (outsize > (1 << 32));
-                assert (compressedsize > (1 << 32));
+
+                // assert (outsize > (1 << 32));
+                // assert (compressedsize > (1 << 32));
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 assert (uncompressedsize == outsize);
                 assert (compressedsize <= outsize);
@@ -723,7 +721,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
                 startaddr = uncompressed_fq_64;
                 outsize = uncompressedsize;
-*/
+
+                if (size > 212 && size < 412) {
+                     delete[] compressed_fq_64;
+                     delete[] uncompressed_fq_64;
+                 }
 
                 /// startaddr = compressed_fq_64;
                 /// outsize = compressedsize;
@@ -756,14 +758,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 // std::cout << " 2the communicator is a row " << std::endl;
 // std::cout << " 2pre receiving package " << std::endl;
 
-#ifndef _SIMDCOMPRESS
-/*
+#ifdef _SIMDCOMPRESS
+
                 int outsize, compressedsize;
                 FQ_T *startaddr;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
 
-                assert (compressedsize > (1 << 32));
+                // assert (compressedsize > (1 << 32));
 
                 assert(outsize <= recv_fq_buff_length);
                 MPI_Bcast(recv_fq_buff, compressedsize, fq_tp_type, it->sendColSl, row_comm);
@@ -776,7 +778,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 recv_fq_buff = uncompressed_fq_64;
                 outsize = uncompressedsize;
-*/
 
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
@@ -799,6 +800,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
 
+            if (size > 212 && size < 412) {
+                 delete[] uncompressed_fq_64;
+             }
+
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     lqueue += tend - tstart;
@@ -812,10 +817,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
              * Memory cleanup
              */
             // TODO: refactor-export-to-method
-            if (outsize > 512) {
-                 // delete[] compressed_fq_64;
-                 // delete[] uncompressed_fq_64;
-             }
 #endif
         }
 
