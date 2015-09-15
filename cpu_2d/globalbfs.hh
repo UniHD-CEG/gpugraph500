@@ -679,29 +679,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 // SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
 
-if (rank == 0) {
 
                 uncompressedsize = static_cast<std::size_t>(outsize);
-/*
-if (uncompressedsize > (1 << 32)) {
-    std::cerr << "wrong size: " << uncompressedsize << std::endl;
-}
-                assert (uncompressedsize < (1 >> 32));
-*/
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
-}
+
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 // freemem=getTotalSystemMemory();
                 // printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
-if (rank == 0) {
 
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 assert (uncompressedsize == outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
-}
 
 #endif
 
@@ -728,13 +719,11 @@ if (rank == 0) {
                 assert (uncompressedsize == outsize);
                 assert (compressedsize <= outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-//                SIMDverifyCompression(startaddr, uncompressed_fq_64, uncompressedsize);
+                SIMDverifyCompression(startaddr, uncompressed_fq_64, uncompressedsize);
 
                 startaddr = uncompressed_fq_64;
                 outsize = uncompressedsize;
 */
-
-
 
                 /// startaddr = compressed_fq_64;
                 /// outsize = compressedsize;
@@ -763,11 +752,8 @@ if (rank == 0) {
 
             } else {
 
-// std::cout << " 2the communicator is a row " << std::endl;
-
-
 // std::cout << "----------------------- IF-BRANCH-2" << std::endl;
-
+// std::cout << " 2the communicator is a row " << std::endl;
 // std::cout << " 2pre receiving package " << std::endl;
 
 #ifndef _SIMDCOMPRESS
