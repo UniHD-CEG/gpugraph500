@@ -1070,7 +1070,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         // std::copy((FQ_T *)compressed_fq_64, (FQ_T *)(compressed_fq_64+size), (uint32_t *)compressed_fq_32);
         std::copy(compressed_fq_64, compressed_fq_64+size, compressed_fq_32);
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
-        compressed_fq_64 = new FQ_T[size];
+        uncompressed_fq_64 = new FQ_T[uncompressedsize];
         std::copy(uncompressed_fq_32, uncompressed_fq_32+size, uncompressed_fq_64);
         // std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+size), (FQ_T *)compressed_fq_64);
 // std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << std::endl;
