@@ -719,6 +719,8 @@ if (outsize > 212 && outsize < 412) {
 
 #ifdef _SIMDCOMPRESS
 
+                assert (((compressedsize >> 32) & 0xFFFFFFFF) == 0x00000000);
+                assert (((outsize >> 32) & 0xFFFFFFFF) == 0x00000000);
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
@@ -729,6 +731,7 @@ if (outsize > 212 && outsize < 412) {
 #endif
 
 #ifdef _SIMDCOMPRESS
+                assert (((outsize >> 32) & 0xFFFFFFFF) == 0x00000000);
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 assert (uncompressedsize == outsize);
                 assert (compressedsize <= outsize);
@@ -789,6 +792,8 @@ if (outsize > 212 && outsize < 412) {
                 FQ_T *startaddr;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
+
+                assert (((outsize >> 32) & 0xFFFFFFFF) == 0x00000000);
 
                 assert(outsize <= recv_fq_buff_length);
                 MPI_Bcast(recv_fq_buff, compressedsize, fq_tp_type, it->sendColSl, row_comm);
@@ -1020,17 +1025,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         uint32_t *compressed_fq_32 = new uint32_t[size+1024];
 
         fq_32 = new uint32_t[size];
-        // std::copy((FQ_T *)fq, (FQ_T *)(fq+size), (uint32_t *)fq_32);
-        std::copy(fq, fq+size, fq_32);
+        std::copy((FQ_T *)fq, (FQ_T *)(fq+size), (uint32_t *)fq_32);
+        // std::copy(fq, fq+size, fq_32);
         compressedsize = size+1024;
         codec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
         compressed_fq_64 = new FQ_T[compressedsize];
-        // std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+compressedsize), (FQ_T *)compressed_fq_64);
-        std::copy(compressed_fq_32, compressed_fq_32+compressedsize, compressed_fq_64);
+        std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+compressedsize), (FQ_T *)compressed_fq_64);
+        // std::copy(compressed_fq_32, compressed_fq_32+compressedsize, compressed_fq_64);
 // std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize << std::endl;
 
 std::cout << std::endl << "ORIGINAL_COMPRESION: (" << size << "elems.) **************"<< std::endl;
-for (int i=0; i < size; ++i) {
+for (size_t i=0; i < size; ++i) {
     std::cout << fq[i] << " ";
 }
 std::cout << std::endl << std::endl;
@@ -1041,10 +1046,10 @@ std::cout << std::endl << std::endl;
          * Buffer will not be compressed (Small size. Not worthed)
          */
         compressedsize = size;
-        /// compressed_fq_64 = new FQ_T[size];
-        /// std::copy(fq , fq + size, compressed_fq_64);
-        // std::copy((FQ_T *)fq , (FQ_T *)(fq + size), (FQ_T *)compressed_fq_64);
-        compressed_fq_64 = fq;
+        compressed_fq_64 = new FQ_T[compressedsize];
+        /// std::copy(fq , fq + compressedsize, compressed_fq_64);
+        std::copy((FQ_T *)fq , (FQ_T *)(fq + compressedsize), (FQ_T *)compressed_fq_64);
+        // compressed_fq_64 = fq;
 // std::cout << "Compressing. Original size: " << size << " compressed size: " << compressedsize << " [NO COMPRESSION]"<< std::endl;
      }
 std::cout << "" << size << " --> " << compressedsize << std::endl;
@@ -1088,10 +1093,10 @@ for (int i=0; i < uncompressedsize; ++i) {
         /**
          * PRE: Buffer was not previously compressed
          */
-        uncompressedsize = size;
-        //// uncompressed_fq_64 = new FQ_T[size];
-        /// std::copy(compressed_fq_64 , compressed_fq_64+size, uncompressed_fq_64);
-        uncompressed_fq_64 = compressed_fq_64;
+        // uncompressedsize = size;
+        uncompressed_fq_64 = new FQ_T[uncompressedsize];
+        std::copy(compressed_fq_64 , compressed_fq_64+uncompressedsize, uncompressed_fq_64);
+        // uncompressed_fq_64 = compressed_fq_64;
 // std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << " NO DECOMPRESSION" << std::endl;
     }
 
