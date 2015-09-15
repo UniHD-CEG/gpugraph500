@@ -5,11 +5,6 @@
  *
  */
 
-#if __cplusplus > 199711L  //C++11 check
-    #include <random>
-#else
-    #error "This library needs at least a C++11 compliant compiler"
-#endif
 
 #include "mpi.h"
 #include <cstring>
@@ -20,6 +15,12 @@
 #include "generator/make_graph.h"
 #include "distmatrix2d.hh"
 
+
+#if __cplusplus > 199711L  //C++11 check
+    #include <random>
+#else
+    #error This library needs at least a C++11 compliant compiler
+#endif
 
 
 #ifdef _CUDA
