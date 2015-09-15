@@ -1039,9 +1039,6 @@ template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size,
                                                                 FQ_T *&uncompressed_fq_64, std::size_t &uncompressedsize) const {
 
-    /**
-     * PRE: uncompressed_fq_64 buffer is already allocated in the caller method.
-     */
     if (uncompressedsize > 212 && uncompressedsize < 412) {
 //     if (uncompressedsize == -1) {
         uint32_t *uncompressed_fq_32 = new uint32_t[uncompressedsize];
@@ -1052,7 +1049,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         char const *codec_name = "s4-bp128-dm";
         IntegerCODEC &icodec =  *CODECFactory::getFromName(codec_name);
         icodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
-        // uncompressed_fq_64 = new FQ_T[uncompressedsize];
+        uncompressed_fq_64 = new FQ_T[uncompressedsize];
         std::copy(uncompressed_fq_32, uncompressed_fq_32+uncompressedsize, uncompressed_fq_64);
         // std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+size), (FQ_T *)compressed_fq_64);
 // std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << std::endl;
