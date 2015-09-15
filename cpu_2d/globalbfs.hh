@@ -679,83 +679,57 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 // SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
 
-/*
-if (outsize > 212 && outsize < 412) {
-    std::cout << "1 ORIGINAL: (" << outsize << "elems.) **************"<< std::endl;
-    for (int i=0; i < outsize; ++i) {
-        std::cout << startaddr[i] << " ";
-    }
-    std::cout << std::endl << std::endl;
-}
-*/
-
-
+if (rank == 0) {
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 assert (uncompressedsize > (1 << 32));
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
-// std::cout << " 1compress has been run " << std::endl;
-
-
+}
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 // freemem=getTotalSystemMemory();
                 // printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
+if (rank == 0) {
+
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 assert (uncompressedsize == outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
-
-/*
-if (outsize > 212 && outsize < 412) {
-    std::cout << "1 DECOMPRESSED: (" << outsize << "elems.) **************"<< std::endl;
-    for (int i=0; i < outsize; ++i) {
-        std::cout << startaddr[i] << " ";
-    }
-    std::cout << std::endl << std::endl;
 }
-*/
+
 #endif
 
 
-#ifdef _SIMDCOMPRESS
-
+#ifndef _SIMDCOMPRESS
+/*
                 assert (compressedsize > (1 << 32));
                 assert (uncompressedsize > (1 << 32));
 
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
-
+*/
 #else
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
 #endif
 
 #ifdef _SIMDCOMPRESS
+/*
                 assert (outsize > (1 << 32));
                 assert (compressedsize > (1 << 32));
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 assert (uncompressedsize == outsize);
                 assert (compressedsize <= outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-
-//std::cout << "Verify transfer: " << std::endl;
 //                SIMDverifyCompression(startaddr, uncompressed_fq_64, uncompressedsize);
 
                 startaddr = uncompressed_fq_64;
                 outsize = uncompressedsize;
-
-
-/*
-if (outsize > 212 && outsize < 412) {
-    std::cout << "1 DECOMPRESSED: (" << outsize << "elems.) **************"<< std::endl;
-    for (int i=0; i < outsize; ++i) {
-        std::cout << startaddr[i] << " ";
-    }
-    std::cout << std::endl << std::endl;
-}
 */
+
+
+
                 /// startaddr = compressed_fq_64;
                 /// outsize = compressedsize;
 #ifdef INSTRUMENTED
@@ -790,7 +764,8 @@ if (outsize > 212 && outsize < 412) {
 
 // std::cout << " 2pre receiving package " << std::endl;
 
-#ifdef _SIMDCOMPRESS
+#ifndef _SIMDCOMPRESS
+/*
                 int outsize, compressedsize;
                 FQ_T *startaddr;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -801,12 +776,6 @@ if (outsize > 212 && outsize < 412) {
                 assert(outsize <= recv_fq_buff_length);
                 MPI_Bcast(recv_fq_buff, compressedsize, fq_tp_type, it->sendColSl, row_comm);
 
-// std::cout << " 2decompressed packet of size: " << compressedsize << " / " << outsize << std::endl;
-// std::cout << " 2received in communicator " << it->sendColSl << std::endl;
-// std::cout << std::endl << std::endl;
-// std::cout << "2data received:: originalsize: " << outsize << " compressedsize: " << compressedsize << std::endl;
-
-// std::cout << " 2before decompression " << std::endl;
 
                 // uncompressedsize = static_cast<std::size_t>(outsize);
                 // SIMDcompression(codec, recv_fq_buff, uncompressedsize, compressed_fq_64, compressedsize);
@@ -815,20 +784,8 @@ if (outsize > 212 && outsize < 412) {
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 recv_fq_buff = uncompressed_fq_64;
                 outsize = uncompressedsize;
-
-
-// std::cout << " 2sizes after decompression: " << compressedsize << " / " << outsize << std::endl;
-
-// std::cout << " 2after decompression. ready to print " << std::endl;
-/*
-if (outsize > 212 && outsize < 412) {
-    std::cout << "2 DECOMPRESSED: (" << uncompressedsize << "elems.)"<< std::endl;
-    for (int i=0; i < uncompressedsize; ++i) {
-        std::cout << uncompressed_fq_64[i] << " ";
-    }
-    std::cout << std::endl << std::endl;
-}
 */
+
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
                 // freemem=getTotalSystemMemory();
