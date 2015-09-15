@@ -1036,10 +1036,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
          * Buffer will not be compressed (Small size. Not worthed)
          */
         compressedsize = size;
-        compressed_fq_64 = new FQ_T[size];
-        std::copy(fq , fq + size, compressed_fq_64);
+        /// compressed_fq_64 = new FQ_T[size];
+        /// std::copy(fq , fq + size, compressed_fq_64);
         // std::copy((FQ_T *)fq , (FQ_T *)(fq + size), (FQ_T *)compressed_fq_64);
-        /// compressed_fq_64 = fq;
+        compressed_fq_64 = fq;
 // std::cout << "Compressing. Original size: " << size << " compressed size: " << compressedsize << " [NO COMPRESSION]"<< std::endl;
     }
 std::cout << "" << size << " --> " << compressedsize << std::endl;
@@ -1075,9 +1075,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
          * PRE: Buffer was not previously compressed
          */
         uncompressedsize = size;
-        uncompressed_fq_64 = new FQ_T[size];
-        std::copy(compressed_fq_64 , compressed_fq_64+size, uncompressed_fq_64);
-        /// uncompressed_fq_64 = compressed_fq_64;
+        //// uncompressed_fq_64 = new FQ_T[size];
+        /// std::copy(compressed_fq_64 , compressed_fq_64+size, uncompressed_fq_64);
+        uncompressed_fq_64 = compressed_fq_64;
 // std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << " NO DECOMPRESSION" << std::endl;
     }
 std::cout << "" << size << " --> " << uncompressedsize << std::endl;
