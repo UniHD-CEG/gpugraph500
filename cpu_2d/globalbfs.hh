@@ -1017,12 +1017,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 //     if (size > 212 && size < 412) {
 //     if (size == -1) {
         uint32_t *fq_32;
-        uint32_t *compressed_fq_32 = new uint32_t[size+1024];
+        uint32_t *compressed_fq_32 = new uint32_t[size];
 
         fq_32 = new uint32_t[size];
         // std::copy((FQ_T *)fq, (FQ_T *)(fq+size), (uint32_t *)fq_32);
         std::copy(fq, fq+size, fq_32);
-        compressedsize = size+1024;
+        compressedsize = size;
         codec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
         compressed_fq_64 = new FQ_T[compressedsize];
         // std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+compressedsize), (FQ_T *)compressed_fq_64);
@@ -1044,7 +1044,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 //     }
 std::cout << "" << size << " --> " << compressedsize << std::endl;
 
-std::cout << std:endl << "ORIGINAL_COMPRESION: (" << uncompressedsize << "elems.) **************"<< std::endl;
+std::cout << std::endl << "ORIGINAL_COMPRESION: (" << size << "elems.) **************"<< std::endl;
 for (int i=0; i < size; ++i) {
     std::cout << fq[i] << " ";
 }
@@ -1071,7 +1071,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         std::copy(compressed_fq_64, compressed_fq_64+size, compressed_fq_32);
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         compressed_fq_64 = new FQ_T[size];
-        std::copy(compressed_fq_32, compressed_fq_32+size, compressed_fq_64);
+        std::copy(uncompressed_fq_32, uncompressed_fq_32+size, uncompressed_fq_64);
         // std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+size), (FQ_T *)compressed_fq_64);
 // std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << std::endl;
 
@@ -1091,7 +1091,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 
 std::cout << "" << size << " --> " << uncompressedsize << std::endl;
 
-std::cout << std:endl << "DECOMPRESSED_DECOMPRESSION: (" << uncompressedsize << "elems.) **************"<< std::endl;
+std::cout << std::endl << "DECOMPRESSED_DECOMPRESSION: (" << uncompressedsize << "elems.) **************"<< std::endl;
 for (int i=0; i < uncompressedsize; ++i) {
     std::cout << uncompressed_fq_64[i] << " ";
 }
