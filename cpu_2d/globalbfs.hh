@@ -1039,13 +1039,23 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         // std::copy(compressed_fq_32, compressed_fq_32+compressedsize, compressed_fq_64);
 // std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize << std::endl;
 
+/*
 std::cout << std::endl << "ORIGINAL_COMPRESION: (" << size << "elems.) **************"<< std::endl;
 for (size_t i=0; i < size; ++i) {
     std::cout << fq[i] << " ";
 }
 std::cout << std::endl << std::endl;
+*/
+
+std::cout << std::endl << "COMPRESSED_COMPRESION: (" << compressedsize << "elems.) **************"<< std::endl;
+for (size_t i=0; i < compressedsize; ++i) {
+    std::cout << compressed_fq_64[i] << " ";
+}
+std::cout << std::endl << std::endl;
+
         delete[] fq_32;
         delete[] compressed_fq_32;
+
      } else {
         /**
          * Buffer will not be compressed (Small size. Not worthed)
@@ -1091,11 +1101,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         delete[] uncompressed_fq_32;
 
 std::cout << "" << size << " --> " << uncompressedsize << std::endl;
-
+/*
 std::cout << std::endl << "DECOMPRESSED_DECOMPRESSION: (" << uncompressedsize << "elems.) **************"<< std::endl;
 for (int i=0; i < uncompressedsize; ++i) {
     std::cout << uncompressed_fq_64[i] << " ";
 }
+std::cout << std::endl << std::endl;
+*/
+std::cout << std::endl << "COMPRESSED_DECOMPRESSION: (" << size << "elems.) **************"<< std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << uncompressed_fq_64[i] << " ";
+}
+std::cout << std::endl << std::endl;
+
+
     } else {
         /**
          * PRE: Buffer was not previously compressed
@@ -1107,7 +1126,6 @@ for (int i=0; i < uncompressedsize; ++i) {
 // std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << " NO DECOMPRESSION" << std::endl;
     }
 
-std::cout << std::endl << std::endl;
 
 
 }
