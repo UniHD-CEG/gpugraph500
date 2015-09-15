@@ -1014,7 +1014,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, std
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *fq, std::size_t &size, FQ_T *&compressed_fq_64,
                                                                                                         std::size_t &compressedsize) const {
-     if (size > 212 && size < 412) {
+//     if (size > 212 && size < 412) {
 //     if (size == -1) {
         uint32_t *fq_32;
         uint32_t *compressed_fq_32 = new uint32_t[size+1024];
@@ -1031,17 +1031,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 
         delete[] fq_32;
         delete[] compressed_fq_32;
-    } else {
-        /**
-         * Buffer will not be compressed (Small size. Not worthed)
-         */
-        compressedsize = size;
-        /// compressed_fq_64 = new FQ_T[size];
-        /// std::copy(fq , fq + size, compressed_fq_64);
-        // std::copy((FQ_T *)fq , (FQ_T *)(fq + size), (FQ_T *)compressed_fq_64);
-        compressed_fq_64 = fq;
-// std::cout << "Compressing. Original size: " << size << " compressed size: " << compressedsize << " [NO COMPRESSION]"<< std::endl;
-    }
+//     } else {
+//         /**
+//          * Buffer will not be compressed (Small size. Not worthed)
+//          */
+//         compressedsize = size;
+//         /// compressed_fq_64 = new FQ_T[size];
+//         /// std::copy(fq , fq + size, compressed_fq_64);
+//         // std::copy((FQ_T *)fq , (FQ_T *)(fq + size), (FQ_T *)compressed_fq_64);
+//         compressed_fq_64 = fq;
+// // std::cout << "Compressing. Original size: " << size << " compressed size: " << compressedsize << " [NO COMPRESSION]"<< std::endl;
+//     }
 std::cout << "" << size << " --> " << compressedsize << std::endl;
 }
 
@@ -1055,7 +1055,7 @@ template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size,
                                                                 FQ_T *&uncompressed_fq_64, std::size_t &uncompressedsize) const {
 
-     if (uncompressedsize > 212 && uncompressedsize < 412) {
+//     if (uncompressedsize > 212 && uncompressedsize < 412) {
 //     if (uncompressedsize == -1) {
         uint32_t *uncompressed_fq_32 = new uint32_t[uncompressedsize];
         uint32_t *compressed_fq_32 = new uint32_t[size];
@@ -1070,16 +1070,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
-    } else {
-        /**
-         * PRE: Buffer was not previously compressed
-         */
-        uncompressedsize = size;
-        //// uncompressed_fq_64 = new FQ_T[size];
-        /// std::copy(compressed_fq_64 , compressed_fq_64+size, uncompressed_fq_64);
-        uncompressed_fq_64 = compressed_fq_64;
-// std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << " NO DECOMPRESSION" << std::endl;
-    }
+
+//     } else {
+//         /**
+//          * PRE: Buffer was not previously compressed
+//          */
+//         uncompressedsize = size;
+//         //// uncompressed_fq_64 = new FQ_T[size];
+//         /// std::copy(compressed_fq_64 , compressed_fq_64+size, uncompressed_fq_64);
+//         uncompressed_fq_64 = compressed_fq_64;
+// // std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << " NO DECOMPRESSION" << std::endl;
+//     }
+
 std::cout << "" << size << " --> " << uncompressedsize << std::endl;
 }
 
@@ -1091,7 +1093,7 @@ std::cout << "" << size << " --> " << uncompressedsize << std::endl;
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, FQ_T *uncompressed_fq_64, std::size_t uncompressedsize) const {
 
-     if (uncompressedsize > 212 && uncompressedsize < 412) {
+//     if (uncompressedsize > 212 && uncompressedsize < 412) {
 //     if (uncompressedsize == -1) {
 
         if (std::equal(uncompressed_fq_64, uncompressed_fq_64 + uncompressedsize, fq)) {
@@ -1113,7 +1115,7 @@ for (int i=0; i < uncompressedsize; ++i) {
 std::cout << std::endl << std::endl;
 
         // assert(equal);
-     }
+//     }
 }
 
 
