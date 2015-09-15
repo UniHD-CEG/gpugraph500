@@ -40,9 +40,6 @@ function install {
   export OMPI_CC=$cc
   export OMPI_CXX=$cxx
 
-  if [ 1 -eq 2 ]; then
-    :
-
   banner "OpenMPI"
   if [ ! -f ${openmpi}.tar.gz ]; then
     section_banner "Downloading"
@@ -103,7 +100,7 @@ function install {
   make -j4 install
   exit_error $?
   cd ..
- 
+
   banner "TAU"
   if [ ! -f  ${tau}.tar.gz ]; then
     section_banner "Downloading"
@@ -130,7 +127,6 @@ function install {
   make -j4 install
   exit_error $?
   cd ..
-  
 
   banner "Cube"
   if [ ! -f  ${cube}.tar.gz ]; then
@@ -161,10 +157,8 @@ function install {
   make -j4 install
   exit_error $?
   cd ..
-  fi
 
-  if [ 1 -eq 2 ]; then
-  :
+
   banner "Score-P"
   if [ ! -f  ${scorep}.tar.gz ]; then
     section_banner "Downloading"
@@ -194,11 +188,8 @@ function install {
   #exit_error $?
   section_banner "Installing"
   make -j4  install
-  return $?
-  fi
 
-  if [ 1 -eq 1 ]; then
-  :
+
   banner "Scalasca"
   if [ ! -f  ${scalasca}.tar.gz ]; then
     section_banner "Downloading"
@@ -220,7 +211,7 @@ function install {
   cd ${scalasca}
   section_banner "Checking"
   ./configure   --prefix=$scalasca_prefix --with-cube=${cube_prefix}/bin \
-                --with-mpi=openmpi --with-otf2=${scorep_prefix}/bin 
+                --with-mpi=openmpi --with-otf2=${scorep_prefix}/bin
   exit_error $?
   section_banner "Making"
   make -j4
@@ -228,7 +219,6 @@ function install {
   section_banner "Installing"
   make -j4  install
   return $?
-  fi
 }
 
 cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
@@ -236,8 +226,8 @@ cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
 nvcc=`locate bin/nvcc | grep bin/nvcc$ | tail -1`
 cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$,,'`
 
-# these versions are compatible. 
-# Ubuntu 12. Aug 2015 
+# these versions are compatible.
+# Ubuntu 12. Aug 2015
 # openmpi="openmpi-1.6.5"
 # opari="opari2-1.1.2"
 # cube="cube-4.2.3"
@@ -261,4 +251,3 @@ scalasca_prefix="$HOME/scalasca"
 
 install
 exit $?
-
