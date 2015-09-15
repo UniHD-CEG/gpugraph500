@@ -676,7 +676,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
-                SIMDbenchmarkCompression(startaddr, outsize, rank);
+                // SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
 
 /*
@@ -789,8 +789,8 @@ if (outsize > 212 && outsize < 412) {
                 FQ_T *startaddr;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
+
                 assert(outsize <= recv_fq_buff_length);
-                // MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
                 MPI_Bcast(recv_fq_buff, compressedsize, fq_tp_type, it->sendColSl, row_comm);
 
 // std::cout << " 2decompressed packet of size: " << compressedsize << " / " << outsize << std::endl;
@@ -1043,6 +1043,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 // // std::cout << "Compressing. Original size: " << size << " compressed size: " << compressedsize << " [NO COMPRESSION]"<< std::endl;
 //     }
 std::cout << "" << size << " --> " << compressedsize << std::endl;
+
+std::cout << std:endl << "ORIGINAL_COMPRESION: (" << uncompressedsize << "elems.) **************"<< std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << fq[i] << " ";
+}
+std::cout << std::endl << std::endl;
+
 }
 
 
@@ -1083,6 +1090,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 //     }
 
 std::cout << "" << size << " --> " << uncompressedsize << std::endl;
+
+std::cout << std:endl << "DECOMPRESSED_DECOMPRESSION: (" << uncompressedsize << "elems.) **************"<< std::endl;
+for (int i=0; i < uncompressedsize; ++i) {
+    std::cout << uncompressed_fq_64[i] << " ";
+}
+std::cout << std::endl << std::endl;
+
+
 }
 
 
@@ -1102,6 +1117,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, FQ_
             std::cout << "verification: compression-decompression ERROR." << std::endl;
         }
 
+/*
 std::cout << "1 CHECK_ORIGINAL: (" << uncompressedsize << "elems.) **************"<< std::endl;
 for (int i=0; i < uncompressedsize; ++i) {
     std::cout << fq[i] << " ";
@@ -1113,7 +1129,7 @@ for (int i=0; i < uncompressedsize; ++i) {
     std::cout << uncompressed_fq_64[i] << " ";
 }
 std::cout << std::endl << std::endl;
-
+*/
         // assert(equal);
 //     }
 }
