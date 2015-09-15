@@ -737,7 +737,7 @@ if (_outsize > 20 && _outsize < 40) {
                 MPI_Bcast(recv_fq_buff, compressedsize, fq_tp_type, it->sendColSl, row_comm);
 
 if (compressedsize > 20 && compressedsize < 40) {
-    std::cout << std::endl << "POINT 1 - recv_fq_buff size: " << compressedsize << std::endl;
+    std::cout << std::endl << "POINT 2 - recv_fq_buff size: " << compressedsize << std::endl;
     for (int i=0; i <compressedsize; ++i) {
         std::cout << recv_fq_buff[i] << " ";
     }
