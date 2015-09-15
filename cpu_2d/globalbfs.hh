@@ -58,8 +58,8 @@ private:
                                 std::vector<FQ_T> &uncompressed_fq_64, std::size_t &uncompressedsize) const;
     void SIMDverifyCompression(FQ_T *fq, std::vector<FQ_T> &uncompressed_fq_64, std::size_t uncompressedsize) const;
     /* Dynamic memory implementations */
-    void SIMDcompression(IntegerCODEC &codec, FQ_T *&fq_64, std::size_t &size, FQ_T *&compressed_fq_64, std::size_t &compressedsize) const;
-    void SIMDdecompression(IntegerCODEC &codec, FQ_T *&compressed_fq_64, int size, FQ_T *&uncompressed_fq_64,
+    void SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, std::size_t &size, FQ_T *&compressed_fq_64, std::size_t &compressedsize) const;
+    void SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size, FQ_T *&uncompressed_fq_64,
                                 std::size_t &uncompressedsize) const;
     void SIMDverifyCompression(FQ_T *fq, FQ_T *uncompressed_fq_64, std::size_t uncompressedsize) const;
 #endif
@@ -713,13 +713,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
                 // assert (outsize > (1 << 32));
                 // assert (compressedsize > (1 << 32));
+                FQ_T *startaddr_dispose_ptr;
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 assert (uncompressedsize == outsize);
                 assert (compressedsize <= outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 // SIMDverifyCompression(startaddr, uncompressed_fq_64, uncompressedsize);
+                startaddr_dispose_ptr = startaddr;
                 startaddr = uncompressed_fq_64;
                 outsize = uncompressedsize;
+
+std::cout << "pointer 1. deleted by rank: " << rank << std::endl;
+                delete[] startaddr_dispose_ptr;
 
 
                 /// startaddr = compressed_fq_64;
@@ -756,7 +761,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef _SIMDCOMPRESS
 
                 int outsize, compressedsize;
-                FQ_T *startaddr;
+                FQ_T *startaddr, *recv_fq_buff_dispose_ptr;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
 
@@ -771,9 +776,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 assert(uncompressedsize == outsize);
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
-                delete[] recv_fq_buff;
+                recv_fq_buff_dispose_ptr = recv_fq_buff;
                 recv_fq_buff = uncompressed_fq_64;
                 outsize = uncompressedsize;
+
+std::cout << "pointer 2. deleted by rank: " << rank << std::endl;
+                delete[] recv_fq_buff_dispose_ptr;
 
 #ifdef INSTRUMENTED
                 // TODO: more debugging for mem leaks is recommended
@@ -781,9 +789,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 // printf("free memory: %lu, rank: %d\n", freemem, rank);
 #endif
 
-//             if (outsize > 212 && outsize < 412) {
-//                  delete[] uncompressed_fq_64;
-//              }
+                // if (outsize > 212 && outsize < 412) {
+                //      delete[] uncompressed_fq_64;
+                // }
 
 #else
                 int outsize;
@@ -814,6 +822,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
              * Memory cleanup
              */
             // TODO: refactor-export-to-method
+            // 
 #endif
         }
 
@@ -967,7 +976,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, std
  * SIMD compression. Implemented with dynamic memory.
  */
 template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *&fq_64, std::size_t &size, FQ_T *&compressed_fq_64,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, std::size_t &size, FQ_T *&compressed_fq_64,
                                                                                                         std::size_t &compressedsize) const {
      if (size > 212 && size < 412) {
 //     if (size == -1) {
@@ -1027,9 +1036,12 @@ std::cout << "[C] " << size << " --> " << compressedsize << std::endl;
  * SIMD decompression. Implemented with dynamic memory.
  */
 template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *&compressed_fq_64, int size,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size,
                                                                 FQ_T *&uncompressed_fq_64, std::size_t &uncompressedsize) const {
 
+    /**
+     * PRE: uncompressed_fq_64 buffer is already allocated in the caller method.
+     */
     if (uncompressedsize > 212 && uncompressedsize < 412) {
 //     if (uncompressedsize == -1) {
         uint32_t *uncompressed_fq_32 = new uint32_t[uncompressedsize];
@@ -1040,7 +1052,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         char const *codec_name = "s4-bp128-dm";
         IntegerCODEC &icodec =  *CODECFactory::getFromName(codec_name);
         icodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
-        uncompressed_fq_64 = new FQ_T[uncompressedsize];
+        // uncompressed_fq_64 = new FQ_T[uncompressedsize];
         std::copy(uncompressed_fq_32, uncompressed_fq_32+uncompressedsize, uncompressed_fq_64);
         // std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+size), (FQ_T *)compressed_fq_64);
 // std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << std::endl;
