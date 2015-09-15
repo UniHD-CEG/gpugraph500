@@ -1029,6 +1029,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         std::copy(compressed_fq_32, compressed_fq_32+compressedsize, compressed_fq_64);
 // std::cout << "Compressing. original size: " << size << " compressed size: " << compressedsize << std::endl;
 
+std::cout << std::endl << "ORIGINAL_COMPRESION: (" << size << "elems.) **************"<< std::endl;
+for (int i=0; i < size; ++i) {
+    std::cout << fq[i] << " ";
+}
+std::cout << std::endl << std::endl;
         delete[] fq_32;
         delete[] compressed_fq_32;
      } else {
@@ -1044,11 +1049,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
      }
 std::cout << "" << size << " --> " << compressedsize << std::endl;
 
-std::cout << std::endl << "ORIGINAL_COMPRESION: (" << size << "elems.) **************"<< std::endl;
-for (int i=0; i < size; ++i) {
-    std::cout << fq[i] << " ";
-}
-std::cout << std::endl << std::endl;
 
 }
 
@@ -1078,6 +1078,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
 
+std::cout << "" << size << " --> " << uncompressedsize << std::endl;
+
+std::cout << std::endl << "DECOMPRESSED_DECOMPRESSION: (" << uncompressedsize << "elems.) **************"<< std::endl;
+for (int i=0; i < uncompressedsize; ++i) {
+    std::cout << uncompressed_fq_64[i] << " ";
+}
     } else {
         /**
          * PRE: Buffer was not previously compressed
@@ -1089,12 +1095,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 // std::cout << "Decompressing. original size: " << size << " compressed size: " << uncompressedsize << " NO DECOMPRESSION" << std::endl;
     }
 
-std::cout << "" << size << " --> " << uncompressedsize << std::endl;
-
-std::cout << std::endl << "DECOMPRESSED_DECOMPRESSION: (" << uncompressedsize << "elems.) **************"<< std::endl;
-for (int i=0; i < uncompressedsize; ++i) {
-    std::cout << uncompressed_fq_64[i] << " ";
-}
 std::cout << std::endl << std::endl;
 
 
