@@ -695,6 +695,8 @@ if (outsize > 20 && outsize < 40) {
                 assert (uncompressedsize == outsize);
                 assert (compressedsize <= outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize))
                 // startaddr = new FQ_T[uncompressedsize];
                 // std::copy(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize, startaddr);
 
@@ -752,6 +754,7 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 assert (outsize == uncompressedsize);
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize))
 
 
 if (uncompressedsize > 20 && uncompressedsize < 40) {
