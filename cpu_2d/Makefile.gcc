@@ -6,95 +6,117 @@
 # Configurable options:
 #
 # nvidia_architecture
-#  Values: fermi | kepler | maxwell | all
-# "use all for generic code: Fermi and Kepler.
+#   Values: fermi | kepler | maxwell | auto
+#   Default value: fermi
+#   Description: "use all for generic code: Fermi and Kepler.
 #
 # nvidia_ptxas_otimize
-#  Values: yes | no
-# "enables -O3 optimization on ptax cuda regiters"
+#   Values: yes | no
+#   Default value: no
+#   Description: "enables -O3 optimization on ptax cuda regiters"
 #
 # openmp_on_cuda
-#  Values: yes | no
-# "Hybrid execution mode. OpenMP threads are added to
-#  BFSruns processed with cuda"
+#   Values: yes | no
+#   Default value: no
+#   Description: "Hybrid execution mode. OpenMP threads are added to
+#  				  BFSruns processed with cuda"
 #
 # openmp_on_other_compilers
-#  Values: yes | no
-# "Hybrid execution mode. OpenMP threads are added to
-#  other high O() code"
+#   Values: yes | no
+#   Default value: no
+#   Description: "Hybrid execution mode. OpenMP threads are added to
+#  				  other high O() code"
 #
 # manual_profiler_cuda
-#  Values: yes | no
-# "prints out information on initialization"
+#   Values: yes | no
+#   Default value: no
+#   Description: "prints out information on initialization"
 #
 # manual_profiler_other_compilers
-#  Values: yes | no
-# "prints out results/ statistics at the end"
+#   Values: yes | no
+#   Default value: no
+#   Description: "prints out results/ statistics at the end"
 #
 # custom_openmpi
-#  Values: yes | no
-# "use user compiled openmpi instead of system's"
+#   Values: yes | no
+#   Default value: no
+#   Description: "use user compiled openmpi instead of system's"
 #
 # custom_openmpi_basedir
-# Values: path
-#  "if previous option is set, absolute path to dir"
+#   Values: path
+#   Default value: CHANGE_ME
+#   Description: "if previous option is set, absolute path to dir"
 #
 # scorep_profiler_enable
-#  Values: yes | no
-# "is scorep has been installed, enable it on code"
+#   Values: yes | no
+#   Default value: no
+#   Description: "is scorep has been installed, enable it on code"
 #
 # scorep_profiler_automatic_instrument
-#  Values: yes | no
-# "this option set to no enables manual instrumentation,
-#  and reads the already added zones!
+#   Values: yes | no
+#   Default value: yes
+#   Description: "this option set to no enables manual instrumentation,
+#  				  and reads the already added zones!
 #
 # scorep_custom
-#  Values: yes | no
-# "see open_mpi above. for scorep"
+#   Values: yes | no
+#   Default value: yes
+#   Description: "use custom compiled scorep instead of systems one"
 #
 # scorep_custom_basedir
-# Values: path
-#  "see custom_openmpi_basedir option above"
+#   Values: path
+#   Default value: CHANGE_ME
+#   Description: "see custom_openmpi_basedir option above"
 #
 # use_avx_instructions
-#  Values: yes | no
-#  "CPU SSExx and AMD compatible AVX will be used"
+#   Values: yes | no
+#   Default value: yes
+#   Description: "CPU SSExx and AMD compatible AVX will be used.
+#   				Required for SIMDcompression librasy"
 #
 # enable_simd_compression
-#  Values: yes | no
-#  "MPI packets will be sent compressed by using
-#   D. Lemire SIMDCompression library"
+#   Values: yes | no
+#   Default value: yes
+#   Description: "MPI packets will be sent compressed by using
+#   			  D. Lemire SIMDCompression library"
+#   External links:
+#   			- https://github.com/lemire/SIMDCompressionAndIntersection
 #
 # enable_simd_compression_benchmark
-#  Values: yes | no
-#  "shows statistics of compression rate, time of compression
-#   decompression for each codec at Lemire's library"
-#
+#   Values: yes | no
+#   Default value: no
+#   Description: "shows statistics of compression rate, time of compression
+#   			  decompression for each codec at Lemire's library"
 # debug
-#  Values: yes | no
-# "Provides extra data in runtime execution.
-#  recorded in slurm-xx.out file"
+#   Values: yes | no
+#   Default value:
+#   Description: "Provides extra data in runtime execution.
+#  				recorded in slurm-xx.out file"
 #
 # quiet_output
-#  Values: yes | no
-# "Disable verbose on Make command execution"
+#   Values: yes | no
+#   Default value: no
+#   Description: "Disable verbose on Make command execution"
 #
 # use_cuda
-#  Values: yes | no
-# "if cuda is disabled BFS runs are proccessed
-#  by CPU"
+#   Values: yes | no
+#   Default value: yes
+#   Description: "use CUDA implementation for the BFS algorithm instead of CPU"
 #
 # code_optimization_level
-#  Values: O4 | O3 | O2 | O1 | O0
-#  "Compiler optimization level."
-#
+#   Values: O4 | O3 | O2 | O1 | O0
+#   Default value:
+#   Description: "Compiler optimization level. O0=none, O4=maximum"
 #
 # code_optimization_flags
-#  Format: value value value (separated by spaces)
-#  Values: -funroll-loops -flto -finline-functions -funswitch-loops -fpredictive-commoning
-#          -fgcse-after-reload -ftree-vectorize -ftree-partial-pre -fipa-cp-clone options ...
-#           (https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options)
-#  "Optimization flags added to compiler"
+#    Values: -funroll-loops -flto -finline-functions -funswitch-loops -fpredictive-commoning
+#            -fgcse-after-reload -ftree-vectorize -ftree-partial-pre -fipa-cp-clone ...
+#
+#    Default value: -funroll-loops -flto (For GNU's version of Makefile)
+#    Format: value value value (separated by spaces)
+#    Description: "Optimization flags added to compiler"
+#    External links:
+#    			- GNU compiler: https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options
 
 
 nvidia_architecture                       :="fermi"
@@ -115,10 +137,14 @@ enable_simd_compression_benchmark         :="yes"
 debug                                     :="no"
 quiet_output                              :="no"
 use_cuda                                  :="yes"
-code_optimization_level                   :="O4"
-code_optimization_flags                   :=-funroll-loops -flto
+code_optimization_level                   :="O3"
+code_optimization_flags                   :=
 
 
+#
+# If there are several compilers installed on the system, choose the neuer version
+#
+#
 
 CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
 CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
@@ -142,7 +168,10 @@ ifeq ($(code_optimization_level), "O1")
 	o_level := -O1
 	o_level_nvcc := -O1
 endif
-
+ifeq ($(code_optimization_level), "O0")
+	o_level := -O0
+	o_level_nvcc := -O0
+endif
 
 ifeq ($(use_avx_instructions), "yes")
 	arch := -mavx
