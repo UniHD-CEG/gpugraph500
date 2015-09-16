@@ -211,13 +211,16 @@ int main(int argc, char **argv) {
     }
 
 #ifdef _SIMDCOMPRESS
-    // Check Matrix. Values lower than 32 bits are needed for lemire's SIMDCompression
-    printf("Checking that matrix values are lower than 32bit...");
-    if (store.allValuesSmallerThan32Bits() == true) {
-        printf("OK\n");
-    } else {
+    // Check Matrix. Values lower than 32 bits are needed for SIMDcompression
+    if (rank == 0) {
+        printf("Checking that matrix values are lower than 32bit...");
+    }
+    if (!store.allValuesSmallerThan32Bits()) {
         printf("ERROR\n");
         exit(1);
+    }
+    if (rank == 0) {
+        printf("OK\n");
     }
 #endif
 

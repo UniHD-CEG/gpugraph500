@@ -626,6 +626,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
                                                                             it != fold_fq_props.end(); ++it) {
 
+printf("--->0\n");
             if (it->sendColSl == store.getLocalColumnID()) {
 
                 FQ_T *startaddr;
@@ -638,8 +639,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     tstart = MPI_Wtime();
 #endif
 
+printf("--->0.1\n");
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
 
+printf("--->0.2\n");
 if (outsize > 20 && outsize < 40) {
     std::cout << std::endl << "POINT 0 - recv_fq_buff size: " << outsize << " rank: " << rank <<std::endl;
     for (int i=0; i <outsize; ++i) {
@@ -648,6 +651,8 @@ if (outsize > 20 && outsize < 40) {
     std::cout << std::endl << std::endl;
 }
 
+printf("--->0.3\n");
+
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     lqueue += tend - tstart;
@@ -655,8 +660,10 @@ if (outsize > 20 && outsize < 40) {
 
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
-                SIMDbenchmarkCompression(startaddr, outsize, rank);
+                // SIMDbenchmarkCompression(startaddr, outsize, rank);
 #endif
+
+printf("--->0.4\n");
 
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
@@ -679,7 +686,7 @@ if (outsize > 20 && outsize < 40) {
                 // SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
 
 #endif
-
+printf("--->0.5\n");
 
 #ifdef _SIMDCOMPRESS
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -740,12 +747,13 @@ printf("--->1.2\n");
 /*#endif*/
 
 #ifdef _SIMDCOMPRESS
+
                 if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize && rank != 0) {
                     // there was compression and uncompression
                     delete[] uncompressed_fq_64;
-                    delete[] compressed_fq_64;
+                    // delete[] compressed_fq_64;
                 } else if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize && rank == 0) {
-                    delete[] compressed_fq_64;
+                    // delete[] compressed_fq_64;
                 }
 #endif
 printf("--->1.3\n");
