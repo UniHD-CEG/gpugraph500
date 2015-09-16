@@ -82,7 +82,6 @@ template <class T> statistic getStatistics(std::vector <T> &input);
 void outputMatrixGenerationResults(int size, const int64_t &global_edges, double constr_time, long global_edges_wd);
 void printStat(statistic &input, const char *name, bool harmonic);
 void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid, double make_graph_time, int iterations);
-// void output32bitMatrixVerificationResults(bool allValues32, int rank);
 void outputBfsRunIterationResults(double rtstart, double rtstop, double gmax_lexp, double gmax_lqueue,
                                                                 double gmax_rowcom, double gmax_colcom, double gmax_predlistred);
 void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C);
@@ -211,13 +210,8 @@ int main(int argc, char **argv) {
         printf("Global matrix redistribution done!\n");
     }
 
-/*
-#ifdef INSTRUMENTED
-    if (verbosity >= 16) {
-        output32bitMatrixVerificationResults(store.allValuesSmallerThan32Bits(), rank);
-    }
-#endif
-*/
+#ifdef _SIMDCOMPRESS
+    // Check Matrix. Values lower than 32 bits are needed for lemire's SIMDCompression
     printf("Checking that matrix values are lower than 32bit...");
     if (store.allValuesSmallerThan32Bits() == true) {
         printf("OK\n");
@@ -225,6 +219,7 @@ int main(int argc, char **argv) {
         printf("ERROR\n");
         exit(1);
     }
+#endif
 
 #ifdef _OPENCL
     OCLRunner oclrun;
@@ -454,16 +449,7 @@ double gmax_rowcom, double gmax_colcom, double gmax_predlistred) {
     printf("max. col com.:       %fs(%f%%)\n", gmax_colcom,  100.*gmax_colcom/(rtstop-rtstart));
     printf("max. pred. list. red:%fs(%f%%)\n", gmax_predlistred,  100.*gmax_predlistred/(rtstop-rtstart));
 }
-/*
-void output32bitMatrixVerificationResults(bool allValues32, int rank) {
-    std::cout << "Analyzing the SubMatrix for task #" << rank << "..." << std::endl;
-    if (allValues32) {
-        std::cout << "32bits: OK." << std::endl;
-    }else {
-        std::cout << "32bits: ERROR. Not all values are 32bit Integers." << std::endl;
-    }
-}
-*/
+
 void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
 double make_graph_time, int iterations) {
     printf("Validation: %s\n", (valid) ? "passed" : "failed!");
