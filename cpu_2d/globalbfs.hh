@@ -703,9 +703,11 @@ if (outsize > 20 && outsize < 40) {
                 }*/
 
                 // Save (G/C)PU cycles. decompression not needed for MPI rank 0 (root). The original array is available.
+printf("--->1\n");
                 if (rank != 0){
                     SIMDdecompression(codec, compressed_fq_64, compressedsize, startaddr, uncompressedsize);
                 }
+printf("--->1.1\n");
 
 if (uncompressedsize > 20 && uncompressedsize < 40) {
     std::cout << std::endl << "POINT 1 - recv_fq_buff size: " << uncompressedsize << " rank: " << rank <<" rank2: "<< it->sendColSl <<std::endl;
@@ -734,6 +736,7 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
 #else
 */
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
+printf("--->1.2\n");
 /*#endif*/
 
 #ifdef _SIMDCOMPRESS
@@ -745,7 +748,7 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
                     delete[] compressed_fq_64;
                 }
 #endif
-
+printf("--->1.3\n");
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
@@ -762,6 +765,7 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
 
+printf("--->2\n");
                 /*
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
@@ -771,7 +775,7 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, recv_fq_buff, uncompressedsize);
 
-
+printf("--->2.1\n");
 
 if (uncompressedsize > 20 && uncompressedsize < 40) {
     std::cout << std::endl << "POINT 2 - recv_fq_buff size: " << uncompressedsize << " rank: " << rank <<std::endl;
@@ -780,6 +784,7 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
     }
     std::cout << std::endl << std::endl;
 }
+
 
 #ifdef INSTRUMENTED
                 if (rank == 0) {
@@ -800,7 +805,9 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
     tstart = MPI_Wtime();
 #endif
 
+printf("--->2.2\n");
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
+printf("--->2.3\n");
 /*
 #ifdef _SIMDCOMPRESS
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, outsize);
@@ -813,12 +820,13 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
     lqueue += tend - tstart;
 #endif
 
+/*
 #ifdef _SIMDCOMPRESS
                 if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize) {
                     delete[] compressed_fq_64;
                 }
 #endif
-
+*/
             }
         }
 
