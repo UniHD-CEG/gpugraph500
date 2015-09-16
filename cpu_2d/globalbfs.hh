@@ -694,14 +694,17 @@ if (outsize > 20 && outsize < 40) {
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 assert (uncompressedsize == outsize);
                 assert (compressedsize <= outsize);
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                
-                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize))
-                // startaddr = new FQ_T[uncompressedsize];
-                // std::copy(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize, startaddr);
+                // Save (G/C)PU cycles. decompression not needed for MPI rank 0 (root). The original array is available.
+                if (rank == 0){
+                    uncompressed_fq_64 = startaddr;
+                } else {
+                    SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                    assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
+                }
+
 
 if (uncompressedsize > 20 && uncompressedsize < 40) {
-    std::cout << std::endl << "POINT 1 - recv_fq_buff size: " << uncompressedsize << " rank: " << rank <<std::endl;
+    std::cout << std::endl << "POINT 1 - recv_fq_buff size: " << uncompressedsize << " rank: " << rank <<" rank2: "<< it->sendColSl <<std::endl;
     for (int i=0; i <uncompressedsize; ++i) {
         std::cout << uncompressed_fq_64[i] << " ";
     }
@@ -728,8 +731,11 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
 #endif
 
 #ifdef _SIMDCOMPRESS
-                if (outsize > SIMDCOMPRESSION_THRESHOLD) {
+                if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize && rank != 0) {
+                    // there was compression and uncompression
                     delete[] uncompressed_fq_64;
+                    delete[] compressed_fq_64;
+                } else if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize && rank == 0) {
                     delete[] compressed_fq_64;
                 }
 #endif
@@ -754,7 +760,7 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 assert (outsize == uncompressedsize);
-                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize))
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
 
 
 if (uncompressedsize > 20 && uncompressedsize < 40) {
