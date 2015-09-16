@@ -9,9 +9,11 @@
 ### Downloading
 Create an account in [https://bitbucket.org](https://bitbucket.org) Request access for bfs_multinode repository
 
-Available repositories are: (Replace the token **Your_Bitbucket_User**)
-- [https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git) **(Updated daily)**
-- [https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git) **(Updated weekly)**
+Available repositories are:(Replace the token **Your_Bitbucket_User**)  
+  
+
+- [https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git) **(Updated daily)**  
+- [https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git) **(Updated weekly)**  
 
 ```
 $ REPLACE the token Your_Bitbucket_User
@@ -21,7 +23,7 @@ $ git pull origin architectural_tuning
 ```
 
 ### Setting up the environment
-1. Add CUDA libraries and binaries to your path:
+1- Add CUDA libraries and binaries to your path:
 
 Add this text to your ~/.bashrc
 
@@ -32,7 +34,7 @@ export PATH=$CUDA_PATH/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_PATH/lib64:$CUDA_PATH/lib:$CUDA_PATH/extras/CUPTI/lib64:$CUDA_PATH/extras/CUPTI/lib:$LD_LIBRARY_PATH
 ```
 
-1. In case of using EXTOLL add these lines to your ~/.bashrc
+2- Optional. In case of using EXTOLL add these lines to your ~/.bashrc
 
 ```
 Adjust next line to your actual path
@@ -52,15 +54,19 @@ fi
 ### Building
 The code to compile is in the folder `cpu_2d/`. It is built using `Make`.
 
-The currently available Makefiles are:
+The (currently) available Makefiles are:  
+  
+
 - Makefile.gcc
 - Makefile.gcc.keeneland
 
-The Makefiles in the list below are currently being developed:
+The Makefiles in the list below are currently being developed:  
+  
+
 - Makefile.Intel
 - Makefile.cpu
 
-The file `Makefile` is a symbolic link to the Makefile.___ being used. It may be created/edited using:
+The file `Makefile` is a symbolic link to the Makefile.___ being used. It may be created/ edited using:
 
 ```
 $ cd bfs_multinode/cpu_2d
@@ -106,6 +112,8 @@ code_optimization_flags                   :=-funroll-loops -flto
 Test scenarios are in the folder `eval/`
 
 Sbatch relevant Test-cases in the previous list are:  
+  
+
 - o4p2n-roptim.rsh [SCALE_FACTOR]  
 - o4p2n-coptim.rsh [SCALE_FACTOR]  
 - o4p2n-noptim.rsh [SCALE_FACTOR]  
@@ -137,17 +145,18 @@ Submitted batch job 425
 
 # Automation Scripts
 ## List of scripts
-- r-ify.sh
-- r-compare.sh
-- check-all.sh
-- scorep_install.sh
+* r-ify.sh
+* r-compare.sh
+* check-all.sh
+* scorep_install.sh
 
 ## Installing scripts
 Scripts are located under the `scripts/` folder
 
-To install  
-- r-ify.sh  
-- r-compare.sh  
+To install
+
+- r-ify.sh
+- r-compare.sh
 - check-all.sh  
 
 Run:
@@ -162,22 +171,22 @@ $ ln -s ../scripts/check-all.sh check-all.sh
 $ chmod u+x *.sh
 ```
 
-To install (Useful for Profiling and Tracing)  
+To install (Useful for Profiling and Tracing)
+
 - scorep_install.sh  
 
 Run:
 
 ```
-cp scripts/scorep_install.sh ~
-cd ~  
+cp scripts/scorep_install.sh $HOME
+cd $HOME  
 chmod u+x scorep_install.sh
-./scorep_install.sh
 ...
 ```
 
 ## Script r-ify.sh
 ### Description
-It uses the execution traces to generate R-code. This R-code (once run) shows the time meassurements of the Phases of the BFS code. This script uses result files with same Scale Factor. The results are represented as a Barplot.
+It uses the execution traces to generate R-code. This R-code (once run) shows the time measurements of the Phases of the BFS code. This script uses result files with same Scale Factor. The results are represented as a Barplot.
 
 ### Execution
 
@@ -233,9 +242,9 @@ $ ./scorep_install.sh
 
 # Other
 ## Profiling and Tracing
-This BFS application allows the code to be instrumented in Zones using Score-P with very low overhead. This requires Score-P and Scalasca to be installed in the system. The results may be analyzed either visually (using CUBE) or through console using `scorep-score`     
+This BFS application allows the code to be instrumented in Zones using Score-P with very low overhead. This requires Score-P and Scalasca to be installed in the system. The results may be analyzed either visually (using CUBE) or through console using `scorep-score`.     
 
-These tools may be installed locally (No privileged user is needed) using the scorep_install.sh aforementioned.
+These tools may be installed locally (no priviledged user is needed) using the scorep_install.sh aforementioned.
 
 The names of the instrumentable Zones are listed below. Other Zones may be added if needed.
 
@@ -303,7 +312,7 @@ $ scorep-score -r profile.cubex
 
 ## Current Limitations
 ### Out-Of-Memory errors and CUDA memory size limitations:
-For some high Score-Factors (e.g 22 as of the day of writing this guide), the resulting Slurm trace will be:
+For some high Score-Factors (e.g: 22, as of the day of writing this guide), the resulting Slurm trace will be:
 
 ```
 Using SCALE-FACTOR 22
