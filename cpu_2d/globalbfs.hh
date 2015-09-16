@@ -38,8 +38,8 @@ template<class Derived,
         class STORE> //Storage of Matrix
 class GlobalBFS {
 private:
-    // set to -1 to transparently disable simd(de)compression
-    std::size_t SIMDCOMPRESSION_THRESHOLD = -1;
+    // Set to -1 to transparently disable SIMD(de)compression
+    std::size_t SIMDCOMPRESSION_THRESHOLD = 20;
     MPI_Comm row_comm, col_comm;
     int rank;
     // sending node column slice, startvtx, size
@@ -49,22 +49,17 @@ private:
 
 // Todo: export-to-class
 #ifdef _SIMDCOMPRESS
+
     /**
-     * std::vector implementations
+     * SIMD integration calls
+     *
+     *
      */
     void SIMDbenchmarkCompression(FQ_T *fq, int size, int rank) const;
-    void SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, std::size_t &size, std::vector<FQ_T> &compressed_fq_64,
-                                                                                                       std::size_t &compressedsize) const;
-    void SIMDdecompression(IntegerCODEC &codec, std::vector<FQ_T> &compressed_fq_64, std::size_t size,
-                                                        std::vector<FQ_T> &uncompressed_fq_64, std::size_t &uncompressedsize) const;
-    void SIMDverifyCompression(FQ_T *fq, std::vector<FQ_T> &uncompressed_fq_64, std::size_t uncompressedsize) const;
-    /**
-     * Dynamic memory implementations
-     */
+    void SIMDverifyCompression(FQ_T *fq, FQ_T *uncompressed_fq_64, std::size_t uncompressedsize) const;
     void SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, std::size_t &size, FQ_T *&compressed_fq_64, std::size_t &compressedsize) const;
     void SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size, FQ_T *&uncompressed_fq_64,
                                                                                                     std::size_t &uncompressedsize) const;
-    void SIMDverifyCompression(FQ_T *fq, FQ_T *uncompressed_fq_64, std::size_t uncompressedsize) const;
 #endif
 
 #ifdef INSTRUMENTED
@@ -84,8 +79,13 @@ protected:
     MType *tmpmask;
     int64_t mask_size;
 
+    /**
+     * Inherited methods in children classes: cuda_bfs.cu (CUDA), cpubfs_bin.cpp (CPU improved) and simplecpubfs.cpp (CPU basic)
+     *
+     *
+     */
     // Functions that have to be implemented by the children
-    // void reduce_fq_out(FQ_T* startaddr, long insize)=0;    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
+    // void reduce_fq_out(FQ_T* startaddr, long insize)=0;  //Global Reducer of the local outgoing frontier queues. Have to be implemented by the children.
     // void getOutgoingFQ(FQ_T* &startaddr, vtxtype& outsize)=0;
     // void setModOutgoingFQ(FQ_T* startaddr, long insize)=0; //startaddr: 0, self modification
     // void getOutgoingFQ(vtxtype globalstart, vtxtype size, FQ_T* &startaddr, vtxtype& outsize)=0;
@@ -695,8 +695,8 @@ if (compressedsize > 20 && compressedsize < 40) {
                 assert (uncompressedsize == outsize);
                 assert (compressedsize <= outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                startaddr = new FQ_T[uncompressedsize];
-                std::copy(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize, startaddr);
+                // startaddr = new FQ_T[uncompressedsize];
+                // std::copy(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize, startaddr);
 
 #ifdef INSTRUMENTED
                 if (rank == 0) {
@@ -712,7 +712,7 @@ if (compressedsize > 20 && compressedsize < 40) {
 #endif
 
 #ifdef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, outsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
 #endif
@@ -839,7 +839,7 @@ if (compressedsize > 20 && compressedsize < 40) {
  */
 
 /**
- * benchmarks compression.
+ * Benchmark compression/decompression.
  *
  */
 template<class Derived, class FQ_T, class MType, class STORE>
@@ -911,7 +911,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size,
                                                                 FQ_T *&uncompressed_fq_64, std::size_t &uncompressedsize) const {
-    if (uncompressedsize > SIMDCOMPRESSION_THRESHOLD) {
+    if (uncompressedsize > SIMDCOMPRESSION_THRESHOLD && size != uncompressedsize) {
         uint32_t *uncompressed_fq_32 = new uint32_t[uncompressedsize];
         uint32_t *compressed_fq_32 = new uint32_t[size];
         std::copy(compressed_fq_64, compressed_fq_64+size, compressed_fq_32);
@@ -929,7 +929,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 }
 
 /**
- * SIMD compression/decompression verification. Implementation with dynamic memory
+ * SIMD compression/decompression verification.
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, FQ_T *uncompressed_fq_64, std::size_t uncompressedsize) const {
