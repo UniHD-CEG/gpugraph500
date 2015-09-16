@@ -750,10 +750,10 @@ printf("--->1.2\n");
 
                 if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize && rank != 0) {
                     // there was compression and uncompression
-                    // delete[] uncompressed_fq_64;
-                    // delete[] compressed_fq_64;
+                    delete[] uncompressed_fq_64;
+                    delete[] compressed_fq_64;
                 } else if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize && rank == 0) {
-                    // delete[] compressed_fq_64;
+                    delete[] compressed_fq_64;
                 }
 #endif
 printf("--->1.3\n");
