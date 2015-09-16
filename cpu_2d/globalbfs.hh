@@ -756,7 +756,7 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
 
 
 #ifdef _SIMDCOMPRESS
-                FQ_T *uncompressed_fq_64;
+                FQ_T *compressed_fq_64;
                 int outsize, compressedsize;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
@@ -776,7 +776,7 @@ if (uncompressedsize > 20 && uncompressedsize < 40) {
 if (uncompressedsize > 20 && uncompressedsize < 40) {
     std::cout << std::endl << "POINT 2 - recv_fq_buff size: " << uncompressedsize << " rank: " << rank <<std::endl;
     for (int i=0; i <uncompressedsize; ++i) {
-        std::cout << uncompressed_fq_64[i] << " ";
+        std::cout << recv_fq_buff[i] << " ";
     }
     std::cout << std::endl << std::endl;
 }
