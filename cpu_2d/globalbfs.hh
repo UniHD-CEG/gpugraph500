@@ -640,7 +640,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
 
-
+if (outsize > 20 && outsize < 40) {
+    std::cout << std::endl << "POINT 0 - recv_fq_buff size: " << outsize << " rank: " << rank <<std::endl;
+    for (int i=0; i <outsize; ++i) {
+        std::cout << startaddr[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
+}
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
@@ -655,13 +661,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 
-if (compressedsize > 20 && compressedsize < 40) {
-    std::cout << std::endl << "POINT 1 - recv_fq_buff size: " << compressedsize << std::endl;
-    for (int i=0; i <compressedsize; ++i) {
-        std::cout << compressed_fq_64[i] << " ";
-    }
-    std::cout << std::endl << std::endl;
-}
+
 
 #ifdef INSTRUMENTED
                 if (rank == 0) {
@@ -697,6 +697,14 @@ if (compressedsize > 20 && compressedsize < 40) {
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 // startaddr = new FQ_T[uncompressedsize];
                 // std::copy(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize, startaddr);
+
+if (uncompressedsize > 20 && uncompressedsize < 40) {
+    std::cout << std::endl << "POINT 1 - recv_fq_buff size: " << uncompressedsize << " rank: " << rank <<std::endl;
+    for (int i=0; i <uncompressedsize; ++i) {
+        std::cout << uncompressed_fq_64[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
+}
 
 #ifdef INSTRUMENTED
                 if (rank == 0) {
@@ -740,18 +748,19 @@ if (compressedsize > 20 && compressedsize < 40) {
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(recv_fq_buff, compressedsize, fq_tp_type, it->sendColSl, row_comm);
 
-if (compressedsize > 20 && compressedsize < 40) {
-    std::cout << std::endl << "POINT 2 - recv_fq_buff size: " << compressedsize << std::endl;
-    for (int i=0; i <compressedsize; ++i) {
-        std::cout << recv_fq_buff[i] << " ";
-    }
-    std::cout << std::endl << std::endl;
-}
-
 
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
                 assert (outsize == uncompressedsize);
+
+
+if (uncompressedsize > 20 && uncompressedsize < 40) {
+    std::cout << std::endl << "POINT 2 - recv_fq_buff size: " << uncompressedsize << " rank: " << rank <<std::endl;
+    for (int i=0; i <uncompressedsize; ++i) {
+        std::cout << uncompressed_fq_64[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
+}
 
 #ifdef INSTRUMENTED
                 if (rank == 0) {
