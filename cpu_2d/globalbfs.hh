@@ -765,23 +765,25 @@ printf("--->1.3\n");
 
             } else {
 
+printf("--->2\n");
+
 
 #ifdef _SIMDCOMPRESS
-                FQ_T *compressed_fq_64;
+                FQ_T *compressed_fq_64b;
                 int outsize, compressedsize;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
+                MPI_Bcast(compressed_fq_64b, compressedsize, fq_tp_type, it->sendColSl, row_comm);
+printf("--->2.0\n");
 
-printf("--->2\n");
                 /*
                 uncompressedsize = static_cast<std::size_t>(outsize);
-                SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
+                SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64b, uncompressedsize);
                 assert (outsize == uncompressedsize);
-                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
+                assert (std::is_sorted(uncompressed_fq_64b, uncompressed_fq_64b+uncompressedsize));
                 */
                 uncompressedsize = static_cast<std::size_t>(outsize);
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, recv_fq_buff, uncompressedsize);
+                SIMDdecompression(codec, compressed_fq_64b, compressedsize, recv_fq_buff, uncompressedsize);
 
 printf("--->2.1\n");
 
@@ -818,7 +820,7 @@ printf("--->2.2\n");
 printf("--->2.3\n");
 /*
 #ifdef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, outsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64b, outsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
 #endif
@@ -831,7 +833,7 @@ printf("--->2.3\n");
 /*
 #ifdef _SIMDCOMPRESS
                 if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize) {
-                    delete[] compressed_fq_64;
+                    delete[] compressed_fq_64b;
                 }
 #endif
 */

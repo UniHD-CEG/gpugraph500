@@ -213,14 +213,14 @@ int main(int argc, char **argv) {
 #ifdef _SIMDCOMPRESS
     // Check Matrix. Values lower than 32 bits are needed for SIMDcompression
     if (rank == 0) {
-        printf("Checking that matrix values are lower than 32bit...");
+        printf("Check matrix values...");
     }
     if (!store.allValuesSmallerThan32Bits()) {
-        printf("ERROR\n");
+        printf("[ERROR:: values grater that 2exp32]\n");
         exit(1);
     }
     if (rank == 0) {
-        printf("OK\n");
+        printf(" done!\n");
     }
 #endif
 
