@@ -594,14 +594,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
         static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
 
-if (_outsize > 20 && _outsize < 40) {
-    std::cout << std::endl << "POINT 1 - recv_fq_buff size: " << _outsize << std::endl;
-    for (int i=0; i <_outsize; ++i) {
-        std::cout << recv_fq_buff[i] << " ";
-    }
-    std::cout << std::endl << std::endl;
-}
-
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_END( BFSRUN_region_columnCommunication )
@@ -648,6 +640,8 @@ if (_outsize > 20 && _outsize < 40) {
 
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
 
+
+
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     lqueue += tend - tstart;
@@ -660,6 +654,14 @@ if (_outsize > 20 && _outsize < 40) {
 
                 uncompressedsize = static_cast<std::size_t>(outsize);
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
+
+if (compressedsize > 20 && compressedsize < 40) {
+    std::cout << std::endl << "POINT 1 - recv_fq_buff size: " << compressedsize << std::endl;
+    for (int i=0; i <compressedsize; ++i) {
+        std::cout << compressed_fq_64[i] << " ";
+    }
+    std::cout << std::endl << std::endl;
+}
 
 #ifdef INSTRUMENTED
                 if (rank == 0) {
@@ -693,6 +695,8 @@ if (_outsize > 20 && _outsize < 40) {
                 assert (uncompressedsize == outsize);
                 assert (compressedsize <= outsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                startaddr = new FQ_T[uncompressedsize];
+                std::copy(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize, startaddr);
 
 #ifdef INSTRUMENTED
                 if (rank == 0) {
@@ -708,7 +712,7 @@ if (_outsize > 20 && _outsize < 40) {
 #endif
 
 #ifdef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, outsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
 #endif
