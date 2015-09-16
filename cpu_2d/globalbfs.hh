@@ -750,7 +750,7 @@ printf("--->1.2\n");
 
                 if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize && rank != 0) {
                     // there was compression and uncompression
-                    delete[] uncompressed_fq_64;
+                    // delete[] uncompressed_fq_64;
                     // delete[] compressed_fq_64;
                 } else if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize && rank == 0) {
                     // delete[] compressed_fq_64;
@@ -769,21 +769,25 @@ printf("--->2\n");
 
 
 #ifdef _SIMDCOMPRESS
-                FQ_T *compressed_fq_64b;
+                FQ_T *uncompressed_fq_64;
                 int outsize, compressedsize;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
                 MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(compressed_fq_64b, compressedsize, fq_tp_type, it->sendColSl, row_comm);
+                MPI_Bcast(recv_fq_buff, compressedsize, fq_tp_type, it->sendColSl, row_comm);
 printf("--->2.0\n");
 
+                uncompressedsize = static_cast<std::size_t>(outsize);
+                SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
+                if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize) {
+                    // There has been compression. assign recv_fq_buff the buffer with the original uncompressed size.
+                    recv_fq_buff = uncompressed_fq_64;
+                }
                 /*
-                uncompressedsize = static_cast<std::size_t>(outsize);
-                SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64b, uncompressedsize);
                 assert (outsize == uncompressedsize);
-                assert (std::is_sorted(uncompressed_fq_64b, uncompressed_fq_64b+uncompressedsize));
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
                 */
-                uncompressedsize = static_cast<std::size_t>(outsize);
-                SIMDdecompression(codec, compressed_fq_64b, compressedsize, recv_fq_buff, uncompressedsize);
+                // uncompressedsize = static_cast<std::size_t>(outsize);
+                // SIMDdecompression(codec, compressed_fq_64, compressedsize, recv_fq_buff, uncompressedsize);
 
 printf("--->2.1\n");
 
@@ -820,7 +824,7 @@ printf("--->2.2\n");
 printf("--->2.3\n");
 /*
 #ifdef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64b, outsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, outsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
 #endif
@@ -830,13 +834,14 @@ printf("--->2.3\n");
     lqueue += tend - tstart;
 #endif
 
-/*
+
 #ifdef _SIMDCOMPRESS
                 if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize) {
-                    delete[] compressed_fq_64b;
+                    // delete only the pointer; not the content
+                    delete uncompressed_fq_64;
                 }
 #endif
-*/
+
             }
         }
 
