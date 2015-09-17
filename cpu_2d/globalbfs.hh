@@ -720,13 +720,10 @@ if (originalsize > 20 && originalsize < 200) {
                 // Save (G/C)PU cycles. decompression not needed for MPI rank 0 (root). The original array is available.
 
                 if (rank != root_rank){
-std:cout << "in:: rank: " << rank << " root_rank: " << root_rank << std::endl;
+std::cout << "in:: rank: " << rank << " root_rank: " << root_rank << std::endl;
                     SIMDdecompression(codec, compressed_fq_64, compressedsize, startaddr, uncompressedsize);
                 } else {
-std:cout << "out:: rank: " << rank << " root_rank: " << root_rank << std::endl;
-                }
-
-/*
+std::cout << "out:: rank: " << rank << " root_rank: " << root_rank << std::endl;
 if (originalsize > 20 && originalsize < 500 && compressedsize != originalsize) {
     std::cout << std::endl << "POINT 1 - fq_64 size: " << originalsize << " rank: " << rank <<" rank2: "<< root_rank <<std::endl;
     for (int i=0; i <originalsize; ++i) {
@@ -734,6 +731,9 @@ if (originalsize > 20 && originalsize < 500 && compressedsize != originalsize) {
     }
     std::cout << std::endl << std::endl;
 }
+                }
+
+/*
 */
 /*
 #ifdef INSTRUMENTED
@@ -758,11 +758,17 @@ if (originalsize > 20 && originalsize < 500 && compressedsize != originalsize) {
 #endif
 
 #ifdef _SIMDCOMPRESS
-                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize && rank != root_rank) {
                     // there was compression and uncompression
-                    // delete[] uncompressed_fq_64;
+                    delete[] startaddr;
                     // delete[] compressed_fq_64;
                 }
+                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize && rank == root_rank) {
+                    // there was compression and uncompression
+                    // delete[] uncompressed_fq_64;
+                    delete[] compressed_fq_64;
+                }
+
 #endif
 // printf("--->1.3\n");
 
