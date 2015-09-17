@@ -39,7 +39,7 @@ template<class Derived,
 class GlobalBFS {
 private:
     // Set to -1 to transparently disable SIMD(de)compression
-    std::size_t SIMDCOMPRESSION_THRESHOLD = (1 >> 28);
+    std::uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff; // 2^32
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
@@ -621,9 +621,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef _SIMDCOMPRESS
         IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
         std::size_t uncompressedsize, compressedsize;
-#ifdef INSTRUMENTED
-        std::size_t memory;
-#endif
 #endif
 
         int root_rank;
@@ -685,11 +682,12 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                 /**
                  * Decompression test before broadcasted
                  */
-                uncompressedsize = static_cast<std::size_t>(originalsize);
-                assert (uncompressedsize == originalsize);
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
-
+                 if (rank == root_rank) {
+                         uncompressedsize = static_cast<std::size_t>(originalsize);
+                         assert (uncompressedsize == originalsize);
+                         SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
+                         SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+                 }
 #endif
 // printf("--->0.5\n");
 
@@ -707,7 +705,7 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                 assert (uncompressedsize == originalsize);
                 // assert (compressedsize <= originalsize);
 
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
                 assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
 
                 /*
@@ -727,15 +725,7 @@ if (originalsize > 20 && originalsize < 1000) {
     std::cout << std::endl << std::endl;
 }
 */
-/*
-#ifdef INSTRUMENTED
-                if (rank == root_rank) {
-                    // debugs mem leaks
-                    // memory=getTotalSystemMemory();
-                    // printf("Memory: %lu, rank: %d\n", memory, rank);
-                }
-#endif
-*/
+
 #endif
 
 #ifdef INSTRUMENTED
@@ -752,8 +742,8 @@ if (originalsize > 20 && originalsize < 1000) {
 #ifdef _SIMDCOMPRESS
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // there was compression and uncompression
-                    delete[] uncompressed_fq_64;
-                    delete[] compressed_fq_64;
+                    // delete[] uncompressed_fq_64;
+                    // delete[] compressed_fq_64;
                 }
                 /*
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize && rank != root_rank) {
@@ -794,7 +784,7 @@ if (originalsize > 20 && originalsize < 1000) {
                 MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
                 uncompressedsize = static_cast<std::size_t>(originalsize);
-                SIMDdecompression(codec, fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                SIMDdecompression(codec, fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
                 assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+originalsize));
 
 /*
@@ -831,15 +821,7 @@ if (uncompressedsize > 20 && uncompressedsize < 200) {
     std::cout << std::endl << std::endl;
 }
 */
-/*
-#ifdef INSTRUMENTED
-                if (rank == root_rank) {
-                    // debugs mem leaks
-                    // memory=getTotalSystemMemory();
-                    // printf("Memory: %lu, rank: %d\n", memory, rank);
-                }
-#endif
-*/
+
 #else
                 int originalsize;
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
@@ -1054,26 +1036,4 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, FQ_
 
 #ifdef INSTRUMENTED
 
-
-
-
-
-
-
-
-
-/**
- * getTotalSystemMemory()
- * Used to manually search for Memory Leaks
- *
- *
- *
- */
-    template<class Derived, class FQ_T, class MType, class STORE>
-    std::size_t GlobalBFS<Derived, FQ_T, MType, STORE>::getTotalSystemMemory() {
-        long pages = sysconf(_SC_PHYS_PAGES);
-        long page_size = sysconf(_SC_PAGE_SIZE);
-        return pages * page_size;
-    }
-#endif
 #endif // GLOBALBFS_HH
