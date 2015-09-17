@@ -776,6 +776,7 @@ if (originalsize > 20 && originalsize < 1000) {
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 assert(originalsize <= fq_64_length);
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
+                compressed_fq_64 = new FQ_T[compressedsize];
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
 /*
