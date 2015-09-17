@@ -39,7 +39,7 @@ template<class Derived,
 class GlobalBFS {
 private:
     // Set to 0xffffffff (2^32) to transparently disable SIMD(de)compression
-    std::uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff;
+    std::uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
@@ -147,8 +147,8 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
     delete[] owenmask;
     delete[] tmpmask;
 
-    MPI_Type_free(&fq_tp_type);
-    MPI_Type_free(&bm_type);
+    // MPI_Type_free(&fq_tp_type);
+    // MPI_Type_free(&bm_type);
 }
 
 /**
@@ -673,29 +673,34 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                 /**
                  * Decompression test before broadcasted
                  */
-                 if (rank == root_rank) {
-                         uncompressedsize = static_cast<std::size_t>(originalsize);
-                         SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
-                         SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
-                 }
+
+                 uncompressedsize = static_cast<std::size_t>(originalsize);
+                 SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
+                 SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
 #endif
 // printf("--->0.5\n");
 
-#ifndef _SIMDCOMPRESS
+#ifdef _SIMDCOMPRESS
+/*
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
+*/
+                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #else
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
-#ifndef _SIMDCOMPRESS
+#ifdef _SIMDCOMPRESS
+/*ifndef
                 uncompressedsize = static_cast<std::size_t>(originalsize);
                 // assert (compressedsize <= originalsize);
+*/
+//                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
+//                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
 
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
-                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
 
                 /*
                 // Save (G/C)PU cycles. decompression not needed for MPI rank 0 (root). The original array is available.
@@ -722,8 +727,9 @@ if (originalsize > 20 && originalsize < 1000) {
 #endif
 
 
-#ifndef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
+#ifdef _SIMDCOMPRESS
+                // static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #endif
@@ -760,7 +766,15 @@ if (originalsize > 20 && originalsize < 1000) {
 // printf("--->2\n");
 
 
-#ifndef _SIMDCOMPRESS
+#ifdef _SIMDCOMPRESS
+
+                int originalsize;
+                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+                assert(originalsize <= fq_64_length);
+                MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
+
+/*
+ifndef
 
                 assert(rank != root_rank);
 
@@ -773,8 +787,11 @@ if (originalsize > 20 && originalsize < 1000) {
                 MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
                 uncompressedsize = static_cast<std::size_t>(originalsize);
-                SIMDdecompression(codec, fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
-                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+originalsize));
+*/
+//                SIMDdecompression(codec, fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
+//                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+originalsize));
+
+
 
 /*
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
@@ -824,8 +841,10 @@ if (uncompressedsize > 20 && uncompressedsize < 200) {
 
 // printf("--->2.2\n");
 
-#ifndef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
+#ifdef _SIMDCOMPRESS
+//                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
+
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 #endif
@@ -1022,7 +1041,5 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(FQ_T *fq, FQ_
     }
 }
 #endif
-
-#ifdef INSTRUMENTED
 
 #endif // GLOBALBFS_HH
