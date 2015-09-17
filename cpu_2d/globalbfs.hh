@@ -861,14 +861,16 @@ if (uncompressedsize > 20 && uncompressedsize < 200) {
     lqueue += tend - tstart;
 #endif
 
-/*
+
 #ifdef _SIMDCOMPRESS
+                delete[] compressed_fq_64;
+/*
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // delete only the pointer; not the content
                     // delete uncompressed_fq_64;
                 }
-#endif
 */
+#endif
             }
         }
 
