@@ -38,8 +38,8 @@ template<class Derived,
         class STORE> //Storage of Matrix
 class GlobalBFS {
 private:
-    // Set to -1 to transparently disable SIMD(de)compression
-    std::size_t SIMDCOMPRESSION_THRESHOLD = -1;
+    // Set to (1 >> 32) to transparently disable SIMD(de)compression
+    long SIMDCOMPRESSION_THRESHOLD = (1 >> 28);
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
@@ -629,14 +629,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
         int root_rank;
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
                                                                             it != fold_fq_props.end(); ++it) {
-            root_rank = it->sendColSl;
 // printf("--->0\n");
+            root_rank = it->sendColSl;
             if (root_rank == store.getLocalColumnID()) {
 
                 int originalsize;
                 FQ_T *startaddr;
 #ifdef _SIMDCOMPRESS
-                FQ_T *compressed_fq_64; //, *uncompressed_fq_64;
+                FQ_T *compressed_fq_64, *uncompressed_fq_64;
 #endif
 
 #ifdef INSTRUMENTED
@@ -647,7 +647,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, originalsize);
 
 // printf("--->0.2\n");
-
+/*
 if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
     std::cout << std::endl << "POINT 0 - fq_64 size: " << originalsize << " rank: " << rank << " root_rank: " << root_rank <<std::endl;
     for (int i=0; i <originalsize; ++i) {
@@ -655,7 +655,7 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
     }
     std::cout << std::endl << std::endl;
 }
-
+*/
 // printf("--->0.3\n");
 
 #ifdef INSTRUMENTED
@@ -685,10 +685,10 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                 /**
                  * Decompression test before broadcasted
                  */
-                // uncompressedsize = static_cast<std::size_t>(originalsize);
-                // assert (uncompressedsize == originalsize);
-                // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                // SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+                uncompressedsize = static_cast<std::size_t>(originalsize);
+                assert (uncompressedsize == originalsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
 
 #endif
 // printf("--->0.5\n");
@@ -705,23 +705,18 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
 #ifdef _SIMDCOMPRESS
                 uncompressedsize = static_cast<std::size_t>(originalsize);
                 assert (uncompressedsize == originalsize);
-                assert (compressedsize <= originalsize);
-/*
-                // Save (G/C)PU cycles. decompression not needed for MPI rank 0 (root). The original array is available.
-                if (rank == root_rank){
-                    uncompressed_fq_64 = startaddr;
-                } else {
-                    SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                    assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
-                }
+                // assert (compressedsize <= originalsize);
+
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
-*/
+
+                /*
                 // Save (G/C)PU cycles. decompression not needed for MPI rank 0 (root). The original array is available.
                 if (rank != root_rank){
                     SIMDdecompression(codec, compressed_fq_64, compressedsize, startaddr, uncompressedsize);
                     delete[] compressed_fq_64;
                 }
+                */
 
 /*
 if (originalsize > 20 && originalsize < 1000) {
@@ -749,22 +744,29 @@ if (originalsize > 20 && originalsize < 1000) {
 
 
 #ifdef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #endif
 
 #ifdef _SIMDCOMPRESS
+                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                    // there was compression and uncompression
+                    delete[] uncompressed_fq_64;
+                    delete[] compressed_fq_64;
+                }
+                /*
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize && rank != root_rank) {
                     // there was compression and uncompression
-                    // delete[] startaddr;
-                    // delete[] compressed_fq_64;
+                    delete[] uncompressed_fq_64;
+                    delete[] compressed_fq_64;
                 }
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize && rank == root_rank) {
                     // there was compression and uncompression
                     // delete[] uncompressed_fq_64;
-                    // delete[] compressed_fq_64;
+                    delete[] compressed_fq_64;
                 }
+                */
 
 #endif
 // printf("--->1.3\n");
@@ -795,12 +797,13 @@ if (originalsize > 20 && originalsize < 1000) {
                 SIMDdecompression(codec, fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                 assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+originalsize));
 
+/*
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // free(fq_64);
                     fq_64 = uncompressed_fq_64;
                 } else {
                 }
-
+*/
 // printf("--->2.0\n");
 /*
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
@@ -809,7 +812,6 @@ if (originalsize > 20 && originalsize < 1000) {
                     // originalsize = static_cast<int>(uncompressedsize);
                 }
 */
-                assert (std::is_sorted(fq_64, fq_64+originalsize));
 
                 /*
                 assert (originalsize == uncompressedsize);
@@ -990,15 +992,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         uint32_t *fq_32;
         uint32_t *compressed_fq_32 = new uint32_t[size+1024];
         fq_32 = new uint32_t[size];
-        // std::copy((FQ_T *)fq_64, (FQ_T *)(fq_64+size), (uint32_t *)fq_32);
-        std::copy(fq_64, fq_64+size, fq_32);
+        std::copy((FQ_T *)fq_64, (FQ_T *)(fq_64+size), (uint32_t *)fq_32);
+        // std::copy(fq_64, fq_64+size, fq_32);
         compressedsize = size+1024;
         char const *codec_name = "s4-bp128-dm";
         IntegerCODEC &icodec =  *CODECFactory::getFromName(codec_name);
         icodec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
         compressed_fq_64 = new FQ_T[compressedsize];
-        // std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+compressedsize), (FQ_T *)compressed_fq_64);
-        std::copy(compressed_fq_32, compressed_fq_32+compressedsize, compressed_fq_64);
+        std::copy((uint32_t *)compressed_fq_32, (uint32_t *)(compressed_fq_32+compressedsize), (FQ_T *)compressed_fq_64);
+        // std::copy(compressed_fq_32, compressed_fq_32+compressedsize, compressed_fq_64);
         delete[] fq_32;
         delete[] compressed_fq_32;
      } else {
@@ -1019,12 +1021,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
     if (uncompressedsize > SIMDCOMPRESSION_THRESHOLD && size != uncompressedsize) {
         uint32_t *uncompressed_fq_32 = new uint32_t[uncompressedsize];
         uint32_t *compressed_fq_32 = new uint32_t[size];
-        std::copy(compressed_fq_64, compressed_fq_64+size, compressed_fq_32);
+        // std::copy(compressed_fq_64, compressed_fq_64+size, compressed_fq_32);
+        std::copy((FQ_T *)compressed_fq_64, (FQ_T *)(compressed_fq_64+size), (uint32_t *)compressed_fq_32);
         char const *codec_name = "s4-bp128-dm";
         IntegerCODEC &icodec =  *CODECFactory::getFromName(codec_name);
         icodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         uncompressed_fq_64 = new FQ_T[uncompressedsize];
-        std::copy(uncompressed_fq_32, uncompressed_fq_32+uncompressedsize, uncompressed_fq_64);
+        // std::copy(uncompressed_fq_32, uncompressed_fq_32+uncompressedsize, uncompressed_fq_64);
+        std::copy((uint32_t *)uncompressed_fq_32, (uint32_t *)(uncompressed_fq_32+uncompressedsize), (FQ_T *)uncompressed_fq_64);
         delete[] compressed_fq_32;
         delete[] uncompressed_fq_32;
     } else {
