@@ -739,8 +739,8 @@ if (originalsize > 20 && originalsize < 1000) {
 #ifdef _SIMDCOMPRESS
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // there was compression and uncompression
-                    // delete[] uncompressed_fq_64;
-                    // delete[] compressed_fq_64;
+                    delete[] uncompressed_fq_64;
+                    delete[] compressed_fq_64;
                 }
                 /*
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize && rank != root_rank) {
