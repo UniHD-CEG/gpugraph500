@@ -686,6 +686,7 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 */
+                MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #else
@@ -768,7 +769,8 @@ if (originalsize > 20 && originalsize < 1000) {
 
 #ifdef _SIMDCOMPRESS
 
-                int originalsize;
+                int originalsize, compressedsize;
+                MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 assert(originalsize <= fq_64_length);
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
