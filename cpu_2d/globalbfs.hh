@@ -41,7 +41,6 @@ private:
     // Set to -1 to transparently disable SIMD(de)compression
     std::size_t SIMDCOMPRESSION_THRESHOLD = 20;
     MPI_Comm row_comm, col_comm;
-    int rank;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
@@ -71,13 +70,14 @@ protected:
     typename STORE::vtxtyp *predecessor;
     MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
     MPI_Datatype bm_type;    // Bitmap Type
-    // FQ_T*  __restrict__ recv_fq_buff; - conflicts with void* ref
-    FQ_T *recv_fq_buff;
+    // FQ_T*  __restrict__ fq_64; - conflicts with void* ref
+    FQ_T *fq_64;
     //, *compressed_fq_64; // uncompressed and compressed column-buffers
-    long recv_fq_buff_length;
+    long fq_64_length;
     MType *owenmask;
     MType *tmpmask;
     int64_t mask_size;
+    int rank;
 
     /**
      * Inherited methods in children classes: cuda_bfs.cu (CUDA), cpubfs_bin.cpp (CPU improved) and simplecpubfs.cpp (CPU basic)
@@ -125,11 +125,12 @@ public:
 template<class Derived, class FQ_T, class MType, class STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : store(_store) {
     int mtypesize = 8 * sizeof(MType);
+    int local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
     // Split communicator into row and column communicator
     // Split by row, rank by column
-    MPI_Comm_split(MPI_COMM_WORLD, store.getLocalRowID(), store.getLocalColumnID(), &row_comm);
+    MPI_Comm_split(MPI_COMM_WORLD, local_row, local_column, &row_comm);
     // Split by column, rank by row
-    MPI_Comm_split(MPI_COMM_WORLD, store.getLocalColumnID(), store.getLocalRowID(), &col_comm);
+    MPI_Comm_split(MPI_COMM_WORLD, local_column, local_row, &col_comm);
     fold_fq_props = store.getFoldProperties();
     mask_size = (store.getLocColLength() / mtypesize) + ((store.getLocColLength() % mtypesize > 0) ? 1 : 0);
     owenmask = new MType[mask_size];
@@ -145,6 +146,9 @@ template<class Derived, class FQ_T, class MType, class STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
     delete[] owenmask;
     delete[] tmpmask;
+
+    MPI_Type_free(&fq_tp_type);
+    MPI_Type_free(&bm_type);
 }
 
 /**
@@ -535,7 +539,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
             // MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
             static_cast<Derived *>(this)->generatOwenMask();
             allReduceBitCompressed(predecessor,
-                                   recv_fq_buff, // have to be changed for bitmap queue
+                                   fq_64, // have to be changed for bitmap queue
                                    owenmask, tmpmask);
 
 
@@ -581,7 +585,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                           static_cast<Derived *>(this), _1, _2, _3, _4);
 
         vreduce(reduce, get,
-                recv_fq_buff,
+                fq_64,
                 _outsize,
                 store.getLocColLength(),
                 fq_tp_type,
@@ -592,7 +596,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
                 );
 
-        static_cast<Derived *>(this)->setModOutgoingFQ(recv_fq_buff, _outsize);
+        static_cast<Derived *>(this)->setModOutgoingFQ(fq_64, _outsize);
 
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
@@ -622,36 +626,37 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 #endif
 
-        int outsize;
+        int root_rank;
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
                                                                             it != fold_fq_props.end(); ++it) {
+            root_rank = it->sendColSl;
+// printf("--->0\n");
+            if (root_rank == store.getLocalColumnID()) {
 
-printf("--->0\n");
-            if (it->sendColSl == store.getLocalColumnID()) {
-
+                int originalsize;
                 FQ_T *startaddr;
-
 #ifdef _SIMDCOMPRESS
-                FQ_T *compressed_fq_64, *uncompressed_fq_64;
+                FQ_T *compressed_fq_64; //, *uncompressed_fq_64;
 #endif
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
 
-printf("--->0.1\n");
-                static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, outsize);
+// printf("--->0.1\n");
+                static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, originalsize);
 
-printf("--->0.2\n");
-if (outsize > 20 && outsize < 40) {
-    std::cout << std::endl << "POINT 0 - recv_fq_buff size: " << outsize << " rank: " << rank <<std::endl;
-    for (int i=0; i <outsize; ++i) {
+// printf("--->0.2\n");
+/*
+if (originalsize > 20 && originalsize < 200) {
+    std::cout << std::endl << "POINT 0 - fq_64 size: " << originalsize << " rank: " << rank <<std::endl;
+    for (int i=0; i <originalsize; ++i) {
         std::cout << startaddr[i] << " ";
     }
     std::cout << std::endl << std::endl;
 }
-
-printf("--->0.3\n");
+*/
+// printf("--->0.3\n");
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
@@ -660,18 +665,18 @@ printf("--->0.3\n");
 
 #ifdef _SIMDCOMPRESS
 #ifdef _SIMDCOMPRESSBENCHMARK
-                // SIMDbenchmarkCompression(startaddr, outsize, rank);
+                // SIMDbenchmarkCompression(startaddr, originalsize, rank);
 #endif
 
-printf("--->0.4\n");
+// printf("--->0.4\n");
 
-                uncompressedsize = static_cast<std::size_t>(outsize);
+                uncompressedsize = static_cast<std::size_t>(originalsize);
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 
 
 
 #ifdef INSTRUMENTED
-                if (rank == 0) {
+                if (rank == root_rank) {
                     // debugs mem leaks
                     // memory=getTotalSystemMemory();
                     // printf("Memory: %lu, rank: %d\n", memory, rank);
@@ -680,83 +685,86 @@ printf("--->0.4\n");
                 /**
                  * Decompression test before broadcasted
                  */
-                // uncompressedsize = static_cast<std::size_t>(outsize);
-                // assert (uncompressedsize == outsize);
+                // uncompressedsize = static_cast<std::size_t>(originalsize);
+                // assert (uncompressedsize == originalsize);
                 // SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
-                // SIMDverifyCompression(startaddr, uncompressed_fq_64, outsize);
+                // SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
 
 #endif
-printf("--->0.5\n");
+// printf("--->0.5\n");
 
 #ifdef _SIMDCOMPRESS
-                MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, it->sendColSl, row_comm);
+                MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
+                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 #else
-                MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(startaddr, outsize, fq_tp_type, it->sendColSl, row_comm);
+                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
 #ifdef _SIMDCOMPRESS
-                uncompressedsize = static_cast<std::size_t>(outsize);
-                assert (uncompressedsize == outsize);
-                assert (compressedsize <= outsize);
-                /*
-                if (rank == 0){
+                uncompressedsize = static_cast<std::size_t>(originalsize);
+                assert (uncompressedsize == originalsize);
+                assert (compressedsize <= originalsize);
+/*
+                // Save (G/C)PU cycles. decompression not needed for MPI rank 0 (root). The original array is available.
+                if (rank == root_rank){
                     uncompressed_fq_64 = startaddr;
                 } else {
                     SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                     assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
-                }*/
-
-                // Save (G/C)PU cycles. decompression not needed for MPI rank 0 (root). The original array is available.
-printf("--->1\n");
-                if (rank != 0){
-                    SIMDdecompression(codec, compressed_fq_64, compressedsize, startaddr, uncompressedsize);
                 }
-printf("--->1.1\n");
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
+*/
+                // Save (G/C)PU cycles. decompression not needed for MPI rank 0 (root). The original array is available.
 
-if (uncompressedsize > 20 && uncompressedsize < 40) {
-    std::cout << std::endl << "POINT 1 - recv_fq_buff size: " << uncompressedsize << " rank: " << rank <<" rank2: "<< it->sendColSl <<std::endl;
-    for (int i=0; i <uncompressedsize; ++i) {
-        std::cout << uncompressed_fq_64[i] << " ";
+                if (rank != root_rank){
+std:cout << "in:: rank: " << rank << " root_rank: " << root_rank << std::endl;
+                    SIMDdecompression(codec, compressed_fq_64, compressedsize, startaddr, uncompressedsize);
+                } else {
+std:cout << "out:: rank: " << rank << " root_rank: " << root_rank << std::endl;
+                }
+
+/*
+if (originalsize > 20 && originalsize < 500 && compressedsize != originalsize) {
+    std::cout << std::endl << "POINT 1 - fq_64 size: " << originalsize << " rank: " << rank <<" rank2: "<< root_rank <<std::endl;
+    for (int i=0; i <originalsize; ++i) {
+        std::cout << startaddr[i] << " ";
     }
     std::cout << std::endl << std::endl;
 }
-
+*/
+/*
 #ifdef INSTRUMENTED
-                if (rank == 0) {
+                if (rank == root_rank) {
                     // debugs mem leaks
                     // memory=getTotalSystemMemory();
                     // printf("Memory: %lu, rank: %d\n", memory, rank);
                 }
 #endif
+*/
 #endif
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
 
-/*
+
 #ifdef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #else
-*/
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, outsize);
-printf("--->1.2\n");
-/*#endif*/
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
+#endif
 
 #ifdef _SIMDCOMPRESS
-
-                if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize && rank != 0) {
+                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // there was compression and uncompression
-                    delete[] uncompressed_fq_64;
-                    delete[] compressed_fq_64;
-                } else if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize && rank == 0) {
-                    delete[] compressed_fq_64;
+                    // delete[] uncompressed_fq_64;
+                    // delete[] compressed_fq_64;
                 }
 #endif
-printf("--->1.3\n");
+// printf("--->1.3\n");
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
@@ -765,83 +773,100 @@ printf("--->1.3\n");
 
             } else {
 
-printf("--->2\n");
+// printf("--->2\n");
 
 
 #ifdef _SIMDCOMPRESS
-                FQ_T *uncompressed_fq_64;
-                int outsize, compressedsize;
-                MPI_Bcast(&compressedsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                MPI_Bcast(recv_fq_buff, compressedsize, fq_tp_type, it->sendColSl, row_comm);
-printf("--->2.0\n");
 
-                uncompressedsize = static_cast<std::size_t>(outsize);
-                SIMDdecompression(codec, recv_fq_buff, compressedsize, uncompressed_fq_64, uncompressedsize);
-                if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize) {
-                    // There has been compression. assign recv_fq_buff the buffer with the original uncompressed size.
-                    recv_fq_buff = uncompressed_fq_64;
+                assert(rank != root_rank);
+
+                FQ_T *uncompressed_fq_64;
+                int originalsize, compressedsize;
+                MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
+                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+                assert(originalsize <= fq_64_length);
+
+                MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
+
+                uncompressedsize = static_cast<std::size_t>(originalsize);
+                SIMDdecompression(codec, fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+originalsize));
+
+                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                    fq_64 = uncompressed_fq_64;
+                } else {
                 }
+
+// printf("--->2.0\n");
+/*
+                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                    // There has been compression. assign fq_64 the buffer with the original uncompressed size.
+                    // fq_64 = uncompressed_fq_64;
+                    // originalsize = static_cast<int>(uncompressedsize);
+                }
+*/
+                assert (std::is_sorted(fq_64, fq_64+originalsize));
+
                 /*
-                assert (outsize == uncompressedsize);
+                assert (originalsize == uncompressedsize);
                 assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
                 */
-                // uncompressedsize = static_cast<std::size_t>(outsize);
-                // SIMDdecompression(codec, compressed_fq_64, compressedsize, recv_fq_buff, uncompressedsize);
+                // uncompressedsize = static_cast<std::size_t>(originalsize);
+                // SIMDdecompression(codec, compressed_fq_64, compressedsize, fq_64, uncompressedsize);
 
-printf("--->2.1\n");
+// printf("--->2.1\n");
 
-if (uncompressedsize > 20 && uncompressedsize < 40) {
-    std::cout << std::endl << "POINT 2 - recv_fq_buff size: " << uncompressedsize << " rank: " << rank <<std::endl;
+/*
+if (uncompressedsize > 20 && uncompressedsize < 200) {
+    std::cout << std::endl << "POINT 2 - fq_64 size: " << uncompressedsize << " rank: " << rank <<std::endl;
     for (int i=0; i <uncompressedsize; ++i) {
-        std::cout << recv_fq_buff[i] << " ";
+        std::cout << fq_64[i] << " ";
     }
     std::cout << std::endl << std::endl;
 }
-
-
+*/
+/*
 #ifdef INSTRUMENTED
-                if (rank == 0) {
+                if (rank == root_rank) {
                     // debugs mem leaks
                     // memory=getTotalSystemMemory();
                     // printf("Memory: %lu, rank: %d\n", memory, rank);
                 }
 #endif
-
+*/
 #else
-                int outsize;
-                MPI_Bcast(&outsize, 1, MPI_LONG, it->sendColSl, row_comm);
-                assert(outsize <= recv_fq_buff_length);
-                MPI_Bcast(recv_fq_buff, outsize, fq_tp_type, it->sendColSl, row_comm);
+                int originalsize;
+                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+                assert(originalsize <= fq_64_length);
+                MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
 #ifdef INSTRUMENTED
     tstart = MPI_Wtime();
 #endif
 
-printf("--->2.2\n");
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
-printf("--->2.3\n");
-/*
+// printf("--->2.2\n");
+
 #ifdef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, outsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 #else
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, recv_fq_buff, outsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 #endif
-*/
+
+// printf("--->2.3\n");
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     lqueue += tend - tstart;
 #endif
 
-
+/*
 #ifdef _SIMDCOMPRESS
-                if (outsize > SIMDCOMPRESSION_THRESHOLD && outsize != compressedsize) {
+                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // delete only the pointer; not the content
-                    delete uncompressed_fq_64;
+                    // delete uncompressed_fq_64;
                 }
 #endif
-
+*/
             }
         }
 
@@ -866,8 +891,31 @@ printf("--->2.3\n");
     SCOREP_USER_REGION_END( BFSRUN_region_rowCommunication )
 #endif
         ++iter;
-    }
+    } /** end loop of death **/
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

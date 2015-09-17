@@ -40,14 +40,14 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
 
     fq_tp_type = MPI_INT64_T;
     bm_type = MPI_UNSIGNED_CHAR;
-    recv_fq_buff_length = static_cast<vtxtyp>(std::max(store.getLocRowLength(), store.getLocColLength()) * queue_sizing);
-    //recv_fq_buff = new vtxtyp[recv_fq_buff_length];
-    cudaHostAlloc(&recv_fq_buff, recv_fq_buff_length * sizeof(vtxtyp), cudaHostAllocDefault);
+    fq_64_length = static_cast<vtxtyp>(std::max(store.getLocRowLength(), store.getLocColLength()) * queue_sizing);
+    //fq_64 = new vtxtyp[fq_64_length];
+    cudaHostAlloc(&fq_64, fq_64_length * sizeof(vtxtyp), cudaHostAllocDefault);
     //multipurpose buffer
     qb_length = 0;
-    cudaHostAlloc(&queuebuff, recv_fq_buff_length * sizeof(vtxtyp), cudaHostAllocDefault);
+    cudaHostAlloc(&queuebuff, fq_64_length * sizeof(vtxtyp), cudaHostAllocDefault);
     rb_length = 0;
-    cudaHostAlloc(&redbuff, recv_fq_buff_length * sizeof(vtxtyp), cudaHostAllocDefault);
+    cudaHostAlloc(&redbuff, fq_64_length * sizeof(vtxtyp), cudaHostAllocDefault);
 
     csr_problem = new Csr;
 
@@ -134,7 +134,7 @@ CUDA_BFS::~CUDA_BFS() {
     delete csr_problem;
     cudaFreeHost(redbuff);
     cudaFreeHost(queuebuff);
-    cudaFreeHost(recv_fq_buff);
+    cudaFreeHost(fq_64);
     delete[] predecessor;
 }
 
@@ -228,7 +228,7 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize) {
     }
 
     if (startaddr != 0) {
-        std::swap(recv_fq_buff, queuebuff);
+        std::swap(fq_64, queuebuff);
         qb_length = insize;
     }
     //update visited
@@ -290,8 +290,8 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, 
  *  Expect symmetric partitioning, so all parameters are ignored.
  */
 void CUDA_BFS::setIncommingFQ(vtxtyp globalstart, long size, vtxtyp *startaddr, int &insize_max) {
-    if (startaddr == recv_fq_buff) {
-        std::swap(recv_fq_buff, queuebuff);
+    if (startaddr == fq_64) {
+        std::swap(fq_64, queuebuff);
     }
     qb_length = insize_max;
 }
