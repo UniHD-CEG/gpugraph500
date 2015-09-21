@@ -696,12 +696,12 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
 #endif
 
 #ifdef _SIMDCOMPRESS
-/*ifndef
+
                 uncompressedsize = static_cast<std::size_t>(originalsize);
                 // assert (compressedsize <= originalsize);
-*/
-//                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
-//                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
+
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
 
 
                 /*
@@ -730,8 +730,8 @@ if (originalsize > 20 && originalsize < 1000) {
 
 
 #ifdef _SIMDCOMPRESS
-                // static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
+                // static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #endif
@@ -756,7 +756,7 @@ if (originalsize > 20 && originalsize < 1000) {
                 */
 
 #endif
-// printf("--->1.3\n");
+
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
@@ -765,18 +765,15 @@ if (originalsize > 20 && originalsize < 1000) {
 
             } else {
 
-// printf("--->2\n");
-
-
 #ifdef _SIMDCOMPRESS
 
-                FQ_T *compressed_fq_64;
+                FQ_T *compressed_fq_64, *uncompressed_fq_64;
                 int originalsize, compressedsize;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 assert(originalsize <= fq_64_length);
-                MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
                 compressed_fq_64 = new FQ_T[compressedsize];
+                MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
 /*
@@ -791,11 +788,11 @@ ifndef
                 assert(originalsize <= fq_64_length);
 
                 MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
+*/
 
                 uncompressedsize = static_cast<std::size_t>(originalsize);
-*/
-//                SIMDdecompression(codec, fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
-//                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+originalsize));
+                SIMDdecompression(codec, fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+originalsize));
 
 
 
@@ -815,10 +812,6 @@ ifndef
                 }
 */
 
-                /*
-                assert (originalsize == uncompressedsize);
-                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
-                */
                 // uncompressedsize = static_cast<std::size_t>(originalsize);
                 // SIMDdecompression(codec, compressed_fq_64, compressedsize, fq_64, uncompressedsize);
 
@@ -848,8 +841,8 @@ if (uncompressedsize > 20 && uncompressedsize < 200) {
 // printf("--->2.2\n");
 
 #ifdef _SIMDCOMPRESS
-//                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
+                //static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
