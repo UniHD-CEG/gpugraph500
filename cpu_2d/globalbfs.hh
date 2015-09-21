@@ -671,7 +671,7 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                 SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
 
                 /**
-                 * Decompression test before broadcasted
+                 * Decompression test before broadcast
                  */
 
                  uncompressedsize = static_cast<std::size_t>(originalsize);
@@ -701,7 +701,13 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                 // assert (compressedsize <= originalsize);
 
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
+
+                /**
+                 * Decompression test after broadcast
+                 */
+
                 assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
+                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
 
 
                 /*
@@ -738,23 +744,9 @@ if (originalsize > 20 && originalsize < 1000) {
 
 #ifdef _SIMDCOMPRESS
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-                    // there was compression and uncompression
                     delete[] uncompressed_fq_64;
                     delete[] compressed_fq_64;
                 }
-                /*
-                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize && rank != root_rank) {
-                    // there was compression and uncompression
-                    delete[] uncompressed_fq_64;
-                    delete[] compressed_fq_64;
-                }
-                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize && rank == root_rank) {
-                    // there was compression and uncompression
-                    // delete[] uncompressed_fq_64;
-                    delete[] compressed_fq_64;
-                }
-                */
-
 #endif
 
 
@@ -772,18 +764,12 @@ if (originalsize > 20 && originalsize < 1000) {
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 assert(originalsize <= fq_64_length);
-                assert(compressedsize <= fq_64_length);
                 compressed_fq_64 = new FQ_T[compressedsize];
-                // fq_64 = new FQ_T[compressedsize];
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
-                // MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
 /*
 ifndef
-
-                assert(rank != root_rank);
-
                 FQ_T *uncompressed_fq_64;
                 int originalsize, compressedsize;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
@@ -795,8 +781,14 @@ ifndef
 
                 uncompressedsize = static_cast<std::size_t>(originalsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
-                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+originalsize));
 
+
+                /**
+                 * Decompression test after broadcast
+                 */
+
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+originalsize));
+                SIMDverifyCompression(fq_64, uncompressed_fq_64, originalsize);
 
 
 /*
@@ -851,7 +843,6 @@ if (uncompressedsize > 20 && uncompressedsize < 200) {
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 #endif
 
-// printf("--->2.3\n");
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     lqueue += tend - tstart;
@@ -860,11 +851,12 @@ if (uncompressedsize > 20 && uncompressedsize < 200) {
 
 #ifdef _SIMDCOMPRESS
 
-                // delete[] compressed_fq_64;
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // delete only the pointer; not the content
                     delete[] uncompressed_fq_64;
                 }
+                // todo: if verify transfer
+                delete[] compressed_fq_64;
 #endif
             }
         }
