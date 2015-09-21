@@ -44,11 +44,13 @@ class CUDA_BFS : public GlobalBFS<CUDA_BFS,
     int64_t verbosity;
     double queue_sizing;
     uint64_t qb_length, rb_length;
+
     vtxtyp *__restrict__ queuebuff;
     vtxtyp *__restrict__ redbuff;
-
     //Csr::VisitedMask** __restrict__ vmask;
     MType *__restrict__ vmask;
+
+
 
     bool done;
 

@@ -2,6 +2,7 @@
 #define GLOBALBFS_HH
 
 
+
 #include "distmatrix2d.hh"
 #include "comp_opt.h"
 #include "bitlevelfunctions.h"
@@ -39,7 +40,7 @@ template<class Derived,
 class GlobalBFS {
 private:
     // Set to 0xffffffff (2^32) to transparently disable SIMD(de)compression
-    std::uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff;
+    std::uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
@@ -624,9 +625,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
         int root_rank;
+        FQ_T *uncompressed_fq_64_second;
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
                                                                             it != fold_fq_props.end(); ++it) {
-// printf("--->0\n");
             root_rank = it->sendColSl;
             if (root_rank == store.getLocalColumnID()) {
 
@@ -640,10 +641,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     tstart = MPI_Wtime();
 #endif
 
-// printf("--->0.1\n");
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, originalsize);
 
-// printf("--->0.2\n");
 /*
 if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
     std::cout << std::endl << "POINT 0 - fq_64 size: " << originalsize << " rank: " << rank << " root_rank: " << root_rank <<std::endl;
@@ -759,7 +758,7 @@ if (originalsize > 20 && originalsize < 1000) {
 
 #ifdef _SIMDCOMPRESS
 
-                FQ_T *compressed_fq_64, *uncompressed_fq_64;
+                FQ_T *compressed_fq_64;
                 int originalsize, compressedsize;
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
@@ -780,21 +779,20 @@ ifndef
 */
 
                 uncompressedsize = static_cast<std::size_t>(originalsize);
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*Out*/ uncompressedsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64_second, /*Out*/ uncompressedsize);
 
 
                 /**
                  * Decompression test after broadcast
                  */
 
-                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+originalsize));
-                SIMDverifyCompression(fq_64, uncompressed_fq_64, originalsize);
-
+                assert (std::is_sorted(uncompressed_fq_64_second, uncompressed_fq_64_second+originalsize));
+                SIMDverifyCompression(fq_64, uncompressed_fq_64_second, originalsize);
 
 /*
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // free(fq_64);
-                    fq_64 = uncompressed_fq_64;
+                    fq_64 = uncompressed_fq_64_second;
                 } else {
                 }
 */
@@ -802,7 +800,7 @@ ifndef
 /*
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // There has been compression. assign fq_64 the buffer with the original uncompressed size.
-                    // fq_64 = uncompressed_fq_64;
+                    // fq_64 = uncompressed_fq_64_second;
                     // originalsize = static_cast<int>(uncompressedsize);
                 }
 */
@@ -833,11 +831,17 @@ if (uncompressedsize > 20 && uncompressedsize < 200) {
     tstart = MPI_Wtime();
 #endif
 
-// printf("--->2.2\n");
 
 #ifdef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
-                //static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
+                // static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64_second, originalsize);
+                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+printf("--->rank: %d", rank);
+                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64_second, originalsize);
+printf("<-- (%d)\n",rank);
+
+                } else {
+                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
+                }
 
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
@@ -853,7 +857,7 @@ if (uncompressedsize > 20 && uncompressedsize < 200) {
 
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // delete only the pointer; not the content
-                    //delete[] uncompressed_fq_64;
+                    delete[] uncompressed_fq_64;
                 }
                 // todo: if verify transfer
                 delete[] compressed_fq_64;
