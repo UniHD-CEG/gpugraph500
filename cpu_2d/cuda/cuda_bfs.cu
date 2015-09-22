@@ -352,16 +352,32 @@ void CUDA_BFS::getBackOutqueue() {
     for (int i = 0; i < numGpus; ++i) {
         Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         queue_sizes[i] = bfsGPU->getQueueSize(gs->gpu, gs->stream);
-        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
-                               "Can't synchronize device.", __FILE__, __LINE__);
+        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream), "Can't synchronize device.", __FILE__, __LINE__);
+
     }
     //sort values on the gpu
     for (int i = 0; i < numGpus; ++i) {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaSetDevice(gs->gpu));
         thrust::device_ptr <typename MatrixT::vtxtyp> multigpu(gs->frontier_queues.d_keys[0]);
+/*
+std::cout << std::endl;
+for (int x = 0; x < queue_sizes[i]; ++x) {
+    std::cout << multigpu[x] << " ";
+}
+std::cout << std::endl;
+*/
         thrust::sort(multigpu, multigpu + queue_sizes[i]);
+/*
+std::cout << std::endl;
+for (int x = 0; x < queue_sizes[i]; ++x) {
+    std::cout << multigpu[x] << " ";
+}
+std::cout << std::endl;
+*/
     }
+
+
 
     qb_length = 0;//csr_problem->num_gpus;
     typename MatrixT::vtxtyp *qb_nxt = queuebuff;
