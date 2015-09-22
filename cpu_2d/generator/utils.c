@@ -11,7 +11,7 @@
 #define __STDC_CONSTANT_MACROS
 #endif
 #include "splittable_mrg.h"
-#include "graph_generator.h"
+// #include "graph_generator.h"
 #include <stdint.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -23,6 +23,7 @@
 #include "utils.h"
 
 void* xmalloc(size_t n) {
+printf("Malloc called.\n");
   void* p = malloc(n);
   if (!p) {
     fprintf(stderr, "Out of memory trying to allocate %zu byte(s)\n", n);
@@ -32,6 +33,7 @@ void* xmalloc(size_t n) {
 }
 
 void* xcalloc(size_t n, size_t k) {
+printf("Calloc called.\n");
   void* p = calloc(n, k);
   if (!p) {
     fprintf(stderr, "Out of memory trying to allocate %zu byte(s)\n", n);
@@ -41,8 +43,8 @@ void* xcalloc(size_t n, size_t k) {
 }
 
 void* xMPI_Alloc_mem(size_t nbytes) {
-  void* p;
 printf("MPI_Alloc_mem called.\n");
+  void* p;
   MPI_Alloc_mem(nbytes, MPI_INFO_NULL, &p);
   if (nbytes != 0 && !p) {
     fprintf(stderr, "MPI_Alloc_mem failed for size %zu\n", nbytes);
