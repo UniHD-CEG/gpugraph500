@@ -23,7 +23,6 @@
 #include "utils.h"
 
 void* xmalloc(size_t n) {
-printf("Malloc called.\n");
   void* p = malloc(n);
   if (!p) {
     fprintf(stderr, "Out of memory trying to allocate %zu byte(s)\n", n);
@@ -33,7 +32,6 @@ printf("Malloc called.\n");
 }
 
 void* xcalloc(size_t n, size_t k) {
-printf("Calloc called.\n");
   void* p = calloc(n, k);
   if (!p) {
     fprintf(stderr, "Out of memory trying to allocate %zu byte(s)\n", n);
@@ -43,7 +41,6 @@ printf("Calloc called.\n");
 }
 
 void* xMPI_Alloc_mem(size_t nbytes) {
-printf("MPI_Alloc_mem called.\n");
   void* p;
   MPI_Alloc_mem(nbytes, MPI_INFO_NULL, &p);
   if (nbytes != 0 && !p) {

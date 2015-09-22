@@ -624,7 +624,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
 
-std::cout  << "000 rank: "<< rank << std::endl;
+//std::cout  << "000 rank: "<< rank << std::endl;
 
 #ifdef _SIMDCOMPRESS
         IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
@@ -767,7 +767,7 @@ if (originalsize > 20 && originalsize < 1000) {
 
             } else {
 
-std::cout  << "00 rank: "<< rank << std::endl;
+//std::cout  << "00 rank: "<< rank << std::endl;
 
 #ifdef _SIMDCOMPRESS
 
@@ -786,9 +786,9 @@ std::cout  << "00 rank: "<< rank << std::endl;
 
 
 /*
-std::cout  << "0 rank: "<< rank << std::endl;
+//std::cout  << "0 rank: "<< rank << std::endl;
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-std::cout  << "1 "<< std::endl;
+//std::cout  << "1 "<< std::endl;
                     uncompressedsize = static_cast<std::size_t>(originalsize);
                     SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64_second, uncompressedsize);
                     fq_64 = new FQ_T[originalsize]();
@@ -797,12 +797,12 @@ std::cout  << "1 "<< std::endl;
                     //fq_64 = uncompressed_fq_64_second;
 
                 } else {
-std::cout  << "2 "<< std::endl;
+//std::cout  << "2 "<< std::endl;
                     // fq_64 = new FQ_T[originalsize]();
                     // std::copy(compressed_fq_64, compressed_fq_64 + originalsize, fq_64);
                     fq_64 = compressed_fq_64;
                 }
-std::cout  << "3 rank: "<< rank << std::endl;
+//std::cout  << "3 rank: "<< rank << std::endl;
 
 
 */
@@ -886,7 +886,7 @@ std::cout  << "3 rank: "<< rank << std::endl;
 
 #ifdef _SIMDCOMPRESS
 
-std::cout  << "4 rank: "<< rank << std::endl;
+//std::cout  << "4 rank: "<< rank << std::endl;
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // delete only the pointer; not the content
                     // delete[] uncompressed_fq_64_second;
@@ -909,7 +909,7 @@ std::cout  << "4 rank: "<< rank << std::endl;
                 //free(startaddr);
                 //free(compressed_fq_64);
 
-std::cout  << "5 rank: "<< rank << std::endl;
+//std::cout  << "5 rank: "<< rank << std::endl;
 #endif
             }
         }
@@ -921,7 +921,7 @@ std::cout  << "5 rank: "<< rank << std::endl;
 
         static_cast<Derived *>(this)->setBackInqueue();
 
-std::cout  << "6 rank: "<< rank << std::endl;
+//std::cout  << "6 rank: "<< rank << std::endl;
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
