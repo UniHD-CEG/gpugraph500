@@ -26,7 +26,7 @@ if [ "x$G500_ENABLE_RUNTIME_SCALASCA" = "xyes" ]; then
   scalasca="scalasca -analyze -f filter.scorep -e scorep_g500_testreduce`date +"%F-%s"`"
   $scalasca $mpirun -np 4 --display-map "-rf hosts-coptimum" ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1
 else
-  # $mpirun -np 4 --display-map -rf hosts-coptimum valgrind --leak-check=full --show-reachable=yes -v ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1
-  $mpirun -np 4 --display-map -rf hosts-coptimum valgrind --leak-check=full --track-origins=yes --show-reachable=yes -v --gen-suppressions=yes --suppressions=./valgrind.supp ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1
+  # $mpirun -np 4 --display-map -rf hosts-coptimum valgrind --leak-check=full --track-origins=yes --show-reachable=yes -v ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1
+  $mpirun -np 4 --display-map -rf hosts-coptimum valgrind --leak-check=yes --gen-suppressions=no --suppressions=./valgrind.supp ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1
 fi
 

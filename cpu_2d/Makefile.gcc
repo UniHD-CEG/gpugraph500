@@ -125,7 +125,7 @@
 #    External links:
 #    			- GNU compiler: https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options
 #
-# code_debug
+# debug_code
 #   Values: yes | no
 #   Default value: no
 #   Description: "Enables symbol inclusion in the binary (compiler option -g).
@@ -150,7 +150,7 @@ enable_simd_compression_benchmark         :="yes"
 enable_simd_compression_verify            :="yes"
 use_cuda                                  :="yes"
 debug                                     :="no"
-code_debug                                :="yes"
+debug_code                                :="yes"
 quiet_output                              :="no"
 code_optimization_level                   :="O4"
 code_optimization_flags                   :=-funroll-loops -flto
@@ -167,7 +167,7 @@ NVCXX := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
 NVDIR := $(shell echo $(NVCXX) | sed 's,/bin/nvcc$$,,')
 
 #
-# Code Optimization levels. Read code_debug option help above.
+# Code Optimization levels. Read debug_code option help above.
 #
 
 ifeq ($(code_optimization_level), "O4")
@@ -327,7 +327,7 @@ ifeq ($(quiet_output), "yes")
 	Q = @
 endif
 
-ifeq ($(code_debug), "yes")
+ifeq ($(debug_code), "yes")
 	o_level = -O0
 	o_level_nvcc = -O0
 	DEBUG_FLAG=-g

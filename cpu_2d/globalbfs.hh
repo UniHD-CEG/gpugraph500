@@ -697,7 +697,7 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
 // #ifdef _SIMDCOMPRESSVERIFY
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 // #endif
-                //MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
+                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 #else
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
@@ -778,11 +778,17 @@ if (originalsize > 20 && originalsize < 1000) {
                 assert(originalsize <= fq_64_length);
                 // compressed_fq_64 = new FQ_T[compressedsize];
                 // startaddr = new FQ_T[originalsize];
-                //compressed_fq_64 = malloc(compressedsize * sizeof(FQ_T));
+std::cout  << "orig: " << originalsize<< "compr: "<< compressedsize << std::endl;
+                compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
                 //startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
                 //continue with this: MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
-                //MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
+                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
+
+
+                if (originalsize <= SIMDCOMPRESSION_THRESHOLD || originalsize == compressedsize) {
+                    assert(memcmp(fq_64, compressed_fq_64, originalsize) == 0);
+                }
 
 
 /*
@@ -817,7 +823,12 @@ if (originalsize > 20 && originalsize < 1000) {
 
                 uncompressedsize = static_cast<size_t>(originalsize);
                 // test: if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-            //SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64_second, /*Out*/ uncompressedsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64_second, /*Out*/ uncompressedsize);
+
+                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                    assert(memcmp(uncompressed_fq_64_second, fq_64, originalsize) == 0);
+                }
+
                 // SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ fq_64, /*Out*/ uncompressedsize);
                 //
                 // test fq_64 = ????????
@@ -897,17 +908,19 @@ if (originalsize > 20 && originalsize < 1000) {
                     //delete[] compressed_fq_64;
                     // free(compressed_fq_64);
                     //free(uncompressed_fq_64_second);
+                    free(compressed_fq_64);
                 } else {
                     // if there was not compression fq_64=compressed_fq_64. The last one cannot be deleted
                     //delete compressed_fq_64;
                     //delete[] compressed_fq_64;
+                    free(compressed_fq_64);
                 }
                 // todo: if verify transfer
                 // startaddr is only for de/compression verification
 
                 //delete[] startaddr;
                 //free(startaddr);
-                //free(compressed_fq_64);
+
 
 //std::cout  << "5 rank: "<< rank << std::endl;
 #endif
