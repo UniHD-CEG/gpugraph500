@@ -124,7 +124,13 @@
 #    Description: "Optimization flags added to compiler"
 #    External links:
 #    			- GNU compiler: https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options
-
+#
+# code_debug
+#   Values: yes | no
+#   Default value: no
+#   Description: "Enables symbol inclusion in the binary (compiler option -g).
+#   				Disables optimizations (compiler-O0) and removes code_optimization_flags.
+#   				It is useful to run this option with Valgrind in the runtime Test-file"
 
 nvidia_architecture                       :="fermi"
 nvidia_ptxas_otimize                      :="no"
@@ -142,9 +148,10 @@ use_avx_instructions                      :="no"
 enable_simd_compression                   :="yes"
 enable_simd_compression_benchmark         :="yes"
 enable_simd_compression_verify            :="yes"
-debug                                     :="no"
-quiet_output                              :="yes"
 use_cuda                                  :="yes"
+debug                                     :="no"
+code_debug                                :="yes"
+quiet_output                              :="no"
 code_optimization_level                   :="O4"
 code_optimization_flags                   :=-funroll-loops -flto
 
@@ -159,6 +166,9 @@ CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
 NVCXX := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
 NVDIR := $(shell echo $(NVCXX) | sed 's,/bin/nvcc$$,,')
 
+#
+# Code Optimization levels. Read code_debug option help above.
+#
 
 ifeq ($(code_optimization_level), "O4")
 	o_level := -O3 -ffast-math
@@ -272,7 +282,9 @@ endif
 
 #
 # SIMDcompression block.
-# CPU with SSE4 support is required. AVX support is recommended.
+#
+# CPU with SSE4 support is required.
+# CPU with AVX support is recommended.
 #
 #
 
@@ -315,17 +327,24 @@ ifeq ($(quiet_output), "yes")
 	Q = @
 endif
 
+ifeq ($(code_debug), "yes")
+	o_level = -O0
+	o_level_nvcc = -O0
+	DEBUG_FLAG=-g
+	code_optimization_flags =
+endif
+
 #
 # Compiler/ Linker options: C, C++, MPI, CUDA Flags and Libs
 #
 #
 #
 
-CXXFLAGS := $(arch) -std=c++11  -Weffc++ -pedantic -m64 $(o_level) $(code_optimization_flags) -Wall -Wextra
-CCFLAGS := $(arch) -std=c99 -pedantic -m64 $(o_level) $(code_optimization_flags) -Wall -Wextra
-MPICFLAGS := $(arch) -std=c99 -pedantic -m64 -mfpmath=sse $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) -Wall -Wextra
-MPICXXFLAGS := $(arch) -std=c++11 -pedantic -m64 $(o_level) $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) -Wall -Wextra
-NVCXXFLAGS := $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP)
+CXXFLAGS := $(arch) -std=c++11  -Weffc++ -pedantic -m64 $(o_level) $(code_optimization_flags) $(DEBUG_FLAG) -Wall -Wextra
+CCFLAGS := $(arch) -std=c99 -pedantic -m64 $(o_level) $(code_optimization_flags) $(DEBUG_FLAG) -Wall -Wextra
+MPICFLAGS := $(arch) -std=c99 -pedantic -m64 -mfpmath=sse $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) -Wall -Wextra
+MPICXXFLAGS := $(arch) -std=c++11 -pedantic -m64 $(o_level) $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) -Wall -Wextra
+NVCXXFLAGS := $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
 LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,$(o_level)
 LLIBS := $(SCOREP_LLIBS) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
 
