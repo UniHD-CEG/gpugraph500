@@ -40,7 +40,7 @@ template<class Derived,
 class GlobalBFS {
 private:
     // Set to 0xffffffff (2^32) to transparently disable SIMD(de)compression
-    std::uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
+    std::uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff;
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
@@ -782,18 +782,23 @@ ifndef
                 MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 */
 
+std::cout  << "0 rank: "<< rank << std::endl;
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+std::cout  << "1 "<< std::endl;
                     uncompressedsize = static_cast<std::size_t>(originalsize);
                     SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64_second, /*Out*/ uncompressedsize);
                     fq_64 = new FQ_T[originalsize]();
-                    std::swap(fq_64, uncompressed_fq_64_second);
+                    std::copy(compressed_fq_64, compressed_fq_64 + originalsize, fq_64);
+                    // std::swap(fq_64, uncompressed_fq_64_second);
+                    //fq_64 = uncompressed_fq_64_second;
+
                 } else {
+std::cout  << "2 "<< std::endl;
                     fq_64 = new FQ_T[originalsize]();
                     std::copy(compressed_fq_64, compressed_fq_64 + originalsize, fq_64);
                 }
+std::cout  << "3 rank: "<< rank << std::endl;
 
-
-                // fq_64 = uncompressed_fq_64_second;
 
     std::cout << std::endl << "POINT 0 - fq_64 size: " << originalsize << " rank: " << rank <<std::endl;
     for (int i=0; i <originalsize; ++i) {
@@ -805,8 +810,8 @@ ifndef
                  * Decompression test after broadcast
                  */
 
-                assert (std::is_sorted(fq_64, fq_64 + originalsize));
-                SIMDverifyCompression(startaddr, fq_64, originalsize);
+                // assert (std::is_sorted(fq_64, fq_64 + originalsize));
+                // SIMDverifyCompression(startaddr, fq_64, originalsize);
 
 
 /*
@@ -878,10 +883,11 @@ printf("<-- (%d)\n",rank);
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // delete only the pointer; not the content
                     // delete[] uncompressed_fq_64_second;
+                    delete[] uncompressed_fq_64_second;
                 }
                 // todo: if verify transfer
-                // delete[] compressed_fq_64;
-                // delete[] uncompressed_fq_64_second;
+                delete[] startaddr;
+                delete[] compressed_fq_64;
 #endif
             }
         }
