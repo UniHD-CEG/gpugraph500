@@ -73,6 +73,7 @@ protected:
     MPI_Datatype bm_type;    // Bitmap Type
     // FQ_T*  __restrict__ fq_64; - conflicts with void* ref
     FQ_T *fq_64;
+    FQ_T *fq_64_slice;
     //, *compressed_fq_64; // uncompressed and compressed column-buffers
     long fq_64_length;
     MType *owenmask;
@@ -773,7 +774,7 @@ std::cout  << "00 rank: "<< rank << std::endl;
                 compressed_fq_64 = new FQ_T[compressedsize];
                 startaddr = new FQ_T[originalsize];
                 //continue with this: MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
-                MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
+                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
 
@@ -798,16 +799,19 @@ std::cout  << "3 rank: "<< rank << std::endl;
 
 
 */
+/*
     std::cout << std::endl << "POINT 0 - fq_64 size: " << originalsize << " rank: " << rank <<std::endl;
     for (int i=0; i <originalsize; ++i) {
         std::cout << fq_64[i] << " ";
     }
     std::cout << std::endl << std::endl;
+*/
 
 
                 uncompressedsize = static_cast<std::size_t>(originalsize);
                 // test: if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64_second, /*Out*/ uncompressedsize);
+                // SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64_second, /*Out*/ uncompressedsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ fq_64, /*Out*/ uncompressedsize);
                 //
                 // test fq_64 = ????????
                 //
@@ -839,6 +843,18 @@ std::cout  << "3 rank: "<< rank << std::endl;
 
 
 #ifdef _SIMDCOMPRESS
+
+                //
+                //
+                //
+                //  why only the attribute fq_64 can be transmitted
+                //  why can not be resized.
+                //
+                //
+                //
+                //
+                //
+
                 // static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64_second, originalsize);
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // why only works with attibute fq_6: static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64_second, originalsize);
@@ -867,14 +883,21 @@ std::cout  << "4 rank: "<< rank << std::endl;
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // delete only the pointer; not the content
                     // delete[] uncompressed_fq_64_second;
-                    delete[] uncompressed_fq_64_second;
+                    // fq_64 = uncompressed_fq_64_second. The last one cannot be deleted
+                    //
+                    // delete[] uncompressed_fq_64_second;
+                    // compress can be deleted
                     delete[] compressed_fq_64;
                 } else {
+                    // if there was not compression fq_64=compressed_fq_64. The last one cannot be deleted
                     //delete compressed_fq_64;
-                    delete[] compressed_fq_64;
+                    //delete[] compressed_fq_64;
                 }
                 // todo: if verify transfer
-                // delete[] startaddr;
+                // startaddr is only for de/compression verification
+
+                delete[] startaddr;
+
 std::cout  << "5 rank: "<< rank << std::endl;
 #endif
             }

@@ -42,6 +42,7 @@ void* xcalloc(size_t n, size_t k) {
 
 void* xMPI_Alloc_mem(size_t nbytes) {
   void* p;
+printf("MPI_Alloc_mem called.\n");
   MPI_Alloc_mem(nbytes, MPI_INFO_NULL, &p);
   if (nbytes != 0 && !p) {
     fprintf(stderr, "MPI_Alloc_mem failed for size %zu\n", nbytes);
