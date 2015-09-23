@@ -1088,11 +1088,18 @@ printf(">>>>in compression");
 */
 
 
+/*
         IntegerCODEC &icodec =  *CODECFactory::getFromName("s4-bp128-dm");
         icodec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
+*/
+
+
+compressedsize = size;
+
         // if this condition is met it can not be known whether or not there has been a compression.
         // Todo: find solution
-        assert (compressedsize != size);
+        //assert (compressedsize != size);
+
         *compressed_fq_64 = NULL;
         *compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
         if(*compressed_fq_64 == NULL) {
@@ -1101,7 +1108,8 @@ printf(">>>>in compression");
 
         // memcpy((FQ_T *)compressed_fq_64, (uint32_t *)compressed_fq_32, compressedsize * sizeof(uint32_t));
         for (int i=0; i<size;++i){
-            *compressed_fq_64[i] = static_cast<FQ_T>(compressed_fq_32[i]);
+            //*compressed_fq_64[i] = static_cast<FQ_T>(compressed_fq_32[i]);
+*compressed_fq_64[i] = fq_64[i];
         }
         free(fq_32);
         free(compressed_fq_32);
@@ -1153,8 +1161,10 @@ printf(">>>>in DE-compression");
             compressed_fq_32[i] = static_cast<uint32_t>(compressed_fq_64[i]);
         }
 
+/*
         IntegerCODEC &icodec =  *CODECFactory::getFromName("s4-bp128-dm");
         icodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
+*/
 
         *uncompressed_fq_64 = NULL;
         *uncompressed_fq_64 = (FQ_T *)malloc(uncompressedsize * sizeof(FQ_T));
@@ -1164,7 +1174,8 @@ printf(">>>>in DE-compression");
 
         // memcpy((FQ_T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, uncompressedsize * sizeof(uint32_t));
         for (int i=0; i<uncompressedsize;++i){
-            *uncompressed_fq_64[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
+            //*uncompressed_fq_64[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
+*uncompressed_fq_64[i] = compressed_fq_64[i];
         }
 
         free(compressed_fq_32);
