@@ -40,8 +40,8 @@ template<class Derived,
 class GlobalBFS {
 private:
     // Set to 0xffffffff (2^32) to transparently disable SIMD(de)compression
-    // uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff; // transparently deactivate de/compression.
-    uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
+    uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff; // transparently deactivate de/compression.
+    // uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
@@ -1101,7 +1101,7 @@ printf(">>>>in compression");
 
         // memcpy((FQ_T *)compressed_fq_64, (uint32_t *)compressed_fq_32, compressedsize * sizeof(uint32_t));
         for (int i=0; i<size;++i){
-            compressed_fq_64[i] = static_cast<FQ_T>(compressed_fq_32[i]);
+            *compressed_fq_64[i] = static_cast<FQ_T>(compressed_fq_32[i]);
         }
         free(fq_32);
         free(compressed_fq_32);
@@ -1132,7 +1132,7 @@ printf("<<<<<out\n");
          * Buffer will not be compressed (Small size. Not worthed)
          */
         compressedsize = size;
-        compressed_fq_64 = fq_64;
+        *compressed_fq_64 = fq_64;
      }
 }
 
@@ -1164,7 +1164,7 @@ printf(">>>>in DE-compression");
 
         // memcpy((FQ_T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, uncompressedsize * sizeof(uint32_t));
         for (int i=0; i<uncompressedsize;++i){
-            uncompressed_fq_64[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
+            *uncompressed_fq_64[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
         }
 
         free(compressed_fq_32);
@@ -1172,7 +1172,7 @@ printf(">>>>in DE-compression");
 printf("<<<<<out\n");
     } else {
         uncompressedsize = size;
-        uncompressed_fq_64 = compressed_fq_64;
+        *uncompressed_fq_64 = compressed_fq_64;
     }
 }
 
