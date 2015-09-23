@@ -686,8 +686,8 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                  */
 
                  //uncompressedsize = static_cast<size_t>(originalsize);
-                 //SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*In Out*/ uncompressedsize);
-                 //SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+                 SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*In Out*/ uncompressedsize);
+                 SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
 #endif
 // printf("--->0.5\n");
 
@@ -724,8 +724,8 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                  * Decompression test after broadcast
                  */
 
-                //assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
-                //SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
+                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
 
 
                 /*
@@ -756,8 +756,10 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     //delete[] uncompressed_fq_64;
                     //delete[] compressed_fq_64;
-                    //free(uncompressed_fq_64);
-                    //free(compressed_fq_64);
+                    free(uncompressed_fq_64);
+                    free(compressed_fq_64);
+                } else {
+                    free(compressed_fq_64);
                 }
 #endif
 
@@ -925,7 +927,7 @@ std::cout  << "4 rank: "<< rank << std::endl;
                     // compress can be deleted
                     //delete[] compressed_fq_64;
                     // free(compressed_fq_64);
-                    //free(uncompressed_fq_64_second);
+                    free(uncompressed_fq_64_second);
                     free(compressed_fq_64);
                 } else {
                     // if there was not compression fq_64=compressed_fq_64. The last one cannot be deleted
@@ -1088,17 +1090,16 @@ printf(">>>>in compression");
 */
 
 
-/*
+
         IntegerCODEC &icodec =  *CODECFactory::getFromName("s4-bp128-dm");
         icodec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
-*/
 
 
-compressedsize = size;
+//compressedsize = size;
 
         // if this condition is met it can not be known whether or not there has been a compression.
         // Todo: find solution
-        //assert (compressedsize != size);
+        assert (compressedsize < size);
 
         *compressed_fq_64 = NULL;
         *compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
@@ -1108,21 +1109,20 @@ compressedsize = size;
 
         // memcpy((FQ_T *)compressed_fq_64, (uint32_t *)compressed_fq_32, compressedsize * sizeof(uint32_t));
         for (int i=0; i<size;++i){
-            //*compressed_fq_64[i] = static_cast<FQ_T>(compressed_fq_32[i]);
-*compressed_fq_64[i] = fq_64[i];
+            *compressed_fq_64[i] = static_cast<FQ_T>(compressed_fq_32[i]);
+//*compressed_fq_64[i] = fq_64[i];
         }
         free(fq_32);
         free(compressed_fq_32);
 
-/*
+
         FQ_T *uncompressed_fq_64;
         uint32_t *uncompressed_fq_32 = (uint32_t *) malloc(size * sizeof(uint32_t));
         compressed_fq_32 = (uint32_t *) malloc(size * sizeof(uint32_t));
         //memcpy((uint32_t *)compressed_fq_32, (uint32_t *)compressed_fq_64, size * sizeof(uint32_t));
         for (int i=0; i<size;++i){
-            compressed_fq_32[i] = static_cast<uint32_t>(compressed_fq_64[i]);
+            compressed_fq_32[i] = static_cast<uint32_t>(*compressed_fq_64[i]);
         }
-
         size_t uncompressedsize = size;
         icodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         uncompressed_fq_64 = (FQ_T *)malloc(size * sizeof(FQ_T));
@@ -1130,10 +1130,15 @@ compressedsize = size;
         for (int i=0; i<uncompressedsize;++i){
             uncompressed_fq_64[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
         }
-        assert(memcmp(fq_64, uncompressed_fq_64, size) == 0);
-        free(uncompressed_fq_32);
         free(compressed_fq_32);
-*/
+        free(uncompressed_fq_32);
+
+
+        assert(memcmp(fq_64, uncompressed_fq_64, size) == 0);
+        assert(std::is_sorted(uncompressed_fq_64, uncompressed_fq_64 + size));
+
+
+
 printf("<<<<<out\n");
      } else {
         /**
@@ -1161,10 +1166,10 @@ printf(">>>>in DE-compression");
             compressed_fq_32[i] = static_cast<uint32_t>(compressed_fq_64[i]);
         }
 
-/*
+
         IntegerCODEC &icodec =  *CODECFactory::getFromName("s4-bp128-dm");
         icodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
-*/
+
 
         *uncompressed_fq_64 = NULL;
         *uncompressed_fq_64 = (FQ_T *)malloc(uncompressedsize * sizeof(FQ_T));
@@ -1174,9 +1179,12 @@ printf(">>>>in DE-compression");
 
         // memcpy((FQ_T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, uncompressedsize * sizeof(uint32_t));
         for (int i=0; i<uncompressedsize;++i){
-            //*uncompressed_fq_64[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
-*uncompressed_fq_64[i] = compressed_fq_64[i];
+            *uncompressed_fq_64[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
+//*uncompressed_fq_64[i] = compressed_fq_64[i];
         }
+
+        assert(uncompressedsize>size);
+        assert(std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
 
         free(compressed_fq_32);
         free(uncompressed_fq_32);
