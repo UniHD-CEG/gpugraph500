@@ -1068,15 +1068,20 @@ printf(">>>>in compression");
 
         // memcpy(fq_32, fq_64, size * sizeof(uint32_t));
         for (int i=0; i<size;++i){
-            fq_32[] = static_cast<uint32_t>(fq_64);
+            fq_32[i] = static_cast<uint32_t>(fq_64);
         }
 
 
 
-
-    printf("\n");
+    printf("\nFQ_32:\n");
     for (int i=0; i<size;++i){
-        std::cout<< (uint32_t *)fq_32[i]<< " ";
+        std::cout << fq_32[i]<< " ";
+    }
+    printf("\n");
+
+    printf("\nFQ_64\n");
+    for (int i=0; i<size;++i){
+        std::cout << static_type<uint32_t>(fq_64[i])<< " ";
     }
     printf("\n");
 
