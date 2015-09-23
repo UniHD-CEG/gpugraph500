@@ -61,8 +61,8 @@ private:
     //void SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, std::size_t &size, FQ_T *&compressed_fq_64, std::size_t &compressedsize) const;
     //void SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size, FQ_T *&uncompressed_fq_64,
     //                                                                                                std::size_t &uncompressedsize) const;
-    void SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, size_t &size, FQ_T *&compressed_fq_64, size_t &compressedsize) const;
-    void SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size, FQ_T *&uncompressed_fq_64,
+    void SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, size_t &size, FQ_T **compressed_fq_64, size_t &compressedsize) const;
+    void SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size, FQ_T **uncompressed_fq_64,
                                                                                                     size_t &uncompressedsize) const;
 #endif
 
@@ -675,7 +675,7 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
 // printf("--->0.4\n");
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                SIMDcompression(codec, startaddr, uncompressedsize, compressed_fq_64, compressedsize);
+                SIMDcompression(codec, startaddr, uncompressedsize, &compressed_fq_64, compressedsize);
 
                 if (originalsize <= SIMDCOMPRESSION_THRESHOLD || originalsize == compressedsize) {
                     assert(memcmp(startaddr, compressed_fq_64, originalsize) == 0);
@@ -713,7 +713,7 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                 uncompressedsize = static_cast<size_t>(originalsize);
                 // assert (compressedsize <= originalsize);
 
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64, /*In Out*/ uncompressedsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
 
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                         assert(memcmp(startaddr, uncompressed_fq_64, originalsize) == 0);
@@ -760,6 +760,7 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
                     //free(compressed_fq_64);
                 }
 #endif
+
 
 
 #ifdef INSTRUMENTED
@@ -825,7 +826,7 @@ std::cout  << "3 rank: "<< rank << std::endl;
 
                 uncompressedsize = static_cast<size_t>(originalsize);
                 // test: if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ uncompressed_fq_64_second, /*In Out*/ uncompressedsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64_second, /*In Out*/ uncompressedsize);
 
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     int error = memcmp(uncompressed_fq_64_second, fq_64, originalsize);
@@ -1056,23 +1057,23 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(FQ_T *fq, 
  * SIMD compression. C style memory allocation
  */
 template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, size_t &size, FQ_T *&compressed_fq_64,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, size_t &size, FQ_T **compressed_fq_64,
                                                                                                         size_t &compressedsize) const {
      if (size > SIMDCOMPRESSION_THRESHOLD) {
 printf(">>>>in compression");
         uint32_t *fq_32 = (uint32_t *)malloc(size * sizeof(uint32_t));
         uint32_t *compressed_fq_32 = (uint32_t *)malloc((size+1024) * sizeof(uint32_t));
+
         compressedsize = size+1024;
+
         // triky memcpy. 64b values fit in 32 bit
-
-
         // memcpy(fq_32, fq_64, size * sizeof(uint32_t));
         for (int i=0; i<size;++i){
-            fq_32[i] = static_cast<uint32_t>(fq_64);
+            fq_32[i] = static_cast<uint32_t>(fq_64[i]);
         }
 
 
-
+/*
     printf("\nFQ_32:\n");
     for (int i=0; i<size;++i){
         std::cout << fq_32[i]<< " ";
@@ -1081,11 +1082,10 @@ printf(">>>>in compression");
 
     printf("\nFQ_64\n");
     for (int i=0; i<size;++i){
-        std::cout << static_type<uint32_t>(fq_64[i])<< " ";
+        std::cout << static_cast<uint32_t>(fq_64[i])<< " ";
     }
     printf("\n");
-
-
+*/
 
 
         IntegerCODEC &icodec =  *CODECFactory::getFromName("s4-bp128-dm");
@@ -1093,26 +1093,36 @@ printf(">>>>in compression");
         // if this condition is met it can not be known whether or not there has been a compression.
         // Todo: find solution
         assert (compressedsize != size);
-        compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
-        // memcpy((FQ_T *)compressed_fq_64, (uint32_t *)compressed_fq_32, compressedsize * sizeof(uint32_t));
-        for (int i=0; i<size;++i){
-            compressed_fq_64[i] = static_cast<FQ_T>(compressed_fq_32);
+        *compressed_fq_64 = NULL;
+        *compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
+        if(*compressed_fq_64 == NULL) {
+            printf("\nERROR: Memory allocation error!");
         }
 
-
+        // memcpy((FQ_T *)compressed_fq_64, (uint32_t *)compressed_fq_32, compressedsize * sizeof(uint32_t));
+        for (int i=0; i<size;++i){
+            compressed_fq_64[i] = static_cast<FQ_T>(compressed_fq_32[i]);
+        }
         free(fq_32);
         free(compressed_fq_32);
+
 /*
         FQ_T *uncompressed_fq_64;
         uint32_t *uncompressed_fq_32 = (uint32_t *) malloc(size * sizeof(uint32_t));
         compressed_fq_32 = (uint32_t *) malloc(size * sizeof(uint32_t));
-        memcpy((uint32_t *)compressed_fq_32, (uint32_t *)compressed_fq_64, size * sizeof(uint32_t));
-        icodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, size);
+        //memcpy((uint32_t *)compressed_fq_32, (uint32_t *)compressed_fq_64, size * sizeof(uint32_t));
+        for (int i=0; i<size;++i){
+            compressed_fq_32[i] = static_cast<uint32_t>(compressed_fq_64[i]);
+        }
+
+        size_t uncompressedsize = size;
+        icodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         uncompressed_fq_64 = (FQ_T *)malloc(size * sizeof(FQ_T));
-        memcpy((FQ_T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, size * sizeof(uint32_t));
-
+        //memcpy((FQ_T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, size * sizeof(uint32_t));
+        for (int i=0; i<uncompressedsize;++i){
+            uncompressed_fq_64[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
+        }
         assert(memcmp(fq_64, uncompressed_fq_64, size) == 0);
-
         free(uncompressed_fq_32);
         free(compressed_fq_32);
 */
@@ -1131,7 +1141,7 @@ printf("<<<<<out\n");
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, int size,
-                                                                FQ_T *&uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const {
+                                                                FQ_T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const {
     if (uncompressedsize > SIMDCOMPRESSION_THRESHOLD && size != uncompressedsize) {
 printf(">>>>in DE-compression");
         uint32_t *uncompressed_fq_32 = (uint32_t *) malloc(uncompressedsize * sizeof(uint32_t));
@@ -1140,16 +1150,21 @@ printf(">>>>in DE-compression");
 
         // memcpy((uint32_t *)compressed_fq_32, (uint32_t *)compressed_fq_64, size * sizeof(uint32_t));
         for (int i=0; i<size;++i){
-            compressed_fq_32[i] = static_cast<uint32_t>(compressed_fq_64);
+            compressed_fq_32[i] = static_cast<uint32_t>(compressed_fq_64[i]);
         }
 
         IntegerCODEC &icodec =  *CODECFactory::getFromName("s4-bp128-dm");
         icodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
 
-        uncompressed_fq_64 = (FQ_T *)malloc(uncompressedsize * sizeof(FQ_T));
+        *uncompressed_fq_64 = NULL;
+        *uncompressed_fq_64 = (FQ_T *)malloc(uncompressedsize * sizeof(FQ_T));
+        if(*uncompressed_fq_64 == NULL) {
+            printf("\nERROR: Memory allocation error!");
+        }
+
         // memcpy((FQ_T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, uncompressedsize * sizeof(uint32_t));
         for (int i=0; i<uncompressedsize;++i){
-            uncompressed_fq_64[i] = static_cast<FQ_T>(uncompressed_fq_32);
+            uncompressed_fq_64[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
         }
 
         free(compressed_fq_32);
