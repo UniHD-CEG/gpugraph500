@@ -849,7 +849,12 @@ std::cout  << "3 rank: "<< rank << std::endl;
 
                 uncompressedsize = static_cast<size_t>(originalsize);
                 // test: if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &fq_64, /*In Out*/ uncompressedsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
+
+
+                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                    memcpy(fq_64, uncompressed_fq_64, originalsize * sizeof(FQ_T));
+                }
 
                 //if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                 assert(memcmp(fq_64, startaddr, originalsize * sizeof(FQ_T)) == 0);
@@ -937,10 +942,9 @@ std::cout  << "4 rank: "<< rank << std::endl;
                     //delete[] compressed_fq_64;
                     // free(compressed_fq_64);
 
-                    // put back after realloc test:
-                    //if (uncompressed_fq_64 != NULL) {
-                    //    free(uncompressed_fq_64);
-                    //}
+                    if (uncompressed_fq_64 != NULL) {
+                        free(uncompressed_fq_64);
+                    }
                     if (compressed_fq_64 != NULL) {
                         free(compressed_fq_64);
                     }
