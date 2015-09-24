@@ -330,7 +330,8 @@ endif
 ifeq ($(debug_code), "yes")
 	o_level = -O0
 	o_level_nvcc = -O0
-	DEBUG_FLAG=-g -DTHRUST_DEBUG
+	DEBUG_FLAG=-g
+	NVCC_DEBUG_FLAGS=-DTHRUST_DEBUG
 	code_optimization_flags =
 endif
 
@@ -502,7 +503,7 @@ ifneq ($(enable_simd_compression), "yes")
 endif
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -m64 $(o_level_nvcc) -use_fast_math -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -m64 $(o_level_nvcc) -use_fast_math -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 
