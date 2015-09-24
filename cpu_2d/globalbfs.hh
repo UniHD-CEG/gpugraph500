@@ -782,7 +782,7 @@ std::cout  << "00 rank: "<< rank << std::endl;
 
 #ifdef _SIMDCOMPRESS
 
-                FQ_T *compressed_fq_64, *startaddr, *uncompressed_fq_64, *tmpPtr;
+                FQ_T *compressed_fq_64, *startaddr, *uncompressed_fq_64=NULL, *tmpPtr;
                 int originalsize, compressedsize;
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
@@ -804,6 +804,7 @@ std::cout  << "orig: " << originalsize<< "compr: "<< compressedsize << std::endl
                 memcpy(compressed_fq_64, fq_64, compressedsize * sizeof(FQ_T));
                 assert(memcmp(compressed_fq_64, fq_64, compressedsize * sizeof(FQ_T)) == 0);
 
+/*
                 tmpPtr = (FQ_T *)realloc(fq_64, originalsize * sizeof(FQ_T));
                 if (tmpPtr == NULL) {
                     printf("\nERROR: Memory allocation error!");
@@ -811,7 +812,7 @@ std::cout  << "orig: " << originalsize<< "compr: "<< compressedsize << std::endl
                 } else {
                     fq_64 = tmpPtr;
                 }
-
+*/
                 if (originalsize <= SIMDCOMPRESSION_THRESHOLD || originalsize == compressedsize) {
                     assert(memcmp(startaddr, compressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
                 }
