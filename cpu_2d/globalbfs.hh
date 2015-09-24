@@ -903,9 +903,9 @@ std::cout  << "3 rank: "<< rank << std::endl;
                 // static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // why only works with attibute fq_6: static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
-                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
+                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
                 } else {
-                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
+                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
                     // why only works with attibute fq_6: static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
                 }
 
@@ -934,9 +934,11 @@ std::cout  << "4 rank: "<< rank << std::endl;
                     // compress can be deleted
                     //delete[] compressed_fq_64;
                     // free(compressed_fq_64);
-                    if (uncompressed_fq_64 != NULL) {
-                        free(uncompressed_fq_64);
-                    }
+
+                    // put back after realloc test:
+                    //if (uncompressed_fq_64 != NULL) {
+                    //    free(uncompressed_fq_64);
+                    //}
                     if (compressed_fq_64 != NULL) {
                         free(compressed_fq_64);
                     }
