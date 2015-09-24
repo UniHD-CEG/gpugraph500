@@ -856,7 +856,7 @@ std::cout  << "3 rank: "<< rank << std::endl;
 
 
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-                    bfsMemCpy(fq_64, uncompressed_fq_64, originalsize);
+                    static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq_64, originalsize);
                 }
 
                 //if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
