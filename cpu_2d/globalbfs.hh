@@ -41,8 +41,8 @@ template<class Derived,
 class GlobalBFS {
 private:
     // Set to 0xffffffff (2^32) to transparently disable SIMD(de)compression
-    // uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff; // transparently deactivate de/compression.
-    uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
+    uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff; // transparently deactivate de/compression.
+    // uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
