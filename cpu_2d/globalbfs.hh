@@ -13,6 +13,7 @@
 #include <ctgmath>
 #include <string.h>
 #include <functional>
+#include <stdlib.h>
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     #include "scorep/SCOREP_User.h"
@@ -480,6 +481,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 // 2) Local expansion
     int iter = 0;
 
+#ifdef _SIMDCOMPRESS
+        IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
+        std::size_t uncompressedsize, compressedsize;
+#endif
+
 /**
  * Todo: refactor-extract
  *
@@ -627,13 +633,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 std::cout  << "000 rank: "<< rank << std::endl;
 
-#ifdef _SIMDCOMPRESS
-        IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
-        std::size_t uncompressedsize, compressedsize;
-#endif
 
         int root_rank;
-        // FQ_T *uncompressed_fq_64_second;
+        // FQ_T *uncompressed_fq_64;
         for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
                                                                             it != fold_fq_props.end(); ++it) {
             root_rank = it->sendColSl;
@@ -747,7 +749,7 @@ if (originalsize < SIMDCOMPRESSION_THRESHOLD) {
 
 #ifdef _SIMDCOMPRESS
                 // static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #endif
@@ -780,7 +782,7 @@ std::cout  << "00 rank: "<< rank << std::endl;
 
 #ifdef _SIMDCOMPRESS
 
-                FQ_T *compressed_fq_64, *startaddr, *uncompressed_fq_64_second;
+                FQ_T *compressed_fq_64, *startaddr, *uncompressed_fq_64;
                 int originalsize, compressedsize;
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
@@ -789,14 +791,27 @@ std::cout  << "00 rank: "<< rank << std::endl;
                 // startaddr = new FQ_T[originalsize];
 std::cout  << "orig: " << originalsize<< "compr: "<< compressedsize << std::endl;
                 compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
-                //startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
-                //continue with this: MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
-                MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
-                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
+                startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
+                // fq_64 = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
+                if (startaddr == NULL) {
+                    printf("\nERROR: Memory allocation error!");
+                    abort();
+                }
+                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+                //MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
+                MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
+                memcpy(compressed_fq_64, fq_64, compressedsize * sizeof(FQ_T));
+                assert(memcmp(compressed_fq_64, fq_64, compressedsize * sizeof(FQ_T)) == 0);
+
+                fq_64 = (FQ_T *)realloc(fq_64, originalsize * sizeof(FQ_T));
+                if (fq_64 == NULL) {
+                    printf("\nERROR: Memory allocation error!");
+                    abort();
+                }
 
                 if (originalsize <= SIMDCOMPRESSION_THRESHOLD || originalsize == compressedsize) {
-                    assert(memcmp(fq_64, compressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
+                    assert(memcmp(startaddr, compressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
                 }
 
 
@@ -805,11 +820,11 @@ std::cout  << "0 rank: "<< rank << std::endl;
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
 std::cout  << "1 "<< std::endl;
                     uncompressedsize = static_cast<std::size_t>(originalsize);
-                    SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64_second, uncompressedsize);
+                    SIMDdecompression(codec, compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
                     fq_64 = new FQ_T[originalsize]();
-                    std::copy(uncompressed_fq_64_second, uncompressed_fq_64_second + originalsize, fq_64);
-                    // std::swap(fq_64, uncompressed_fq_64_second);
-                    //fq_64 = uncompressed_fq_64_second;
+                    std::copy(uncompressed_fq_64, uncompressed_fq_64 + originalsize, fq_64);
+                    // std::swap(fq_64, uncompressed_fq_64);
+                    //fq_64 = uncompressed_fq_64;
 
                 } else {
 std::cout  << "2 "<< std::endl;
@@ -832,26 +847,14 @@ std::cout  << "3 rank: "<< rank << std::endl;
 
                 uncompressedsize = static_cast<size_t>(originalsize);
                 // test: if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64_second, /*In Out*/ uncompressedsize);
+                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &fq_64, /*In Out*/ uncompressedsize);
 
-                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-                    int error = memcmp(uncompressed_fq_64_second, fq_64, originalsize * sizeof(FQ_T));
-                    if (error != 0) {
-    std::cout << std::endl << "POINT 0 - ORIGINAL. size: " << originalsize << " rank: " << rank <<std::endl;
-    for (int i=0; i <originalsize; ++i) {
-        std::cout << fq_64[i] << " ";
-    }
-    std::cout << std::endl << std::endl;
+                //if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                assert(memcmp(fq_64, startaddr, originalsize * sizeof(FQ_T)) == 0);
+                //memcpy(fq_64, uncompressed_fq_64, originalsize * sizeof(FQ_T));
+                //assert(memcmp(fq_64, startaddr, originalsize * sizeof(FQ_T)) == 0);
+                //}
 
-    std::cout << std::endl << "POINT 1 - UNCOMPRESS. size: " << originalsize << " rank: " << rank <<std::endl;
-    for (int i=0; i <originalsize; ++i) {
-        std::cout << uncompressed_fq_64_second[i] << " ";
-    }
-    std::cout << std::endl << std::endl;
-
-                    }
-                    assert (error == 0);
-                }
 
                 // SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ fq_64, /*Out*/ uncompressedsize);
                 //
@@ -897,9 +900,9 @@ std::cout  << "3 rank: "<< rank << std::endl;
                 //
                 //
 
-                // static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64_second, originalsize);
+                // static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-                    // why only works with attibute fq_6: static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64_second, originalsize);
+                    // why only works with attibute fq_6: static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
                     static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
                 } else {
                     static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
@@ -917,32 +920,38 @@ std::cout  << "3 rank: "<< rank << std::endl;
 
                 // try to re-resize fq_64
                 // fq_64 = (FQ_T *) realloc(fq_64, originalsize * sizeof(FQ_T));
-                // std::copy(uncompressed_fq_64_second, uncompressed_fq_64_second+originalsize, fq_64);
+                // std::copy(uncompressed_fq_64, uncompressed_fq_64+originalsize, fq_64);
 
 #ifdef _SIMDCOMPRESS
 
 std::cout  << "4 rank: "<< rank << std::endl;
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // delete only the pointer; not the content
-                    // delete[] uncompressed_fq_64_second;
-                    // fq_64 = uncompressed_fq_64_second. The last one cannot be deleted
+                    // delete[] uncompressed_fq_64;
+                    // fq_64 = uncompressed_fq_64. The last one cannot be deleted
                     //
-                    // delete[] uncompressed_fq_64_second;
+                    // delete[] uncompressed_fq_64;
                     // compress can be deleted
                     //delete[] compressed_fq_64;
                     // free(compressed_fq_64);
-                    if (uncompressed_fq_64_second != NULL) {
-                        free(uncompressed_fq_64_second);
+                    if (uncompressed_fq_64 != NULL) {
+                        free(uncompressed_fq_64);
                     }
                     if (compressed_fq_64 != NULL) {
                         free(compressed_fq_64);
+                    }
+                    if (startaddr != NULL) {
+                        free(startaddr);
                     }
                 } else {
                     // if there was not compression fq_64=compressed_fq_64. The last one cannot be deleted
                     //delete compressed_fq_64;
                     //delete[] compressed_fq_64;
                     if (compressed_fq_64 != NULL) {
-                        //free(compressed_fq_64);
+                        free(compressed_fq_64);
+                    }
+                    if (startaddr != NULL) {
+                        free(startaddr);
                     }
                 }
                 // todo: if verify transfer
@@ -1090,7 +1099,7 @@ printf(">>>>in compression");
             fq_32[i] = static_cast<uint32_t>(fq_64[i]);
         }
 
-
+        assert(std::is_sorted(fq_64, fq_64+size));
 /*
     printf("\nFQ_32:\n");
     for (int i=0; i<size;++i){
@@ -1107,8 +1116,8 @@ printf(">>>>in compression");
 
 
 
-        IntegerCODEC &icodec = *CODECFactory::getFromName("s4-bp128-dm");
-        icodec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
+        //IntegerCODEC &icodec = *CODECFactory::getFromName("s4-bp128-dm");
+        codec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
 
 
 //compressedsize = size;
@@ -1125,18 +1134,18 @@ printf(">>>>in compression");
         }
 
 //if (rank == 0) {
-    std::cout << "compressedsize: " << compressedsize << " origsize: " << size << " sizeof(FQ_T): " << sizeof(FQ_T) << std::endl;
+//    std::cout << "compressedsize: " << compressedsize << " origsize: " << size << " sizeof(FQ_T): " << sizeof(FQ_T) << std::endl;
 //}
         // memcpy((FQ_T *)compressed_fq_64, (uint32_t *)compressed_fq_32, compressedsize * sizeof(uint32_t));
         for (auto i=0; i<compressedsize;++i){
             //if (rank == 0) {
-                std::cout << "index: " << i << " " << "value: " << static_cast<FQ_T>(compressed_fq_32[i]) << std::endl;
+                //std::cout << "index: " << i << " " << "value: " << static_cast<FQ_T>(compressed_fq_32[i]) << std::endl;
             //}
             (*compressed_fq_64)[i] = static_cast<FQ_T>(compressed_fq_32[i]);
 //*compressed_fq_64[i] = fq_64[i];
         }
 //if (rank == 0) {
-    std::cout << std::endl;
+    //std::cout << std::endl;
 //}
         free(fq_32);
         free(compressed_fq_32);
@@ -1201,8 +1210,8 @@ printf(">>>>in DE-compression");
         }
 
 
-        IntegerCODEC &icodec =  *CODECFactory::getFromName("s4-bp128-dm");
-        icodec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
+        //IntegerCODEC &icodec =  *CODECFactory::getFromName("s4-bp128-dm");
+        codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
 
 
         *uncompressed_fq_64 = NULL;
@@ -1213,13 +1222,30 @@ printf(">>>>in DE-compression");
         }
 
         // memcpy((FQ_T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, uncompressedsize * sizeof(uint32_t));
-        for (int i=0; i<uncompressedsize;++i){
+    //if (rank == 0) {
+    //std::cout << "rank: " << rank <<" compressedsize: " << size << " origsize: " << uncompressedsize  << std::endl;
+    //}
+        for (auto i=0; i<uncompressedsize;++i){
+            //if (rank != 0) {
+                //if (i+1 != uncompressedsize) {
+                //    assert(static_cast<FQ_T>(uncompressed_fq_32[i]) < static_cast<FQ_T>(uncompressed_fq_32[i+1]));
+                //}
+            //}
             (*uncompressed_fq_64)[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
+            //if (rank != 0) {
+                //if (i+1 != uncompressedsize) {
+                //    assert(static_cast<FQ_T>(uncompressed_fq_32[i]) < static_cast<FQ_T>(uncompressed_fq_32[i+1]));
+                //}
+                //std::cout << "rank: " << rank <<" index: " << i << " " << "value32: " << static_cast<FQ_T>(uncompressed_fq_32[i]) << " value64: " << (*uncompressed_fq_64)[i] << std::endl;
+            //}
+
 //*uncompressed_fq_64[i] = compressed_fq_64[i];
         }
-
+//if (rank != 0) {
+    //std::cout << std::endl;
+//}
         assert(uncompressedsize>size);
-        assert(std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
+        assert(std::is_sorted(*uncompressed_fq_64, *uncompressed_fq_64+uncompressedsize));
 
         free(compressed_fq_32);
         free(uncompressed_fq_32);
