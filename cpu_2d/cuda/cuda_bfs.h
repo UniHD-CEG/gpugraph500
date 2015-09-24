@@ -84,6 +84,7 @@ public:
     bool istheresomethingnew();           //to detect if finished
     void setStartVertex(vtxtyp start);
     void runLocalBFS();
+    void bfsMemCpy(vtxtyp *&dst, vtxtyp *src, size_t size);
 };
 
 #endif // CUDA_BFS_H
