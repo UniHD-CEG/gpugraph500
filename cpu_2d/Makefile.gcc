@@ -277,7 +277,7 @@ ifeq ($(manual_profiler_other_compilers), "yes")
 endif
 
 ifeq ($(debug), "yes")
-	DEFINES += -D_DEBUG
+	DEFINES +=-D_DEBUG
 endif
 
 #
@@ -330,7 +330,7 @@ endif
 ifeq ($(debug_code), "yes")
 	o_level = -O0
 	o_level_nvcc = -O0
-	DEBUG_FLAG=-g
+	DEBUG_FLAG=-g -DTHRUST_DEBUG
 	code_optimization_flags =
 endif
 
