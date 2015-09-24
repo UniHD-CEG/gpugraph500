@@ -138,6 +138,13 @@ CUDA_BFS::~CUDA_BFS() {
     delete[] predecessor;
 }
 
+/*
+ * Dos a memcpy to one of the Fronere_queu variables.
+ * FQ variables in this object require cuda calls.
+ */
+void CUDA_BFS::reduce_fq_out(FQ_T *&dst, FQ_T *src, size_t size) {
+    cudaMemcpy(dst, src, size * sizeof(FQ_T), cudaMemcpyHostToHost);
+}
 
 /*
  * Function for reduction of the current and incoming frontier queue

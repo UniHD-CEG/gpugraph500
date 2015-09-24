@@ -107,6 +107,8 @@ protected:
     void setBackInqueue();
     void generatOwenMask();
 
+    void bfsMemCpy(FQ_T *&dst, FQ_T *src, size_t size);
+
 public:
     /**
      * Constructor & destructor declaration
@@ -854,7 +856,7 @@ std::cout  << "3 rank: "<< rank << std::endl;
 
 
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
-                    memcpy(fq_64, uncompressed_fq_64, originalsize * sizeof(FQ_T));
+                    bfsMemCpy(fq_64, uncompressed_fq_64, originalsize);
                 }
 
                 //if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
@@ -911,9 +913,9 @@ std::cout  << "3 rank: "<< rank << std::endl;
                 // static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
                 if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
                     // why only works with attibute fq_6: static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
-                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
+                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
                 } else {
-                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
+                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
                     // why only works with attibute fq_6: static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
                 }
 
