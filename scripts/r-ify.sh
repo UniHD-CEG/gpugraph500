@@ -164,11 +164,11 @@ function generate_r_plotcode {
 
 
     plot="par(xpd = TRUE, mar = c(5.1, 4.1, 4.1, 7.1))
-        bp <-  barplot(matriz, axes = FALSE, axisnames = FALSE,
+        bp <-  barplot(matriz, axes = FALSE, axisnames = FALSE, ylim = c(0, 0.4),
             main = '', border = NA,
             col = ccols($num_labels_x))
         axis(1, at = barplot(matriz, plot = FALSE), labels = $labels_x)
-        axis(2, at = seq(0, 1.75, 0.05), labels = seq(0, 1.75, 0.05))
+        axis(2, seq(0, 0.45, 0.05),main='time (seconds)', cex.axis=1)
         legend('topright', inset = c(-0.25, 0), fill = ccols(length(rownames(matriz))),
         legend = c($labels_x_text))"
 
