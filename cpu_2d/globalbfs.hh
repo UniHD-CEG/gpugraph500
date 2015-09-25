@@ -657,30 +657,30 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #ifdef _SIMDCOMPRESS
 
 #ifdef _SIMDCOMPRESSBENCHMARK
-                // SIMDbenchmarkCompression(startaddr, originalsize, rank);
+                SIMDbenchmarkCompression(startaddr, originalsize, rank);
 #endif
 
 
                 uncompressedsize = static_cast<size_t>(originalsize);
                 SIMDcompression(codec, startaddr, uncompressedsize, &compressed_fq_64, compressedsize);
 
-                // if (originalsize <= SIMDCOMPRESSION_THRESHOLD || originalsize == compressedsize) {
-                //    assert(memcmp(startaddr, compressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
-                // }
 
+#ifdef _SIMDCOMPRESSVERIFY
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
-// #ifdef _SIMDCOMPRESSVERIFY
-                // SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
-// #endif
+                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+#endif
+
 #endif
 
 #ifdef _SIMDCOMPRESS
 
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
-// #ifdef _SIMDCOMPRESSVERIFY
+
+#ifdef _SIMDCOMPRESSVERIFY
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
-// #endif
+#endif
+
                 MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 #else
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
@@ -692,16 +692,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 uncompressedsize = static_cast<size_t>(originalsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
 
+#ifdef _SIMDCOMPRESSVERIFY
                 if (SIMDthereWasCompression(originalsize, compressedsize)) {
                         assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
                 } else {
                         assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
                 }
-
-// #ifdef _SIMDCOMPRESSVERIFY
-                // assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
-                // SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
-// #endif
+                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
+                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+#endif
 
                 // Todo: Save (G/C)PU cycles. decompression not needed for MPI rank Root. The original array is available.
                 /*
@@ -747,38 +746,36 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 #ifdef _SIMDCOMPRESS
 
-                FQ_T *compressed_fq_64=NULL, *startaddr=NULL, *uncompressed_fq_64=NULL;
+                FQ_T *compressed_fq_64=NULL, *uncompressed_fq_64=NULL;
                 int originalsize, compressedsize;
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
                 assert(originalsize <= fq_64_length);
                 compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
+
+#ifdef _SIMDCOMPRESSVERIFY
+                FQ_T *startaddr=NULL;
                 startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
                 if (startaddr == NULL) {
                     printf("\nERROR: Memory allocation error!");
                     abort();
                 }
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+#endif
+
                 MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
                 memcpy(compressed_fq_64, fq_64, compressedsize * sizeof(FQ_T));
-
-                //assert(memcmp(compressed_fq_64, fq_64, compressedsize * sizeof(FQ_T)) == 0);
-                //if (originalsize <= SIMDCOMPRESSION_THRESHOLD || originalsize == compressedsize) {
-                //    assert(memcmp(startaddr, compressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
-                //}
-
                 uncompressedsize = static_cast<size_t>(originalsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
-
-                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                if (SIMDthereWasCompression(originalsize, compressedsize)) {
                     static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq_64, originalsize);
                 }
 
-// #ifdef _SIMDCOMPRESSVERIFY
-                // assert (std::is_sorted(fq_64, fq_64 + originalsize));
-                // SIMDverifyCompression(startaddr, fq_64, originalsize);
-// #endif
+#ifdef _SIMDCOMPRESSVERIFY
+                assert (std::is_sorted(fq_64, fq_64 + originalsize));
+                SIMDverifyCompression(startaddr, fq_64, originalsize);
+#endif
 
 #else
                 int originalsize;
@@ -807,16 +804,24 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                     if (compressed_fq_64 != NULL) {
                         free(compressed_fq_64);
                     }
+
+#ifdef _SIMDCOMPRESSVERIFY
                     if (startaddr != NULL) {
                         free(startaddr);
                     }
+#endif
+
                 } else {
                     if (compressed_fq_64 != NULL) {
                         free(compressed_fq_64);
                     }
+
+#ifdef _SIMDCOMPRESSVERIFY
                     if (startaddr != NULL) {
                         free(startaddr);
                     }
+#endif
+
                 }
 #endif
             }
