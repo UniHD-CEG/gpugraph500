@@ -62,6 +62,8 @@ private:
     void SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, const size_t &size, FQ_T **compressed_fq_64, size_t &compressedsize) const;
     void SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, const int size, FQ_T **uncompressed_fq_64,
                                                                                                     size_t &uncompressedsize) const;
+    inline bool SIMDthereWasCompression(const size_t originalsize, const size_t compressedsize) const;
+
 #endif
 
 #ifdef INSTRUMENTED
@@ -668,7 +670,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
 // #ifdef _SIMDCOMPRESSVERIFY
-                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+                // SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
 // #endif
 #endif
 
@@ -690,15 +692,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 uncompressedsize = static_cast<size_t>(originalsize);
                 SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
 
-                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                if (SIMDthereWasCompression(originalsize, compressedsize)) {
                         assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
                 } else {
                         assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
                 }
 
 // #ifdef _SIMDCOMPRESSVERIFY
-                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
-                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+                // assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
+                // SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
 // #endif
 
                 // Todo: Save (G/C)PU cycles. decompression not needed for MPI rank Root. The original array is available.
@@ -723,7 +725,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
 #ifdef _SIMDCOMPRESS
-                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                if (SIMDthereWasCompression(originalsize, compressedsize)) {
                     if (uncompressed_fq_64 != NULL) {
                         free(uncompressed_fq_64);
                     }
@@ -798,7 +800,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
 #ifdef _SIMDCOMPRESS
-                if (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize) {
+                if (SIMDthereWasCompression(originalsize, compressedsize)) {
                     if (uncompressed_fq_64 != NULL) {
                         free(uncompressed_fq_64);
                     }
@@ -928,7 +930,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(const FQ_T
 }
 
 /**
- * SIMD compression. C style memory allocation
+ * SIMD compression.
+ *
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, const size_t &size, FQ_T **compressed_fq_64,
@@ -969,12 +972,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 }
 
 /**
- * SIMD decompression. C style memory allocation
+ * SIMD decompression.
+ *
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, const int size,
                                                     /*Out*/ FQ_T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const {
-    if (uncompressedsize > SIMDCOMPRESSION_THRESHOLD && size != uncompressedsize) {
+    if (SIMDthereWasCompression(size, uncompressedsize)) {
         uint32_t *uncompressed_fq_32 = (uint32_t *) malloc(uncompressedsize * sizeof(uint32_t));
         uint32_t *compressed_fq_32 = (uint32_t *) malloc(size * sizeof(uint32_t));
         if(compressed_fq_32 == NULL || uncompressed_fq_32 == NULL) {
@@ -1008,6 +1012,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
 
 /**
  * SIMD compression/decompression verification.
+ *
  */
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(const FQ_T *fq, const FQ_T *uncompressed_fq_64, const size_t uncompressedsize) const {
@@ -1016,5 +1021,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(const FQ_T *f
     }
 }
 #endif
+
+/**
+ * SIMDthereWasCompression.
+ * returns whether or not there was compression.
+ */
+template<class Derived, class FQ_T, class MType, class STORE>
+void GlobalBFS<Derived, FQ_T, MType, STORE>::inline bool SIMDthereWasCompression(const size_t originalsize, const size_t compressedsize) const {
+    return (uncompressedsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize);
+}
+
 
 #endif // GLOBALBFS_HH
