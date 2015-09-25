@@ -960,6 +960,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
         }
         for (auto i=0; i<compressedsize;++i){
             (*compressed_fq_64)[i] = static_cast<FQ_T>(compressed_fq_32[i]);
+        }
         free(fq_32);
         free(compressed_fq_32);
      } else {
@@ -978,7 +979,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
 template<class Derived, class FQ_T, class MType, class STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, const int size,
                                                     /*Out*/ FQ_T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const {
-    if (SIMDthereWasCompression(size, uncompressedsize)) {
+    if (SIMDthereWasCompression(uncompressedsize, size)) {
         uint32_t *uncompressed_fq_32 = (uint32_t *) malloc(uncompressedsize * sizeof(uint32_t));
         uint32_t *compressed_fq_32 = (uint32_t *) malloc(size * sizeof(uint32_t));
         if(compressed_fq_32 == NULL || uncompressed_fq_32 == NULL) {
@@ -998,7 +999,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
         // memcpy((FQ_T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, uncompressedsize * sizeof(uint32_t));
         for (auto i=0; i<uncompressedsize;++i){
             (*uncompressed_fq_64)[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
-        assert(uncompressedsize>size);
+        }
         free(compressed_fq_32);
         free(uncompressed_fq_32);
     } else {
@@ -1020,16 +1021,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(const FQ_T *f
         assert(memcmp(fq, uncompressed_fq_64, uncompressedsize * sizeof(FQ_T)) == 0);
     }
 }
-#endif
 
 /**
  * SIMDthereWasCompression.
  * returns whether or not there was compression.
  */
 template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::inline bool SIMDthereWasCompression(const size_t originalsize, const size_t compressedsize) const {
-    return (uncompressedsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize);
+inline bool GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDthereWasCompression(const size_t originalsize, const size_t compressedsize) const {
+    return (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize);
 }
-
+#endif
 
 #endif // GLOBALBFS_HH
