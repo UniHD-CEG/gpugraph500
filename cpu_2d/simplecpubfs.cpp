@@ -8,14 +8,14 @@ SimpleCPUBFS::SimpleCPUBFS(MatrixT &_store/*, int64_t verbosity*/):GlobalBFS<Sim
     predecessor = new vtxtyp[store.getLocColLength()];
 
     //allocate recive buffer
-    recv_fq_buff_length = std::max(store.getLocRowLength(), store.getLocColLength());
-    recv_fq_buff = static_cast<void*>( new vtxtyp[recv_fq_buff_length]);
+    fq_64_length = std::max(store.getLocRowLength(), store.getLocColLength());
+    fq_64 = static_cast<void*>( new vtxtyp[fq_64_length]);
 
 }
 
 SimpleCPUBFS::~SimpleCPUBFS()
 {
-    delete[] static_cast<vtxtyp*>(recv_fq_buff);
+    delete[] static_cast<vtxtyp*>(fq_64);
     delete[] predecessor;
 }
 

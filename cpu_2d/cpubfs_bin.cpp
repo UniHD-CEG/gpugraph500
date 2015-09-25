@@ -10,21 +10,21 @@ CPUBFS_bin::CPUBFS_bin(MatrixT& _store, int64_t verbosity):GlobalBFS<CPUBFS_bin,
     //if(posix_memalign((void**)&predecessor,64,sizeof(vtxtyp)*store.getLocColLength()))predecessor=0;// new vtxtyp[store.getLocColLength()];;
     MPI_Alloc_mem(sizeof(vtxtyp)*store.getLocColLength(), MPI_INFO_NULL, (void*)&predecessor);
     //allocate recive buffer
-    long recv_fq_buff_length_tmp = std::max(store.getLocRowLength(), store.getLocColLength());
-    recv_fq_buff_length = recv_fq_buff_length_tmp/64 + ((recv_fq_buff_length_tmp%64 >0)? 1:0);
-    //if(posix_memalign((void**)&recv_fq_buff,64,sizeof(uint64_t)*recv_fq_buff_length))recv_fq_buff=0;
-    MPI_Alloc_mem(sizeof(uint64_t)*recv_fq_buff_length, MPI_INFO_NULL, (void*)&recv_fq_buff);
+    long fq_64_length_tmp = std::max(store.getLocRowLength(), store.getLocColLength());
+    fq_64_length = fq_64_length_tmp/64 + ((fq_64_length_tmp%64 >0)? 1:0);
+    //if(posix_memalign((void**)&fq_64,64,sizeof(uint64_t)*fq_64_length))fq_64=0;
+    MPI_Alloc_mem(sizeof(uint64_t)*fq_64_length, MPI_INFO_NULL, (void*)&fq_64);
     if(posix_memalign((void**)&visited,64,sizeof(uint64_t)*col64))visited=0;//new uint64_t[col64];
     //if(posix_memalign((void**)&fq_out,64,sizeof(uint64_t)*col64))fq_out=0; //new uint64_t[col64];
     MPI_Alloc_mem(sizeof(uint64_t)*col64, MPI_INFO_NULL, (uint64_t*)&fq_out);
     if(posix_memalign((void**)&fq_in,64,sizeof(uint64_t)*row64)) fq_in =0; //new uint64_t[row64];
 
     if(predecessor  == 0 ||
-       recv_fq_buff == 0 ||
+       fq_64 == 0 ||
        visited      == 0 ||
        fq_out       == 0 ||
        fq_in        == 0) {
-      if(verbosity != 0) 
+      if(verbosity != 0)
          fprintf(stderr,"Unable to allocate memory.\n");
        MPI_Abort(MPI_COMM_WORLD, -1);
 
@@ -37,9 +37,9 @@ CPUBFS_bin::~CPUBFS_bin()
     //free(predecessor);
     MPI_Free_mem(predecessor);
     predecessor=0;
-    //free(recv_fq_buff);
-    MPI_Free_mem(recv_fq_buff);
-    recv_fq_buff = 0;
+    //free(fq_64);
+    MPI_Free_mem(fq_64);
+    fq_64 = 0;
     free(visited);
     visited = 0;
     //free(fq_out);
@@ -55,7 +55,7 @@ void CPUBFS_bin::reduce_fq_out(uint64_t* __restrict__ startaddr, long insize)
     //assume_aligned(uint64_t*,startaddr,64);
     //assume_aligned(uint64_t*,fq_out,64);
 
-    assert(insize == col64);    
+    assert(insize == col64);
     for(long i = 0; i < col64; i++){
         fq_out[i] |= startaddr[i];
     }

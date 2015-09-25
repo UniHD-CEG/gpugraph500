@@ -40,15 +40,14 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
 
     fq_tp_type = MPI_INT64_T;
     bm_type = MPI_UNSIGNED_CHAR;
-    recv_fq_buff_length = static_cast<vtxtyp>
-    (std::max(store.getLocRowLength(), store.getLocColLength()) * queue_sizing);
-    //recv_fq_buff = new vtxtyp[recv_fq_buff_length];
-    cudaHostAlloc(&recv_fq_buff, recv_fq_buff_length * sizeof(vtxtyp), cudaHostAllocDefault);
+    fq_64_length = static_cast<vtxtyp>(std::max(store.getLocRowLength(), store.getLocColLength()) * queue_sizing);
+    //fq_64 = new vtxtyp[fq_64_length];
+    cudaHostAlloc(&fq_64, fq_64_length * sizeof(vtxtyp), cudaHostAllocDefault);
     //multipurpose buffer
     qb_length = 0;
-    cudaHostAlloc(&queuebuff, recv_fq_buff_length * sizeof(vtxtyp), cudaHostAllocDefault);
+    cudaHostAlloc(&queuebuff, fq_64_length * sizeof(vtxtyp), cudaHostAllocDefault);
     rb_length = 0;
-    cudaHostAlloc(&redbuff, recv_fq_buff_length * sizeof(vtxtyp), cudaHostAllocDefault);
+    cudaHostAlloc(&redbuff, fq_64_length * sizeof(vtxtyp), cudaHostAllocDefault);
 
     csr_problem = new Csr;
 
@@ -101,9 +100,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
     Csr::GraphSlice *gs_other;
     for (int gpu = 0; gpu < num_gpus; ++gpu) {
         gs = csr_problem->graph_slices[gpu];
-        for (int other_gpu = (gpu + 1) % num_gpus;
-             other_gpu != gpu;
-             other_gpu = (other_gpu + 1) % num_gpus) {
+        for (int other_gpu = (gpu + 1) % num_gpus; other_gpu != gpu; other_gpu = (other_gpu + 1) % num_gpus) {
             gs_other = csr_problem->graph_slices[other_gpu];
             // Set device
             if (b40c::util::B40CPerror(cudaSetDevice(gs->gpu),
@@ -137,10 +134,17 @@ CUDA_BFS::~CUDA_BFS() {
     delete csr_problem;
     cudaFreeHost(redbuff);
     cudaFreeHost(queuebuff);
-    cudaFreeHost(recv_fq_buff);
+    cudaFreeHost(fq_64);
     delete[] predecessor;
 }
 
+/*
+ * Performs a memcpy to the FQ variable.
+ * FQ variables may require specific device calls.
+ */
+void CUDA_BFS::bfsMemCpy(vtxtyp *&dst, vtxtyp *src, size_t size) {
+    cudaMemcpy(dst, src, size * sizeof(vtxtyp), cudaMemcpyHostToHost);
+}
 
 /*
  * Function for reduction of the current and incoming frontier queue
@@ -153,20 +157,15 @@ void CUDA_BFS::reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr, i
     if((errorCode=checkQueue.checkCol(startaddr, insize))!= CheckQueue<vtxtyp>::ErrorCode::Valid){
         std::cerr << "(" <<store.getLocalRowID() << ":" <<store.getLocalColumnID() << ") ";
         switch(errorCode){
-            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
-            std::cerr << "Recieved queue with invalid length";
+            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:std::cerr << "Recieved queue with invalid length";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
-            std::cerr << "Recieved queue with ids out of range";
+            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:std::cerr << "Recieved queue with ids out of range";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
-            std::cerr << "Recieved not sorted queue";
+            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:std::cerr << "Recieved not sorted queue";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
-            std::cerr << "Recieved queue with duplicate ids";
+            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:std::cerr << "Recieved queue with duplicate ids";
             break;
-            default:
-            std::cerr << "Recieved invalid queue";
+            default:std::cerr << "Recieved invalid queue";
         }
         std::cerr << " from source node." << std::endl;
     }
@@ -236,7 +235,7 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize) {
     }
 
     if (startaddr != 0) {
-        std::swap(recv_fq_buff, queuebuff);
+        std::swap(fq_64, queuebuff);
         qb_length = insize;
     }
     //update visited
@@ -276,20 +275,15 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, 
     if((errorCode=checkQueue.checkCol(start_local, end_local-start_local))!= CheckQueue<vtxtyp>::ErrorCode::Valid){
         std::cerr << "(" <<store.getLocalRowID() << ":" <<store.getLocalColumnID() << ") ";
         switch(errorCode){
-            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
-            std::cerr << "Select queue with invalid length";
+            case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:std::cerr << "Select queue with invalid length";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
-            std::cerr << "Select queue with ids out of range";
+            case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:std::cerr << "Select queue with ids out of range";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
-            std::cerr << "Select not sorted queue";
+            case CheckQueue<vtxtyp>::ErrorCode::NotSorted:std::cerr << "Select not sorted queue";
             break;
-            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
-            std::cerr << "Select queue with duplicate ids";
+            case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:std::cerr << "Select queue with duplicate ids";
             break;
-            default:
-            std::cerr << "Select invalid queue";
+            default:std::cerr << "Select invalid queue";
         }
         std::cerr << "." << std::endl;
     }
@@ -303,8 +297,8 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, 
  *  Expect symmetric partitioning, so all parameters are ignored.
  */
 void CUDA_BFS::setIncommingFQ(vtxtyp globalstart, long size, vtxtyp *startaddr, int &insize_max) {
-    if (startaddr == recv_fq_buff) {
-        std::swap(recv_fq_buff, queuebuff);
+    if (startaddr == fq_64) {
+        std::swap(fq_64, queuebuff);
     }
     qb_length = insize_max;
 }
@@ -365,16 +359,32 @@ void CUDA_BFS::getBackOutqueue() {
     for (int i = 0; i < numGpus; ++i) {
         Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         queue_sizes[i] = bfsGPU->getQueueSize(gs->gpu, gs->stream);
-        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream),
-                               "Can't synchronize device.", __FILE__, __LINE__);
+        b40c::util::B40CPerror(cudaStreamSynchronize(gs->stream), "Can't synchronize device.", __FILE__, __LINE__);
+
     }
     //sort values on the gpu
     for (int i = 0; i < numGpus; ++i) {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaSetDevice(gs->gpu));
         thrust::device_ptr <typename MatrixT::vtxtyp> multigpu(gs->frontier_queues.d_keys[0]);
+/*
+std::cout << std::endl;
+for (int x = 0; x < queue_sizes[i]; ++x) {
+    std::cout << multigpu[x] << " ";
+}
+std::cout << std::endl;
+*/
         thrust::sort(multigpu, multigpu + queue_sizes[i]);
+/*
+std::cout << std::endl;
+for (int x = 0; x < queue_sizes[i]; ++x) {
+    std::cout << multigpu[x] << " ";
+}
+std::cout << std::endl;
+*/
     }
+
+
 
     qb_length = 0;//csr_problem->num_gpus;
     typename MatrixT::vtxtyp *qb_nxt = queuebuff;

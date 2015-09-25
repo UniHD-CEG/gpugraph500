@@ -1085,7 +1085,8 @@ template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
         max_j = rowp[i + 1];
         while (allSmaller && j < max_j) {
             val64 = static_cast<long>(columnp[j]);
-            if (((val64 >> 32) & 0xFFFFFFFF) != 0x00000000) {
+            // if (((val64 >> 32) & 0xFFFFFFFF) != 0x00000000) {
+            if (val64 > 0xFFFFFFFF) {
                 allSmaller = false;
             }
             ++j;

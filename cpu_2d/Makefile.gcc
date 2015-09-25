@@ -6,97 +6,131 @@
 # Configurable options:
 #
 # nvidia_architecture
-#  Values: fermi | kepler | maxwell | all
-# "use all for generic code: Fermi and Kepler.
+#   Values: fermi | kepler | maxwell | auto
+#   Default value: auto
+#   Description: "use all for generic code: Fermi and Kepler.
 #
 # nvidia_ptxas_otimize
-#  Values: yes | no
-# "enables -O3 optimization on ptax cuda regiters"
+#   Values: yes | no
+#   Default value: no
+#   Description: "enables -O3 optimization on ptax cuda regiters"
 #
 # openmp_on_cuda
-#  Values: yes | no
-# "Hybrid execution mode. OpenMP threads are added to
-#  BFSruns processed with cuda"
+#   Values: yes | no
+#   Default value: no
+#   Description: "Hybrid execution mode. OpenMP threads are added to
+#  				  BFSruns processed with cuda"
 #
 # openmp_on_other_compilers
-#  Values: yes | no
-# "Hybrid execution mode. OpenMP threads are added to
-#  other high O() code"
+#   Values: yes | no
+#   Default value: no
+#   Description: "Hybrid execution mode. OpenMP threads are added to
+#  				  other high O() code"
 #
 # manual_profiler_cuda
-#  Values: yes | no
-# "prints out information on initialization"
+#   Values: yes | no
+#   Default value: no
+#   Description: "prints out information on initialization"
 #
 # manual_profiler_other_compilers
-#  Values: yes | no
-# "prints out results/ statistics at the end"
+#   Values: yes | no
+#   Default value: no
+#   Description: "prints out results/ statistics at the end"
 #
 # custom_openmpi
-#  Values: yes | no
-# "use user compiled openmpi instead of system's"
+#   Values: yes | no
+#   Default value: no
+#   Description: "use user compiled openmpi instead of system's"
 #
 # custom_openmpi_basedir
-# Values: path
-#  "if previous option is set, absolute path to dir"
+#   Values: path
+#   Default value: CHANGE_ME
+#   Description: "if previous option is set, absolute path to dir"
 #
 # scorep_profiler_enable
-#  Values: yes | no
-# "is scorep has been installed, enable it on code"
+#   Values: yes | no
+#   Default value: no
+#   Description: "is scorep has been installed, enable it on code"
 #
 # scorep_profiler_automatic_instrument
-#  Values: yes | no
-# "this option set to no enables manual instrumentation,
-#  and reads the already added zones!
+#   Values: yes | no
+#   Default value: yes
+#   Description: "this option set to no enables manual instrumentation,
+#  				  and reads the already added zones!
 #
 # scorep_custom
-#  Values: yes | no
-# "see open_mpi above. for scorep"
+#   Values: yes | no
+#   Default value: yes
+#   Description: "use custom compiled scorep instead of systems one"
 #
 # scorep_custom_basedir
-# Values: path
-#  "see custom_openmpi_basedir option above"
+#   Values: path
+#   Default value: CHANGE_ME
+#   Description: "see custom_openmpi_basedir option above"
 #
 # use_avx_instructions
-#  Values: yes | no
-#  "CPU SSExx and AMD compatibles (AVX) will be used
-#   to compile files"
+#   Values: yes | no
+#   Default value: yes
+#   Description: "CPU SSExx and AMD compatible AVX will be used.
+#   				Required for SIMDcompression librasy"
 #
 # enable_simd_compression
-#  Values: yes | no
-#  "MPI packets will be sent compressed by using
-#   D. Lemire SIMDCompression library"
+#   Values: yes | no
+#   Default value: yes
+#   Description: "MPI packets will be sent compressed by using
+#   			  D. Lemire SIMDCompression library"
+#   External links:
+#   			- https://github.com/lemire/SIMDCompressionAndIntersection
 #
 # enable_simd_compression_benchmark
-#  Values: yes | no
-#  "shows statistics of compression rate, time of compression
-#   decompression for each codec at Lemire's library"
+#   Values: yes | no
+#   Default value: no
+#   Description: "shows statistics of compression rate, time of compression
+#   			  decompression for each codec at Lemire's library"
+#
+# enable_simd_compression_verify
+#   Values: yes | no
+#   Default value: no
+#   Description: "sends both compressed, and decompressed data through
+#   			  the network. Checks decompression at peer node"
 #
 # debug
-#  Values: yes | no
-# "Provides extra data in runtime execution.
-#  recorded in slurm-xx.out file"
+#   Values: yes | no
+#   Default value:
+#   Description: "Provides extra data in runtime execution.
+#  				recorded in slurm-xx.out file"
 #
 # quiet_output
-#  Values: yes | no
-# "Disable verbose on Make command execution"
+#   Values: yes | no
+#   Default value: no
+#   Description: "Disable verbose on Make command execution"
 #
 # use_cuda
-#  Values: yes | no
-# "if cuda is disabled BFS runs are proccessed
-#  by CPU"
+#   Values: yes | no
+#   Default value: yes
+#   Description: "use CUDA implementation for the BFS algorithm instead of CPU"
 #
 # code_optimization_level
-#  Values: O4 | O3 | O2 | O1 | O0
-#  "Compiler optimization level."
-#
+#   Values: O4 | O3 | O2 | O1 | O0
+#   Default value:
+#   Description: "Compiler optimization level. O0=none, O4=maximum"
 #
 # code_optimization_flags
-#  Format: value, value, value
-#  Values: -funroll-loops, -finline-functions, -funswitch-loops, -fpredictive-commoning,
-#          -fgcse-after-reload, -ftree-vectorize, -ftree-partial-pre and -fipa-cp-clone options, ...
-#           (https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options)
-#  "Optimization flags added to the compiler"
-
+#    Values: -funroll-loops -flto -finline-functions -funswitch-loops -fpredictive-commoning
+#            -fgcse-after-reload -ftree-vectorize -ftree-partial-pre -fipa-cp-clone ...
+#
+#    Default value: -funroll-loops -flto (For GNU's version of Makefile)
+#    Format: value value value (separated by spaces)
+#    Description: "Optimization flags added to compiler"
+#    External links:
+#    			- GNU compiler: https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options
+#
+# debug_code
+#   Values: yes | no
+#   Default value: no
+#   Description: "Enables symbol inclusion in the binary (compiler option -g).
+#   				Disables optimizations (compiler-O0) and removes code_optimization_flags.
+#   				It is useful to run this option with Valgrind in the runtime Test-file"
 
 nvidia_architecture                       :="fermi"
 nvidia_ptxas_otimize                      :="no"
@@ -113,19 +147,28 @@ scorep_custom_basedir                     :=/home/jromera/scorep
 use_avx_instructions                      :="no"
 enable_simd_compression                   :="yes"
 enable_simd_compression_benchmark         :="yes"
-debug                                     :="no"
-quiet_output                              :="no"
+enable_simd_compression_verify            :="yes"
 use_cuda                                  :="yes"
+debug                                     :="no"
+debug_code                                :="no"
+quiet_output                              :="yes"
 code_optimization_level                   :="O4"
 code_optimization_flags                   :=-funroll-loops -flto
 
 
+#
+# If there are several compilers installed on the system, choose the neuer version
+#
+#
 
 CXX := $(shell locate bin/g++- | grep "bin/g++-[0-9]" | tail -1)
 CC := $(shell locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1)
 NVCXX := $(shell locate bin/nvcc | grep bin/nvcc$$ | tail -1)
 NVDIR := $(shell echo $(NVCXX) | sed 's,/bin/nvcc$$,,')
 
+#
+# Code Optimization levels. Read debug_code option help above.
+#
 
 ifeq ($(code_optimization_level), "O4")
 	o_level := -O3 -ffast-math
@@ -142,6 +185,10 @@ endif
 ifeq ($(code_optimization_level), "O1")
 	o_level := -O1
 	o_level_nvcc := -O1
+endif
+ifeq ($(code_optimization_level), "O0")
+	o_level := -O0
+	o_level_nvcc := -O0
 endif
 
 
@@ -161,7 +208,7 @@ ifeq ($(nvidia_ptxas_otimize), "yes")
 endif
 
 
-ifeq ($(nvidia_architecture), "all")
+ifeq ($(nvidia_architecture), "auto")
 	NV_ARCHITECTURE := $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 else
 ifeq ($(nvidia_architecture), "fermi")
@@ -175,6 +222,10 @@ endif
 endif
 endif
 
+#
+# Instrumentation with Score-P
+#
+#
 
 ifeq ($(scorep_profiler_enable), "yes")
 	threads := none
@@ -226,8 +277,17 @@ ifeq ($(manual_profiler_other_compilers), "yes")
 endif
 
 ifeq ($(debug), "yes")
-	DEFINES += -D_DEBUG
+	DEFINES +=-D_DEBUG
 endif
+
+#
+# SIMDcompression block.
+#
+# CPU with SSE4 support is required.
+# CPU with AVX support is recommended.
+#
+#
+
 
 ifeq ($(enable_simd_compression), "yes")
 	DEFINES += -D_SIMDCOMPRESS
@@ -236,6 +296,9 @@ ifeq ($(enable_simd_compression), "yes")
 ifeq ($(enable_simd_compression_benchmark), "yes")
 	DEFINES += -D_SIMDCOMPRESSBENCHMARK
 	LLIBC := -static-libstdc++
+endif
+ifeq ($(enable_simd_compression_verify), "yes")
+	DEFINES += -D_SIMDCOMPRESSVERIFY
 endif
 else
 	INCPATH := -I.
@@ -264,12 +327,25 @@ ifeq ($(quiet_output), "yes")
 	Q = @
 endif
 
+ifeq ($(debug_code), "yes")
+	o_level = -O0
+	o_level_nvcc = -O0
+	DEBUG_FLAG=-g
+	NVCC_DEBUG_FLAGS=-DTHRUST_DEBUG
+	code_optimization_flags =
+endif
 
-CXXFLAGS := $(arch) -std=c++11  -Weffc++ -pedantic -m64 $(o_level) $(code_optimization_flags) -Wall -Wextra
-CCFLAGS := $(arch) -std=c99 -pedantic -m64 $(o_level) $(code_optimization_flags) -Wall -Wextra
-MPICFLAGS := $(arch) -std=c99 -pedantic -m64 -mfpmath=sse $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) -Wall -Wextra
-MPICXXFLAGS := $(arch) -std=c++11 -pedantic -m64 $(o_level) $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) -Wall -Wextra
-NVCXXFLAGS := $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP)
+#
+# Compiler/ Linker options: C, C++, MPI, CUDA Flags and Libs
+#
+#
+#
+
+CXXFLAGS := $(arch) -std=c++11  -Weffc++ -pedantic -m64 $(o_level) $(code_optimization_flags) $(DEBUG_FLAG) -Wall -Wextra
+CCFLAGS := $(arch) -std=c99 -pedantic -m64 $(o_level) $(code_optimization_flags) $(DEBUG_FLAG) -Wall -Wextra
+MPICFLAGS := $(arch) -std=c99 -pedantic -m64 -mfpmath=sse $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) -Wall -Wextra
+MPICXXFLAGS := $(arch) -std=c++11 -pedantic -m64 $(o_level) $(code_optimization_flags) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) -Wall -Wextra
+NVCXXFLAGS := $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
 LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,$(o_level)
 LLIBS := $(SCOREP_LLIBS) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
 
@@ -280,6 +356,12 @@ MPICC := $(MPICC)
 MPICXX := $(MPICXX)
 LINK := $(PROFILER) $(MPICXX)
 
+#
+# List of sources to compile
+#
+#
+#
+
 OUTFILES := $(shell ls *.o)
 COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
 SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c $(bfs_implementation) validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp
@@ -289,6 +371,11 @@ ifeq ($(enable_simd_compression), "yes")
 	OBJECTS := $(COMPRESSION_OBJECTS) $(OBJECTS)
 endif
 
+#
+# Make/ Build rules
+#
+#
+#
 
 all: clean g500
 
@@ -416,7 +503,7 @@ ifneq ($(enable_simd_compression), "yes")
 endif
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -m64 $(o_level_nvcc) -use_fast_math -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -m64 $(o_level_nvcc) -use_fast_math -I$(NVDIR)/include -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 

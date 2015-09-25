@@ -35,3 +35,7 @@ void CUDA_BFS::setStartVertex(vtxtype start)
 void CUDA_BFS::runLocalBFS()
 {
 }
+
+void bfsMemCpy(vtxtyp *&dst, vtxtyp *src, size_t size)
+{
+}
