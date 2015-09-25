@@ -1,0 +1,274 @@
+%% frontmatter.tex
+%%
+
+\title{Dissipation in Deforming Chaotic Billiards}
+\author{Alexander Harvey Barnett}
+\degreemonth{October} % month final submission occurs.
+\degreeyear{2000}
+\degree{Doctor of Philosophy}
+\field{Physics}
+\department{Physics}
+\advisor{Eric J. Heller} % Category I added.
+
+\maketitle
+\copyrightpage
+
+
+\begin{abstract}
+% limited to 1.5 pages, double-spaced (Registrar's Office guidelines).
+% Also limited to 350 words. I claim $\mu \sim \omega^4$ is a single word.
+
+Chaotic billiards (hard-walled cavities)
+in two or more dimensions are paradigm systems in the fields
+of classical and quantum chaos.
+We study the dissipation (irreversible heating) rate in such billiard systems
+due to general shape deformations which are periodic in time.
+We are motivated by older studies of one-body nuclear dissipation
+and by anticipated mesoscopic applications.
+We review the classical and quantum linear response theories of dissipation rate
+and demonstrate their correspondence in the semiclassical
+limit.
+In both pictures, heating is a result of stochastic energy spreading.
+The heating rate can be expressed as a frequency-dependent
+friction coefficient $\mu(\omega)$, which
+depends on billiard shape and deformation choice.
+We show that there is a special class of deformations for which
+$\mu$ vanishes as like a power law in the small-$\omega$ limit.
+Namely, for deformations which cause translations and dilations
+$\mu \sim \omega^4$ whereas for those which cause rotations $\mu \sim \omega^2$.
+This contrasts the generic case for which $\mu \sim \omega^0$.
+We show how a systematic treatment of this special class leads to
+an improved version of the `wall formula' estimate for $\mu(0)$.
+
+We show that the special nature of dilation (a new result)
+is semiclassically equivalent to a
+quasi-orthogonality relation between the (undeformed) billiard quantum
+eigenstates on the boundary.
+This quasi-orthogonality forms the heart of a `scaling method' for the numerical
+calculation of quantum eigenstates, invented recently by Vergini and Saraceno.
+The scaling method is orders of magnitude more efficient than any other
+known billiard quantization method, however an adequate explanation for its
+success has been lacking until now.
+We explain the scaling method, its errors, and applications.
+We also present improvements to Heller's plane wave method.
+
+Two smaller projects conclude the thesis.
+Firstly, we give a new formalism for quantum point contact (QPC)
+conductance in terms of scattering
+cross-section in the half-plane, of use in open mesoscopic and atomic systems.
+We derive the maximum conductance through a tunneling QPC coupled to a resonator.
+Secondly, we numerically model a novel design of
+coherent atom waveguide which uses the dipole
+force due to evanescent light fields leaking from
+an optical waveguide mounted on a substrate.
+
+\end{abstract}
+
+%We show how a systematic subtraction of the `special' components of a general
+%deformation can be used to give an improved
+%version of the `wall formula' estimate for $\mu(0)$.
+%We believe this is the first study of $\omega$-dependent heating rate in
+%billards, and the first consideration of the `special' nature of dilation.
+
+
+
+\newpage
+\addcontentsline{toc}{section}{Table of Contents}
+\tableofcontents
+
+% these are optional in the Jan 2000 Harvard thesis GSAS guide:
+%\listoffigures
+%\listoftables
+%(Cut them for my personal thesis format).
+
+% cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+\begin{citations}
+
+\vspace{0.8in}
+
+\ssp
+\noindent
+Large portions of Chapters~\ref{ch:dil} and \ref{ch:wall}, as well as some
+of Sections~\ref{sec:qcc} and \ref{sec:quasi}
+have appeared in the following two papers:
+\begin{quote}
+	``Deformations and dilations of chaotic billiards:
+	dissipation rate, and quasi-orthogonality of the boundary
+	wavefunctions'',
+	A. H. Barnett, D. Cohen, and E. J. Heller,
+	Phys. Rev. Lett. {\bf 85}, 1412 (2000), {\tt nlin.CD/0003018};
+	\vspace{.1in} \\
+	``Rate of energy absorption for a driven chaotic cavity'',
+	A. H. Barnett, D. Cohen, and E. J. Heller,
+	submitted to J. Phys. A, {\tt nlin.CD/0006041}.
+\end{quote}
+The numerical methods of
+Chapter~\ref{ch:verg} were used to calculate data appearing in the above
+papers and in the following:
+\begin{quote}
+	``Parametric evolution for a deformed cavity'',
+	D. Cohen, A. H. Barnett, W. Bies, and E. J. Heller,
+	submitted to Phys. Rev. E, {\tt nlin.CD/0008040}.
+\end{quote}
+Chapter~\ref{ch:qpc} appears in its entirety as
+\begin{quote}
+	``Mesoscopic scattering in the half-plane:
+	how much conductance can you squeeze through a small hole?'',
+	A. H. Barnett, M. Blaauboer, A. Mody, and E. J. Heller,
+	submitted to Phys. Rev. B,
+	{\tt cond-mat/0008279}.
+\end{quote}
+Finally, most of Chapter~\ref{ch:atom} has been published as
+\begin{quote}
+	``Substrate-based atom waveguide using guided two-color
+	evanescent light fields'',
+	A. H. Barnett, S. P. Smith, M. Olshanii, K. S. Johnson,
+	A. W. Adams, M. Prentiss,
+	Phys. Rev. A {\bf 61}, 023608 (2000), {\tt physics/9907014}.
+\end{quote}
+Electronic preprints (shown in {\tt typewriter font}) are available
+on the Internet at the following URL:
+\begin{quote}
+	{\tt http://arXiv.org}
+\end{quote}
+\end{citations}
+
+
+
+
+\begin{acknowledgments}
+
+Completing this doctoral work
+has been a wonderful and often overwhelming experience.
+It is hard to know whether it has been grappling with the physics
+itself which has been the real learning experience, or grappling with
+how to write a paper, give a coherent talk, work in a group, teach section, code
+intelligibly, recover a crashed hard drive,
+stay up until the birds start singing,
+and... stay, um... focussed.
+
+I have been very privileged to have undoubtedly the most intuitive,
+smart and supportive advisor anyone could ask for, namely Rick Heller.
+Ever since I learned from him what an avoided crossing was
+(animated in full colour, naturally), I have been stimulated and excited
+by his constant flow of good ideas.
+Rick has an ability to cut through reams of algebra with a single visual
+explanation that I will always admire, and I have learned a great deal
+of physics from him.
+He has fostered certainly the most open, friendly,
+collaborative and least competitive
+research group in the theory wing of this Department.
+He has also known when (and how)
+to give me a little push in the forward direction when I needed it.
+
+Throughout my six years, I was supported for many semesters
+by the National Science Foundation, and the Institute for Theoretical
+Atomic and Molecular Physics (ITAMP), through the generosity of my advisor.
+During my first year I thank the Kennedy Memorial Trust in London for
+providing my funding.
+
+Rick's other students and post-docs, both past and present, comprise a
+superb research group.
+The ability to bounce ideas off so many excellent minds has been priceless.
+My most intense collaboration has been with Doron Cohen,
+whose clarity, persistence, ability to create new models, and
+ability to write a new publication every month,
+has taught me a lot.
+(I am still working on the publication per month aspect.)
+Michael Haggerty has similiarly influenced me, and I
+think I can safely say that everyone in the group has benefitted from
+his generosity and collaboration.
+In my first couple of years in the Heller group, Adam Lupu-Sax and I
+swapped many thoughts on numerical methods, while Lev Kaplan prevented me
+from getting too scarred by the new realm of quantum chaos.
+Jesse Hersch shared many good times and wacky science experiments
+with me, and introduced me to a world of
+electrostatically-levitated chalk particles.
+Areez Mody has been a companion and goldmine of mathematical knowledge
+since the year we arrived together.
+Scot Shaw has been my numerical methods partner-in-crime.
+Bill Bies was my buddy through thesis formatting hell.
+It has also been my pleasure to work with (and hang out with)
+Ji\v{r}\'{\i} Van\'{\i}\v{c}ek,  Axel Andr\'{e},
+Miriam Blaauboer,
+Ragnar Fleischmann,  Greg Fiete,  Allison Kalben, Natasha Lepore,
+Michael Efroimsky (and his stories),
+Manny Tannenbaum (and his accents), Sheng Li and Stephan Filipov;
+also from the earlier days
+Maurizio Carioli, Allan Tameshtit,
+Jonathan Edwards, Kazuo Hirai (and his valves),
+Bill Hoston,  Neepa Maitra,  Martin Naraschewski
+and Steve Tomsovic (and his jazz).
+
+Our group's secretary Carol Davis is surely the kindest, coolest
+and most witty person one could possibly hope to spend a lunch-break
+gossiping with. She has also helped me out many a time during those
+pre-presentation panics.
+I must also thank Mary Lampros for her unique blend of caring and total
+organisation. She will be sorely missed in this Department.
+
+On the foreign front,
+I must thank Eduardo Vergini for fascinating email exchanges, and
+guiding me towards an understanding of
+the incredible numerical method he invented along with Marcos Saraceno.
+From the group of Mara Prentiss, Steve Smith and Maxim Ol'shanii
+were always there to fill me in on the practice and theory of atom optics.
+
+There are countless others who have
+been there for me throughout my time as a graduate student.
+From the world of physics,
+Meredith Betterton, Joseph Thywissen and Rosalba Perna
+stand out as both good, caring friends and providers of
+fascinating physics conversations.
+From other worlds, Erika Evasdottir and my
+housemates Vitaly Napadow and John Iversen have been wonderful
+influences and friends; they have lead me from deconstruction to drumming.
+
+My fascination with the physical world is undoubtedly due to
+the influence of my father, Ross. He showed me the joys of
+high-dispersion prisms in sunlight at an early age,
+and let me spend most of my childhood
+building Tesla coils and playing with BASIC on our 6502 home computer.
+Even now, he proofreads my papers.
+My late mother Pat taught me a love of language, of art,
+of teaching, and of signs,
+and it is sad to realise that she cannot be present for this moment in my life.
+The same realisation holds true for my grandfather Oliver, who
+is highly responsible for my tinkering nature.
+My courageous sister Jess has kept me sane
+during my hardest times via the transatlantic phone system.
+
+Finally, Liz Canner has been my guiding light and love
+over these last two years. She has seen my best and my worst,
+and provided support, hugs, and taken me places I never imagined.
+Even when my emotional and research brains became so hopelessly entwined
+that I dreamt that the two of us were overlapping eigenfunctions,
+she still loved me. And she even thought it was cute.
+
+\end{acknowledgments}
+
+
+
+
+
+%ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+\dedication
+
+\begin{quote}
+\hsp
+\em
+\raggedleft
+
+Dedicated to my father Ross,\\
+my late mother Pat,\\
+and my sister Jess.
+
+\end{quote}
+
+
+\newpage
+
+\startarabicpagination
+
+%%% end
+

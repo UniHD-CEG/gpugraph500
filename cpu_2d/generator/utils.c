@@ -11,7 +11,7 @@
 #define __STDC_CONSTANT_MACROS
 #endif
 #include "splittable_mrg.h"
-#include "graph_generator.h"
+// #include "graph_generator.h"
 #include <stdint.h>
 #include <assert.h>
 #include <stdlib.h>

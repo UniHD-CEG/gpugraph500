@@ -1,0 +1,576 @@
+%% intro.tex
+\chapter{Introduction and summary}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsubsection{Structure of this thesis}
+
+
+This thesis falls naturally into four parts, which are relatively
+independent:
+\begin{itemize}
+\item Study of dissipation rate in deformed chaotic billiards (Chapters~2,
+3 and 4),
+\item Improved numerical methods for quantization of billiards
+(Chapters~\ref{ch:ipwdm} and \ref{ch:verg}),
+\item Half-plane scattering
+%theory
+approach to mesoscopic conductance
+(Chapter~\ref{ch:qpc}), and
+\item Design of an atom waveguide using two-color evanescent light fields
+(Chapter~\ref{ch:atom}).
+\end{itemize}
+
+The first two parts form the main body of the thesis, and they are both
+devoted to the study of billiard systems (hard-walled cavities
+enclosing a region of free space)
+in which the classical motion is chaotic.
+The quantum mechanics of such systems has become known as the field of
+`quantum chaos'.
+The first part probably contains the most significant new physical results;
+this is reflected in the choice of thesis title.
+The second part can be viewed merely as a description of numerical
+quantum-mechanical calculations that play a
+supporting role in the first part.
+However, there will also turn out to be a surprising reciprocal connection,
+namely that results from the first part will provide a much-needed
+explanation for the success of a very efficient numerical technique
+in the second part.
+The intertwining of these two subject areas had turned out to be one of the
+most beautiful surprises in this body of research.
+
+The third and fourth parts form essentially separate projects, and can
+therefore be read independently.
+However they do share with the rest of the thesis the common theme of
+wave mechanics: the third presents a new approach to
+the transport of quasiparticle waves in mesoscopic systems,
+and the fourth models confined electromagnetic waves to trap and guide atoms
+(which themselves can be treated as coherent matter waves).
+
+The goals and subject matter of the four parts are sufficiently different
+to merit individual introductions and summaries, which now follow without
+further ado.
+
+
+
+% 1111111111111111111111111111111111111111111111111111111111111111111111111111
+\subsubsection{Chapters 2,3 and 4: Dissipation rate and
+deformations of chaotic billiards}
+
+
+The dynamics of a particle inside a cavity
+(billiard) in $d=2$ or 3 dimensions 
+is a major theme in studies of classical and quantum chaos
+\cite{ottbook,hellerleshouches,berryleshouches}.
+Whereas the physics of time-independent chaotic systems 
+is extensively explored, less is known 
+about the physics when such a system is `driven' (time-dependent
+chaotic Hamiltonian).
+The main exceptions are the studies of 
+the kicked rotator and related systems \cite{qkr}. 
+However, the rotator (with no kicks) 
+is a $d=1$ integrable system, whereas we 
+are interested in chaotic ($d\ge2$) cavities.
+
+
+Driven cavities have been of special interest since the 1970s in
+studies of the so-called `one-body' dissipation rate in vibrating nuclei 
+\cite{wall,koonincl,kooninqm,jarz92,jarz93}.
+A renewed interest in this problem is anticipated
+in the field of mesoscopic physics. Quantum dots \cite{been,dittrich}
+can be regarded as small 2D cavities whose shape 
+is controlled by electrical gates. Quasiparticle motion inside the dot
+can have long coherence (dephasing) times,
+and enable the semiclassical regime to be approached (many wavelengths
+across the system).
+
+
+In Chapter~\ref{ch:review} I give tutorial review of the
+theory of dissipation in general driven
+ergodic systems, which is quite a young field.
+The Hamiltonian is controlled by a single parameter $x$, whose
+time-dependence will be $x(t)=A\sin(\omega t)$ where $A$ is the amplitude  
+and $\omega$ is the driving frequency.
+In both the classical (Section~\ref{sec:classreview}) and quantum-mechanical
+(Section~\ref{sec:qmreview}) pictures, dissipation is a result of
+{\em stochastic energy spreading}.
+Once this spreading is established, the pictures can be unified \cite{doronfrc}.
+Irreversible growth of energy (heating) is then a result of biased diffusion
+(a random walk) in energy.
+I will confine myself to a regime where linear response theory (LRT) is valid.
+In the quantum case this is known as the Kubo formalism, although the
+language of the energy spreading picture appears different (I connect the
+two pictures in Section~\ref{sec:resp}).
+The heating rate is given by
+\be
+\label{i_heat}
+	\frac{d}{dt}\langle {\cal H} \rangle \ = \
+	\mu(\omega) \cdot \half  (A\omega)^2,
+\ee
+where the `friciton coefficient' $\mu(\omega)$ is related
+linearly\footnote{The relation depends upon the initial energy distribution.}
+to $\cew$, the correlation spectrum
+of the time-dependent fluctuating quantity
+$-\partial {\cal H}/\partial x$.
+The latter (a generalized `force' on the parameter $x$) specifies the
+random `kicks' up or down in energy that particles receive.
+In the quantum case $\cew$ is the `band profile' (average off-diagonal shape)
+of the matrix $\partial {\cal H}/\partial x$ in the energy representation.
+In Section~\ref{sec:qcc} I demonstrate theoretically and numerically the
+semiclassical equivalence of the classical and quantum versions of $\cew$,
+and examine quantum effects beyond the band profile.
+
+
+In Chapters~\ref{ch:dil} and \ref{ch:wall} we specialize to a
+system of non-interacting particles
+inside a billiard whose walls are deformed by the parameter $x$.
+One can specify any deformation by a function $D(\mbf{s})$,
+where~$\mbf{s}$ specifies location of a wall element
+on the boundary (surface) of the billiard,
+and $D(\mbf{s})x$ is the resulting normal displacement of this
+wall element.
+We will be interested in low-frequency driving, 
+meaning $\omega \ll 1/\tbl$ the mean collision frequency.
+In the $\omega\rightarrow0$ limit (uniform parameter velocity $\dot{x}$),
+the heating rate (\ref{i_heat}) is given by the dc friction
+$\mu(0)$ proportional to
+$\ve = \tilde{C}_{\tbox E}(\omega\rightarrow0)$.
+An assumption of uncorrelated collisions
+(the white noise approximation or WNA)
+gives an estimate for $\ve$, which in turn in $d=3$
+leads to the well-known
+`wall formula' \cite{wall} (from the nuclear application),
+\be
+        \mu_{\tbox{E}} \  = \ \frac{N}{\mathsf{V}} 
+        m v_{\tbox E} \oint D(\mbf{s})^2 d\mbf{s}.
+\ee
+This ($\omega$-independent) estimate of the friction applies to
+a microcanonical ensemble of $N$ particles
+with speed $v_{\tbox E}$ in a billiard volume $\mV$.
+
+We analyze $\mu(\omega)$ numerically in 2D billiard shapes (generalized Sinai,
+and Bunimovich stadium). We believe this is the first study of frequency-dependent
+heating rate in billiard systems.
+The chief discovery (Section~\ref{sec:spec})
+is a class of deformations whose heating rate
+vanishes in the $\omega\rightarrow0$
+limit, like a power-law $\cew \sim \omega^\gamma$.
+This holds even for billiards with strong chaos,
+and goes completely against the WNA prediction.
+The class of `special' deformations
+turns out to be just the class which preserves the billiard shape.
+For translations and dilations $\gamma = 4$ and for rotations $\gamma = 2$.
+This is to be compared to the case of a generic deformation, for which
+$\gamma = 0$ as the WNA prediction would predict.
+We give classical explanations for the power-laws (which
+rely on correlation on short timescales $\sim \tbl$).
+Importantly, the special class is manifested in the quantum band profile too.
+Thus the special nature of dilation, believed to be new in the literature,
+corresponds to a quasi-orthogonality relation between
+eigenstates on the boundary,
+which in turn will be the key to the powerful
+numerical method of Chapter~\ref{ch:verg}.
+We also discuss (Section~\ref{sec:wnarev}) non-generic shape-dependent
+effects (such as marginally-stable orbits) which may alter the power-laws
+given above.
+
+The goal of Chapter~\ref{ch:wall} is as follows:
+given a general deformation $D\ofs$, in a given billiard shape,
+we seek an analytical estimate of $\ve$ (and hence
+$\mu(0)$). It is an exact result that $\ve$ is a quadratic form in
+the function space of $D\ofs$.
+The WNA
+fails to take into account that $\ve$ vanishes for special deformations
+(which form a linear subspace in $D\ofs$).
+We show that how it is possible to systematically subtract
+(project out) the `special' components of a general $D\ofs$.
+Applying the WNA only to the remaining (`normal') component
+gives an improved estimate of $\ve$.
+We analytically and numerically justify this projection procedure, and test
+the quality of the improved formula.
+The quality is limited by that of the WNA estimate of the `normal' component,
+which relies on the assumption of strongly chaotic motion.
+However, in the generalized Sinai billiard
+the improved formula is found to perform much better than the original WNA.
+
+Our work replaces all {\em ad hoc} corrections which had been introduced \cite{wall}
+to account for the intuitive result that translations and rotations cause no heating
+at $\omega=0$.
+We thereby clear up some inconsistent habits in the nuclear community
+(Section~\ref{sec:wallhistory}).
+More significantly,
+the incorporation of the special nature of dilation is entirely new.
+
+Note that the effect of interaction between the particles is 
+not considered. If the mean free path 
+for inter-particle collisions is large compared 
+with the size of the cavity, then we expect that our 
+analysis still applies. (However if the mean free path is 
+much smaller, then we get into the hydrodynamic regime, where viscosity
+becomes the dominant dissipative effect).
+
+This work was performed in collaboration with Doron Cohen.
+I also benefitted greatly from use of a classical billiard trajectory code
+written by Michael Haggerty.
+
+
+
+% 2222222222222222222222222222222222222222222222222222222222222222222222222222
+\subsubsection{Chapters \ref{ch:ipwdm} and \ref{ch:verg}:
+Improved billiard quantization methods}
+
+The rapid development of electronic computing machines in the last 50 years
+has had an impact on scientific research whose size is hard
+\footnote{Here's another footnote to make sure it's separated from the first}
+to
+grasp\footnote{Some idea
+of the rate of progress of this technology can be gained from such quotes as
+``Such a machine in the hands of a competent operator can produce 400 full-length
+products or 1,000 sums during an 8-hour working day''\cite{highspeed},
+referring to an electromechanical desk calculator typical for scientific use in
+the 1950s.
+The diagonalization of an 8-by-8 matrix was a weekend-long task\cite{lanczos}.}.
+The interplay between numerical simulations and theoretical models now plays a
+crucial role in most areas of physics, chemistry, engineering, and other
+sciences.
+However, this impact would have been be drastically reduced were it not for
+the parallel development of efficient numerical algorithms.
+For instance, the invention of two techniques alone---the
+diagonalization of dense matrices\cite{golub+vanloan},
+and the Fast Fourier Transform\cite{numrec}---has allowed scientists
+to handle hitherto undreamed-of problems on a daily basis.
+
+Quantum chaos \cite{hellerleshouches} is no exception: it has relied heavily
+on numerical solutions almost since its inception
+(as did its forebear, classical chaotic dynamics\cite{ottbook}).
+Billiards in $d=2$ (or sometimes 3) dimensions have been popular systems for
+study because
+use of the free-space Green's function allows formulation as a boundary problem.
+Thus
+quantum eigenstates can be calculated at much higher energy than with the
+traditional (\eg finite element) methods which cover the entire domain.
+High energies are so sought-after because most of the theoretical predictions
+involve the semiclassical limit $\hbar\rightarrow0$.
+In this part of the thesis I will present new and efficient
+methods for finding these high-energy eigenstates.
+
+The time-independent Schrodinger's equation in such a system is
+the Helmholtz wave equation,
+\be
+\label{eq:i_helm}
+	(\nabla^2 + k^2) \psi\ofr \ = \ 0,
+\ee
+with certain boundary conditions.
+This problem is common to many other areas of physics and engineering
+(mesoscopic devices, acoustics, elastodynamics of thin plates,
+scalar electromagnetics and optics),
+and there
+has been some (but not that much) exchange of ideas between those communities
+and that of quantum chaos.
+If the boundary conditions are open then we have a scattering problem;
+if closed, an eigenvalue problem.
+I will be concerned only with the latter.
+In Section~\ref{sec:eigreview} I present a review, and
+categorize solution methods dependent on whether the basis
+does not (Class A) or does (Class B) depend on energy.
+Only Class B allows formulation as a boundary problem.
+The pioneering chaotic eigenstate studies of
+McDonald and Kaufman \cite{macdonald}
+and Berry and Wilkinson \cite{berrywilk} used the Boundary Integral Method
+\cite{bim1,bim2}
+(BIM or BEM), while those of Heller
+\cite{Heller84,hellerleshouches} used the Plane Wave Decomposition Method (PWDM,
+an original technique).
+Semiclassical quantization methods have also been developed based
+on boundary matching \cite{berrykkr} or the surface of section
+\cite{bogomolny}.
+All these methods are Class B, and all require an expensive search
+(`sweep' or `hunt') in energy-space for zero-determinants of a matrix.
+
+In Chapter~\ref{ch:ipwdm} I present an original
+Class B sweep method which is a simplified
+version of Heller's PWDM. The problems of missing states and sensitivity to
+basis size choice and matching point density have been solved,
+and the efficieny increased.
+The coefficient vector $\mbf{x}$ of the nearest eigenfunction to a given
+wavenumber $k$ is given by the largest-eigenvalue ($\lambda_1$) solution to
+\be
+\label{i_geneigprob}
+	\left[ G(k) - \lambda F(k) \right] \mbf{x} \ = \ \mbf{0} ,
+\ee
+where the matrix $G$ takes the norm in the domain,
+and $F$ takes the norm of the boundary condition error (the `tension').
+I show that $G$ can be expressed entirely on the boundary, and discuss
+improved `hunt' methods for zeros of $\lambda_1^{-1}$ (which give the desired
+eigenwavenumbers $k$). However, a few diagonalizations of (\ref{i_geneigprob})
+are still required per state found.
+
+Of much more significance is Chapter~\ref{ch:verg}.
+Here I analyse the
+`scaling method' of Vergini and Saraceno
+\cite{v+s,verginithesis},
+which despite being little-understood and little-used, is without doubt the
+most significant advance in numerical billiard quantization in the last 15 years.
+Eigenstates are given by the large-$\lambda$ solutions of
+\be
+\label{i_vergep}
+	\left[ \frac{dF}{dk}(k) - \lambda F(k) \right] \mbf{x} \ = \ \mbf{0} ,
+\ee
+however, through a certain choice of boundary weighting function
+an amazing property of $F$ and $dF/dk$ emerges:
+they are {\em quasi-diagonal} (have very small off-diagonal elements)
+in a basis of
+the exact eigenfunctions rescaled to all have the same wavenumber $k$.
+This allows (\ref{i_vergep}) to return up to $N/10$ useful eigenfunctions
+for a {\em single} diagonalization,
+and entirely eliminates the need for `hunt' procedures.
+Here $N$ is the matrix size (semiclassical basis size).
+The relative efficiency over sweep methods is $\sim 10^3$ when there are
+several hundred wavelengths across the system, and moreover,
+increases further with increasing $k$ and dimension $d$!
+Remarkably, no adequate explanation of the key quasi-diagonality property
+has been known until now.
+I give, for the first time, a semiclassical
+explanation in terms of the `special' nature of
+the dilation deformation (from Chapter~\ref{ch:dil}).
+I also correct errors in the original authors' derivation
+\cite{v+s,verginithesis} of higher-order tension terms.
+
+Both chapters are presented as a practical `how-to' guide to the diagonalization
+of $d$-dimensional billiards, and I hope they may be of use
+to other communities who solve the Helmholtz eigenproblem.
+I thoroughly analyse the various types of error in both the sweep
+and scaling methods, compare results from the two, and discuss
+the use of real and evanescent plane
+wave basis sets.
+For illustration, I use Bunimovich's stadium billiard (a shape known to
+be classically-chaotic \cite{bunimovich}), in which
+evanescent basis sets have been pioneered by Vergini\cite{verginithesis}.
+Currently the scaling method applies only to Dirichlet boundary conditions.
+Adequate basis
+sets for more general shapes is an area in dire need of future research.
+My work has involved deriving a collection of useful new formulae for
+boundary evaluation of domain integrals of Helmholtz solutions:
+these are presented in Appendix~\ref{ap:perim}.
+
+Two applications of the scaling method are presented in this thesis.
+The first is the quantum band-profile calculations for Chapters~2--4.
+The second is an efficient
+evaluation of overlaps of eigenstates of a billiard with
+eigenstates of the same billiard deformed by various finite amounts
+(Section~\ref{sec:pnm}).
+The profiles of the resulting matrices can be viewed as local densities
+of states (`line shapes'), which are analysed in our publication \cite{pnm}.
+The diagonalization of the deformed stadium billiard is believed to be new.
+
+During this work,
+I have benefitted much from fruitful exchanges with Eduardo Vergini.
+I must thank Doron Cohen for first alerting me to the
+semiclassical estimation of the band profile of matrix
+elements on the boundary.
+Finally,
+Appendix~\ref{ap:perim} resulted from collaboration with Michael Haggerty.
+
+
+
+% 33333333333333333333333333333333333333333333333333333333333333333333333333
+\subsubsection{Chapter~\ref{ch:qpc}: Quantum point contact conductance
+and scattering in the half-plane}
+
+This third part continues the theme of wave mechanics of non-interacting
+particles.
+However attention shifts from closed to open systems, namely
+the transport
+of quasiparticles (in a 2D electron gas) though a general two-terminal
+mesoscopic electronic device, or `quantum point contact' (QPC)
+\cite{been,dittrich}.
+
+We model the conductance of a QPC, in linear response.
+If the QPC is highly non-adiabatic or near to
+scatterers in the open reservoir regions, then
+the usual distinction between `leads' and `reservoirs' breaks down.
+This situation arises in the recent experimental work of
+Katine \cite{kati97} and Topinka \cite{topinka}
+in the Westervelt group
+here at Harvard, where open resonant and scattering geometries were studied.
+In such systems the Landauer formula \cite{LB1,LB2,LB3,datta,dittrich}
+for the conductance
+(including spin degeneracy),
+\be
+\label{i_lb}
+        G \; = \; \frac{2e^2}{h} \mbox{Tr}( t^\dag t) ,
+\ee
+is no longer convenient because no conventional transverse `lead' states
+exist between which to define the transmission matrix $t$.
+Rather, a technique based on scattering theory
+in the two-dimensional infinite half-plane is appropriate.
+We relate conductance to transmission {\em cross section}, defined as an
+effective collision size on the reflective boundary of a half-plane
+(reservoir) region.
+We also introduce a new half-plane radial basis of `lead' states
+in which the usual Landauer formula is recovered.
+
+The relation between the Landauer and the half-plane scattering formalism
+is expressed by
+\be
+        \int_{-\pi/2}^{\pi/2} \!\! d\phi \, \sigma_{\rm T}(k,\phi) \; = \; 
+        \lambda \mbox{Tr} (t^\dag t),
+\ee
+where $\sigma_{\rm T}(k,\phi)$ is the angle-dependent transmission cross section
+and $\lambda$ the Fermi wavelength,
+which I derive for both hard-walled and soft-walled reflective
+potential barriers.
+
+We analyse an idealized, highly non-adiabatic slit QPC system
+in the extreme quantum, intermediate, and semiclassical regimes.
+We derive the
+counterintuitive result (first due to Heller) that an 
+arbitrarily small (tunneling) QPC can reach a p-wave channel conductance
+of $2e^2/h$
+when coupled to a suitable resonant cavity.
+We also find that if two or more resonances coincide, the
+total conductance can in theory reach multiples of this value.
+
+This leads to some thought-experiments on attempting to overcome the maximum
+conductance $2e^2/h$ per quantum channel.
+We also discuss reciprocity (left-to-right symmetry)
+of conductance, and the possibility
+of its breakdown in a proposed QPC
+(which could exhibit `conductance' quantization) for atom waves\cite{josephqpc}.
+We emphasizes the importance of the {\em thermal occupation} of states in
+phase space (as is usual in 2D electron systems), for reciprocity to exist.
+An analogous atomic QPC in 3D need not have this thermal occupation,
+thus in this system reciprocity can be broken.
+
+This work has been in collaboration with Areez Mody and Miriam Blaauboer,
+and at the earlier stages many contributions were made by Adam Lupu-Sax.
+Joseph Thywissen, and professors Charlie Marcus and Daniel Fisher
+also contributed via stimulating discussions.
+
+
+
+
+
+
+
+% 44444444444444444444444444444444444444444444444444444444444444444444444444
+\subsubsection{Chapter~\ref{ch:atom}: Waveguides for neutral atoms using
+evanescent light fields}
+
+The fourth and final part is a self-contained proposal for a new
+design of coherent
+atom waveguide, using the forces exerted on atoms by near-resonant
+laser fields.
+As an independent project, it
+does not connect directly with other theoretical work in this thesis.
+However it shares many common themes:
+the motion of atoms in the trapping potential is a 2D quantum bound mode
+problem (in a smooth potential), and
+the optical waveguide
+bound mode calculation
+is also similar to this same problem
+(dielectric constant playing the role of a negative potential).
+Because the optical `potential' is not hard-walled, and because the fields
+are vector rather than scalar,
+the efficient methods of Chapter~\ref{ch:ipwdm} or \ref{ch:verg}
+do not apply; rather Finite Elements\cite{FEreview} will be used.
+
+There has been much recent
+progress
+in the
+trapping and cooling of neutral atoms, opening up new areas of
+ultra-low energy and matter-wave physics \cite{churev,cctrev,billrev}.
+Waveguides for such atoms are of great interest for atom optics,
+atom interferometery, and atom lithography.
+%As with optical guides, the applications of atom waveguides
+%fall into the multimode and single-mode regimes.
+Multimode atom waveguides act as
+incoherent atom pipes
+that could
+trap atoms, transport them along complicated paths or
+between different environments, or deliver
+highly localized atom beams to a surface.
+% lithography refs?
+Single-mode waveguides (or multimode guides populated only by atoms in
+the transverse
+ground-state) could be used for coherent atom optics and interferometry
+\cite{interf,adams}, as well as a tool for one-dimensional physics
+such as boson-fermion duality
+\cite{joseph,Maxim,1Deffects} and low-dimensional
+Bose-Einstein condensation effects \cite{1Dbec}.
+
+
+In Chapter~\ref{ch:atom} we propose a dipole-force
+% line-like, 1D?
+linear waveguide which confines neutral
+atoms up to $\lambda/2$ above a
+microfabricated single-mode dielectric optical guide.
+%
+The optical guide
+%has rectangular section,
+carries
+far blue-detuned light in the horizontally-polarized TE mode
+and
+far red-detuned light in the vertically-polarized TM mode,
+with both modes close to optical
+cut-off.
+%
+A trapping minimum
+in the transverse plane is formed above the optical guide
+due to
+the differing evanescent
+decay lengths of the two modes.
+%
+This design allows
+% multiple
+manufacture of
+mechanically stable atom-optical elements on a
+substrate.
+
+
+We find that a rectangular optical guide of 0.8\,$\mu$m by 0.2\,$\mu$m
+carrying 6\,mW of total laser power
+(detuning
+$\pm$15\,nm about the D2 line)
+gives a trap depth of 
+200\,$\mu$K for cesium atoms ($m_F = 0$),
+% caesium euro spelling.
+transverse oscillation frequencies of $f_x = 40$\,kHz and
+$f_y = 160$\,kHz,
+collection area $\sim 1\,\mu$m$^{2}$
+and coherence time
+of 9\,ms.
+The laser powers required are orders of magnitude less than those commonly
+needed for dipole traps.
+The large tranverse frequencies achieved allow the possibility of
+atomic single-mode occupation (hence coherent guiding) when
+fed from a source at cesium MOT temperature ($\approx 3\mu K$).
+We present design equations allowing optimal parameter choices to be made.
+We also  discuss the effects of
+non-zero $m_F$, the D1 line, surface interactions, heating rate,
+the substrate refractive index $n_s$,
+and the limits on waveguide bending radius.
+It emerges that lowering $n_s$ is the main goal if large trap depths
+are desired of order an optical wavelength from the guide surface.
+
+As known in the engineering community, the
+optical bound mode problem is notoriously hard \cite{FEreview}.
+We calculate the full vector bound modes for an arbitrary guide shape
+using two-dimensional
+non-uniform finite elements in the frequency-domain,
+allowing us to
+optimize atom waveguide properties.
+We chose rectangular guide cross-sections for this optimization, for simplicity.
+There are many other shapes possible; the fabrication technique will
+be the determining factor on what is practical.
+
+
+This work on atom waveguides, an admittedly far-fetched topic
+for a student of Rick Heller,
+was in fact a collaboration with the following members of the Prentiss Group:
+Steve Smith (my principal collaborator),
+Maxim Olshanii,
+Kent Johnson,
+Allan Adams (who introduced me to the problem), and Mara Prentiss.
+I also benefitted from discussions with Joseph Thywissen and Yilong Lu.
+
+%%%

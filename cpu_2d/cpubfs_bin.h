@@ -1,7 +1,8 @@
-#include "globalbfs.hh"
-
 #ifndef CPUBFS_BIN_H
 #define CPUBFS_BIN_H
+
+#include "globalbfs.hh"
+
 typedef int64_t vtxtyp;
 typedef int64_t rowtyp;
 

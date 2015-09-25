@@ -1,0 +1,10 @@
+SCOREP_REGION_NAMES_BEGIN
+  EXCLUDE *
+  INCLUDE BFSRUN_region_vertexBroadcast
+          BFSRUN_region_nodesTest
+          BFSRUN_region_localExpansion
+	  BFSRUN_region_testSomethingHasBeenDone
+	  BFSRUN_region_columnCommunication
+	  BFSRUN_region_rowCommunication
+SCOREP_REGION_NAMES_END
+
