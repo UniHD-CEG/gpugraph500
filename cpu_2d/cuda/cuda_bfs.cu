@@ -139,8 +139,8 @@ CUDA_BFS::~CUDA_BFS() {
 }
 
 /*
- * Dos a memcpy to one of the Fronere_queu variables.
- * FQ variables in this object require cuda calls.
+ * Performs a memcpy to the FQ variable.
+ * FQ variables may require specific device calls.
  */
 void CUDA_BFS::bfsMemCpy(vtxtyp *&dst, vtxtyp *src, size_t size) {
     cudaMemcpy(dst, src, size * sizeof(vtxtyp), cudaMemcpyHostToHost);
