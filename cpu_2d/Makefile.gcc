@@ -524,11 +524,7 @@ clean:
 	@echo "============================================================================"
 	@echo ""
 	$(Q)rm -rf $(OUTFILES) $(OBJECTS)
-	$(Q)rm -rf *~ core *.core example g500
+	$(Q)rm -rf *~ core *.core g500
 	@echo "--- Cleaning"
-
-example:  $(HEADERS) compression/example.cpp  $(COMPRESSION_OBJECTS)
-	$(Q)$(CXX) $(CXXFLAGS)  -o example compression/example.cpp  $(COMPRESSION_OBJECTS) -Icompression/cpusimd/include
-	@echo "    CCX       $@"
 
 .PHONY: g500 clean
