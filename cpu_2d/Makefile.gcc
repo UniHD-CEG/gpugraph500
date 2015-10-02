@@ -405,7 +405,7 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_INSTRUMENTATION) $(SCOREP_CPPFLAGS) $(INCPATH) -o main.o main.cpp
 	@echo "    MPICC     $@"
 
-bitpacking.o: compression/cpusimd/include/bitpacking.h compression/src/bitpacking.cpp
+bitpacking.o: compression/cpusimd/include/bitpacking.h compression/cpusimd/src/bitpacking.cpp
 ifeq ($(enable_simd_compression), "yes")
 	@echo ""
 	@echo "============================================================================"
@@ -414,47 +414,47 @@ ifeq ($(enable_simd_compression), "yes")
 endif
 	@echo ""
 	@echo "--- Compiling SIMDCompression"
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/cpusimd/include
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/bitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
-integratedbitpacking.o: compression/cpusimd/include/integratedbitpacking.h compression/src/integratedbitpacking.cpp
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/integratedbitpacking.cpp -Icompression/cpusimd/include
+integratedbitpacking.o: compression/cpusimd/include/integratedbitpacking.h compression/cpusimd/src/integratedbitpacking.cpp
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/integratedbitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
-simdpackedsearch.o:  compression/src/simdpackedsearch.c
-	$(Q)$(CC) $(CCFLAGS) -c compression/src/simdpackedsearch.c
+simdpackedsearch.o:  compression/cpusimd/src/simdpackedsearch.c
+	$(Q)$(CC) $(CCFLAGS) -c compression/cpusimd/src/simdpackedsearch.c
 	@echo "    CC        $@"
 
-simdpackedselect.o:  compression/src/simdpackedselect.c
-	$(Q)$(CC) $(CCFLAGS) -c compression/src/simdpackedselect.c
+simdpackedselect.o:  compression/cpusimd/src/simdpackedselect.c
+	$(Q)$(CC) $(CCFLAGS) -c compression/cpusimd/src/simdpackedselect.c
 	@echo "    CC        $@"
 
-streamvbyte.o:  compression/src/streamvbyte.c
-	$(Q)$(CC) $(CCFLAGS) -c compression/src/streamvbyte.c
+streamvbyte.o:  compression/cpusimd/src/streamvbyte.c
+	$(Q)$(CC) $(CCFLAGS) -c compression/cpusimd/src/streamvbyte.c
 	@echo "    CC        $@"
 
-varintdecode.o:  compression/src/varintdecode.c
-	$(Q)$(CC) $(CCFLAGS) -c compression/src/varintdecode.c
+varintdecode.o:  compression/cpusimd/src/varintdecode.c
+	$(Q)$(CC) $(CCFLAGS) -c compression/cpusimd/src/varintdecode.c
 	@echo "    CC        $@"
 
-simdbitpacking.o: compression/cpusimd/include/simdbitpacking.h compression/src/simdbitpacking.cpp
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/simdbitpacking.cpp -Icompression/cpusimd/include
+simdbitpacking.o: compression/cpusimd/include/simdbitpacking.h compression/cpusimd/src/simdbitpacking.cpp
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/simdbitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
-usimdbitpacking.o: compression/cpusimd/include/usimdbitpacking.h compression/src/usimdbitpacking.cpp
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/usimdbitpacking.cpp -Icompression/cpusimd/include
+usimdbitpacking.o: compression/cpusimd/include/usimdbitpacking.h compression/cpusimd/src/usimdbitpacking.cpp
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/usimdbitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
-frameofreference.o: compression/src/frameofreference.cpp $(HEADERS)
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/frameofreference.cpp -Icompression/cpusimd/include
+frameofreference.o: compression/cpusimd/src/frameofreference.cpp $(HEADERS)
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/frameofreference.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
-for.o: compression/src/for.c $(HEADERS)
-	$(Q)$(CC) $(CCFLAGS) -c compression/src/for.c -Icompression/cpusimd/include
+for.o: compression/cpusimd/src/for.c $(HEADERS)
+	$(Q)$(CC) $(CCFLAGS) -c compression/cpusimd/src/for.c -Icompression/cpusimd/include
 	@echo "    CC        $@"
 
-simdintegratedbitpacking.o: compression/cpusimd/include/simdintegratedbitpacking.h compression/cpusimd/include/delta.h compression/src/simdintegratedbitpacking.cpp
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/simdintegratedbitpacking.cpp -Icompression/cpusimd/include
+simdintegratedbitpacking.o: compression/cpusimd/include/simdintegratedbitpacking.h compression/cpusimd/include/delta.h compression/cpusimd/src/simdintegratedbitpacking.cpp
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/simdintegratedbitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
 utils.o: generator/utils.c generator/splittable_mrg.h generator/graph_generator.h generator/user_settings.h generator/utils.h
