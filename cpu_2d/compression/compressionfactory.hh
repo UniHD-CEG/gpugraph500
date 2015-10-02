@@ -2,40 +2,58 @@
 #define BFS_MULTINODE_COMPRESSIONFACTORY_H
 
 #include <map>
+#include "compression.hh"
+#include "cpusimd.hh"
 
-template <typename T>
+using std::map;
+using std::string;
+using std::shared_ptr;
+using std::cerr;
+using std::endl;
+using std::nullptr;
+
+static map<string, shared_ptr<Compression>> initializefactory()
+{
+    map <string, shared_ptr<Compression>> schemes;
+    schemes["cpusimd"] = shared_ptr<Compression>(new CpuSimd<FQ_T>());
+    return schemes;
+}
+
 class Factory
 {
 public:
-    template <typename TDerived>
-    void registerType(std::string name)
-    {
-        static_assert(std::is_base_of<T, TDerived>::value,
-                      "Factory::registerType doesn't accept this type because doesn't derive from base class");
-        _createFuncs[name] = &createFunc<TDerived>;
-    }
+    static map<string, shared_ptr<Compression>> compressionschemes;
+    static shared_ptr<Compression> defaultptr;
 
-    T *create(std::string name)
+    static string getName(Compression &compression)
     {
-        typename std::map <std::string, PCreateFunc>::iterator it = _createFuncs.find(name);
-        if (it != _createFuncs.end())
+        for (auto i = compressionschemes.begin(); i != compressionschemes.end() ; ++i)
         {
-            return it.value()();
+            if (i->second.get() == &compression)
+            {
+                return i->first;
+            }
         }
-        return nullptr;
+        return "unknown";
     }
 
-
-private:
-    template <typename TDerived>
-    static T *createFunc()
+    static bool valid(string name)
     {
-        return new TDerived();
+        return (compressionschemes.find(name) != compressionschemes.end()) ;
     }
 
-    typedef T *(*PCreateFunc)();
-    std::map <std::string, PCreateFunc> _createFuncs;
+    static shared_ptr<Compression> &getFromName(string name)
+    {
+        if (!valid(name))
+        {
+            cerr << "name " << name << " does not refer to a Compression Scheme." << endl;
+            return defaultptr;
+        }
+        return compressionschemes[name];
+    }
 };
+map<string, shared_ptr<Compression>> Factory::compressionschemes = initializefactory();
+shared_ptr<Compression> Factory::defaultptr = shared_ptr<Compression>(nullptr);
 
 
 #endif // BFS_MULTINODE_COMPRESSIONFACTORY_H

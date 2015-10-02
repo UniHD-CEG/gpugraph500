@@ -31,7 +31,6 @@ using namespace std::chrono;
 #endif
 
 #include "compression/compressionfactory.hh"
-#include "compression/compression.hh"
 
 
 /*
