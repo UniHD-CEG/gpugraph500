@@ -23,6 +23,7 @@
 template<class T>
 void vreduce(std::function<void(T, long, T*, int )>& reduce, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
              std::function<void(T, long, T*&, int& )>& get, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
+             std::function<void(T, long, T*&, int& )>& compress, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
              T *recv_buff,
              int& rsize, // size of the final result
              int ssize,  //size of the slice
