@@ -397,10 +397,33 @@ invalid_level
 
 ## About this document
 - Version 1.0
-- Last revision: 12th August 2015
+- Last revision: 2nd November 2015
+
+## Hacking this BFS algorithm
+
+- The code compilable code can be found onn the cpu_2d/ directory 
+- The files INTEGRATION_README on each directory explain the behaviour of main files in that dir.
+- You can use `astyle` to format the code easily and without time-consumming formattings.
+
+1. Install `astyle`:
+```
+debian/ ubuntu: 
+$ sudo apt-get install astyle
+
+mac:
+$ brew install astyle
+```
+
+2. run:
+```
+$ astyle  --style=allman --recursive --options=~/CHANGEME/bfs_multinode/cpu_2d/astyle.conf ~/CHANGEME/bfs_multinode/\*.cpp ~/CHANGEME/bfs_multinode/\*.h ~/CHANGEME/bfs_multinode/\*.hpp ~/CHANGEME/bfs_multinode/\*.hh ~/CHANGEME/bfs_multinode/\*.cu ~/CHANGEME/bfs_multinode/\*.cuh
+```
+
 
 ## License
 This code contains a subset of Duane Merrill's BC40 repository of GPU-related functions, including his BFS implementation used in the paper, Scalable Graph Traversals.
+
+SIMDcompressionAndIntersection is licenced under Apache Licence.
 
 All copyrights reserved to their original owners.  
 
