@@ -9,11 +9,11 @@
 ### Downloading
 Create an account in [https://bitbucket.org](https://bitbucket.org) Request access for bfs_multinode repository
 
-Available repositories are:(Replace the token **Your_Bitbucket_User**)  
-  
+Available repositories are:(Replace the token **Your_Bitbucket_User**)
 
-- [https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git) **(Updated daily)**  
-- [https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git) **(Updated weekly)**  
+
+- [https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git) **(Updated daily)**
+- [https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git) **(Updated weekly)**
 
 ```
 $ REPLACE the token Your_Bitbucket_User
@@ -54,14 +54,14 @@ fi
 ### Building
 The code to compile is in the folder `cpu_2d/`. It is built using `Make`.
 
-The (currently) available Makefiles are:  
-  
+The (currently) available Makefiles are:
+
 
 - Makefile.gcc
 - Makefile.gcc.keeneland
 
-The Makefiles in the list below are currently being developed:  
-  
+The Makefiles in the list below are currently being developed:
+
 
 - Makefile.Intel
 - Makefile.cpu
@@ -111,14 +111,14 @@ code_optimization_flags                   :=-funroll-loops -flto
 ### Test Scenarios
 Test scenarios are in the folder `eval/`
 
-Sbatch relevant Test-cases in the previous list are:  
-  
+Sbatch relevant Test-cases in the previous list are:
 
-- o4p2n-roptim.rsh [SCALE_FACTOR]  
-- o4p2n-coptim.rsh [SCALE_FACTOR]  
-- o4p2n-noptim.rsh [SCALE_FACTOR]  
-- o9p8n.rsh [SCALE_FACTOR]  
-- o16p8n.rsh [SCALE_FACTOR]  
+
+- o4p2n-roptim.rsh [SCALE_FACTOR]
+- o4p2n-coptim.rsh [SCALE_FACTOR]
+- o4p2n-noptim.rsh [SCALE_FACTOR]
+- o9p8n.rsh [SCALE_FACTOR]
+- o16p8n.rsh [SCALE_FACTOR]
 
 The name in these files explains what they do. For example:
 
@@ -157,7 +157,7 @@ To install
 
 - r-ify.sh
 - r-compare.sh
-- check-all.sh  
+- check-all.sh
 
 Run:
 
@@ -173,13 +173,13 @@ $ chmod u+x *.sh
 
 To install (Useful for Profiling and Tracing)
 
-- scorep_install.sh  
+- scorep_install.sh
 
 Run:
 
 ```
 cp scripts/scorep_install.sh $HOME
-cd $HOME  
+cd $HOME
 chmod u+x scorep_install.sh
 ...
 ```
@@ -229,7 +229,7 @@ This will run the tests with format `o*.rsh` in the `eval/` folder for Scale Fac
 
 ## Script scorep_install.sh
 ### Description
-This script downloads, decompress, builds and installs Score-P, Scalasca and CUBE locally. Optionally it installs also a compatible version of OpenMPI.<br>This script is configurable. The configuration may be changed editing the script.  
+This script downloads, decompress, builds and installs Score-P, Scalasca and CUBE locally. Optionally it installs also a compatible version of OpenMPI.<br>This script is configurable. The configuration may be changed editing the script.
 
 Root priviledges are not required to perform the installation.
 
@@ -242,7 +242,7 @@ $ ./scorep_install.sh
 
 # Other
 ## Profiling and Tracing
-This BFS application allows the code to be instrumented in Zones using Score-P with very low overhead. This requires Score-P and Scalasca to be installed in the system. The results may be analyzed either visually (using CUBE) or through console using `scorep-score`.     
+This BFS application allows the code to be instrumented in Zones using Score-P with very low overhead. This requires Score-P and Scalasca to be installed in the system. The results may be analyzed either visually (using CUBE) or through console using `scorep-score`.
 
 These tools may be installed locally (no priviledged user is needed) using the scorep_install.sh aforementioned.
 
@@ -257,13 +257,13 @@ BFSRUN_region_columnCommunication
 BFSRUN_region_rowCommunication
 ```
 
-The first step is to update the system variables. This may be done either on .bashrc or in a separate script.  
+The first step is to update the system variables. This may be done either on .bashrc or in a separate script.
 
 Update the paths in the variables below
 
 ```
 $ cat >> ~/.bashrc << EOF
-export G500_ENABLE_RUNTIME_SCALASCA=yes  
+export G500_ENABLE_RUNTIME_SCALASCA=yes
 
 export SCOREP_CUDA_BUFFER=48M
 export SCOREP_CUDA_ENABLE=no
@@ -272,19 +272,19 @@ export SCOREP_ENABLE_TRACING=false
 export SCOREP_PROFILING_FORMAT=CUBE4
 export SCOREP_TOTAL_MEMORY=12M
 export SCOREP_VERBOSE=no
-export SCOREP_PROFILING_MAX_CALLPATH_DEPTH=330  
+export SCOREP_PROFILING_MAX_CALLPATH_DEPTH=330
 
 export LD_LIBRARY_PATH=$HOME/cube/lib:$LD_LIBRARY_PATH
-export PATH=$HOME/cube/bin:$PATH  
+export PATH=$HOME/cube/bin:$PATH
 
 export LD_LIBRARY_PATH=$HOME/scorep/lib:$LD_LIBRARY_PATH
-export PATH=$HOME/scorep/bin:$PATH  
+export PATH=$HOME/scorep/bin:$PATH
 
 export LD_LIBRARY_PATH=$HOME/scalasca/lib:$LD_LIBRARY_PATH
-export PATH=$HOME/scalasca/bin:$PATH  
+export PATH=$HOME/scalasca/bin:$PATH
 
 export MPI_PATH=/home/jromera/openmpi
-export PATH=$MPI_PATH/bin:$CUDA_PATH/bin:$PATH  
+export PATH=$MPI_PATH/bin:$CUDA_PATH/bin:$PATH
 
 export LD_LIBRARY_PATH=$MPI_PATH/lib:$CUDA_PATHo/lib64:$CUDA_PATHo/lib64/stubs:$CUDA_PATHo/lib:$CUDA_PATHo/extras/CUPTI/lib64:$CUDA_PATHo/extras/CUPTI/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$HOME/scorep/lib:$LD_LIBRARY_PATH
@@ -399,15 +399,15 @@ invalid_level
 - Version 1.0
 - Last revision: 2nd November 2015
 
-## Hacking this BFS algorithm
+## Hacking this code
 
-- The code compilable code can be found onn the cpu_2d/ directory 
+- The code compilable code can be found onn the cpu_2d/ directory
 - The files INTEGRATION_README on each directory explain the behaviour of main files in that dir.
 - You can use `astyle` to format the code easily and without time-consumming formattings.
 
 1. Install `astyle`:
 ```
-debian/ ubuntu: 
+debian/ ubuntu:
 $ sudo apt-get install astyle
 
 mac:
@@ -425,7 +425,7 @@ This code contains a subset of Duane Merrill's BC40 repository of GPU-related fu
 
 SIMDcompressionAndIntersection is licenced under Apache Licence.
 
-All copyrights reserved to their original owners.  
+All copyrights reserved to their original owners.
 
 ## External Resources
 [https://www.rstudio.com/products/RStudio/](https://www.rstudio.com/products/RStudio/)
