@@ -413,7 +413,7 @@ ifeq ($(enable_simd_compression), "yes")
 	@echo "============================================================================"
 endif
 	@echo ""
-	@echo "--- Compiling SIMDCompression"
+	@echo "--- Compiling compression. CPU/SIMD"
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/bitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
