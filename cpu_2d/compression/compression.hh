@@ -3,7 +3,7 @@
 
 
 
-template <class T>
+template <typename T>
 class Compression
 {
 protected:

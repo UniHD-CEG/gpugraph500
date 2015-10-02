@@ -36,10 +36,10 @@ using namespace std::chrono;
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template<class Derived,
-         class FQ_T,  // Queue Type
-         class MType, // Bitmap mask
-         class STORE> //Storage of Matrix
+template<typename Derived,
+         typename FQ_T,  // Queue Type
+         typename MType, // Bitmap mask
+         typename STORE> //Storage of Matrix
 class GlobalBFS
 {
 private:
@@ -135,7 +135,7 @@ public:
  * Constructor
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : store(_store)
 {
     int mtypesize = 8 * sizeof(MType);
@@ -156,21 +156,18 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : st
  * Destructor
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS()
 {
     delete[] owenmask;
     delete[] tmpmask;
-
-    // MPI_Type_free(&fq_tp_type);
-    // MPI_Type_free(&bm_type);
 }
 
 /**
  * getPredecessor()
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 {
     return predecessor;
@@ -181,7 +178,7 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
  * Bitmap compression on predecessor reduction
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vtxtyp *&owen,
         typename STORE::vtxtyp *&tmp, MType *&owenmap,
         MType *&tmpmap)
@@ -415,19 +412,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                    owen, &sizes[0], &disps[0], fq_tp_type, col_comm);
 }
 
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::getBackPredecessor() { }
 
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::getBackOutqueue() { }
 
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::setBackInqueue() { }
 
 /*
  * Generates a map of the vertex with predecessor
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
 {
     int mtypesize, store_col_length;
@@ -473,11 +470,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
  *
  */
 #ifdef INSTRUMENTED
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double &lexp, double &lqueue,
         double &rowcom, double &colcom, double &predlistred)
 #else
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex)
 #endif
 {
@@ -970,7 +967,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
  * Benchmark compression/decompression.
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(const FQ_T *fq, const int size,
         const int _rank) const
 {
@@ -1012,7 +1009,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(const FQ_T
  * SIMD compression.
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, const size_t &size,
         FQ_T **compressed_fq_64,
         size_t &compressedsize) const
@@ -1064,7 +1061,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec
  * SIMD decompression.
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64,
         const int size,
         /*Out*/ FQ_T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
@@ -1112,7 +1109,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &cod
  * SIMD compression/decompression verification.
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(const FQ_T *fq, const FQ_T *uncompressed_fq_64,
         const size_t uncompressedsize) const
 {
@@ -1126,7 +1123,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(const FQ_T *f
  * SIMDthereWasCompression.
  * returns whether or not there was compression.
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 inline bool GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDthereWasCompression(const size_t originalsize,
         const size_t compressedsize) const
 {
