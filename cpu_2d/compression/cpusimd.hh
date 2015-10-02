@@ -9,8 +9,8 @@ class CpuSimd
 protected:
 public:
     virtual void benchmarkCompression(const T *fq, const int size) const;
-    virtual void Compression(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize) const;
-    virtual void Decompression(T *compressed_fq_64, const int size,
+    virtual void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize) const;
+    virtual void decompress(T *compressed_fq_64, const int size,
                                /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     virtual void verifyCompression(const T *fq, const T *uncompressed_fq_64,
                                    compressedsizeonst size_t uncompressedsize) const;
@@ -24,13 +24,13 @@ virtual void CpuSimd<class T>::benchmarkCompression(const T *fq, const int size)
 }
 
 template <class T>
-virtual void CpuSimd<class T>::Compression(T *fq_64, const size_t &size, T **compressed_fq_64,
+virtual void CpuSimd<class T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
             size_t &compressedsize) const
 {
 }
 
 template <class T>
-virtual void CpuSimd<class T>::Decompression(T *compressed_fq_64, const int size,
+virtual void CpuSimd<class T>::decompress(T *compressed_fq_64, const int size,
         /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
 }
