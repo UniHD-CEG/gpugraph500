@@ -401,9 +401,9 @@ invalid_level
 
 ## Hacking this code
 
-- The code compilable code can be found onn the cpu_2d/ directory
-- The files INTEGRATION_README on each directory explain the behaviour of main files in that dir.
-- You can use `astyle` to format the code easily and without time-consumming formattings.
+- Compilable code can be found on the `cpu_2d/` directory
+- The `INTEGRATION_README` files explain the files on each directory.
+- `astyle` can be used to format the code easily. Without time consumming formattings.
 
 1. Install `astyle`:
 ```
