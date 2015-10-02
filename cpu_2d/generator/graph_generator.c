@@ -42,7 +42,8 @@
 
 /* #define SPK_NOISE_LEVEL 1000 -- in INITIATOR_DENOMINATOR units */
 
-static int generate_4way_bernoulli(mrg_state *st, int level, int nlevels) {
+static int generate_4way_bernoulli(mrg_state *st, int level, int nlevels)
+{
     /* Generator a pseudorandom number in the range [0, INITIATOR_DENOMINATOR)
      * without modulo bias. */
     static const uint32_t limit = (UINT32_C(0xFFFFFFFF) % INITIATOR_DENOMINATOR);
@@ -50,10 +51,13 @@ static int generate_4way_bernoulli(mrg_state *st, int level, int nlevels) {
     uint32_t adjusted_bc_numerator;
     int spk_noise_factor;
 
-    if (/* Unlikely */ val < limit) {
-        do {
+    if (/* Unlikely */ val < limit)
+    {
+        do
+        {
             val = mrg_get_uint_orig(st);
-        } while (val < limit);
+        }
+        while (val < limit);
     }
 
     spk_noise_factor = 2 * SPK_NOISE_LEVEL * level / nlevels - SPK_NOISE_LEVEL;
@@ -69,7 +73,8 @@ static int generate_4way_bernoulli(mrg_state *st, int level, int nlevels) {
 #if SPK_NOISE_LEVEL == 0
     if (val < INITIATOR_A_NUMERATOR) return 0;
 #else
-  if (val < INITIATOR_A_NUMERATOR * (INITIATOR_DENOMINATOR - 2 * INITIATOR_BC_NUMERATOR) / (INITIATOR_DENOMINATOR - 2 * adjusted_bc_numerator)) return 0;
+    if (val < INITIATOR_A_NUMERATOR * (INITIATOR_DENOMINATOR - 2 * INITIATOR_BC_NUMERATOR) /
+        (INITIATOR_DENOMINATOR - 2 * adjusted_bc_numerator)) return 0;
 #endif
     return 3;
 }
@@ -77,14 +82,15 @@ static int generate_4way_bernoulli(mrg_state *st, int level, int nlevels) {
 /* Reverse bits in a number; this should be optimized for performance
  * (including using bit- or byte-reverse intrinsic if your platform has them).
  * */
-static inline uint64_t bitreverse(uint64_t x) {
+static inline uint64_t bitreverse(uint64_t x)
+{
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3)
 #define USE_GCC_BYTESWAP /* __builtin_bswap* are in 4.3 but not 4.2 */
 #endif
 
     /* 64-bit code */
 #ifdef USE_GCC_BYTESWAP
-  x = __builtin_bswap64(x);
+    x = __builtin_bswap64(x);
 #else
     x = (x >> 32) | (x << 32);
     x = ((x >> 16) & UINT64_C(0x0000FFFF0000FFFF)) | ((x & UINT64_C(0x0000FFFF0000FFFF)) << 16);
@@ -99,7 +105,8 @@ static inline uint64_t bitreverse(uint64_t x) {
 
 /* Apply a permutation to scramble vertex numbers; a randomly generated
  * permutation is not used because applying it at scale is too expensive. */
-static inline int64_t scramble(int64_t v0, int lgN, uint64_t val0, uint64_t val1) {
+static inline int64_t scramble(int64_t v0, int lgN, uint64_t val0, uint64_t val1)
+{
     uint64_t v = (uint64_t) v0;
     v += val0 + val1;
     v *= (val0 | UINT64_C(0x4519840211493211));
@@ -114,16 +121,20 @@ static inline int64_t scramble(int64_t v0, int lgN, uint64_t val0, uint64_t val1
 /* Make a single graph edge using a pre-set MRG state. */
 static
 void make_one_edge(int64_t nverts, int level, int lgN, mrg_state *st, packed_edge *result, uint64_t val0,
-                   uint64_t val1) {
+                   uint64_t val1)
+{
     int64_t base_src = 0, base_tgt = 0;
-    while (nverts > 1) {
+    while (nverts > 1)
+    {
         int square = generate_4way_bernoulli(st, level, lgN);
         int src_offset = square / 2;
         int tgt_offset = square % 2;
         assert(base_src <= base_tgt);
-        if (base_src == base_tgt) {
+        if (base_src == base_tgt)
+        {
             /* Clip-and-flip for undirected graph */
-            if (src_offset > tgt_offset) {
+            if (src_offset > tgt_offset)
+            {
                 int temp = src_offset;
                 src_offset = tgt_offset;
                 tgt_offset = temp;
@@ -144,10 +155,11 @@ void make_one_edge(int64_t nverts, int level, int lgN, mrg_state *st, packed_edg
  * code is parallel on OpenMP and XMT; it must be used with
  * separately-implemented SPMD parallelism for MPI. */
 void generate_kronecker_range(
-        const uint_fast32_t seed[5] /* All values in [0, 2^31 - 1), not all zero */,
-        int logN /* In base 2 */,
-        int64_t start_edge, int64_t end_edge,
-        packed_edge *edges) {
+    const uint_fast32_t seed[5] /* All values in [0, 2^31 - 1), not all zero */,
+    int logN /* In base 2 */,
+    int64_t start_edge, int64_t end_edge,
+    packed_edge *edges)
+{
     mrg_state state;
     int64_t nverts = (int64_t) 1 << logN;
     int64_t ei;
@@ -166,7 +178,8 @@ void generate_kronecker_range(
         val1 += mrg_get_uint_orig(&new_state);
     }
 
-    for (ei = start_edge; ei < end_edge; ++ei) {
+    for (ei = start_edge; ei < end_edge; ++ei)
+    {
         mrg_state new_state = state;
         mrg_skip(&new_state, 0, ei, 0);
         make_one_edge(nverts, 0, logN, &new_state, edges + (ei - start_edge), val0, val1);
