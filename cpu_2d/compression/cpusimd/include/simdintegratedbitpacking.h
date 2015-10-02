@@ -15,7 +15,8 @@
  */
 #include "deltatemplates.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 
 
@@ -356,27 +357,32 @@ typedef void (*integratedpackingfunction)(__m128i, const uint32_t *, __m128i *);
 
 
 template <class DeltaHelper>
-struct IntegratedArrayDispatch {
+struct IntegratedArrayDispatch
+{
     static  integratedunpackingfunction unpack[33];
 
-    static inline __m128i SIMDiunpack(__m128i initOffset, const __m128i    *in, uint32_t     *out, const uint32_t bit) {
+    static inline __m128i SIMDiunpack(__m128i initOffset, const __m128i    *in, uint32_t     *out, const uint32_t bit)
+    {
         return unpack[bit](initOffset, in, out);
     }
     static integratedpatchedunpackingfunction patchedunpack[33];
 
     static inline __m128i SIMDipatchedunpack(__m128i initOffset, const __m128i    *in, uint32_t   *out,
-            const __m128i *patchedbuffer, const uint32_t bit) {
+            const __m128i *patchedbuffer, const uint32_t bit)
+    {
         return patchedunpack[bit](initOffset, in, out, patchedbuffer);
     }
     static integratedpackingfunction packwithoutmask[33];
 
     static inline  void SIMDipackwithoutmask(__m128i initOffset, const uint32_t    *in, __m128i     *out,
-            const uint32_t bit) {
+            const uint32_t bit)
+    {
         packwithoutmask[bit](initOffset, in, out);
     }
     static integratedpackingfunction pack[33];
 
-    static inline void SIMDipack(__m128i initOffset, const uint32_t    *in, __m128i     *out, const uint32_t bit) {
+    static inline void SIMDipack(__m128i initOffset, const uint32_t    *in, __m128i     *out, const uint32_t bit)
+    {
         pack[bit](initOffset, in, out);
     }
 };
@@ -396,8 +402,10 @@ integratedpackingfunction IntegratedArrayDispatch<DeltaHelper>::pack[33] = {ipac
 
 
 template <class DeltaHelper>
-inline __m128i SIMDiunpack(__m128i initOffset, const __m128i    *in, uint32_t     *out, const uint32_t bit) {
-    switch (bit) {
+inline __m128i SIMDiunpack(__m128i initOffset, const __m128i    *in, uint32_t     *out, const uint32_t bit)
+{
+    switch (bit)
+    {
     case 0: return iunpack0<DeltaHelper>(initOffset, in, out);
 
     case 1: return iunpack1<DeltaHelper>(initOffset, in, out);
@@ -472,8 +480,10 @@ inline __m128i SIMDiunpack(__m128i initOffset, const __m128i    *in, uint32_t   
 
 template <class DeltaHelper>
 inline __m128i SIMDipatchedunpack(__m128i initOffset, const __m128i    *in, uint32_t   *out,
-                                  const __m128i *patchedbuffer, const uint32_t bit) {
-    switch (bit) {
+                                  const __m128i *patchedbuffer, const uint32_t bit)
+{
+    switch (bit)
+    {
     case 0: return ipatchedunpack0<DeltaHelper>(initOffset, in, out, patchedbuffer);
 
     case 1: return ipatchedunpack1<DeltaHelper>(initOffset, in, out, patchedbuffer);
@@ -548,8 +558,10 @@ inline __m128i SIMDipatchedunpack(__m128i initOffset, const __m128i    *in, uint
 
 /*assumes that integers fit in the prescribed number of bits*/
 template <class DeltaHelper>
-void SIMDipackwithoutmask(__m128i initOffset, const uint32_t    *in, __m128i     *out, const uint32_t bit) {
-    switch (bit) {
+void SIMDipackwithoutmask(__m128i initOffset, const uint32_t    *in, __m128i     *out, const uint32_t bit)
+{
+    switch (bit)
+    {
     case 0: return;
 
     case 1: ipackwithoutmask1<DeltaHelper>(initOffset, in, out); return;
@@ -624,8 +636,10 @@ void SIMDipackwithoutmask(__m128i initOffset, const uint32_t    *in, __m128i    
 
 
 template <class DeltaHelper>
-void SIMDipack(__m128i initOffset, const uint32_t    *in, __m128i     *out, const uint32_t bit) {
-    switch (bit) {
+void SIMDipack(__m128i initOffset, const uint32_t    *in, __m128i     *out, const uint32_t bit)
+{
+    switch (bit)
+    {
     case 0: return;
 
     case 1: ipack1<DeltaHelper>(initOffset, in, out); return;

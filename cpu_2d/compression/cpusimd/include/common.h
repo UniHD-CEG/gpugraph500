@@ -42,7 +42,8 @@
 #include <unordered_set>
 #include <vector>
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 
 } // namespace SIMDCompressionLib

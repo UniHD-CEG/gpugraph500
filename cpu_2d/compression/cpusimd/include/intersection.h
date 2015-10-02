@@ -5,7 +5,8 @@
 
 #include <common.h>
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 using namespace std;
 /*
@@ -53,35 +54,44 @@ size_t onesidedgallopingintersection(const uint32_t *smallset,
 
 
 
-class IntersectionFactory {
+class IntersectionFactory
+{
 public:
     static std::map<std::string, intersectionfunction> intersection_schemes;
 
-    static vector<string> allNames() {
+    static vector<string> allNames()
+    {
         vector <string> ans;
-        for (auto i = intersection_schemes.begin(); i != intersection_schemes.end(); ++i) {
+        for (auto i = intersection_schemes.begin(); i != intersection_schemes.end(); ++i)
+        {
             ans.push_back(i->first);
         }
         return ans;
     }
 
-    static string getName(intersectionfunction  v) {
-        for (auto i = intersection_schemes.begin(); i != intersection_schemes.end() ; ++i) {
+    static string getName(intersectionfunction  v)
+    {
+        for (auto i = intersection_schemes.begin(); i != intersection_schemes.end() ; ++i)
+        {
             if (i->second == v)
                 return i->first;
         }
         return "UNKNOWN";
     }
 
-    static bool valid(string name) {
+    static bool valid(string name)
+    {
         return (intersection_schemes.find(name) != intersection_schemes.end()) ;
     }
 
-    static intersectionfunction  getFromName(string name) {
-        if (intersection_schemes.find(name) == intersection_schemes.end()) {
+    static intersectionfunction  getFromName(string name)
+    {
+        if (intersection_schemes.find(name) == intersection_schemes.end())
+        {
             cerr << "name " << name << " does not refer to an intersection procedure." << endl;
             cerr << "possible choices:" << endl;
-            for (auto i = intersection_schemes.begin(); i != intersection_schemes.end(); ++i) {
+            for (auto i = intersection_schemes.begin(); i != intersection_schemes.end(); ++i)
+            {
                 cerr << static_cast<string>(i->first) << endl; // useless cast, but just to be clear
             }
             return NULL;

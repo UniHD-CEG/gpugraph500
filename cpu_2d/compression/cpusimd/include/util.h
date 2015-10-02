@@ -10,9 +10,11 @@
 
 #include "common.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
-inline uint32_t random(int b) {
+inline uint32_t random(int b)
+{
     if (b == 32) return rand();
     return rand() % (1U << b);
 }
@@ -33,7 +35,8 @@ inline uint32_t random(int b) {
 
 
 __attribute__((const))
-inline uint32_t gccbits(const uint32_t v) {
+inline uint32_t gccbits(const uint32_t v)
+{
     return v == 0 ? 0 : 32 - __builtin_clz(v);
 }
 
@@ -50,7 +53,8 @@ inline uint32_t gccbits(const uint32_t v) {
  * Treats  __m128i as 4 x 32-bit integers and asks for the max
  * number of bits used (integer logarithm).
  */
-inline uint32_t maxbitas32int(const __m128i accumulator) {
+inline uint32_t maxbitas32int(const __m128i accumulator)
+{
     ALIGN16 uint32_t tmparray[4];
     _mm_store_si128(reinterpret_cast<__m128i *>(tmparray), accumulator);
     return gccbits(tmparray[0] | tmparray[1] | tmparray[2] | tmparray[3]);
@@ -61,15 +65,18 @@ inline uint32_t maxbitas32int(const __m128i accumulator) {
 
 
 static __attribute__((const))
-bool divisibleby(size_t a, uint32_t x) {
+bool divisibleby(size_t a, uint32_t x)
+{
     return (a % x == 0);
 }
 
 #ifdef __GNUC__
 __attribute__((unused))
 #endif
-static  void checkifdivisibleby(size_t a, uint32_t x) {
-    if (!divisibleby(a, x)) {
+static  void checkifdivisibleby(size_t a, uint32_t x)
+{
+    if (!divisibleby(a, x))
+    {
         std::ostringstream convert;
         convert << a << " not divisible by " << x;
         throw std::logic_error(convert.str());
@@ -80,9 +87,11 @@ static  void checkifdivisibleby(size_t a, uint32_t x) {
 
 template<class iterator>
 __attribute__((pure))
-uint32_t maxbits(const iterator &begin, const iterator &end) {
+uint32_t maxbits(const iterator &begin, const iterator &end)
+{
     uint32_t accumulator = 0;
-    for (iterator k = begin; k != end; ++k) {
+    for (iterator k = begin; k != end; ++k)
+    {
         accumulator |= *k;
     }
     return gccbits(accumulator);
@@ -91,7 +100,8 @@ uint32_t maxbits(const iterator &begin, const iterator &end) {
 
 template <class T>
 __attribute__((const))
-inline bool needPaddingTo128Bits(const T *inbyte) {
+inline bool needPaddingTo128Bits(const T *inbyte)
+{
     return reinterpret_cast<uintptr_t>(inbyte) & 15;
 }
 
@@ -100,20 +110,23 @@ inline bool needPaddingTo128Bits(const T *inbyte) {
 
 template <class T>
 __attribute__((const))
-inline bool needPaddingTo32Bits(const T *inbyte) {
+inline bool needPaddingTo32Bits(const T *inbyte)
+{
     return reinterpret_cast<uintptr_t>(inbyte) & 3;
 }
 
 template <class T>
 __attribute__((const))
-T *padTo32bits(T *inbyte) {
+T *padTo32bits(T *inbyte)
+{
     return reinterpret_cast<T *>((reinterpret_cast<uintptr_t>(inbyte)
                                   + 3) & ~3);
 }
 
 template <class T>
 __attribute__((const))
-const T *padTo32bits(const T *inbyte) {
+const T *padTo32bits(const T *inbyte)
+{
     return reinterpret_cast<const T *>((reinterpret_cast<uintptr_t>(inbyte)
                                         + 3) & ~3);
 }
@@ -121,7 +134,8 @@ const T *padTo32bits(const T *inbyte) {
 
 
 __attribute__((const))
-inline uint32_t asmbits(const uint32_t v) {
+inline uint32_t asmbits(const uint32_t v)
+{
     if (v == 0)
         return 0;
     uint32_t answer;
@@ -131,10 +145,12 @@ inline uint32_t asmbits(const uint32_t v) {
 
 
 template <class iterator>
-bool is_strictlysorted(iterator first, iterator last)  {
+bool is_strictlysorted(iterator first, iterator last)
+{
     iterator next = first;
     ++next;
-    while (next < last) {
+    while (next < last)
+    {
         if (*first >= *next)
             return false;
         ++first;

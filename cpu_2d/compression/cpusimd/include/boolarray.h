@@ -9,12 +9,14 @@
 
 #include "common.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 using namespace std;
 
 
-static inline int numberOfTrailingZeros(uint64_t x) {
+static inline int numberOfTrailingZeros(uint64_t x)
+{
     if (x == 0) return 64;
     return  __builtin_ctzl(x);
 }
@@ -22,7 +24,8 @@ static inline int numberOfTrailingZeros(uint64_t x) {
 
 
 
-class BoolArray {
+class BoolArray
+{
 public:
 
 
@@ -30,18 +33,22 @@ public:
     size_t sizeinbits;
     BoolArray(const size_t n, const uint64_t initval = 0) :
         buffer(n / 64 + (n % 64 == 0 ? 0 : 1), initval),
-        sizeinbits(n) {
+        sizeinbits(n)
+    {
     }
 
     BoolArray() :
-        buffer(), sizeinbits(0) {
+        buffer(), sizeinbits(0)
+    {
     }
 
     BoolArray(const BoolArray &ba) :
-        buffer(ba.buffer), sizeinbits(ba.sizeinbits) {
+        buffer(ba.buffer), sizeinbits(ba.sizeinbits)
+    {
     }
 
-    void inplaceIntersect(const BoolArray &other) {
+    void inplaceIntersect(const BoolArray &other)
+    {
         assert(other.buffer.size() == buffer.size());
         for (size_t i = 0; i < buffer.size(); ++i)
             buffer[i] &= other.buffer[i];
@@ -49,11 +56,13 @@ public:
 
     // this is no faster because the compiler will vectorize
     // inplaceIntersect automagically?
-    void SIMDinplaceIntersect(const BoolArray &other) {
+    void SIMDinplaceIntersect(const BoolArray &other)
+    {
         assert(other.buffer.size() == buffer.size());
         __m128i *bin = reinterpret_cast<__m128i *>(buffer.data());
         const  __m128i *bo = reinterpret_cast<const  __m128i *>(other.buffer.data());
-        for (size_t i = 0; i < buffer.size() / 2; ++i) {
+        for (size_t i = 0; i < buffer.size() / 2; ++i)
+        {
             __m128i p1 = _mm_load_si128(bin + i);
             __m128i p2 = _mm_load_si128(bo + i);
             __m128i andp1p2 = _mm_and_si128(p1, p2);
@@ -64,7 +73,8 @@ public:
     }
 
 
-    void intersect(const BoolArray &other, BoolArray &output) {
+    void intersect(const BoolArray &other, BoolArray &output)
+    {
         assert(other.buffer.size() == buffer.size());
         output.buffer.resize(buffer.size());
         for (size_t i = 0; i < buffer.size(); ++i)
@@ -74,14 +84,16 @@ public:
 
     // this is no faster because the compiler will vectorize
     // intersect automagically?
-    void SIMDintersect(const BoolArray &other, BoolArray &output) {
+    void SIMDintersect(const BoolArray &other, BoolArray &output)
+    {
         assert(other.buffer.size() == buffer.size());
         output.buffer.resize(buffer.size());
         const  __m128i *bin = reinterpret_cast<const  __m128i *>(buffer.data());
         const  __m128i *bo = reinterpret_cast<const  __m128i *>(other.buffer.data());
         __m128i *bout = reinterpret_cast<__m128i *>(output.buffer.data());
 
-        for (size_t i = 0; i < buffer.size() / 2; ++i) {
+        for (size_t i = 0; i < buffer.size() / 2; ++i)
+        {
             __m128i p1 = _mm_load_si128(bin + i);
             __m128i p2 = _mm_load_si128(bo + i);
             __m128i andp1p2 = _mm_and_si128(p1, p2);
@@ -91,7 +103,8 @@ public:
             output.buffer[i] = buffer[i] & other.buffer[i];
     }
 
-    void setSizeInBits(const size_t sizeib) {
+    void setSizeInBits(const size_t sizeib)
+    {
         sizeinbits = sizeib;
     }
 
@@ -99,11 +112,14 @@ public:
      * Write out this bitmap to a vector as a list of integers corresponding
      * to set bits. The caller should have allocated enough memory.
      */
-    void toArray(vector<uint32_t> &ans) {
+    void toArray(vector<uint32_t> &ans)
+    {
         uint32_t pos = 0;
-        for (uint32_t k = 0; k < buffer.size(); ++k) {
+        for (uint32_t k = 0; k < buffer.size(); ++k)
+        {
             uint64_t myword = buffer[k];
-            while (myword != 0) {
+            while (myword != 0)
+            {
                 int ntz =  __builtin_ctzl(myword);
                 ans[pos++] = k * 64 + ntz;
                 myword ^= (1l << ntz);
@@ -117,11 +133,14 @@ public:
      * This is a version of toArray where we write to a pointer.
      * Returns the number of written ints.
      */
-    size_t toInts(uint32_t *out) {
+    size_t toInts(uint32_t *out)
+    {
         size_t pos = 0;
-        for (uint32_t k = 0; k < buffer.size(); ++k) {
+        for (uint32_t k = 0; k < buffer.size(); ++k)
+        {
             const uint64_t myword = buffer[k];
-            for (int offset = 0; offset < 64; ++offset) {
+            for (int offset = 0; offset < 64; ++offset)
+            {
                 if ((myword >> offset) == 0) break;
                 offset += numberOfTrailingZeros((myword >> offset));
                 out[pos++] = 64 * k + offset;
@@ -129,7 +148,8 @@ public:
         }
         return pos;
     }
-    BoolArray &operator=(const BoolArray &x) {
+    BoolArray &operator=(const BoolArray &x)
+    {
         this->buffer = x.buffer;
         this->sizeinbits = x.sizeinbits;
         return *this;
@@ -142,7 +162,8 @@ public:
      * prepare a new word and then append it.
      */
     __attribute__((always_inline))
-    inline void set(const size_t pos) {
+    inline void set(const size_t pos)
+    {
         buffer[pos / 64] |= (static_cast<uint64_t>(1) << (pos
                              % 64));
     }
@@ -154,7 +175,8 @@ public:
      * prepare a new word and then append it.
      */
     __attribute__((always_inline))
-    inline void unset(const size_t pos) {
+    inline void unset(const size_t pos)
+    {
         buffer[pos / 64] |= ~(static_cast<uint64_t>(1) << (pos
                               % 64));
     }
@@ -163,7 +185,8 @@ public:
      * true of false? (set or unset)
      */
     __attribute__((always_inline))
-    inline bool get(const size_t pos) const {
+    inline bool get(const size_t pos) const
+    {
         return (buffer[pos / 64] & (static_cast<uint64_t>(1) << (pos
                                     % 64))) != 0;
     }
@@ -171,28 +194,33 @@ public:
     /**
      * set all bits to 0
      */
-    void reset() {
+    void reset()
+    {
         memset(buffer.data(), 0, sizeof(uint64_t) * buffer.size());//memset can be slow, does it matter?
         sizeinbits = 0;
     }
 
-    size_t sizeInBits() const {
+    size_t sizeInBits() const
+    {
         return sizeinbits;
     }
 
-    size_t sizeInBytes() const {
+    size_t sizeInBytes() const
+    {
         return buffer.size() * sizeof(uint64_t);
     }
 
     /**
      * Return memory usage of a bitmap spanning n bits
      */
-    static size_t sizeInBytes(size_t n) {
+    static size_t sizeInBytes(size_t n)
+    {
         size_t buffersize = n / 64 + (n % 64 == 0 ? 0 : 1);
         return buffersize * sizeof(uint64_t);
     }
 
-    ~BoolArray() {
+    ~BoolArray()
+    {
     }
 
 

@@ -13,16 +13,20 @@
 #include "delta.h"
 #include "util.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
-struct BitPackingHelpers {
+struct BitPackingHelpers
+{
     const static unsigned BlockSize = 32;
 
-    static void inline fastunpack(const uint32_t   *__restrict__ in, uint32_t   *__restrict__  out, const uint32_t bit) {
+    static void inline fastunpack(const uint32_t   *__restrict__ in, uint32_t   *__restrict__  out, const uint32_t bit)
+    {
         // Could have used function pointers instead of switch.
         // Switch calls do offer the compiler more opportunities for optimization in
         // theory. In this case, it makes no difference with a good compiler.
-        switch (bit) {
+        switch (bit)
+        {
         case 0:
             __fastunpack0(in, out);
             break;
@@ -129,11 +133,13 @@ struct BitPackingHelpers {
 
 
 
-    static void inline fastpack(const uint32_t   *__restrict__ in, uint32_t   *__restrict__  out, const uint32_t bit) {
+    static void inline fastpack(const uint32_t   *__restrict__ in, uint32_t   *__restrict__  out, const uint32_t bit)
+    {
         // Could have used function pointers instead of switch.
         // Switch calls do offer the compiler more opportunities for optimization in
         // theory. In this case, it makes no difference with a good compiler.
-        switch (bit) {
+        switch (bit)
+        {
         case 0:
             __fastpack0(in, out);
             break;
@@ -242,11 +248,13 @@ struct BitPackingHelpers {
 
     /*assumes that integers fit in the prescribed number of bits*/
     static void inline fastpackwithoutmask(const uint32_t   *__restrict__ in, uint32_t   *__restrict__  out,
-                                           const uint32_t bit) {
+                                           const uint32_t bit)
+    {
         // Could have used function pointers instead of switch.
         // Switch calls do offer the compiler more opportunities for optimization in
         // theory. In this case, it makes no difference with a good compiler.
-        switch (bit) {
+        switch (bit)
+        {
         case 0:
             __fastpackwithoutmask0(in, out);
             break;
@@ -353,11 +361,13 @@ struct BitPackingHelpers {
 
 
     static void inline integratedfastunpack(const uint32_t initoffset, const uint32_t   *__restrict__ in,
-                                            uint32_t   *__restrict__  out, const uint32_t bit) {
+                                            uint32_t   *__restrict__  out, const uint32_t bit)
+    {
         // Could have used function pointers instead of switch.
         // Switch calls do offer the compiler more opportunities for optimization in
         // theory. In this case, it makes no difference with a good compiler.
-        switch (bit) {
+        switch (bit)
+        {
         case 0:
             __integratedfastunpack0(initoffset, in, out);
             break;
@@ -466,11 +476,13 @@ struct BitPackingHelpers {
 
     /*assumes that integers fit in the prescribed number of bits*/
     static void inline integratedfastpackwithoutmask(const uint32_t initoffset, const uint32_t   *__restrict__ in,
-            uint32_t   *__restrict__  out, const uint32_t bit) {
+            uint32_t   *__restrict__  out, const uint32_t bit)
+    {
         // Could have used function pointers instead of switch.
         // Switch calls do offer the compiler more opportunities for optimization in
         // theory. In this case, it makes no difference with a good compiler.
-        switch (bit) {
+        switch (bit)
+        {
         case 0:
             __integratedfastpack0(initoffset, in, out);
             break;
@@ -577,26 +589,32 @@ struct BitPackingHelpers {
 
 
 
-    static void inline ipackwithoutmask(const uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit) {
-        if (Qty % BlockSize) {
+    static void inline ipackwithoutmask(const uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit)
+    {
+        if (Qty % BlockSize)
+        {
             throw std::logic_error("Incorrect # of entries.");
         }
         uint32_t initoffset = 0;
 
-        for (size_t k = 0; k  < Qty / BlockSize; ++k) {
+        for (size_t k = 0; k  < Qty / BlockSize; ++k)
+        {
             integratedfastpackwithoutmask(initoffset, in + k * BlockSize, out + k * bit, bit);
             initoffset = *(in + k * BlockSize + BlockSize - 1);
         }
     }
 
 
-    static void inline pack(uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit) {
-        if (Qty % BlockSize) {
+    static void inline pack(uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit)
+    {
+        if (Qty % BlockSize)
+        {
             throw std::logic_error("Incorrect # of entries.");
         }
         uint32_t initoffset = 0;
 
-        for (size_t k = 0; k  < Qty / BlockSize; ++k) {
+        for (size_t k = 0; k  < Qty / BlockSize; ++k)
+        {
             const uint32_t nextoffset = *(in + k * BlockSize + BlockSize - 1);
             if (bit < 32) delta<BlockSize>(initoffset, in + k * BlockSize);
             fastpack(in + k * BlockSize, out + k * bit, bit);
@@ -604,39 +622,49 @@ struct BitPackingHelpers {
         }
     }
 
-    static void inline packWithoutDelta(uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit) {
-        for (size_t k = 0; k  < Qty / BlockSize; ++k) {
+    static void inline packWithoutDelta(uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit)
+    {
+        for (size_t k = 0; k  < Qty / BlockSize; ++k)
+        {
             fastpack(in + k * BlockSize, out + k * bit, bit);
         }
     }
 
-    static void inline unpack(const uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit) {
-        if (Qty % BlockSize) {
+    static void inline unpack(const uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit)
+    {
+        if (Qty % BlockSize)
+        {
             throw std::logic_error("Incorrect # of entries.");
         }
         uint32_t initoffset = 0;
 
-        for (size_t k = 0; k < Qty / BlockSize; ++k) {
+        for (size_t k = 0; k < Qty / BlockSize; ++k)
+        {
             fastunpack(in + k * bit, out + k * BlockSize, bit);
             if (bit < 32) inverseDelta<BlockSize>(initoffset, out + k * BlockSize);
             initoffset = *(out + k * BlockSize + BlockSize - 1);
         }
     }
 
-    static void inline unpackWithoutDelta(const uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit) {
-        for (size_t k = 0; k < Qty / BlockSize; ++k) {
+    static void inline unpackWithoutDelta(const uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit)
+    {
+        for (size_t k = 0; k < Qty / BlockSize; ++k)
+        {
             fastunpack(in + k * bit, out + k * BlockSize, bit);
         }
     }
 
 
-    static void inline packwithoutmask(uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit) {
-        if (Qty % BlockSize) {
+    static void inline packwithoutmask(uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit)
+    {
+        if (Qty % BlockSize)
+        {
             throw std::logic_error("Incorrect # of entries.");
         }
         uint32_t initoffset = 0;
 
-        for (size_t k = 0; k  < Qty / BlockSize; ++k) {
+        for (size_t k = 0; k  < Qty / BlockSize; ++k)
+        {
             const uint32_t nextoffset = *(in + k * BlockSize + BlockSize - 1);
             if (bit < 32) delta<BlockSize>(initoffset, in + k * BlockSize);
             fastpackwithoutmask(in + k * BlockSize, out + k * bit, bit);
@@ -645,20 +673,25 @@ struct BitPackingHelpers {
     }
 
 
-    static void inline packwithoutmaskWithoutDelta(uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit) {
-        for (size_t k = 0; k  < Qty / BlockSize; ++k) {
+    static void inline packwithoutmaskWithoutDelta(uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit)
+    {
+        for (size_t k = 0; k  < Qty / BlockSize; ++k)
+        {
             fastpackwithoutmask(in + k * BlockSize, out + k * bit, bit);
         }
     }
 
 
-    static void inline iunpack(const uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit) {
-        if (Qty % BlockSize) {
+    static void inline iunpack(const uint32_t *in, const size_t Qty, uint32_t *out,  const uint32_t bit)
+    {
+        if (Qty % BlockSize)
+        {
             throw std::logic_error("Incorrect # of entries.");
         }
 
         uint32_t initoffset = 0;
-        for (size_t k = 0; k < Qty / BlockSize; ++k) {
+        for (size_t k = 0; k < Qty / BlockSize; ++k)
+        {
             integratedfastunpack(initoffset, in + k * bit, out + k * BlockSize, bit);
             initoffset = *(out + k * BlockSize + BlockSize - 1);
         }
@@ -672,8 +705,10 @@ struct BitPackingHelpers {
             data[i] = random(b) + data[i-1];
     }*/
 
-    static void CheckMaxDiff(const std::vector<uint32_t> &refdata, unsigned bit) {
-        for (size_t i = 1; i < refdata.size(); ++i) {
+    static void CheckMaxDiff(const std::vector<uint32_t> &refdata, unsigned bit)
+    {
+        for (size_t i = 1; i < refdata.size(); ++i)
+        {
             if (gccbits(refdata[i] - refdata[i - 1]) > bit) throw std::runtime_error("bug");
 
         }

@@ -14,7 +14,8 @@
 #include "util.h"
 #include "delta.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 
 
@@ -33,7 +34,8 @@ namespace SIMDCompressionLib {
  *
  */
 template <uint32_t BlockSizeInUnitsOfPackSize = 8, class DeltaHelper = NoDelta, class SortedBitPacker = BasicSortedBitPacker, bool arraydispatch = true>
-class SIMDFastPFor: public IntegerCODEC {
+class SIMDFastPFor: public IntegerCODEC
+{
 public:
     /**
      * ps (page size) should be a multiple of BlockSize, any "large"
@@ -41,11 +43,13 @@ public:
      */
     SIMDFastPFor(uint32_t ps = 65536) :
         PageSize(ps), bitsPageSize(gccbits(PageSize)), bpacker(),
-        bytescontainer(PageSize + 3 * PageSize / BlockSize) {
+        bytescontainer(PageSize + 3 * PageSize / BlockSize)
+    {
         assert(ps / BlockSize * BlockSize == ps);
         assert(gccbits(BlockSizeInUnitsOfPackSize * PACKSIZE - 1) <= 8);
     }
-    enum {
+    enum
+    {
         PACKSIZE = 32,
         overheadofeachexcept = 8,
         overheadduetobits = 8,
@@ -61,7 +65,8 @@ public:
     vector<uint8_t> bytescontainer;
 
     const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                                uint32_t *out, size_t &nvalue) {
+                                uint32_t *out, size_t &nvalue)
+    {
         if (needPaddingTo128Bits(out)
             or needPaddingTo128Bits(in)) throw
             std::runtime_error("alignment issue: pointers should be aligned on 128-bit boundaries");
@@ -73,7 +78,8 @@ public:
         nvalue = mynvalue;
         const uint32_t *const finalout(out + nvalue);
         __m128i prev =  _mm_set1_epi32(0);
-        while (out != finalout) {
+        while (out != finalout)
+        {
             size_t thisnvalue(0);
             size_t thissize =
                 static_cast<size_t>(finalout > PageSize + out ? PageSize
@@ -97,7 +103,8 @@ public:
      * to simplify slightly the implementation.)
      */
     void encodeArray(uint32_t *in, const size_t length, uint32_t *out,
-                     size_t &nvalue) {
+                     size_t &nvalue)
+    {
         if (needPaddingTo128Bits(out)
             or needPaddingTo128Bits(in)) throw
             std::runtime_error("alignment issue: pointers should be aligned on 128-bit boundaries");
@@ -109,7 +116,8 @@ public:
         const size_t oldnvalue = nvalue;
         nvalue = 1;
         __m128i prev =  _mm_set1_epi32(0);
-        while (in != finalin) {
+        while (in != finalin)
+        {
             size_t thissize =
                 static_cast<size_t>(finalin > PageSize + in ? PageSize
                                     : (finalin - in));
@@ -127,11 +135,13 @@ public:
 
 
     void getBestBFromData(const uint32_t *in, uint8_t &bestb,
-                          uint8_t &bestcexcept, uint8_t &maxb) {
+                          uint8_t &bestcexcept, uint8_t &maxb)
+    {
         uint32_t freqs[33];
         for (uint32_t k = 0; k <= 32; ++k)
             freqs[k] = 0;
-        for (uint32_t k = 0; k < BlockSize; ++k) {
+        for (uint32_t k = 0; k < BlockSize; ++k)
+        {
             freqs[asmbits(in[k])]++;
         }
         bestb = 32;
@@ -141,12 +151,14 @@ public:
         uint32_t bestcost = bestb * BlockSize;
         uint32_t cexcept = 0;
         bestcexcept = static_cast<uint8_t>(cexcept);
-        for (uint32_t b = bestb - 1; b < 32; --b) {
+        for (uint32_t b = bestb - 1; b < 32; --b)
+        {
             cexcept += freqs[b + 1];
             uint32_t thiscost = cexcept * overheadofeachexcept + cexcept
                                 * (maxb - b) + b * BlockSize + 8;// the  extra 8 is the cost of storing maxbits
-            if(bestb - b == 1) thiscost -= cexcept;
-            if (thiscost < bestcost) {
+            if (bestb - b == 1) thiscost -= cexcept;
+            if (thiscost < bestcost)
+            {
                 bestcost = thiscost;
                 bestb = static_cast<uint8_t>(b);
                 bestcexcept = static_cast<uint8_t>(cexcept);
@@ -155,7 +167,8 @@ public:
     }
 
     void __encodeArray(uint32_t *in, const size_t length, uint32_t *out,
-                       size_t &nvalue, __m128i &prev) {  //         =  _mm_set1_epi32 (0);// for delta
+                       size_t &nvalue, __m128i &prev)    //         =  _mm_set1_epi32 (0);// for delta
+    {
         uint32_t *const initout = out;  // keep track of this
         checkifdivisibleby(length, BlockSize);
         uint32_t *const headerout = out++;  // keep track of this
@@ -164,7 +177,8 @@ public:
         out = padTo128bits(out);
         if (needPaddingTo128Bits(in)) throw std::runtime_error("alignment bug");
         for (const uint32_t *const final = in + length; (in + BlockSize
-                <= final); in += BlockSize) {
+                <= final); in += BlockSize)
+        {
             uint8_t bestb, bestcexcept, maxb;
 
             const __m128i nextprev =   _mm_load_si128(reinterpret_cast<const __m128i *>(in + BlockSize - 4));
@@ -174,20 +188,24 @@ public:
             getBestBFromData(in, bestb, bestcexcept, maxb);
             *bc++ = bestb;
             *bc++ = bestcexcept;
-            if (bestcexcept > 0) {
+            if (bestcexcept > 0)
+            {
                 *bc++ = maxb;
                 bpacker.ensureCapacity(maxb - bestb - 1, bestcexcept);
                 const uint32_t maxval = 1U << bestb;
-                for (uint32_t k = 0; k < BlockSize; ++k) {
-                    if (in[k] >= maxval) {
+                for (uint32_t k = 0; k < BlockSize; ++k)
+                {
+                    if (in[k] >= maxval)
+                    {
                         bpacker.directAppend(maxb - bestb - 1, in[k] >> bestb);
                         *bc++ = static_cast<uint8_t>(k);
                     }
                 }
             }
-            for(int k = 0; k<BlockSize; k+=128) {
-                  simdpack(in + k, reinterpret_cast<__m128i *>(out), bestb);
-                  out += 4 * bestb;
+            for (int k = 0; k < BlockSize; k += 128)
+            {
+                simdpack(in + k, reinterpret_cast<__m128i *>(out), bestb);
+                out += 4 * bestb;
             }
         }
         headerout[0] = static_cast<uint32_t>(out - headerout);
@@ -201,7 +219,8 @@ public:
     }
 
     void __decodeArray(const uint32_t *in, size_t &length, uint32_t *out,
-                       const size_t nvalue, __m128i &prev) {
+                       const size_t nvalue, __m128i &prev)
+    {
         const uint32_t *const initin = in;
         const uint32_t *const headerin = in++;
         const uint32_t wheremeta = headerin[0];
@@ -213,37 +232,46 @@ public:
         inexcept = bpacker.read(inexcept);
         length = inexcept - initin;
         const uint32_t *unpackpointers[32 + 1];
-        for (uint32_t k = 1; k <= 32; ++k) {
+        for (uint32_t k = 1; k <= 32; ++k)
+        {
             unpackpointers[k] = bpacker.get(k - 1);
         }
         in = padTo128bits(in);
         assert(!needPaddingTo128Bits(out));
         for (uint32_t run = 0; run < nvalue / BlockSize; ++run, out
-             += BlockSize) {
+             += BlockSize)
+        {
             const uint8_t b = *bytep++;
             const uint8_t cexcept = *bytep++;
-            for(int k = 0; k<BlockSize; k+=128) {
-            if (arraydispatch)
-                simdunpack(reinterpret_cast<const __m128i *>(in), out + k, b);
-            else
-                ArrayDispatch::SIMDunpack(reinterpret_cast<const __m128i *>(in), out + k, b);
-            in += 4 * b;
+            for (int k = 0; k < BlockSize; k += 128)
+            {
+                if (arraydispatch)
+                    simdunpack(reinterpret_cast<const __m128i *>(in), out + k, b);
+                else
+                    ArrayDispatch::SIMDunpack(reinterpret_cast<const __m128i *>(in), out + k, b);
+                in += 4 * b;
             }
-            if (cexcept > 0) {
-            	const uint8_t maxbits = *bytep++;
-            	if(maxbits - b == 1) {
-            		for (uint32_t k = 0; k < cexcept; ++k) {
-            			const uint8_t pos = *(bytep++);
-            			out[pos] |= static_cast<uint32_t>(1) << b;
-            		}
-            	} else {
-            		const uint32_t *vals = unpackpointers[maxbits - b];
-            		unpackpointers[maxbits - b] += cexcept;
-            		for (uint32_t k = 0; k < cexcept; ++k) {
-            			const uint8_t pos = *(bytep++);
-            			out[pos] |= vals[k] << b;
-            		}
-            	}
+            if (cexcept > 0)
+            {
+                const uint8_t maxbits = *bytep++;
+                if (maxbits - b == 1)
+                {
+                    for (uint32_t k = 0; k < cexcept; ++k)
+                    {
+                        const uint8_t pos = *(bytep++);
+                        out[pos] |= static_cast<uint32_t>(1) << b;
+                    }
+                }
+                else
+                {
+                    const uint32_t *vals = unpackpointers[maxbits - b];
+                    unpackpointers[maxbits - b] += cexcept;
+                    for (uint32_t k = 0; k < cexcept; ++k)
+                    {
+                        const uint8_t pos = *(bytep++);
+                        out[pos] |= vals[k] << b;
+                    }
+                }
             }
             prev = SIMDDeltaProcessor<DeltaHelper, BlockSize>::runPrefixSum(prev, out);
 
@@ -252,7 +280,8 @@ public:
         assert(in == headerin + wheremeta);
     }
 
-    string name() const {
+    string name() const
+    {
         return string("SIMDFastPFor") + DeltaHelper::name();
     }
 

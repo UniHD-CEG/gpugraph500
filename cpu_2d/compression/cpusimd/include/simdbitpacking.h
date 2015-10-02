@@ -9,7 +9,8 @@
 
 #include "common.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 
 void __SIMD_fastunpack1(const  __m128i *, uint32_t *);

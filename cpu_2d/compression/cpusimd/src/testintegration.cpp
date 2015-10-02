@@ -16,11 +16,13 @@ using namespace std;
 using namespace SIMDCompressionLib;
 
 
-vector<uint32_t> maskedcopy(const vector<uint32_t> &in, const uint32_t bit) {
+vector<uint32_t> maskedcopy(const vector<uint32_t> &in, const uint32_t bit)
+{
     vector<uint32_t> out(in);
     if (bit == 32)
         return out;
-    for (auto i = out.begin(); i != out.end(); ++i) {
+    for (auto i = out.begin(); i != out.end(); ++i)
+    {
         *i = *i % (1U << bit);
     }
     return out;
@@ -28,12 +30,16 @@ vector<uint32_t> maskedcopy(const vector<uint32_t> &in, const uint32_t bit) {
 
 template<class container32bit>
 bool equalOnFirstBits(const container32bit &data,
-                      const container32bit &recovered, uint32_t bit) {
-    if (bit == 32) {
+                      const container32bit &recovered, uint32_t bit)
+{
+    if (bit == 32)
+    {
         return data == recovered;
     }
-    for (uint32_t k = 0; k < data.size(); ++k) {
-        if (data[k] % (1U << bit) != recovered[k] % (1U << bit)) {
+    for (uint32_t k = 0; k < data.size(); ++k)
+    {
+        if (data[k] % (1U << bit) != recovered[k] % (1U << bit))
+        {
             cout << " They differ at k = " << k << " data[k]= " << data[k]
                  << " recovered[k]=" << recovered[k] << endl;
             return false;
@@ -42,13 +48,15 @@ bool equalOnFirstBits(const container32bit &data,
     return true;
 }
 
-uint32_t mask(uint32_t bit) {
+uint32_t mask(uint32_t bit)
+{
     if (bit == 32) return 0xFFFFFFFFU;
     return (1U << bit) - 1;
 }
 
 template <class Helper>
-void simplebenchmark(uint32_t N = 1U << 16, uint32_t T = 1U << 9) {
+void simplebenchmark(uint32_t N = 1U << 16, uint32_t T = 1U << 9)
+{
     T = T + 1; // we have a warming up pass
     uint32_t bogus = 0;
     vector<uint32_t> data(N);
@@ -63,12 +71,15 @@ void simplebenchmark(uint32_t N = 1U << 16, uint32_t T = 1U << 9) {
     cout << "#bit,  unpack,iunpack" << endl;
 
 
-    for (uint32_t bitindex = 0; bitindex < 32; ++bitindex) {
+    for (uint32_t bitindex = 0; bitindex < 32; ++bitindex)
+    {
         uint32_t bit =  bitindex  + 1;
         vector <uint32_t> initdata(N);
-        for (size_t i = 0 ; 4 * i < data.size() ; i += 4) {
+        for (size_t i = 0 ; 4 * i < data.size() ; i += 4)
+        {
             initdata[i] = random(bit) + (i >= 4 ? initdata[i - 4] : 0);
-            for (size_t j = 1; j < 4; ++j) {
+            for (size_t j = 1; j < 4; ++j)
+            {
                 initdata[i + j] = initdata[i];
             }
         }
@@ -85,27 +96,33 @@ void simplebenchmark(uint32_t N = 1U << 16, uint32_t T = 1U << 9) {
         recovered.clear();
         recovered.resize(N, 0);
 
-        if (needPaddingTo128Bits(recovered.data())) {
+        if (needPaddingTo128Bits(recovered.data()))
+        {
             throw logic_error("Array is not aligned on 128 bit boundary!");
         }
-        if (needPaddingTo128Bits(icompressed.data())) {
+        if (needPaddingTo128Bits(icompressed.data()))
+        {
             throw logic_error("Array is not aligned on 128 bit boundary!");
         }
-        if (needPaddingTo128Bits(compressed.data()))  {
+        if (needPaddingTo128Bits(compressed.data()))
+        {
             throw logic_error("Array is not aligned on 128 bit boundary!");
         }
-        if (needPaddingTo128Bits(refdata.data()))  {
+        if (needPaddingTo128Bits(refdata.data()))
+        {
             throw logic_error("Array is not aligned on 128 bit boundary!");
         }
 
 
-        for (uint32_t repeat = 0; repeat < 1; ++repeat) {
+        for (uint32_t repeat = 0; repeat < 1; ++repeat)
+        {
 
             unpacktime = 0;
 
             iunpacktime = 0;
 
-            for (uint32_t t = 0; t <= T; ++t) {
+            for (uint32_t t = 0; t <= T; ++t)
+            {
 
                 assert(data.size() == refdata.size());
                 fill(icompressed.begin(), icompressed.end(), 0);
@@ -116,7 +133,8 @@ void simplebenchmark(uint32_t N = 1U << 16, uint32_t T = 1U << 9) {
                 Helper::unpack(icompressed.data(), refdata.size(), recovered.data(), bit);
                 if (t > 0)// we don't count the first run
                     unpacktime += static_cast<double>(z.split());
-                if (!equalOnFirstBits(refdata, recovered, bit)) {
+                if (!equalOnFirstBits(refdata, recovered, bit))
+                {
                     cout << " Bug 1a " << bit << endl;
                     return;
                 }
@@ -127,7 +145,8 @@ void simplebenchmark(uint32_t N = 1U << 16, uint32_t T = 1U << 9) {
                 Helper::iunpack(icompressed.data(), refdata.size(), recovered.data(), bit);
                 if (t > 0)// we don't count the first run
                     iunpacktime += static_cast<double>(z.split());
-                if (!equalOnFirstBits(refdata, recovered, bit)) {
+                if (!equalOnFirstBits(refdata, recovered, bit))
+                {
                     cout << " Bug 2 " << bit << endl;
                     return;
                 }
@@ -148,7 +167,8 @@ void simplebenchmark(uint32_t N = 1U << 16, uint32_t T = 1U << 9) {
 
 
 
-int main() {
+int main()
+{
 
     cout << "# SIMD bit-packing (regular) cache-to-cache 2^12" << endl;
     simplebenchmark<SIMDBitPackingHelpers<RegularDeltaSIMD>>(1U << 12, 1U << 14);

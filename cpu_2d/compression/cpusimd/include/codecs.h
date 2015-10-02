@@ -13,20 +13,24 @@
 #include "util.h"
 #include "bitpackinghelpers.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 using namespace std;
 
-class NotEnoughStorage: public std::runtime_error {
+class NotEnoughStorage: public std::runtime_error
+{
 public:
     size_t required;// number of 32-bit symbols required
     NotEnoughStorage(const size_t req) :
-        runtime_error(""), required(req) {
+        runtime_error(""), required(req)
+    {
 
     }
 };
 
-class IntegerCODEC {
+class IntegerCODEC
+{
 public:
 
     /**
@@ -58,7 +62,8 @@ public:
      */
     virtual const uint32_t *decodeArray(const uint32_t *in,
                                         const size_t length, uint32_t *out, size_t &nvalue) = 0;
-    virtual ~IntegerCODEC() {
+    virtual ~IntegerCODEC()
+    {
     }
 
     /**
@@ -67,7 +72,8 @@ public:
      *
      * This is offered for convenience. It might be slow.
      */
-    virtual vector<uint32_t> compress(vector<uint32_t> &data) {
+    virtual vector<uint32_t> compress(vector<uint32_t> &data)
+    {
         vector <uint32_t> compresseddata(data.size() * 2 + 1024);// allocate plenty of memory
         size_t memavailable = compresseddata.size();
         encodeArray(data.data(), data.size(), compresseddata.data(), memavailable);
@@ -88,13 +94,17 @@ public:
      */
     virtual vector<uint32_t> uncompress(
         vector<uint32_t> &compresseddata,
-        size_t expected_uncompressed_size = 0) {
+        size_t expected_uncompressed_size = 0)
+    {
         vector <uint32_t> data(expected_uncompressed_size);// allocate plenty of memory
         size_t memavailable = data.size();
-        try {
+        try
+        {
             decodeArray(compresseddata.data(), compresseddata.size(), data.data(),
                         memavailable);
-        } catch (NotEnoughStorage &nes) {
+        }
+        catch (NotEnoughStorage &nes)
+        {
             data.resize(nes.required + 1024);
             decodeArray(compresseddata.data(), compresseddata.size(), data.data(),
                         memavailable);
@@ -110,26 +120,31 @@ public:
 /******************
  * This just copies the data, no compression.
  */
-class JustCopy: public IntegerCODEC {
+class JustCopy: public IntegerCODEC
+{
 public:
     void encodeArray(uint32_t *in, const size_t length, uint32_t *out,
-                     size_t &nvalue) {
+                     size_t &nvalue)
+    {
         memcpy(out, in, sizeof(uint32_t) * length);
         nvalue = length;
     }
     // like encodeArray, but we don't actually copy
     void fakeencodeArray(const uint32_t * /*in*/, const size_t length,
-                         size_t &nvalue) {
+                         size_t &nvalue)
+    {
         nvalue = length;
     }
 
     const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                                uint32_t *out, size_t &nvalue) {
+                                uint32_t *out, size_t &nvalue)
+    {
         memcpy(out, in, sizeof(uint32_t) * length);
         nvalue = length;
         return in + length;
     }
-    string name() const {
+    string name() const
+    {
         return "JustCopy";
     }
 };

@@ -30,45 +30,52 @@
 #include "util.h"
 #include "for.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 /*
  * Optimized scalar implementation of FOR (frame-of-reference) compression
  */
-class ForCODEC : public IntegerCODEC {
-  public:
+class ForCODEC : public IntegerCODEC
+{
+public:
     void encodeArray(uint32_t *in, const size_t length, uint32_t *out,
-                        size_t &nvalue) {
-      *(uint32_t *)out = length;
-      out++;
-      // for_compress_sorted() would be a bit faster, but requires
-      // sorted input
-      nvalue = (4 + for_compress_unsorted((const uint32_t *)in, (uint8_t *)out,
-                        length) + 3) / 4;
+                     size_t &nvalue)
+    {
+        *(uint32_t *)out = length;
+        out++;
+        // for_compress_sorted() would be a bit faster, but requires
+        // sorted input
+        nvalue = (4 + for_compress_unsorted((const uint32_t *)in, (uint8_t *)out,
+                                            length) + 3) / 4;
     }
 
     const uint32_t *decodeArray(const uint32_t *in, const size_t,
-                        uint32_t *out, size_t &nvalue) {
-      nvalue = *in;
-      in++;
-      return in + for_uncompress((const uint8_t *)in, out, nvalue);
+                                uint32_t *out, size_t &nvalue)
+    {
+        nvalue = *in;
+        in++;
+        return in + for_uncompress((const uint8_t *)in, out, nvalue);
     }
 
     size_t findLowerBound(const uint32_t *in, const size_t,
-                        uint32_t key, uint32_t *presult) {
-      uint32_t length = *in;
-      in++;
-      return (size_t)for_lower_bound_search((const uint8_t *)in, length,
-                        key, presult);
+                          uint32_t key, uint32_t *presult)
+    {
+        uint32_t length = *in;
+        in++;
+        return (size_t)for_lower_bound_search((const uint8_t *)in, length,
+                                              key, presult);
     }
 
-    uint32_t select(const uint32_t *in, size_t index) {
-      in++; // Skip length
-      return for_select((const uint8_t *)in, index);
+    uint32_t select(const uint32_t *in, size_t index)
+    {
+        in++; // Skip length
+        return for_select((const uint8_t *)in, index);
     }
 
-    string name() const {
-      return "For";
+    string name() const
+    {
+        return "For";
     }
 };
 

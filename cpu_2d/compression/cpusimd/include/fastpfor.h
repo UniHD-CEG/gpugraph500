@@ -14,18 +14,22 @@
 #include "util.h"
 #include "delta.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 
 
-class ScalarSortedBitPacker {
+class ScalarSortedBitPacker
+{
 public:
 
     enum {DEFAULTSIZE = 128};
-	uint32_t buffer[32];
+    uint32_t buffer[32];
 
-    ScalarSortedBitPacker() {
-        for (uint32_t i = 0; i < 32; ++i) {
+    ScalarSortedBitPacker()
+    {
+        for (uint32_t i = 0; i < 32; ++i)
+        {
             data[i] = new uint32_t[DEFAULTSIZE];
             memset(data[i], 0, DEFAULTSIZE * sizeof(uint32_t));
             actualsizes[i] = DEFAULTSIZE;
@@ -33,8 +37,10 @@ public:
         clear();
     }
 
-    void reset() {
-        for (uint32_t i = 0; i < 32; ++i) {
+    void reset()
+    {
+        for (uint32_t i = 0; i < 32; ++i)
+        {
             delete[] data[i];
             data[i] = new uint32_t[DEFAULTSIZE];
             memset(data[i], 0, DEFAULTSIZE * sizeof(uint32_t));
@@ -43,28 +49,35 @@ public:
         clear();
     }
 
-    ~ScalarSortedBitPacker() {
+    ~ScalarSortedBitPacker()
+    {
         free();
     }
-    void free() {
+    void free()
+    {
         clear();
         for (uint32_t i = 0; i < 32; ++i)
-            if (data[i] != NULL) {
+            if (data[i] != NULL)
+            {
                 delete[] data[i];
                 data[i] = NULL;
                 actualsizes[i] = 0;
             }
     }
-    void directAppend(uint32_t i, uint32_t val) {
+    void directAppend(uint32_t i, uint32_t val)
+    {
         data[i][sizes[i]++] = val;
     }
 
-    const uint32_t *get(int i) {
+    const uint32_t *get(int i)
+    {
         return data[i];
     }
 
-    void ensureCapacity(int i, uint32_t datatoadd) {
-        if (sizes[i] + datatoadd > actualsizes[i]) {
+    void ensureCapacity(int i, uint32_t datatoadd)
+    {
+        if (sizes[i] + datatoadd > actualsizes[i])
+        {
             actualsizes[i] = (sizes[i] + datatoadd + 127) / 128 * 128 * 2;
             uint32_t *tmp = new uint32_t[actualsizes[i]];
             for (uint32_t j = 0; j < sizes[i]; ++j)
@@ -74,66 +87,78 @@ public:
         }
     }
 
-    void clear() {
+    void clear()
+    {
         for (uint32_t i = 0; i < 32; ++i)
             sizes[i] = 0;// memset "might" be faster.
     }
 
-    uint32_t *write(uint32_t *out) {
+    uint32_t *write(uint32_t *out)
+    {
         uint32_t bitmap = 0;
-        for (uint32_t k = 1; k < 32; ++k) {
+        for (uint32_t k = 1; k < 32; ++k)
+        {
             if (sizes[k] != 0)
                 bitmap |= (1U << k);
         }
         *(out++) = bitmap;
 
-        for (uint32_t k = 1; k < 32; ++k) {
-            if (sizes[k] != 0) {
+        for (uint32_t k = 1; k < 32; ++k)
+        {
+            if (sizes[k] != 0)
+            {
                 *out = sizes[k];
                 out++;
                 uint32_t j = 0;
-                for (; j < sizes[k]; j += 32) {
+                for (; j < sizes[k]; j += 32)
+                {
                     BitPackingHelpers::fastpackwithoutmask(&data[k][j], out,
                                                            k + 1);
                     out += k + 1;
                 }
-                out -= ( j - sizes[k] ) * (k+1) / 32;
+                out -= (j - sizes[k]) * (k + 1) / 32;
 
             }
         }
         return out;
     }
 
-    const uint32_t *read(const uint32_t *in) {
+    const uint32_t *read(const uint32_t *in)
+    {
         clear();
         const uint32_t bitmap = *(in++);
 
-    	for (uint32_t k = 1; k < 32; ++k) {
-    		if ((bitmap & (1U << k)) != 0) {
-    			sizes[k] = *in++;
-    			if (actualsizes[k] < sizes[k]) {
-    				delete[] data[k];
-    				actualsizes[k] = (sizes[k] + 31) / 32 * 32;
-    				data[k] = new uint32_t[actualsizes[k]];
-    			}
-    			uint32_t j = 0;
-    			for (; j + 31 < sizes[k]; j += 32) {
-    				BitPackingHelpers::fastunpack(in, &data[k][j], k + 1);
-    				in += k + 1;
-    			}
-    			uint32_t remaining = sizes[k] - j;
-    			memcpy(buffer,in,(remaining * (k + 1) + 31)/32*sizeof(uint32_t));
-    			uint32_t * bpointer = buffer;
-    			in += ((sizes[k] + 31) / 32 * 32-j)/32 * (k+1);
-    			for (; j < sizes[k]; j += 32) {
-    				BitPackingHelpers::fastunpack(bpointer, &data[k][j], k + 1);
-    				bpointer+= k + 1;
-    			}
-    			in -= ( j - sizes[k] ) * (k+1) / 32;
+        for (uint32_t k = 1; k < 32; ++k)
+        {
+            if ((bitmap & (1U << k)) != 0)
+            {
+                sizes[k] = *in++;
+                if (actualsizes[k] < sizes[k])
+                {
+                    delete[] data[k];
+                    actualsizes[k] = (sizes[k] + 31) / 32 * 32;
+                    data[k] = new uint32_t[actualsizes[k]];
+                }
+                uint32_t j = 0;
+                for (; j + 31 < sizes[k]; j += 32)
+                {
+                    BitPackingHelpers::fastunpack(in, &data[k][j], k + 1);
+                    in += k + 1;
+                }
+                uint32_t remaining = sizes[k] - j;
+                memcpy(buffer, in, (remaining * (k + 1) + 31) / 32 * sizeof(uint32_t));
+                uint32_t *bpointer = buffer;
+                in += ((sizes[k] + 31) / 32 * 32 - j) / 32 * (k + 1);
+                for (; j < sizes[k]; j += 32)
+                {
+                    BitPackingHelpers::fastunpack(bpointer, &data[k][j], k + 1);
+                    bpointer += k + 1;
+                }
+                in -= (j - sizes[k]) * (k + 1) / 32;
 
-    		}
-    	}
-    	return in;
+            }
+        }
+        return in;
 
     }
 private:
@@ -160,8 +185,9 @@ private:
  * Designed by D. Lemire with ideas from Leonid Boytsov. This scheme is NOT patented.
  *
  */
-template<uint32_t BlockSizeInUnitsOfPackSize = 8,bool useDelta = true>//BlockSizeInUnitsOfPackSize should be 4 or 8
-class FastPFor: public IntegerCODEC {
+template<uint32_t BlockSizeInUnitsOfPackSize = 8, bool useDelta = true> //BlockSizeInUnitsOfPackSize should be 4 or 8
+class FastPFor: public IntegerCODEC
+{
 public:
     /**
      * ps (page size) should be a multiple of BlockSize, any "large"
@@ -169,11 +195,13 @@ public:
      */
     FastPFor(uint32_t ps = 65536) :
         PageSize(ps), bitsPageSize(gccbits(PageSize)), bpacker(),
-        bytescontainer(PageSize + 3 * PageSize / BlockSize) {
+        bytescontainer(PageSize + 3 * PageSize / BlockSize)
+    {
         assert(ps / BlockSize * BlockSize == ps);
         assert(gccbits(BlockSizeInUnitsOfPackSize * PACKSIZE - 1) <= 8);
     }
-    enum {
+    enum
+    {
         PACKSIZE = 32,
         overheadofeachexcept = 8,
         overheadduetobits = 8,
@@ -189,7 +217,8 @@ public:
     vector<uint8_t> bytescontainer;
 
     const uint32_t *decodeArray(const uint32_t *in, const size_t length,
-                                uint32_t *out, size_t &nvalue) {
+                                uint32_t *out, size_t &nvalue)
+    {
         const uint32_t *const initin(in);
         const size_t mynvalue = *in;
         ++in;
@@ -198,7 +227,8 @@ public:
         nvalue = mynvalue;
         const uint32_t *const finalout(out + nvalue);
         uint32_t prev = 0;
-        while (out != finalout) {
+        while (out != finalout)
+        {
             size_t thisnvalue(0);
             size_t thissize =
                 static_cast<size_t>(finalout > PageSize + out ? PageSize
@@ -222,7 +252,8 @@ public:
      * to simplify slightly the implementation.)
      */
     void encodeArray(uint32_t *in, const size_t length, uint32_t *out,
-                     size_t &nvalue) {
+                     size_t &nvalue)
+    {
         checkifdivisibleby(length, BlockSize);
         const uint32_t *const initout(out);
         const uint32_t *const finalin(in + length);
@@ -231,7 +262,8 @@ public:
         const size_t oldnvalue = nvalue;
         nvalue = 1;
         uint32_t prev =  0;
-        while (in != finalin) {
+        while (in != finalin)
+        {
             size_t thissize =
                 static_cast<size_t>(finalin > PageSize + in ? PageSize
                                     : (finalin - in));
@@ -249,11 +281,13 @@ public:
 
 
     void getBestBFromData(const uint32_t *in, uint8_t &bestb,
-                          uint8_t &bestcexcept, uint8_t &maxb) {
+                          uint8_t &bestcexcept, uint8_t &maxb)
+    {
         uint32_t freqs[33];
         for (uint32_t k = 0; k <= 32; ++k)
             freqs[k] = 0;
-        for (uint32_t k = 0; k < BlockSize; ++k) {
+        for (uint32_t k = 0; k < BlockSize; ++k)
+        {
             freqs[asmbits(in[k])]++;
         }
         bestb = 32;
@@ -263,12 +297,14 @@ public:
         uint32_t bestcost = bestb * BlockSize;
         uint32_t cexcept = 0;
         bestcexcept = static_cast<uint8_t>(cexcept);
-        for (uint32_t b = bestb - 1; b < 32; --b) {
+        for (uint32_t b = bestb - 1; b < 32; --b)
+        {
             cexcept += freqs[b + 1];
             uint32_t thiscost = cexcept * overheadofeachexcept + cexcept
                                 * (maxb - b) + b * BlockSize + 8;// the  extra 8 is the cost of storing maxbits
-            if(bestb - b == 1) thiscost -= cexcept;
-            if (thiscost < bestcost) {
+            if (bestb - b == 1) thiscost -= cexcept;
+            if (thiscost < bestcost)
+            {
                 bestcost = thiscost;
                 bestb = static_cast<uint8_t>(b);
                 bestcexcept = static_cast<uint8_t>(cexcept);
@@ -277,16 +313,19 @@ public:
     }
 
     void __encodeArray(uint32_t *in, const size_t length, uint32_t *out,
-                       size_t &nvalue, uint32_t &prev) {
+                       size_t &nvalue, uint32_t &prev)
+    {
         uint32_t *const initout = out;  // keep track of this
         checkifdivisibleby(length, BlockSize);
         uint32_t *const headerout = out++;  // keep track of this
         bpacker.clear();
         uint8_t *bc = bytescontainer.data();
         for (const uint32_t *const final = in + length; (in + BlockSize
-                <= final); in += BlockSize) {
+                <= final); in += BlockSize)
+        {
             uint8_t bestb, bestcexcept, maxb;
-            if (useDelta) {
+            if (useDelta)
+            {
                 uint32_t nextprev = in[BlockSize - 1];
                 delta(prev, in, BlockSize);
                 prev = nextprev;
@@ -294,18 +333,22 @@ public:
             getBestBFromData(in, bestb, bestcexcept, maxb);
             *bc++ = bestb;
             *bc++ = bestcexcept;
-            if (bestcexcept > 0) {
+            if (bestcexcept > 0)
+            {
                 *bc++ = maxb;
                 bpacker.ensureCapacity(maxb - bestb - 1, bestcexcept);
                 const uint32_t maxval = 1U << bestb;
-                for (uint32_t k = 0; k < BlockSize; ++k) {
-                    if (in[k] >= maxval) {
+                for (uint32_t k = 0; k < BlockSize; ++k)
+                {
+                    if (in[k] >= maxval)
+                    {
                         bpacker.directAppend(maxb - bestb - 1, in[k] >> bestb);
                         *bc++ = static_cast<uint8_t>(k);
                     }
                 }
             }
-            for (size_t k = 0; k < BlockSizeInUnitsOfPackSize; ++k) {
+            for (size_t k = 0; k < BlockSizeInUnitsOfPackSize; ++k)
+            {
                 BitPackingHelpers::fastpack(in + k * 32, out + k * bestb, bestb);
             }
             out += BlockSizeInUnitsOfPackSize * bestb;
@@ -321,7 +364,8 @@ public:
     }
 
     void __decodeArray(const uint32_t *in, size_t &length, uint32_t *out,
-                       const size_t nvalue, uint32_t &prev) {
+                       const size_t nvalue, uint32_t &prev)
+    {
         const uint32_t *const initin = in;
         const uint32_t *const headerin = in++;
         const uint32_t wheremeta = headerin[0];
@@ -333,34 +377,44 @@ public:
         inexcept = bpacker.read(inexcept);
         length = inexcept - initin;
         const uint32_t *unpackpointers[32 + 1];
-        for (uint32_t k = 1; k <= 32; ++k) {
+        for (uint32_t k = 1; k <= 32; ++k)
+        {
             unpackpointers[k] = bpacker.get(k - 1);
         }
         for (uint32_t run = 0; run < nvalue / BlockSize; ++run, out
-             += BlockSize) {
+             += BlockSize)
+        {
             const uint8_t b = *bytep++;
             const uint8_t cexcept = *bytep++;
-            for (size_t k = 0; k < BlockSizeInUnitsOfPackSize; ++k) {
+            for (size_t k = 0; k < BlockSizeInUnitsOfPackSize; ++k)
+            {
                 BitPackingHelpers::fastunpack(in + k * b, out + k * 32, b);
             }
             in += BlockSizeInUnitsOfPackSize * b;
-            if (cexcept > 0) {
+            if (cexcept > 0)
+            {
                 const uint8_t maxbits = *bytep++;
-				if (maxbits - b == 1) {
-					for (uint32_t k = 0; k < cexcept; ++k) {
-						const uint8_t pos = *(bytep++);
-						out[pos] |= static_cast<uint32_t>(1) << b;
-					}
-				} else {
-					const uint32_t *vals = unpackpointers[maxbits - b];
-					unpackpointers[maxbits - b] += cexcept;
-					for (uint32_t k = 0; k < cexcept; ++k) {
-						const uint8_t pos = *(bytep++);
-						out[pos] |= vals[k] << b;
-					}
-				}
+                if (maxbits - b == 1)
+                {
+                    for (uint32_t k = 0; k < cexcept; ++k)
+                    {
+                        const uint8_t pos = *(bytep++);
+                        out[pos] |= static_cast<uint32_t>(1) << b;
+                    }
+                }
+                else
+                {
+                    const uint32_t *vals = unpackpointers[maxbits - b];
+                    unpackpointers[maxbits - b] += cexcept;
+                    for (uint32_t k = 0; k < cexcept; ++k)
+                    {
+                        const uint8_t pos = *(bytep++);
+                        out[pos] |= vals[k] << b;
+                    }
+                }
             }
-            if (useDelta) {
+            if (useDelta)
+            {
                 inverseDelta(prev, out, BlockSize);
                 prev = out[BlockSize - 1];
             }
@@ -369,7 +423,8 @@ public:
         assert(in == headerin + wheremeta);
     }
 
-    string name() const {
+    string name() const
+    {
         return string("FastPFor") + (useDelta ? "Delta" : "");
     }
 

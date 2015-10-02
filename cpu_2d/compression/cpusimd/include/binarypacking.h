@@ -12,80 +12,99 @@
 #include "bitpackinghelpers.h"
 #include "util.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 
-struct BasicBlockPacker {
-    static void inline unpackblock(const uint32_t *in,  uint32_t *out,  const uint32_t bit, uint32_t &initoffset) {
+struct BasicBlockPacker
+{
+    static void inline unpackblock(const uint32_t *in,  uint32_t *out,  const uint32_t bit, uint32_t &initoffset)
+    {
         BitPackingHelpers::fastunpack(in, out, bit);
         if (bit < 32) inverseDelta<BitPackingHelpers::BlockSize>(initoffset, out);
         initoffset = *(out + BitPackingHelpers::BlockSize - 1);
     }
 
-    static uint32_t maxbits(const uint32_t *in,  uint32_t &initoffset) {
+    static uint32_t maxbits(const uint32_t *in,  uint32_t &initoffset)
+    {
         uint32_t accumulator = in[0] - initoffset;
-        for (uint32_t k = 1; k < BitPackingHelpers::BlockSize; ++k) {
+        for (uint32_t k = 1; k < BitPackingHelpers::BlockSize; ++k)
+        {
             accumulator |= in[k] - in[k - 1];
         }
         initoffset = in [BitPackingHelpers::BlockSize - 1];
         return gccbits(accumulator);
     }
 
-    static void inline packblockwithoutmask(uint32_t *in, uint32_t *out,  const uint32_t bit, uint32_t &initoffset) {
+    static void inline packblockwithoutmask(uint32_t *in, uint32_t *out,  const uint32_t bit, uint32_t &initoffset)
+    {
         const uint32_t nextoffset = *(in + BitPackingHelpers::BlockSize - 1);
         if (bit < 32) delta<BitPackingHelpers::BlockSize>(initoffset, in);
         BitPackingHelpers::fastpackwithoutmask(in, out, bit);
         initoffset = nextoffset;
     }
-    static string name()  {
+    static string name()
+    {
         return "BasicBlockPacker";
     }
 
 };
 
-struct NoDeltaBlockPacker {
-    static void inline unpackblock(const uint32_t *in,  uint32_t *out,  const uint32_t bit, uint32_t &) {
+struct NoDeltaBlockPacker
+{
+    static void inline unpackblock(const uint32_t *in,  uint32_t *out,  const uint32_t bit, uint32_t &)
+    {
         BitPackingHelpers::fastunpack(in, out, bit);
     }
-    static void inline packblockwithoutmask(uint32_t *in, uint32_t *out,  const uint32_t bit, uint32_t &) {
+    static void inline packblockwithoutmask(uint32_t *in, uint32_t *out,  const uint32_t bit, uint32_t &)
+    {
         BitPackingHelpers::fastpackwithoutmask(in, out, bit);
     }
 
-    static uint32_t maxbits(const uint32_t *in,  uint32_t &) {
+    static uint32_t maxbits(const uint32_t *in,  uint32_t &)
+    {
         uint32_t accumulator = 0;
-        for (uint32_t k = 0; k < BitPackingHelpers::BlockSize; ++k) {
+        for (uint32_t k = 0; k < BitPackingHelpers::BlockSize; ++k)
+        {
             accumulator |= in[k];
         }
         return gccbits(accumulator);
     }
 
-    static string name()  {
+    static string name()
+    {
         return "NoDeltaBlockPacker";
     }
 };
 
 
 
-struct IntegratedBlockPacker {
+struct IntegratedBlockPacker
+{
     __attribute__((pure))
-    static uint32_t maxbits(const uint32_t *in,  uint32_t &initoffset) {
+    static uint32_t maxbits(const uint32_t *in,  uint32_t &initoffset)
+    {
         uint32_t accumulator = in[0] - initoffset;
-        for (uint32_t k = 1; k < BitPackingHelpers::BlockSize; ++k) {
+        for (uint32_t k = 1; k < BitPackingHelpers::BlockSize; ++k)
+        {
             accumulator |= in[k] - in[k - 1];
         }
         initoffset = in [BitPackingHelpers::BlockSize - 1];
         return gccbits(accumulator);
     }
 
-    static void inline packblockwithoutmask(const uint32_t *in, uint32_t *out,  const uint32_t bit, uint32_t &initoffset) {
+    static void inline packblockwithoutmask(const uint32_t *in, uint32_t *out,  const uint32_t bit, uint32_t &initoffset)
+    {
         BitPackingHelpers::integratedfastpackwithoutmask(initoffset, in, out, bit);
         initoffset = *(in + BitPackingHelpers::BlockSize - 1);
     }
-    static void inline unpackblock(const uint32_t *in, uint32_t *out,  const uint32_t bit, uint32_t &initoffset) {
+    static void inline unpackblock(const uint32_t *in, uint32_t *out,  const uint32_t bit, uint32_t &initoffset)
+    {
         BitPackingHelpers::integratedfastunpack(initoffset, in, out, bit);
         initoffset = *(out + BitPackingHelpers::BlockSize - 1);
     }
-    static string name()  {
+    static string name()
+    {
         return "IntegratedBlockPacker";
     }
 };
@@ -93,7 +112,8 @@ struct IntegratedBlockPacker {
 
 
 template <class BlockPacker>
-class BinaryPacking: public IntegerCODEC {
+class BinaryPacking: public IntegerCODEC
+{
 public:
 
 
@@ -103,7 +123,8 @@ public:
     static const uint32_t bits32 = 8 ;
 
     void encodeArray(uint32_t *in, const size_t length, uint32_t *out,
-                     size_t &nvalue) {
+                     size_t &nvalue)
+    {
         checkifdivisibleby(length, BlockSize);
         const uint32_t *const initout(out);
         *out++ = static_cast<uint32_t>(length);
@@ -111,28 +132,34 @@ public:
         uint32_t init = 0;
         const uint32_t *const final = in + length;
         for (; in + HowManyMiniBlocks * MiniBlockSize
-             <= final; in += HowManyMiniBlocks * MiniBlockSize) {
+             <= final; in += HowManyMiniBlocks * MiniBlockSize)
+        {
             uint32_t tmpinit = init;
-            for (uint32_t i = 0; i < HowManyMiniBlocks; ++i) {
+            for (uint32_t i = 0; i < HowManyMiniBlocks; ++i)
+            {
                 Bs[i] = BlockPacker::maxbits(in + i * MiniBlockSize, tmpinit);
             }
             *out++ = (Bs[0] << 24) | (Bs[1] << 16) | (Bs[2] << 8)
                      | Bs[3];
-            for (uint32_t i = 0; i < HowManyMiniBlocks; ++i) {
+            for (uint32_t i = 0; i < HowManyMiniBlocks; ++i)
+            {
                 BlockPacker::packblockwithoutmask(in + i * MiniBlockSize, out, Bs[i], init);
                 out += Bs[i];
             }
         }
-        if (in < final) {
+        if (in < final)
+        {
             size_t howmany = (final - in) / MiniBlockSize;
             uint32_t tmpinit = init;
             memset(&Bs[0], 0, HowManyMiniBlocks * sizeof(uint32_t));
-            for (uint32_t i = 0; i < howmany; ++i) {
+            for (uint32_t i = 0; i < howmany; ++i)
+            {
                 Bs[i] = BlockPacker::maxbits(in + i * MiniBlockSize, tmpinit);
             }
             *out++ = (Bs[0] << 24) | (Bs[1] << 16) | (Bs[2] << 8)
                      | Bs[3];
-            for (uint32_t i = 0; i < howmany; ++i) {
+            for (uint32_t i = 0; i < howmany; ++i)
+            {
                 BlockPacker::packblockwithoutmask(in + i * MiniBlockSize, out, Bs[i], init);
                 out += Bs[i];
             }
@@ -141,32 +168,37 @@ public:
     }
 
     const uint32_t *decodeArray(const uint32_t *in, const size_t /*length*/,
-                                uint32_t *out, size_t &nvalue) {
+                                uint32_t *out, size_t &nvalue)
+    {
         const uint32_t actuallength = *in++;
         checkifdivisibleby(actuallength, BlockSize);
         const uint32_t *const initout(out);
         uint32_t Bs[HowManyMiniBlocks];
         uint32_t init = 0;
         for (; out < initout + actuallength / (HowManyMiniBlocks * MiniBlockSize) *HowManyMiniBlocks * MiniBlockSize
-             ; out += HowManyMiniBlocks * MiniBlockSize) {
+             ; out += HowManyMiniBlocks * MiniBlockSize)
+        {
             Bs[0] = static_cast<uint8_t>(in[0] >> 24);
             Bs[1] = static_cast<uint8_t>(in[0] >> 16);
             Bs[2] = static_cast<uint8_t>(in[0] >> 8);
             Bs[3] = static_cast<uint8_t>(in[0]);
             ++in;
-            for (uint32_t i = 0; i < HowManyMiniBlocks; ++i) {
+            for (uint32_t i = 0; i < HowManyMiniBlocks; ++i)
+            {
                 BlockPacker::unpackblock(in, out + i * MiniBlockSize, Bs[i], init);
                 in += Bs[i];
             }
         }
-        if (out < initout + actuallength) {
+        if (out < initout + actuallength)
+        {
             size_t howmany = (initout + actuallength - out) / MiniBlockSize;
             Bs[0] = static_cast<uint8_t>(in[0] >> 24);
             Bs[1] = static_cast<uint8_t>(in[0] >> 16);
             Bs[2] = static_cast<uint8_t>(in[0] >> 8);
             Bs[3] = static_cast<uint8_t>(in[0]);
             ++in;
-            for (uint32_t i = 0; i < howmany; ++i) {
+            for (uint32_t i = 0; i < howmany; ++i)
+            {
                 BlockPacker::unpackblock(in, out + i * MiniBlockSize, Bs[i], init);
                 in += Bs[i];
             }
@@ -177,7 +209,8 @@ public:
         return in;
     }
 
-    string name() const {
+    string name() const
+    {
         ostringstream convert;
         convert << "BinaryPacking" << "With" << BlockPacker::name() << MiniBlockSize;
         return convert.str();

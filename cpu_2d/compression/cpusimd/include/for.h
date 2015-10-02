@@ -47,7 +47,7 @@ for_compressed_size_bits(uint32_t length, uint32_t bits);
 
 /**
  * Returns the size required to compress an unsorted sequence of |length| ints.
- * 
+ *
  * This routine scans |in| for the min/max values and then calls
  * for_compressed_size_bits().
  *
@@ -59,7 +59,7 @@ for_compressed_size_unsorted(const uint32_t *in, uint32_t length);
 
 /**
  * Returns the size required to compress a sorted sequence of |length| ints.
- * 
+ *
  * This routine extracts min/max values at the beginning and end of
  * the sequence, then calls for_compressed_size_bits(). It is therefore
  * slightly faster than for_compressed_size_unsorted().
@@ -89,7 +89,7 @@ for_compressed_size_sorted(const uint32_t *in, uint32_t length);
  */
 extern uint32_t
 for_compress_bits(const uint32_t *in, uint8_t *out, uint32_t length,
-                uint32_t base, uint32_t bits);
+                  uint32_t base, uint32_t bits);
 
 /**
  * Compresses an unsorted sequence of |length| ints at |in| and stores the
@@ -133,7 +133,7 @@ for_compress_sorted(const uint32_t *in, uint8_t *out, uint32_t length);
  */
 extern uint32_t
 for_uncompress_bits(const uint8_t *in, uint32_t *out, uint32_t length,
-                uint32_t base, uint32_t bits);
+                    uint32_t base, uint32_t bits);
 
 /**
  * Uncompresses a sequence of |length| ints at |in| and stores the
@@ -200,11 +200,11 @@ for_linear_search(const uint8_t *in, uint32_t length, uint32_t value);
  */
 extern uint32_t
 for_linear_search_bits(const uint8_t *in, uint32_t length, uint32_t base,
-                uint32_t bits, uint32_t value);
+                       uint32_t bits, uint32_t value);
 
 /**
  * Performs lower bound binary search search for |value|.
- * 
+ *
  * A lower bound search returns the first element in the sequence which does
  * not compare less than |value|.
  * The actual result is stored in |*actual|.
@@ -215,11 +215,11 @@ for_linear_search_bits(const uint8_t *in, uint32_t length, uint32_t base,
  */
 extern uint32_t
 for_lower_bound_search(const uint8_t *in, uint32_t length, uint32_t value,
-                uint32_t *actual);
+                       uint32_t *actual);
 
 /**
  * Performs lower bound binary search search for |value|.
- * 
+ *
  * A lower bound search returns the first element in the sequence which does
  * not compare less than |value|.
  * The actual result is stored in |*actual|.
@@ -231,7 +231,7 @@ for_lower_bound_search(const uint8_t *in, uint32_t length, uint32_t value,
  */
 extern uint32_t
 for_lower_bound_search_bits(const uint8_t *in, uint32_t length, uint32_t base,
-                uint32_t bits, uint32_t value, uint32_t *actual);
+                            uint32_t bits, uint32_t value, uint32_t *actual);
 
 
 #ifdef __cplusplus

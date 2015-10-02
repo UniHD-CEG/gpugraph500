@@ -6,15 +6,18 @@
 */
 #include "simdintegratedbitpacking.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 
 template <class DeltaHelper>
-__m128i  iunpack0(__m128i initOffset, const __m128i *, uint32_t     *_out) {
+__m128i  iunpack0(__m128i initOffset, const __m128i *, uint32_t     *_out)
+{
     __m128i       *out = reinterpret_cast<__m128i *>(_out);
     static const __m128i zero =  _mm_set1_epi32(0);
 
-    for (unsigned i = 0; i < 8; ++i) {
+    for (unsigned i = 0; i < 8; ++i)
+    {
         initOffset = DeltaHelper::PrefixSum(zero, initOffset);
         _mm_store_si128(out++, initOffset);
         initOffset = DeltaHelper::PrefixSum(zero, initOffset);
@@ -31,17 +34,20 @@ __m128i  iunpack0(__m128i initOffset, const __m128i *, uint32_t     *_out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask0(__m128i  , const uint32_t *, __m128i *) {
+void ipackwithoutmask0(__m128i  , const uint32_t *, __m128i *)
+{
 
 }
 
 template <class DeltaHelper>
-void ipack0(__m128i  , const uint32_t *, __m128i *) {
+void ipack0(__m128i  , const uint32_t *, __m128i *)
+{
 }
 
 
 template <class DeltaHelper>
-void ipackwithoutmask1(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask1(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -244,7 +250,8 @@ void ipackwithoutmask1(__m128i  initOffset, const uint32_t    *_in, __m128i    *
 
 
 template <class DeltaHelper>
-void ipack1(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack1(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -449,7 +456,8 @@ void ipack1(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask2(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask2(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -655,7 +663,8 @@ void ipackwithoutmask2(__m128i  initOffset, const uint32_t    *_in, __m128i    *
 
 
 template <class DeltaHelper>
-void ipack2(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack2(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -863,7 +872,8 @@ void ipack2(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask3(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask3(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -1074,7 +1084,8 @@ void ipackwithoutmask3(__m128i  initOffset, const uint32_t    *_in, __m128i    *
 
 
 template <class DeltaHelper>
-void ipack3(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack3(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -1287,7 +1298,8 @@ void ipack3(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask4(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask4(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -1499,7 +1511,8 @@ void ipackwithoutmask4(__m128i  initOffset, const uint32_t    *_in, __m128i    *
 
 
 template <class DeltaHelper>
-void ipack4(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack4(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -1713,7 +1726,8 @@ void ipack4(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask5(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask5(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -1932,7 +1946,8 @@ void ipackwithoutmask5(__m128i  initOffset, const uint32_t    *_in, __m128i    *
 
 
 template <class DeltaHelper>
-void ipack5(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack5(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -2153,7 +2168,8 @@ void ipack5(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask6(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask6(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -2375,7 +2391,8 @@ void ipackwithoutmask6(__m128i  initOffset, const uint32_t    *_in, __m128i    *
 
 
 template <class DeltaHelper>
-void ipack6(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack6(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -2599,7 +2616,8 @@ void ipack6(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask7(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask7(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -2826,7 +2844,8 @@ void ipackwithoutmask7(__m128i  initOffset, const uint32_t    *_in, __m128i    *
 
 
 template <class DeltaHelper>
-void ipack7(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack7(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -3055,7 +3074,8 @@ void ipack7(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask8(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask8(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -3279,7 +3299,8 @@ void ipackwithoutmask8(__m128i  initOffset, const uint32_t    *_in, __m128i    *
 
 
 template <class DeltaHelper>
-void ipack8(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack8(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -3505,7 +3526,8 @@ void ipack8(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask9(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask9(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -3740,7 +3762,8 @@ void ipackwithoutmask9(__m128i  initOffset, const uint32_t    *_in, __m128i    *
 
 
 template <class DeltaHelper>
-void ipack9(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack9(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -3977,7 +4000,8 @@ void ipack9(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask10(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask10(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -4215,7 +4239,8 @@ void ipackwithoutmask10(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack10(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack10(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -4455,7 +4480,8 @@ void ipack10(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask11(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask11(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -4698,7 +4724,8 @@ void ipackwithoutmask11(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack11(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack11(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -4943,7 +4970,8 @@ void ipack11(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask12(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask12(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -5187,7 +5215,8 @@ void ipackwithoutmask12(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack12(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack12(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -5433,7 +5462,8 @@ void ipack12(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask13(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask13(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -5684,7 +5714,8 @@ void ipackwithoutmask13(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack13(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack13(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -5937,7 +5968,8 @@ void ipack13(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask14(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask14(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -6191,7 +6223,8 @@ void ipackwithoutmask14(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack14(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack14(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -6447,7 +6480,8 @@ void ipack14(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask15(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask15(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -6706,7 +6740,8 @@ void ipackwithoutmask15(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack15(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack15(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -6967,7 +7002,8 @@ void ipack15(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask16(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask16(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -7215,7 +7251,8 @@ void ipackwithoutmask16(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack16(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack16(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -7465,7 +7502,8 @@ void ipack16(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask17(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask17(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -7732,7 +7770,8 @@ void ipackwithoutmask17(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack17(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack17(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -8001,7 +8040,8 @@ void ipack17(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask18(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask18(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -8271,7 +8311,8 @@ void ipackwithoutmask18(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack18(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack18(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -8543,7 +8584,8 @@ void ipack18(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask19(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask19(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -8818,7 +8860,8 @@ void ipackwithoutmask19(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack19(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack19(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -9095,7 +9138,8 @@ void ipack19(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask20(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask20(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -9371,7 +9415,8 @@ void ipackwithoutmask20(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack20(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack20(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -9649,7 +9694,8 @@ void ipack20(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask21(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask21(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -9932,7 +9978,8 @@ void ipackwithoutmask21(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack21(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack21(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -10217,7 +10264,8 @@ void ipack21(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask22(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask22(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -10503,7 +10551,8 @@ void ipackwithoutmask22(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack22(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack22(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -10791,7 +10840,8 @@ void ipack22(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask23(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask23(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -11082,7 +11132,8 @@ void ipackwithoutmask23(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack23(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack23(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -11375,7 +11426,8 @@ void ipack23(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask24(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask24(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -11663,7 +11715,8 @@ void ipackwithoutmask24(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack24(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack24(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -11953,7 +12006,8 @@ void ipack24(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask25(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask25(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -12252,7 +12306,8 @@ void ipackwithoutmask25(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack25(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack25(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -12553,7 +12608,8 @@ void ipack25(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask26(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask26(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -12855,7 +12911,8 @@ void ipackwithoutmask26(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack26(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack26(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -13159,7 +13216,8 @@ void ipack26(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask27(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask27(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -13466,7 +13524,8 @@ void ipackwithoutmask27(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack27(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack27(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -13775,7 +13834,8 @@ void ipack27(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask28(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask28(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -14083,7 +14143,8 @@ void ipackwithoutmask28(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack28(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack28(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -14393,7 +14454,8 @@ void ipack28(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask29(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask29(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -14708,7 +14770,8 @@ void ipackwithoutmask29(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack29(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack29(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -15025,7 +15088,8 @@ void ipack29(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask30(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask30(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -15343,7 +15407,8 @@ void ipackwithoutmask30(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack30(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack30(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -15663,7 +15728,8 @@ void ipack30(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask31(__m128i  initOffset, const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask31(__m128i  initOffset, const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -15986,7 +16052,8 @@ void ipackwithoutmask31(__m128i  initOffset, const uint32_t    *_in, __m128i    
 
 
 template <class DeltaHelper>
-void ipack31(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
+void ipack31(__m128i  initOffset, const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -16311,7 +16378,8 @@ void ipack31(__m128i  initOffset, const uint32_t    *_in, __m128i     *out) {
 
 
 template <class DeltaHelper>
-void ipackwithoutmask32(__m128i  /* initOffset */ , const uint32_t    *_in, __m128i    *out) {
+void ipackwithoutmask32(__m128i  /* initOffset */ , const uint32_t    *_in, __m128i    *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i    OutReg;
 
@@ -16543,7 +16611,8 @@ void ipackwithoutmask32(__m128i  /* initOffset */ , const uint32_t    *_in, __m1
 
 
 template <class DeltaHelper>
-void ipack32(__m128i  /* initOffset */ , const uint32_t    *_in, __m128i     *out) {
+void ipack32(__m128i  /* initOffset */ , const uint32_t    *_in, __m128i     *out)
+{
     const __m128i       *in = reinterpret_cast<const __m128i *>(_in);
     __m128i     OutReg;
 
@@ -16777,7 +16846,8 @@ void ipack32(__m128i  /* initOffset */ , const uint32_t    *_in, __m128i     *ou
 
 
 template <class DeltaHelper>
-__m128i iunpack1(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack1(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -16988,7 +17058,8 @@ __m128i iunpack1(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
 
 
 template <class DeltaHelper>
-__m128i iunpack2(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack2(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -17200,7 +17271,8 @@ __m128i iunpack2(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
 
 
 template <class DeltaHelper>
-__m128i iunpack3(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack3(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -17417,7 +17489,8 @@ __m128i iunpack3(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
 
 
 template <class DeltaHelper>
-__m128i iunpack4(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack4(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -17631,7 +17704,8 @@ __m128i iunpack4(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
 
 
 template <class DeltaHelper>
-__m128i iunpack5(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack5(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -17854,7 +17928,8 @@ __m128i iunpack5(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
 
 
 template <class DeltaHelper>
-__m128i iunpack6(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack6(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -18078,7 +18153,8 @@ __m128i iunpack6(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
 
 
 template <class DeltaHelper>
-__m128i iunpack7(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack7(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -18307,7 +18383,8 @@ __m128i iunpack7(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
 
 
 template <class DeltaHelper>
-__m128i iunpack8(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack8(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -18525,7 +18602,8 @@ __m128i iunpack8(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
 
 
 template <class DeltaHelper>
-__m128i iunpack9(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack9(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -18760,7 +18838,8 @@ __m128i iunpack9(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
 
 
 template <class DeltaHelper>
-__m128i iunpack10(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack10(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -18996,7 +19075,8 @@ __m128i iunpack10(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack11(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack11(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -19237,7 +19317,8 @@ __m128i iunpack11(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack12(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack12(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -19475,7 +19556,8 @@ __m128i iunpack12(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack13(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack13(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -19722,7 +19804,8 @@ __m128i iunpack13(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack14(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack14(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -19970,7 +20053,8 @@ __m128i iunpack14(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack15(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack15(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -20223,7 +20307,8 @@ __m128i iunpack15(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack16(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack16(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -20449,7 +20534,8 @@ __m128i iunpack16(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack17(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack17(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -20708,7 +20794,8 @@ __m128i iunpack17(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack18(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack18(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -20968,7 +21055,8 @@ __m128i iunpack18(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack19(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack19(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -21233,7 +21321,8 @@ __m128i iunpack19(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack20(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack20(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -21495,7 +21584,8 @@ __m128i iunpack20(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack21(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack21(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -21766,7 +21856,8 @@ __m128i iunpack21(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack22(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack22(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -22038,7 +22129,8 @@ __m128i iunpack22(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack23(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack23(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -22315,7 +22407,8 @@ __m128i iunpack23(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack24(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack24(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -22581,7 +22674,8 @@ __m128i iunpack24(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack25(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack25(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -22864,7 +22958,8 @@ __m128i iunpack25(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack26(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack26(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -23148,7 +23243,8 @@ __m128i iunpack26(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack27(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack27(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -23437,7 +23533,8 @@ __m128i iunpack27(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack28(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack28(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -23723,7 +23820,8 @@ __m128i iunpack28(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack29(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack29(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -24018,7 +24116,8 @@ __m128i iunpack29(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack30(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack30(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -24314,7 +24413,8 @@ __m128i iunpack30(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack31(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) {
+__m128i iunpack31(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out)
+{
 
     __m128i   *out = reinterpret_cast<__m128i *>(_out);
     __m128i    InReg = _mm_load_si128(in);
@@ -24614,10 +24714,12 @@ __m128i iunpack31(__m128i  initOffset, const  __m128i   *in, uint32_t    *_out) 
 
 
 template <class DeltaHelper>
-__m128i iunpack32(__m128i  , const  __m128i   *in, uint32_t     *_out) {
+__m128i iunpack32(__m128i  , const  __m128i   *in, uint32_t     *_out)
+{
     __m128i *mout = reinterpret_cast<__m128i *>(_out);
     __m128i invec;
-    for (size_t k = 0; k < 128 / 4; ++k) {
+    for (size_t k = 0; k < 128 / 4; ++k)
+    {
         invec =  _mm_load_si128(in++);
         _mm_store_si128(mout++, invec);
     }

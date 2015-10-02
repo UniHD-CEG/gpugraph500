@@ -29,20 +29,22 @@
 #include "frameofreference.h"
 #include "forcodec.h"
 
-namespace SIMDCompressionLib {
+namespace SIMDCompressionLib
+{
 
 using namespace std;
 
 typedef VariableByte<true>  leftovercodec;
 
-static std::map<string, shared_ptr<IntegerCODEC>> initializefactory() {
+static std::map<string, shared_ptr<IntegerCODEC>> initializefactory()
+{
     std::map <string, shared_ptr<IntegerCODEC>> schemes;
 #ifdef __SSSE3__
     schemes["varintg8iu"] = shared_ptr<IntegerCODEC> (
-                              new VarIntG8IU<true> ());
+                                new VarIntG8IU<true> ());
 #endif /* __SSSE3__ */
     schemes["fastpfor"] = shared_ptr<IntegerCODEC> (
-                              new CompositeCodec<FastPFor<8,true> ,
+                              new CompositeCodec<FastPFor<8, true> ,
                               leftovercodec> ());
 
 
@@ -50,27 +52,27 @@ static std::map<string, shared_ptr<IntegerCODEC>> initializefactory() {
     schemes["varint"] = shared_ptr<IntegerCODEC> (new VariableByte<true> ());
     schemes["vbyte"] = shared_ptr<IntegerCODEC> (new VByte<true> ());
     schemes["maskedvbyte"] = shared_ptr<IntegerCODEC> (
-                              new MaskedVByte<true> ());
+                                 new MaskedVByte<true> ());
     schemes["streamvbyte"] = shared_ptr<IntegerCODEC> (
-                              new StreamVByteD1 ());
+                                 new StreamVByteD1());
     schemes["frameofreference"] = shared_ptr<IntegerCODEC> (
-                                  new FrameOfReference ());
+                                      new FrameOfReference());
 
     schemes["simdframeofreference"] = shared_ptr<IntegerCODEC> (
-                                  new SIMDFrameOfReference ());
+                                          new SIMDFrameOfReference());
 
     schemes["varintgb"] = std::shared_ptr<IntegerCODEC> (new VarIntGB<>());
 
     schemes["s4-fastpfor-d4"] = shared_ptr<IntegerCODEC> (
-                                   new CompositeCodec<SIMDFastPFor<8,CoarseDelta4SIMD> , leftovercodec> ());
+                                    new CompositeCodec<SIMDFastPFor<8, CoarseDelta4SIMD> , leftovercodec> ());
     schemes["s4-fastpfor-dm"]
         = shared_ptr<IntegerCODEC> (
-              new CompositeCodec<SIMDFastPFor<8,Max4DeltaSIMD> ,
+              new CompositeCodec<SIMDFastPFor<8, Max4DeltaSIMD> ,
               VariableByte<true>> ());
     schemes["s4-fastpfor-d1"] = shared_ptr<IntegerCODEC> (
-                                   new CompositeCodec<SIMDFastPFor<8,RegularDeltaSIMD> , leftovercodec> ());
+                                    new CompositeCodec<SIMDFastPFor<8, RegularDeltaSIMD> , leftovercodec> ());
     schemes["s4-fastpfor-d2"] = shared_ptr<IntegerCODEC> (
-                                   new CompositeCodec<SIMDFastPFor<8,CoarseDelta2SIMD> , leftovercodec> ());
+                                    new CompositeCodec<SIMDFastPFor<8, CoarseDelta2SIMD> , leftovercodec> ());
 
     schemes["bp32"] = shared_ptr<IntegerCODEC> (
                           new CompositeCodec<BinaryPacking<BasicBlockPacker> , VariableByte<
@@ -80,54 +82,59 @@ static std::map<string, shared_ptr<IntegerCODEC>> initializefactory() {
                            leftovercodec> ());
 
     schemes["s4-bp128-d1-ni"] = shared_ptr<IntegerCODEC> (
-                                 new CompositeCodec <SIMDBinaryPacking<SIMDBlockPacker<
-                                 RegularDeltaSIMD, true>> , leftovercodec> ());
+                                    new CompositeCodec <SIMDBinaryPacking<SIMDBlockPacker<
+                                    RegularDeltaSIMD, true>> , leftovercodec> ());
     schemes["s4-bp128-d2-ni"] = shared_ptr<IntegerCODEC> (
-                                 new CompositeCodec <SIMDBinaryPacking<SIMDBlockPacker<
-                                 CoarseDelta2SIMD, true>>, leftovercodec> ());
+                                    new CompositeCodec <SIMDBinaryPacking<SIMDBlockPacker<
+                                    CoarseDelta2SIMD, true>>, leftovercodec> ());
     schemes["s4-bp128-d4-ni"] = shared_ptr<IntegerCODEC> (
-                                 new CompositeCodec <SIMDBinaryPacking<SIMDBlockPacker<
-                                 CoarseDelta4SIMD, true>>, leftovercodec> ());
+                                    new CompositeCodec <SIMDBinaryPacking<SIMDBlockPacker<
+                                    CoarseDelta4SIMD, true>>, leftovercodec> ());
     schemes["s4-bp128-dm"] = shared_ptr<IntegerCODEC> (
                                  new CompositeCodec <SIMDBinaryPacking<SIMDBlockPacker<
                                  Max4DeltaSIMD, true>>, leftovercodec> ());
 
     schemes["s4-bp128-d1"] = shared_ptr<IntegerCODEC> (
-                                new CompositeCodec <SIMDBinaryPacking<SIMDIntegratedBlockPacker<
-                                RegularDeltaSIMD, true>>, leftovercodec> ());
+                                 new CompositeCodec <SIMDBinaryPacking<SIMDIntegratedBlockPacker<
+                                 RegularDeltaSIMD, true>>, leftovercodec> ());
     schemes["s4-bp128-d2"] = shared_ptr<IntegerCODEC> (
-                                new CompositeCodec <SIMDBinaryPacking<SIMDIntegratedBlockPacker<
-                                CoarseDelta2SIMD, true>>, leftovercodec> ());
+                                 new CompositeCodec <SIMDBinaryPacking<SIMDIntegratedBlockPacker<
+                                 CoarseDelta2SIMD, true>>, leftovercodec> ());
     schemes["s4-bp128-d4"] = shared_ptr<IntegerCODEC> (
-                                new CompositeCodec <SIMDBinaryPacking<SIMDIntegratedBlockPacker<
-                                CoarseDelta4SIMD, true>>, leftovercodec> ());
+                                 new CompositeCodec <SIMDBinaryPacking<SIMDIntegratedBlockPacker<
+                                 CoarseDelta4SIMD, true>>, leftovercodec> ());
     schemes["s4-bp128-dm"] = shared_ptr<IntegerCODEC> (
-                                new CompositeCodec <SIMDBinaryPacking<SIMDIntegratedBlockPacker<
-                                Max4DeltaSIMD, true>>, leftovercodec> ());
+                                 new CompositeCodec <SIMDBinaryPacking<SIMDIntegratedBlockPacker<
+                                 Max4DeltaSIMD, true>>, leftovercodec> ());
     schemes["for"] = shared_ptr<IntegerCODEC> (
-                                  new ForCODEC ());
+                         new ForCODEC());
     return schemes;
 }
 
 
 
-class CODECFactory {
+class CODECFactory
+{
 public:
     static map<string, shared_ptr<IntegerCODEC>> scodecmap;
     static shared_ptr<IntegerCODEC> defaultptr;
 
     // hacked for convenience
-    static vector<shared_ptr<IntegerCODEC>> allSchemes() {
+    static vector<shared_ptr<IntegerCODEC>> allSchemes()
+    {
         vector <shared_ptr<IntegerCODEC>> ans;
-        for (auto i = scodecmap.begin(); i != scodecmap.end(); ++i) {
+        for (auto i = scodecmap.begin(); i != scodecmap.end(); ++i)
+        {
             ans.push_back(i->second);
         }
         return ans;
     }
 
-    static vector<string> allNames() {
+    static vector<string> allNames()
+    {
         vector <string> ans;
-        for (auto i = scodecmap.begin(); i != scodecmap.end(); ++i) {
+        for (auto i = scodecmap.begin(); i != scodecmap.end(); ++i)
+        {
             ans.push_back(i->first);
         }
         return ans;
@@ -137,7 +144,8 @@ public:
      * This function tries to determine whether the
      * input is modified during compression.
      */
-    static bool modifiesInputDuringCompression(IntegerCODEC &v) {
+    static bool modifiesInputDuringCompression(IntegerCODEC &v)
+    {
         vector<uint32_t> test;
         const uint32_t N = 2049;
         for (uint32_t k = 0; k < N; ++k)
@@ -150,23 +158,29 @@ public:
         return false; // granted this is not full-proof, but is ok in our context
     }
 
-    static string getName(IntegerCODEC &v) {
-        for (auto i = scodecmap.begin(); i != scodecmap.end() ; ++i) {
+    static string getName(IntegerCODEC &v)
+    {
+        for (auto i = scodecmap.begin(); i != scodecmap.end() ; ++i)
+        {
             if (i->second.get() == &v)
                 return i->first;
         }
         return "UNKNOWN";
     }
 
-    static bool valid(string name) {
+    static bool valid(string name)
+    {
         return (scodecmap.find(name) != scodecmap.end()) ;
     }
 
-    static shared_ptr<IntegerCODEC> &getFromName(string name) {
-        if (scodecmap.find(name) == scodecmap.end()) {
+    static shared_ptr<IntegerCODEC> &getFromName(string name)
+    {
+        if (scodecmap.find(name) == scodecmap.end())
+        {
             cerr << "name " << name << " does not refer to a CODEC." << endl;
             cerr << "possible choices:" << endl;
-            for (auto i = scodecmap.begin(); i != scodecmap.end(); ++i) {
+            for (auto i = scodecmap.begin(); i != scodecmap.end(); ++i)
+            {
                 cerr << static_cast<string>(i->first) << endl; // useless cast, but just to be clear
             }
             return defaultptr;
