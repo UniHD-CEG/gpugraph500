@@ -30,6 +30,9 @@ using namespace SIMDCompressionLib;
 using namespace std::chrono;
 #endif
 
+#include "compression/compressionfactory.hh"
+#include "compression.hh"
+
 
 /*
  * This classs implements a distributed level synchronus BFS on global scale.

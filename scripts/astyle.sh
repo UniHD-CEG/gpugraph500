@@ -8,5 +8,5 @@ if [ ! -x $astyle ]; then
 fi
 
 
-$astyle  --style=allman --recursive --options=../cpu_2d/astyle.conf ../cpu_2d/\*.h ../cpu_2d/\*.hpp ../cpu_2d/\*.cuh ../cpu_2d/\*.hh ../cpu_2d/\*.c ../cpu_2d/\*.cpp ../cpu_2d/\*.cu
+$astyle  --style=allman --recursive --options=../cpu_2d/astyle.conf ../cpu_2d/\*.h ../cpu_2d/\*.hpp ../cpu_2d/\*.hh ../cpu_2d/\*.c ../cpu_2d/\*.cpp ../cpu_2d/\*.cu
 
