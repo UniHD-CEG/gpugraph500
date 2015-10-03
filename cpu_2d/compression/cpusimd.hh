@@ -23,7 +23,7 @@ class CpuSimd: public Compression<T>
 {
 private:
     uint32_t SIMDCOMPRESSION_THRESHOLD;
-    IntegerCODEC codec;
+    IntegerCODEC &codec;
 public:
     void benchmarkCompression(const T *fq, const int size) const;
     void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);

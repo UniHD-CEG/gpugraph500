@@ -22,7 +22,7 @@ static map<string, shared_ptr<Compression<Tp>>> initializefactory()
     // SIMD compression algorthm performed on CPU
     schemes["cpusimd"] = shared_ptr<Compression<Tp>>(new CpuSimd<Tp>());
     // SIMT compression algorthm performed on GPU
-    // schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
+    // schemes["gpusimt"] = shared_ptr<Compression<Tp>>(new GpuSimt<Tp>());
 
     return schemes;
 }
@@ -30,14 +30,14 @@ static map<string, shared_ptr<Compression<Tp>>> initializefactory()
 
 
 
-template <typename T>
+template <typename Tc>
 class CompressionFactory
 {
 public:
-    static map<string, shared_ptr<Compression<T>>> compressionschemes;
-    static shared_ptr<Compression<T>> defaultptr;
+    static map<string, shared_ptr<Compression<Tc>>> compressionschemes;
+    static shared_ptr<Compression<Tc>> defaultptr;
 
-    static string getName(Compression<T> &compression)
+    static string getName(Compression<Tc> &compression)
     {
         for (auto i = compressionschemes.begin(); i != compressionschemes.end() ; ++i)
         {
@@ -54,7 +54,7 @@ public:
         return (compressionschemes.find(name) != compressionschemes.end()) ;
     }
 
-    static shared_ptr<Compression<T>> &getFromName(string name)
+    static shared_ptr<Compression<Tc>> &getFromName(string name)
     {
         if (!valid(name))
         {
@@ -64,10 +64,10 @@ public:
         return compressionschemes[name];
     }
 };
-template <typename T>
-map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionschemes = initializefactory();
-template <typename T>
-shared_ptr<Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<Compression<T>>(nullptr);
+template <typename Tc>
+map<string, shared_ptr<Compression<Tc>>> CompressionFactory<Tc>::compressionschemes = initializefactory();
+template <typename Tc>
+shared_ptr<Compression<Tc>> CompressionFactory<Tc>::defaultptr = shared_ptr<Compression<Tc>>(nullptr);
 
 //} // CompresionNamespace
 
