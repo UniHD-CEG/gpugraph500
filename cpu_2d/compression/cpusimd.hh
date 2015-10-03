@@ -8,6 +8,9 @@
 #include "compression.hh"
 #include "codecfactory.h"
 
+namespace CompressionNamespace
+{
+
 using namespace SIMDCompressionLib;
 
 using std::string;
@@ -198,7 +201,7 @@ inline string CpuSimd<T>::name() const
 }
 
 
-
+} // CompressionNamespace
 
 #endif // _SIMDCOMPRESS
 #endif // BFS_MULTINODE_CPUSIMD_COMPRESSION_H

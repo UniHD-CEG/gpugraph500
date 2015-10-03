@@ -69,6 +69,6 @@ map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionscheme
 template <typename T>
 shared_ptr<Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<Compression<T>>(nullptr);
 
-} // CompresionFactory
+} // CompresionNamespace
 
 #endif // BFS_MULTINODE_COMPRESSIONFACTORY_H
