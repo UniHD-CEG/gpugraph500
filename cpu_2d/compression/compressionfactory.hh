@@ -16,7 +16,7 @@ using std::cerr;
 using std::endl;
 
 template <typename Tp>
-static map<string, shared_ptr<Compression<Tp>>> initializeCompressfactory()
+static map<string, shared_ptr<Compression<Tp>>> initializeCompressfactory<Tp>()
 {
     map <string, shared_ptr<Compression<Tp>>> schemes;
     // SIMD compression algorthm performed on CPU
@@ -65,7 +65,7 @@ public:
     }
 };
 template <typename Tc>
-map<string, shared_ptr<Compression<Tc>>> CompressionFactory<Tc>::compressionschemes = initializeCompressfactory();
+map<string, shared_ptr<Compression<Tc>>> CompressionFactory<Tc>::compressionschemes = initializeCompressfactory<Tc>();
 template <typename Tc>
 shared_ptr<Compression<Tc>> CompressionFactory<Tc>::defaultptr = shared_ptr<Compression<Tc>>(nullptr);
 
