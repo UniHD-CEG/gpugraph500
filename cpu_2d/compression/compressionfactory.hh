@@ -10,15 +10,14 @@ using std::string;
 using std::shared_ptr;
 using std::cerr;
 using std::endl;
-using std::nullptr;
 
-static map<string, shared_ptr<Compression>> initializefactory()
+static map<string, shared_ptr<Compression<T>>> initializefactory()
 {
-    map <string, shared_ptr<Compression>> schemes;
+    map <string, shared_ptr<Compression<T>>> schemes;
     // SIMD compression algorthm performed on CPU
-    schemes["cpusimd"] = shared_ptr<Compression>(new CpuSimd<FQ_T>());
+    schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
     // SIMT compression algorthm performed on GPU
-    // schemes["gpusimt"] = shared_ptr<Compression>(new GpuSimt<FQ_T>());
+    // schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
 
     return schemes;
 }
@@ -26,12 +25,12 @@ static map<string, shared_ptr<Compression>> initializefactory()
 
 
 
-
+template <typename T>
 class CompressionFactory
 {
 public:
-    static map<string, shared_ptr<Compression>> compressionschemes;
-    static shared_ptr<Compression> defaultptr;
+    static map<string, shared_ptr<Compression<T>>> compressionschemes;
+    static shared_ptr<Compression<T>> defaultptr;
 
     static string getName(Compression &compression)
     {
@@ -50,7 +49,7 @@ public:
         return (compressionschemes.find(name) != compressionschemes.end()) ;
     }
 
-    static shared_ptr<Compression> &getFromName(string name)
+    static shared_ptr<Compression<T>> &getFromName(string name)
     {
         if (!valid(name))
         {
@@ -60,8 +59,8 @@ public:
         return compressionschemes[name];
     }
 };
-map<string, shared_ptr<Compression>> CompressionFactory::compressionschemes = initializefactory();
-shared_ptr<Compression> CompressionFactory::defaultptr = shared_ptr<Compression>(nullptr);
+map<string, shared_ptr<Compression<T>>> CompressionFactory::compressionschemes = initializefactory();
+shared_ptr<Compression<T>> CompressionFactory::defaultptr = shared_ptr<Compression>(nullptr);
 
 
 #endif // BFS_MULTINODE_COMPRESSIONFACTORY_H
