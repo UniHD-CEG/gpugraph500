@@ -216,17 +216,13 @@ ifeq ($(nvidia_ptxas_otimize), "yes")
 endif
 
 
-ifeq ($(nvidia_architecture), "auto")
-	NV_ARCHITECTURE := $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
-else
 ifeq ($(nvidia_architecture), "fermi")
 	NV_ARCHITECTURE := $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
 else
 ifeq ($(nvidia_architecture), "kepler")
 	NV_ARCHITECTURE := $(PTXAS) -arch=sm_35
 else
-	NV_ARCHITECTURE := $(PTXAS) -arch=sm_52
-endif
+	NV_ARCHITECTURE := $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 endif
 endif
 
@@ -304,7 +300,7 @@ endif
 #
 #
 
-# 1. CPUSIMD Compression.
+# 1. CPU/SIMD Compression.
 #    CPU with SSE4 support is required. CPU with AVX support is recommended.
 #
 ifeq ($(enable_simd_compression), "yes")
@@ -315,7 +311,7 @@ else
 	INCPATH := -I.
 	HEADERS :=
 endif
-# 2. XXXX Compression.
+# 2. XXX/XXXX Compression.
 # ...
 #
 endif
@@ -433,7 +429,7 @@ ifeq ($(enable_simd_compression), "yes")
 	@echo "============================================================================"
 endif
 	@echo ""
-	@echo "--- Compiling compression. CPU/SIMD"
+	@echo "--- Compiling CPU/SIMD compression"
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/bitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
