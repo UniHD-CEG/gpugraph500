@@ -80,6 +80,19 @@
 #   Description: "Enables any type of compression through the network. Switch this option
 #   				to "no" to disable completely compression.
 #
+# enable_compression_benchmark
+#   Values: yes | no
+#   Default value: no
+#   Description: "shows statistics of compression rate, time of compression
+#   			  decompression fot the compression schema used (cpusimd, gpusimt, etc),
+#   			  and for each codec (in the case id at Lemire's simdcompress) if available."
+#
+# enable_compression_verify
+#   Values: yes | no
+#   Default value: no
+#   Description: "sends both compressed, and decompressed data through
+#   			  the network. Checks decompression at peer node"
+#
 # enable_simd_compression
 #   Values: yes | no
 #   Default value: yes
@@ -87,18 +100,6 @@
 #   			  D. Lemire SIMDCompression library"
 #   External links:
 #   			- https://github.com/lemire/SIMDCompressionAndIntersection
-#
-# enable_simd_compression_benchmark
-#   Values: yes | no
-#   Default value: no
-#   Description: "shows statistics of compression rate, time of compression
-#   			  decompression for each codec at Lemire's library"
-#
-# enable_simd_compression_verify
-#   Values: yes | no
-#   Default value: no
-#   Description: "sends both compressed, and decompressed data through
-#   			  the network. Checks decompression at peer node"
 #
 # debug
 #   Values: yes | no
@@ -152,9 +153,9 @@ scorep_custom                             :="yes"
 scorep_custom_basedir                     :=/home/jromera/scorep
 use_avx_instructions                      :="yes"
 enable_compression                        :="yes"
+enable_compression_verify                 :="no"
+enable_compression_benchmark              :="no"
 enable_simd_compression                   :="yes"
-enable_simd_compression_benchmark         :="no"
-enable_simd_compression_verify            :="no"
 use_cuda                                  :="yes"
 debug                                     :="no"
 debug_code                                :="no"
@@ -290,40 +291,33 @@ endif
 
 ifeq ($(enable_compression), "yes")
 	DEFINES += -D_COMPRESSION
+ifeq ($(enable_compression_benchmark), "yes")
+	DEFINES += -D_COMPRESSIONBENCHMARK
+	LLIBC := -static-libstdc++
+endif
+ifeq ($(enable_compression_verify), "yes")
+	DEFINES += -D_COMPRESSIONVERIFY
+endif
 #
 #
 # Compression Block
 #
 #
 
-#
-# 1. CPU/SIMD Compression.
-#
-# CPU with SSE4 support is required. CPU with AVX support is recommended.
-#
+# 1. CPUSIMD Compression.
+#    CPU with SSE4 support is required. CPU with AVX support is recommended.
 #
 ifeq ($(enable_simd_compression), "yes")
 	DEFINES += -D_SIMDCOMPRESS
 	INCPATH := -I. -Icompression/cpusimd/include
 	HEADERS := $(shell ls compression/cpusimd/include/*h)
-ifeq ($(enable_simd_compression_benchmark), "yes")
-	DEFINES += -D_SIMDCOMPRESSBENCHMARK
-	LLIBC := -static-libstdc++
-endif
-ifeq ($(enable_simd_compression_verify), "yes")
-	DEFINES += -D_SIMDCOMPRESSVERIFY
-endif
 else
 	INCPATH := -I.
 	HEADERS :=
 endif
-
-#
-# 2. ... Compression.
-#
-#
+# 2. XXXX Compression.
 # ...
-
+#
 endif
 
 #
