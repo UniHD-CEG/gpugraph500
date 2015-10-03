@@ -192,7 +192,7 @@ inline bool CpuSimd<T>::isCompressed(const size_t originalsize, const size_t com
 }
 
 template <typename T>
-inline bool CpuSimd<T>::inline string name() const
+inline string CpuSimd<T>::name() const
 {
     return "cpusimd";
 }

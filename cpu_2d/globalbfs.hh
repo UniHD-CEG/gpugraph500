@@ -39,6 +39,9 @@ template<typename Derived,
 class GlobalBFS
 {
 private:
+#ifdef _COMPRESSION
+    //Compression schema;
+#endif
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
@@ -480,6 +483,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
     colcom = 0;
 #endif
 
+
+#ifdef _COMPRESSION
+    //&schema = *CompressionFactory::getFromName("cpusimd");
+#endif
+
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_DEFINE(BFSRUN_region_vertexBroadcast)
     SCOREP_USER_REGION_BEGIN(BFSRUN_region_vertexBroadcast, "BFSRUN_region_vertexBroadcast", SCOREP_USER_REGION_TYPE_COMMON)
@@ -519,7 +527,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 
 #ifdef _SIMDCOMPRESS
-    //IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
     std::size_t uncompressedsize, compressedsize;
 #endif
 
