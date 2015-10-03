@@ -1,14 +1,12 @@
 #ifndef BFS_MULTINODE_COMPRESSIONFACTORY_H
 #define BFS_MULTINODE_COMPRESSIONFACTORY_H
 
+#include <iostream>
 #include <map>
+#include <string>
 #include "compression.hh"
 #include "cpusimd.hh"
 
-//namespace CompressionNamespace
-//{
-
-// typedef long long int T;
 
 using std::map;
 using std::string;
@@ -22,10 +20,8 @@ struct InitializeCompressFactory
     static map<string, shared_ptr<Compression<T>>> initializeCompressfactory()
     {
         map <string, shared_ptr<Compression<T>>> schemes;
-        // SIMD compression algorthm performed on CPU
         schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
-        // SIMT compression algorthm performed on GPU
-        // schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
+        //schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
 
         return schemes;
     }
@@ -57,6 +53,5 @@ map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionscheme
 template <typename T>
 shared_ptr<Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<Compression<T>>(nullptr);
 
-//} // CompresionNamespace
 
 #endif // BFS_MULTINODE_COMPRESSIONFACTORY_H

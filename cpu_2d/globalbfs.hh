@@ -27,7 +27,6 @@ using namespace std::chrono;
 
 #ifdef _COMPRESSION
 #include "compression/compressionfactory.hh"
-//using namespace CompressionNamespace;
 #endif
 
 /*

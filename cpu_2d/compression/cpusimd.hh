@@ -7,11 +7,11 @@
 
 #include "compression.hh"
 #include "codecfactory.h"
+#include <chrono>
 
-//namespace CompressionNamespace
-//{
 
 using namespace SIMDCompressionLib;
+using namespace std::chrono;
 
 using std::string;
 using std::vector;
@@ -200,8 +200,6 @@ inline string CpuSimd<T>::name() const
     return "cpusimd";
 }
 
-
-//} // CompressionNamespace
 
 //#endif // _SIMDCOMPRESS
 #endif // BFS_MULTINODE_CPUSIMD_COMPRESSION_H

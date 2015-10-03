@@ -2,8 +2,9 @@
 #define BFS_MULTINODE_COMPRESSION_H
 
 
-//namespace CompressionNamespace
-//{
+#include <string>
+#include <cstring>
+
 
 using std::string;
 
@@ -24,5 +25,4 @@ public:
     virtual string name() const = 0;
 };
 
-//} // CompressionNamespace
 #endif // BFS_MULTINODE_COMPRESSION_H
