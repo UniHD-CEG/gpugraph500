@@ -2,11 +2,11 @@
 #define BFS_MULTINODE_COMPRESSIONFACTORY_H
 
 #include <iostream>
+#include <memory>
 #include <map>
 #include <string>
 #include "compression.hh"
 #include "cpusimd.hh"
-
 
 using std::map;
 using std::string;
