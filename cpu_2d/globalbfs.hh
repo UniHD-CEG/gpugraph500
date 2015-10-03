@@ -27,6 +27,7 @@ using namespace std::chrono;
 
 #ifdef _COMPRESSION
 #include "compression/compressionfactory.hh"
+using namespace CompressionNamespace;
 #endif
 
 /*
@@ -39,9 +40,6 @@ template<typename Derived,
 class GlobalBFS
 {
 private:
-#ifdef _COMPRESSION
-    Compression<FQ_T> &schema;
-#endif
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     std::vector <typename STORE::fold_prop> fold_fq_props;
@@ -467,8 +465,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _COMPRESSION
-    &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
-    CompressionFactory.getName(&schema);
+    Compression<FQ_T> &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
 #endif
 
 

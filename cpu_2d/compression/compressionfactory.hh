@@ -5,6 +5,10 @@
 #include "compression.hh"
 #include "cpusimd.hh"
 
+namespace CompressionNamespace
+{
+
+
 using std::map;
 using std::string;
 using std::shared_ptr;
@@ -65,5 +69,6 @@ map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionscheme
 template <typename T>
 shared_ptr<Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<Compression<T>>(nullptr);
 
+} // CompresionFactory
 
 #endif // BFS_MULTINODE_COMPRESSIONFACTORY_H
