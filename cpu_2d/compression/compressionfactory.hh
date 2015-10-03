@@ -8,6 +8,7 @@
 //namespace CompressionNamespace
 //{
 
+typedef T long long int;
 
 using std::map;
 using std::string;
@@ -15,14 +16,14 @@ using std::shared_ptr;
 using std::cerr;
 using std::endl;
 
-template <typename Tp>
-static map<string, shared_ptr<Compression<Tp>>> initializeCompressfactory<Tp>()
+
+static map<string, shared_ptr<Compression<T>>> initializeCompressfactory()
 {
-    map <string, shared_ptr<Compression<Tp>>> schemes;
+    map <string, shared_ptr<Compression<T>>> schemes;
     // SIMD compression algorthm performed on CPU
-    schemes["cpusimd"] = shared_ptr<Compression<Tp>>(new CpuSimd<Tp>());
+    schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
     // SIMT compression algorthm performed on GPU
-    // schemes["gpusimt"] = shared_ptr<Compression<Tp>>(new GpuSimt<Tp>());
+    // schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
 
     return schemes;
 }
@@ -30,33 +31,17 @@ static map<string, shared_ptr<Compression<Tp>>> initializeCompressfactory<Tp>()
 
 
 
-template <typename Tc>
+
 class CompressionFactory
 {
 public:
-    static map<string, shared_ptr<Compression<Tc>>> compressionschemes;
-    static shared_ptr<Compression<Tc>> defaultptr;
+    static map<string, shared_ptr<Compression<T>>> compressionschemes;
+    static shared_ptr<Compression<T>> defaultptr;
 
-    static string getName(Compression<Tc> &compression)
-    {
-        for (auto i = compressionschemes.begin(); i != compressionschemes.end() ; ++i)
-        {
-            if (i->second.get() == &compression)
-            {
-                return i->first;
-            }
-        }
-        return "unknown";
-    }
 
-    static bool valid(string name)
+    static shared_ptr<Compression<T>> &getFromName(string name)
     {
-        return (compressionschemes.find(name) != compressionschemes.end()) ;
-    }
-
-    static shared_ptr<Compression<Tc>> &getFromName(string name)
-    {
-        if (!valid(name))
+        if (compressionschemes.find(name) == compressionschemes.end())
         {
             cerr << "name " << name << " does not refer to a Compression Scheme." << endl;
             return defaultptr;
@@ -64,10 +49,9 @@ public:
         return compressionschemes[name];
     }
 };
-template <typename Tc>
-map<string, shared_ptr<Compression<Tc>>> CompressionFactory<Tc>::compressionschemes = initializeCompressfactory<Tc>();
-template <typename Tc>
-shared_ptr<Compression<Tc>> CompressionFactory<Tc>::defaultptr = shared_ptr<Compression<Tc>>(nullptr);
+
+map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionschemes = initializeCompressfactory();
+shared_ptr<Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<Compression<T>>(nullptr);
 
 //} // CompresionNamespace
 
