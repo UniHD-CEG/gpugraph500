@@ -158,7 +158,7 @@ enable_simd_compression_verify            :="no"
 use_cuda                                  :="yes"
 debug                                     :="no"
 debug_code                                :="no"
-quiet_output                              :="yes"
+quiet_output                              :="no"
 code_optimization_level                   :="O4"
 code_optimization_flags                   :=-funroll-loops -flto
 
@@ -389,7 +389,7 @@ LINK := $(PROFILER) $(MPICXX)
 #
 
 OUTFILES := $(shell ls *.o)
-COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o
+COMPRESSION_OBJECTS := bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o cpusimd.o
 SOURCES := main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c $(bfs_implementation) validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp
 OBJECTS := $(bfs_object) main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o
 
@@ -481,6 +481,10 @@ for.o: compression/cpusimd/src/for.c $(HEADERS)
 
 simdintegratedbitpacking.o: compression/cpusimd/include/simdintegratedbitpacking.h compression/cpusimd/include/delta.h compression/cpusimd/src/simdintegratedbitpacking.cpp
 	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/simdintegratedbitpacking.cpp -Icompression/cpusimd/include
+	@echo "    CCX       $@"
+
+cpusimd.o: compression/cpusimd.hh compression/cpusimd.cpp
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
 utils.o: generator/utils.c generator/splittable_mrg.h generator/graph_generator.h generator/user_settings.h generator/utils.h
