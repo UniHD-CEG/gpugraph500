@@ -40,7 +40,7 @@ class GlobalBFS
 {
 private:
 #ifdef _COMPRESSION
-    //Compression schema;
+    Compression schema;
 #endif
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
@@ -146,6 +146,9 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : st
     owenmask = new MType[mask_size];
     tmpmask = new MType[mask_size];
     rank = _rank;
+#ifdef _COMPRESSION
+    &schema = *CompressionFactory::getFromName("cpusimd");
+#endif
 }
 
 /**
@@ -483,10 +486,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
     colcom = 0;
 #endif
 
-
-#ifdef _COMPRESSION
-    //&schema = *CompressionFactory::getFromName("cpusimd");
-#endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_DEFINE(BFSRUN_region_vertexBroadcast)
