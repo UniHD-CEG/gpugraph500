@@ -28,17 +28,20 @@ public:
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
-    inline string name() const
-    {
-        return "cpusimd";
-    }
-    void CpuSimd()
+    inline string name() const;
+    /**
+     * Constructor
+     */
+    CpuSimd()
     {
         &codec = *CODECFactory::getFromName("s4-bp128-dm");
         SIMDCOMPRESSION_THRESHOLD = 512;
         // Use 0xffffffff (2^32) to transparently deactivate compression.
         // SIMDCOMPRESSION_THRESHOLD = 0xffffffff;
     }
+    /**
+     * Destructor
+     */
     virtual ~CpuSimd()
     {
     }
@@ -188,6 +191,14 @@ inline bool CpuSimd<T>::isCompressed(const size_t originalsize, const size_t com
     return (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize);
 }
 
-#endif // _SIMDCOMPRESS
+template <typename T>
+inline bool CpuSimd<T>::inline string name() const
+{
+    return "cpusimd";
+}
 
+
+
+
+#endif // _SIMDCOMPRESS
 #endif // BFS_MULTINODE_CPUSIMD_COMPRESSION_H

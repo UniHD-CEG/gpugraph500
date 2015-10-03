@@ -15,9 +15,17 @@ using std::nullptr;
 static map<string, shared_ptr<Compression>> initializefactory()
 {
     map <string, shared_ptr<Compression>> schemes;
+    // SIMD compression algorthm performed on CPU
     schemes["cpusimd"] = shared_ptr<Compression>(new CpuSimd<FQ_T>());
+    // SIMT compression algorthm performed on GPU
+    // schemes["gpusimt"] = shared_ptr<Compression>(new GpuSimt<FQ_T>());
+
     return schemes;
 }
+
+
+
+
 
 class Factory
 {
