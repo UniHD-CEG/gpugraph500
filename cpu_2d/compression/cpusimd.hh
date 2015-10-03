@@ -35,10 +35,10 @@ public:
     /**
      * Constructor
      */
-    CpuSimd();
-    ~CpuSimd();
+    //CpuSimd();
+    //~CpuSimd();
 };
-
+/*
 template <typename T>
 CpuSimd<T>::CpuSimd()
 {
@@ -47,6 +47,7 @@ CpuSimd<T>::CpuSimd()
     // Use 0xffffffff (2^32) to transparently deactivate compression.
     // SIMDCOMPRESSION_THRESHOLD = 0xffffffff;
 }
+*/
 
 template <typename T>
 void CpuSimd<T>::benchmarkCompression(const T *fq, const int size) const
