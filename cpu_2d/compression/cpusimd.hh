@@ -1,12 +1,12 @@
 #ifndef BFS_MULTINODE_CPUSIMD_COMPRESSION_H
 #define BFS_MULTINODE_CPUSIMD_COMPRESSION_H
 
-
 #ifdef _SIMDCOMPRESS
+
+
 
 #include "compression.hh"
 #include "codecfactory.h"
-
 
 using namespace SIMDCompressionLib;
 
@@ -19,18 +19,29 @@ template <typename T>
 class CpuSimd: public Compression<T>
 {
 private:
-    // uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff; // Use 2^32 to transparently deactivate compression.
-    uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
+    uint32_t SIMDCOMPRESSION_THRESHOLD;
+    IntegerCODEC codec;
 public:
     void benchmarkCompression(const T *fq, const int size) const;
     void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize) const;
     void decompress(T *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
-    void verifyCompression(const T *fq, const T *uncompressed_fq_64,
-                                                 size_t uncompressedsize) const;
+    void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
-    inline string name() const;
-    virtual ~CpuSimd();
+    inline string name() const
+    {
+        return "cpusimd";
+    }
+    void CpuSimd()
+    {
+        &codec = *CODECFactory::getFromName("s4-bp128-dm");
+        SIMDCOMPRESSION_THRESHOLD = 512;
+        // Use 0xffffffff (2^32) to transparently deactivate compression.
+        // SIMDCOMPRESSION_THRESHOLD = 0xffffffff;
+    }
+    virtual ~CpuSimd()
+    {
+    }
 };
 
 
@@ -73,7 +84,7 @@ void CpuSimd<T>::benchmarkCompression(const T *fq, const int size) const
 
 template <typename T>
 void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
-                                   size_t &compressedsize) const
+                          size_t &compressedsize) const
 {
     if (size > SIMDCOMPRESSION_THRESHOLD)
     {
@@ -120,7 +131,7 @@ void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
 
 template <typename T>
 void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
-                                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
+                            /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
     if (isCompressed(uncompressedsize, size))
     {
@@ -163,7 +174,7 @@ void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
 
 template <typename T>
 void CpuSimd<T>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
-        const size_t uncompressedsize) const
+                                   const size_t uncompressedsize) const
 {
     if (uncompressedsize > SIMDCOMPRESSION_THRESHOLD)
     {
@@ -175,12 +186,6 @@ template <typename T>
 inline bool CpuSimd<T>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
     return (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize);
-}
-
-template <typename T>
-inline bool CpuSimd<T>::virtual string name() const
-{
-    return "cpusimd";
 }
 
 #endif // _SIMDCOMPRESS
