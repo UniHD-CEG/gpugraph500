@@ -1,13 +1,25 @@
 #ifndef BFS_MULTINODE_CPUSIMD_COMPRESSION_H
 #define BFS_MULTINODE_CPUSIMD_COMPRESSION_H
 
+
+#ifdef _SIMDCOMPRESS
+
 #include "compression.hh"
+#include "codecfactory.h"
+
+
+using namespace SIMDCompressionLib;
+
+using std::string;
+using std::vector;
+using std::equal;
+
 
 template <typename T>
-class CpuSimd: public Compression<typename T>
+class CpuSimd: public Compression<T>
 {
 private:
-    // uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff; // (2^32) transparently deactivate compression.
+    // uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff; // Use 2^32 to transparently deactivate compression.
     uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
 public:
     void benchmarkCompression(const T *fq, const int size) const;
@@ -15,9 +27,9 @@ public:
     void decompress(T *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64,
-                           compressedsizeonst size_t uncompressedsize) const;
+                                                 size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
-    inline bool std::string name() const;
+    inline string name() const;
     virtual ~CpuSimd();
 };
 
@@ -30,28 +42,28 @@ void CpuSimd<typename T>::benchmarkCompression(const T *fq, const int size) cons
         char const *codec_name = "s4-bp128-dm";
         IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
         high_resolution_clock::time_point time_0, time_1;
-        std::vector<uint32_t>  fq_32(fq, fq + size);
-        std::vector<uint32_t>  compressed_fq_32(size + 1024);
-        std::vector<uint32_t>  uncompressed_fq_32(size);
-        std::size_t compressedsize = compressed_fq_32.size();
-        std::size_t uncompressedsize = uncompressed_fq_32.size();
+        vector<uint32_t>  fq_32(fq, fq + size);
+        vector<uint32_t>  compressed_fq_32(size + 1024);
+        vector<uint32_t>  uncompressed_fq_32(size);
+        size_t compressedsize = compressed_fq_32.size();
+        size_t uncompressedsize = uncompressed_fq_32.size();
         time_0 = high_resolution_clock::now();
         codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
         time_1 = high_resolution_clock::now();
         auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
         compressed_fq_32.resize(compressedsize);
         compressed_fq_32.shrink_to_fit();
-        std::vector<T> compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
+        vector<T> compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
         time_0 = high_resolution_clock::now();
         codec.decodeArray(compressed_fq_32.data(), compressed_fq_32.size(), uncompressed_fq_32.data(), uncompressedsize);
         time_1 = high_resolution_clock::now();
         auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
         uncompressed_fq_32.resize(uncompressedsize);
-        std::vector<T> uncompressed_fq_64(uncompressed_fq_32.begin(), uncompressed_fq_32.end());
+        vector<T> uncompressed_fq_64(uncompressed_fq_32.begin(), uncompressed_fq_32.end());
         /**
          * Check validity of results
          */
-        assert(size == uncompressedsize && std::equal(uncompressed_fq_64.begin(), uncompressed_fq_64.end(), fq));
+        assert(size == uncompressedsize && equal(uncompressed_fq_64.begin(), uncompressed_fq_64.end(), fq));
         double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
         double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
         printf("SIMD.codec: %s, c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name, encode_time, decode_time,
@@ -166,9 +178,11 @@ inline bool CpuSimd<typename T>::isCompressed(const size_t originalsize, const s
 }
 
 template <typename T>
-inline bool CpuSimd<typename T>::virtual std::string name() const
+inline bool CpuSimd<typename T>::virtual string name() const
 {
     return "cpusimd";
 }
+
+#endif // _SIMDCOMPRESS
 
 #endif // BFS_MULTINODE_CPUSIMD_COMPRESSION_H
