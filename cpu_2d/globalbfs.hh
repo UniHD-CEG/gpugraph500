@@ -129,9 +129,6 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : st
     owenmask = new MType[mask_size];
     tmpmask = new MType[mask_size];
     rank = _rank;
-#ifdef _COMPRESSION
-    &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
-#endif
 }
 
 /**
@@ -467,6 +464,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
     double comtstart, comtend;
     rowcom = 0;
     colcom = 0;
+#endif
+
+#ifdef _COMPRESSION
+    &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
+    CompressionFactory.getName(&schema);
 #endif
 
 
