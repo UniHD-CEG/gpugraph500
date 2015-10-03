@@ -8,7 +8,7 @@
 //namespace CompressionNamespace
 //{
 
-typedef T long long int;
+// typedef long long int T;
 
 using std::map;
 using std::string;
@@ -16,22 +16,24 @@ using std::shared_ptr;
 using std::cerr;
 using std::endl;
 
-
-static map<string, shared_ptr<Compression<T>>> initializeCompressfactory()
+template <typename T>
+struct InitializeCompressFactory
 {
-    map <string, shared_ptr<Compression<T>>> schemes;
-    // SIMD compression algorthm performed on CPU
-    schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
-    // SIMT compression algorthm performed on GPU
-    // schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
+    static map<string, shared_ptr<Compression<T>>> initializeCompressfactory()
+    {
+        map <string, shared_ptr<Compression<T>>> schemes;
+        // SIMD compression algorthm performed on CPU
+        schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
+        // SIMT compression algorthm performed on GPU
+        // schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
 
-    return schemes;
-}
+        return schemes;
+    }
+};
 
 
 
-
-
+template <typename T>
 class CompressionFactory
 {
 public:
@@ -49,8 +51,10 @@ public:
         return compressionschemes[name];
     }
 };
-
-map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionschemes = initializeCompressfactory();
+template <typename T>
+map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionschemes =
+    InitializeCompressFactory<T>::initializeCompressfactory();
+template <typename T>
 shared_ptr<Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<Compression<T>>(nullptr);
 
 //} // CompresionNamespace
