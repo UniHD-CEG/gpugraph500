@@ -22,7 +22,7 @@ template <typename T>
 class CpuSimd: public Compression<T>
 {
 private:
-    uint32_t SIMDCOMPRESSION_THRESHOLD;
+    uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
     IntegerCODEC &codec;
 public:
     void benchmarkCompression(const T *fq, const int size) const;
@@ -40,9 +40,9 @@ public:
 };
 
 template <typename T>
-void CpuSimd<T>::CpuSimd()
+CpuSimd<T>::CpuSimd()
 {
-    &codec = *CODECFactory::getFromName("s4-bp128-dm");
+    // &codec = *CODECFactory::getFromName("s4-bp128-dm");
     SIMDCOMPRESSION_THRESHOLD = 512;
     // Use 0xffffffff (2^32) to transparently deactivate compression.
     // SIMDCOMPRESSION_THRESHOLD = 0xffffffff;
@@ -104,6 +104,7 @@ void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
         {
             fq_32[i] = static_cast<uint32_t>(fq_64[i]);
         }
+        IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
         codec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
         // if this condition is met it can not be known whether or not there has been a compression.
         // Todo: find solution
@@ -150,6 +151,7 @@ void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
         {
             compressed_fq_32[i] = static_cast<uint32_t>(compressed_fq_64[i]);
         }
+        IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
         if (*uncompressed_fq_64 == NULL)
