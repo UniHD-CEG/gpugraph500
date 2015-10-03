@@ -23,9 +23,9 @@ private:
     IntegerCODEC codec;
 public:
     void benchmarkCompression(const T *fq, const int size) const;
-    void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize) const;
+    void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
     void decompress(T *compressed_fq_64, const int size,
-                    /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
+                    /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize);
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
     inline string name() const;
@@ -87,7 +87,7 @@ void CpuSimd<T>::benchmarkCompression(const T *fq, const int size) const
 
 template <typename T>
 void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
-                          size_t &compressedsize) const
+                          size_t &compressedsize)
 {
     if (size > SIMDCOMPRESSION_THRESHOLD)
     {
@@ -134,7 +134,7 @@ void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
 
 template <typename T>
 void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
-                            /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
+                            /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize)
 {
     if (isCompressed(uncompressedsize, size))
     {
