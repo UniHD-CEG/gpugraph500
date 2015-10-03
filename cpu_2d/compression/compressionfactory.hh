@@ -5,8 +5,8 @@
 #include "compression.hh"
 #include "cpusimd.hh"
 
-namespace CompressionNamespace
-{
+//namespace CompressionNamespace
+//{
 
 
 using std::map;
@@ -15,12 +15,12 @@ using std::shared_ptr;
 using std::cerr;
 using std::endl;
 
-template <typename T>
-static map<string, shared_ptr<Compression<T>>> initializefactory()
+template <typename Tp>
+static map<string, shared_ptr<Compression<Tp>>> initializefactory()
 {
-    map <string, shared_ptr<Compression<T>>> schemes;
+    map <string, shared_ptr<Compression<Tp>>> schemes;
     // SIMD compression algorthm performed on CPU
-    schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
+    schemes["cpusimd"] = shared_ptr<Compression<Tp>>(new CpuSimd<Tp>());
     // SIMT compression algorthm performed on GPU
     // schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
 
@@ -65,10 +65,10 @@ public:
     }
 };
 template <typename T>
-map<string, shared_ptr<CompressionNamespace::Compression<T>>> CompressionFactory<T>::compressionschemes = CompressionNamespace::initializefactory();
+map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionschemes = initializefactory();
 template <typename T>
-shared_ptr<CompressionNamespace::Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<CompressionNamespace::Compression<T>>(nullptr);
+shared_ptr<Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<Compression<T>>(nullptr);
 
-} // CompresionNamespace
+//} // CompresionNamespace
 
 #endif // BFS_MULTINODE_COMPRESSIONFACTORY_H
