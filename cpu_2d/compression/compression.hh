@@ -1,7 +1,7 @@
 #ifndef BFS_MULTINODE_COMPRESSION_H
 #define BFS_MULTINODE_COMPRESSION_H
 
-
+using std::string;
 
 template <typename T>
 class Compression
@@ -14,11 +14,11 @@ public:
                             /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const = 0;
     virtual void verifyCompression(const T *fq, const T *uncompressed_fq_64,
                                    const size_t uncompressedsize) const = 0;
-    virtual inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const = 0;
+    virtual bool isCompressed(const size_t originalsize, const size_t compressedsize) const = 0;
     virtual ~Compression()
     {
     }
-    virtual std::string name() const = 0;
+    virtual string name() const = 0;
 };
 
 #endif // BFS_MULTINODE_COMPRESSION_H
