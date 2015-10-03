@@ -158,7 +158,7 @@ enable_simd_compression_verify            :="no"
 use_cuda                                  :="yes"
 debug                                     :="no"
 debug_code                                :="no"
-quiet_output                              :="no"
+quiet_output                              :="yes"
 code_optimization_level                   :="O4"
 code_optimization_flags                   :=-funroll-loops -flto
 

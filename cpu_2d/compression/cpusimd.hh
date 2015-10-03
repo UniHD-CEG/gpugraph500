@@ -35,7 +35,7 @@ public:
 
 
 template <typename T>
-void CpuSimd<typename T>::benchmarkCompression(const T *fq, const int size) const
+void CpuSimd<T>::benchmarkCompression(const T *fq, const int size) const
 {
     if (size > SIMDCOMPRESSION_THRESHOLD)
     {
@@ -72,7 +72,7 @@ void CpuSimd<typename T>::benchmarkCompression(const T *fq, const int size) cons
 }
 
 template <typename T>
-void CpuSimd<typename T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
+void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
                                    size_t &compressedsize) const
 {
     if (size > SIMDCOMPRESSION_THRESHOLD)
@@ -119,7 +119,7 @@ void CpuSimd<typename T>::compress(T *fq_64, const size_t &size, T **compressed_
 }
 
 template <typename T>
-void CpuSimd<typename T>::decompress(T *compressed_fq_64, const int size,
+void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
                                      /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
     if (isCompressed(uncompressedsize, size))
@@ -162,7 +162,7 @@ void CpuSimd<typename T>::decompress(T *compressed_fq_64, const int size,
 }
 
 template <typename T>
-void CpuSimd<typename T>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
+void CpuSimd<T>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
         const size_t uncompressedsize) const
 {
     if (uncompressedsize > SIMDCOMPRESSION_THRESHOLD)
@@ -172,13 +172,13 @@ void CpuSimd<typename T>::verifyCompression(const T *fq, const T *uncompressed_f
 }
 
 template <typename T>
-inline bool CpuSimd<typename T>::isCompressed(const size_t originalsize, const size_t compressedsize) const
+inline bool CpuSimd<T>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
     return (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize);
 }
 
 template <typename T>
-inline bool CpuSimd<typename T>::virtual string name() const
+inline bool CpuSimd<T>::virtual string name() const
 {
     return "cpusimd";
 }
