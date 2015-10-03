@@ -11,6 +11,7 @@ using std::shared_ptr;
 using std::cerr;
 using std::endl;
 
+template <typename T>
 static map<string, shared_ptr<Compression<T>>> initializefactory()
 {
     map <string, shared_ptr<Compression<T>>> schemes;
@@ -32,7 +33,7 @@ public:
     static map<string, shared_ptr<Compression<T>>> compressionschemes;
     static shared_ptr<Compression<T>> defaultptr;
 
-    static string getName(Compression &compression)
+    static string getName(Compression<T> &compression)
     {
         for (auto i = compressionschemes.begin(); i != compressionschemes.end() ; ++i)
         {
@@ -59,8 +60,10 @@ public:
         return compressionschemes[name];
     }
 };
-map<string, shared_ptr<Compression<T>>> CompressionFactory::compressionschemes = initializefactory();
-shared_ptr<Compression<T>> CompressionFactory::defaultptr = shared_ptr<Compression>(nullptr);
+template <typename T>
+map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionschemes = initializefactory();
+template <typename T>
+shared_ptr<Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<Compression<T>>(nullptr);
 
 
 #endif // BFS_MULTINODE_COMPRESSIONFACTORY_H
