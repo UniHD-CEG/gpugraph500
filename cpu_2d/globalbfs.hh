@@ -40,7 +40,7 @@ class GlobalBFS
 {
 private:
 #ifdef _COMPRESSION
-    Compression schema;
+    Compression<FQ_T> &schema;
 #endif
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
@@ -48,23 +48,6 @@ private:
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
 
-// Todo: export-to-class
-#ifdef _SIMDCOMPRESS
-
-    /**
-     * SIMD integration calls
-     *
-     *
-     */
-    void SIMDbenchmarkCompression(const FQ_T *fq, const int size, const int rank) const;
-    void SIMDverifyCompression(const FQ_T *fq, const FQ_T *uncompressed_fq_64, const size_t uncompressedsize) const;
-    void SIMDcompression(FQ_T *fq_64, const size_t &size, FQ_T **compressed_fq_64,
-                         size_t &compressedsize) const;
-    void SIMDdecompression(FQ_T *compressed_fq_64, const int size, FQ_T **uncompressed_fq_64,
-                           size_t &uncompressedsize) const;
-    inline bool SIMDthereWasCompression(const size_t originalsize, const size_t compressedsize) const;
-
-#endif
 
 #ifdef INSTRUMENTED
     std::size_t getTotalSystemMemory();
@@ -147,7 +130,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : st
     tmpmask = new MType[mask_size];
     rank = _rank;
 #ifdef _COMPRESSION
-    &schema = *CompressionFactory::getFromName("cpusimd");
+    &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
 #endif
 }
 
@@ -525,7 +508,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
     int iter = 0;
 
 
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
     std::size_t uncompressedsize, compressedsize;
 #endif
 
@@ -688,7 +671,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
                 int originalsize;
                 FQ_T *startaddr;
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
                 FQ_T *compressed_fq_64, *uncompressed_fq_64;
 #endif
 
@@ -702,30 +685,29 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 lqueue += tend - tstart;
 #endif
 
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
 
-#ifdef _SIMDCOMPRESSBENCHMARK
-                SIMDbenchmarkCompression(startaddr, originalsize, rank);
+#ifdef _COMPRESSIONBENCHMARK
+                schema.benchmarkCompression(startaddr, originalsize);
 #endif
-
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                SIMDcompression(startaddr, uncompressedsize, &compressed_fq_64, compressedsize);
+                schema.compress(startaddr, uncompressedsize, &compressed_fq_64, compressedsize);
 
 
-#ifdef _SIMDCOMPRESSVERIFY
-                SIMDdecompression(compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
-                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+#ifdef _COMPRESSIONVERIFY
+                schema.decompress(compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
+                schema.verifyCompression(startaddr, uncompressed_fq_64, originalsize);
 #endif
 
 #endif
 
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
 
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
 
-#ifdef _SIMDCOMPRESSVERIFY
+#ifdef _COMPRESSIONVERIFY
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
@@ -735,13 +717,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                SIMDdecompression(compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
+                schema.decompress(compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
 
-#ifdef _SIMDCOMPRESSVERIFY
-                if (SIMDthereWasCompression(originalsize, compressedsize))
+#ifdef _COMPRESSIONVERIFY
+                if (schema.isCompressed(originalsize, compressedsize))
                 {
                     assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
                 }
@@ -750,13 +732,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                     assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
                 }
                 assert(std::is_sorted(uncompressed_fq_64, uncompressed_fq_64 + uncompressedsize));
-                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+                schema.verifyCompression(startaddr, uncompressed_fq_64, originalsize);
 #endif
 
                 // Todo: Save (G/C)PU cycles. decompression not needed for MPI rank Root. The original array is available.
                 /*
                 if (rank != root_rank){
-                    SIMDdecompression(compressed_fq_64, compressedsize, startaddr, uncompressedsize);
+                    schema.decompress(compressed_fq_64, compressedsize, startaddr, uncompressedsize);
                     delete[] compressed_fq_64;
                 }
                 */
@@ -768,14 +750,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #endif
 
-#ifdef _SIMDCOMPRESS
-                if (SIMDthereWasCompression(originalsize, compressedsize))
+#ifdef _COMPRESSION
+                if (schema.isCompressed(originalsize, compressedsize))
                 {
                     if (uncompressed_fq_64 != NULL)
                     {
@@ -800,7 +782,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
             {
 
 
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
 
                 FQ_T *compressed_fq_64 = NULL, *uncompressed_fq_64 = NULL;
                 int originalsize, compressedsize;
@@ -809,7 +791,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 assert(originalsize <= fq_64_length);
                 compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
 
-#ifdef _SIMDCOMPRESSVERIFY
+#ifdef _COMPRESSIONVERIFY
                 FQ_T *startaddr = NULL;
                 startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
                 if (startaddr == NULL)
@@ -824,15 +806,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
                 memcpy(compressed_fq_64, fq_64, compressedsize * sizeof(FQ_T));
                 uncompressedsize = static_cast<size_t>(originalsize);
-                SIMDdecompression(compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
-                if (SIMDthereWasCompression(originalsize, compressedsize))
+                schema.decompress(compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
+                if (schema.isCompressed(originalsize, compressedsize))
                 {
                     static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq_64, originalsize);
                 }
 
-#ifdef _SIMDCOMPRESSVERIFY
+#ifdef _COMPRESSIONVERIFY
                 assert(std::is_sorted(fq_64, fq_64 + originalsize));
-                SIMDverifyCompression(startaddr, fq_64, originalsize);
+                schema.verifyCompression(startaddr, fq_64, originalsize);
 #endif
 
 #else
@@ -854,8 +836,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 lqueue += tend - tstart;
 #endif
 
-#ifdef _SIMDCOMPRESS
-                if (SIMDthereWasCompression(originalsize, compressedsize))
+#ifdef _COMPRESSION
+                if (schema.isCompressed(originalsize, compressedsize))
                 {
                     if (uncompressed_fq_64 != NULL)
                     {
@@ -866,7 +848,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                         free(compressed_fq_64);
                     }
 
-#ifdef _SIMDCOMPRESSVERIFY
+#ifdef _COMPRESSIONVERIFY
                     if (startaddr != NULL)
                     {
                         free(startaddr);
@@ -881,7 +863,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                         free(compressed_fq_64);
                     }
 
-#ifdef _SIMDCOMPRESSVERIFY
+#ifdef _COMPRESSIONVERIFY
                     if (startaddr != NULL)
                     {
                         free(startaddr);
@@ -918,101 +900,5 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifdef _SIMDCOMPRESS
-/**
- *
- * TODO: extract to compression factory
- * simd-cpu-compression
- *
- *
- *
- */
-
-/**
- * Benchmark compression/decompression.
- *
- */
-template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(const FQ_T *fq, const int size,
-        const int _rank) const
-{
-}
-
-/**
- * SIMD compression.
- *
- */
-template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(FQ_T *fq_64, const size_t &size,
-        FQ_T **compressed_fq_64,
-        size_t &compressedsize) const
-{
-}
-
-/**
- * SIMD decompression.
- *
- */
-template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(FQ_T *compressed_fq_64,
-        const int size,
-        /*Out*/ FQ_T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
-{
-}
-
-/**
- * SIMD compression/decompression verification.
- *
- */
-template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(const FQ_T *fq, const FQ_T *uncompressed_fq_64,
-        const size_t uncompressedsize) const
-{
-}
-
-/**
- * SIMDthereWasCompression.
- * returns whether or not there was compression.
- */
-template<typename Derived, typename FQ_T, typename MType, typename STORE>
-inline bool GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDthereWasCompression(const size_t originalsize,
-        const size_t compressedsize) const
-{
-}
-#endif
 
 #endif // GLOBALBFS_HH
