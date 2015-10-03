@@ -35,21 +35,18 @@ public:
     /**
      * Constructor
      */
-    CpuSimd()
-    {
-        &codec = *CODECFactory::getFromName("s4-bp128-dm");
-        SIMDCOMPRESSION_THRESHOLD = 512;
-        // Use 0xffffffff (2^32) to transparently deactivate compression.
-        // SIMDCOMPRESSION_THRESHOLD = 0xffffffff;
-    }
-    /**
-     * Destructor
-     */
-    virtual ~CpuSimd()
-    {
-    }
+    CpuSimd();
+    ~CpuSimd();
 };
 
+template <typename T>
+void CpuSimd<T>::CpuSimd()
+{
+    &codec = *CODECFactory::getFromName("s4-bp128-dm");
+    SIMDCOMPRESSION_THRESHOLD = 512;
+    // Use 0xffffffff (2^32) to transparently deactivate compression.
+    // SIMDCOMPRESSION_THRESHOLD = 0xffffffff;
+}
 
 template <typename T>
 void CpuSimd<T>::benchmarkCompression(const T *fq, const int size) const
