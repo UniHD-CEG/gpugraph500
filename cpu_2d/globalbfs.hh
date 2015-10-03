@@ -516,12 +516,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 // 2) Local expansion
     int iter = 0;
 
-/*
+
 #ifdef _SIMDCOMPRESS
-    IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
+    //IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
     std::size_t uncompressedsize, compressedsize;
 #endif
-*/
 
     /**
      * Todo: refactor-extract
