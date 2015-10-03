@@ -27,7 +27,7 @@ static map<string, shared_ptr<Compression>> initializefactory()
 
 
 
-class Factory
+class CompressionFactory
 {
 public:
     static map<string, shared_ptr<Compression>> compressionschemes;
@@ -60,8 +60,8 @@ public:
         return compressionschemes[name];
     }
 };
-map<string, shared_ptr<Compression>> Factory::compressionschemes = initializefactory();
-shared_ptr<Compression> Factory::defaultptr = shared_ptr<Compression>(nullptr);
+map<string, shared_ptr<Compression>> CompressionFactory::compressionschemes = initializefactory();
+shared_ptr<Compression> CompressionFactory::defaultptr = shared_ptr<Compression>(nullptr);
 
 
 #endif // BFS_MULTINODE_COMPRESSIONFACTORY_H
