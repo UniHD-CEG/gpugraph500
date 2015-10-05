@@ -25,7 +25,7 @@ class CpuSimd: public Compression<T>
 {
 private:
 public:
-    void benchmarkCompression(const T *fq, const int size) const;
+    void benchmarkCompression(T *fq, const int size);
     void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
     void decompress(T *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize);
@@ -50,7 +50,7 @@ CpuSimd<T>::CpuSimd()
 */
 
 template <typename T>
-void CpuSimd<T>::benchmarkCompression(const T *fq, const int size) const
+void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
 {
     if (size > SIMDCOMPRESSION_THRESHOLD)
     {

@@ -11,7 +11,7 @@ class NoCompression: public Compression<T>
 {
 private:
 public:
-    void benchmarkCompression(const T *fq, const int size) const;
+    void benchmarkCompression(T *fq, const int size);
     void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
     void decompress(T *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize);
@@ -21,27 +21,25 @@ public:
 };
 
 template <typename T>
-void NoCompression<T>::benchmarkCompression(const T *fq, const int size) const
+void NoCompression<T>::benchmarkCompression(T *fq, const int size)
 {
 
-    size_t compressedsize, uncompressedsize;
-    T *compressed_fq_64, **uncompressed_fq_64, *fq_copy;
-    memcpy(fq_clone, fq, size * sizeof(T));
+    size_t compressedsize, uncompressedsize = static_cast<size_t>(size);
+    T *compressed_fq_64, *uncompressed_fq_64;
     high_resolution_clock::time_point time_0, time_1;
     time_0 = high_resolution_clock::now();
-    compress(fq_clone, size, compressed_fq_64, compressedsize);
+    compress(fq, uncompressedsize, &compressed_fq_64, compressedsize);
     time_1 = high_resolution_clock::now();
     auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
-
     time_0 = high_resolution_clock::now();
-    decompress(compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+    decompress(compressed_fq_64, compressedsize, &uncompressed_fq_64, uncompressedsize);
     time_1 = high_resolution_clock::now();
     auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
 
     /**
      * Check validity of results
      */
-    verifyCompression(fq_clone, uncompressed_fq_64, uncompressedsize);
+    verifyCompression(fq, uncompressed_fq_64, uncompressedsize);
     double compressratio = 0.0;
     printf("No-Compression: c/d: %04ld/%04ldus, %02.3f%% gained\n", encode_time, decode_time, compressratio);
 
