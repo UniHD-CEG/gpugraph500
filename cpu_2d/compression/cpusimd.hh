@@ -17,13 +17,13 @@ using std::string;
 using std::vector;
 using std::equal;
 
+IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
+uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
 
 template <typename T>
 class CpuSimd: public Compression<T>
 {
 private:
-    uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
-    IntegerCODEC &codec;
 public:
     void benchmarkCompression(const T *fq, const int size) const;
     void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
@@ -33,7 +33,7 @@ public:
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
     inline string name() const;
     /**
-     * Constructor
+     * constructor & destructor
      */
     //CpuSimd();
     //~CpuSimd();
