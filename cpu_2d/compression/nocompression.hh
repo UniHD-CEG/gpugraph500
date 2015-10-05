@@ -1,17 +1,10 @@
 #ifndef BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H
 #define BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H
 
-
-
 #include "compression.hh"
 #include <chrono>
 
 using namespace std::chrono;
-
-using std::string;
-using std::vector;
-using std::equal;
-
 
 template <typename T>
 class NoCompression: public Compression<T>
@@ -30,8 +23,27 @@ public:
 template <typename T>
 void NoCompression<T>::benchmarkCompression(const T *fq, const int size) const
 {
+
+    size_t compressedsize, uncompressedsize;
+    T *compressed_fq_64, *uncompressed_fq_64;
+    high_resolution_clock::time_point time_0, time_1;
+    time_0 = high_resolution_clock::now();
+    compress(fq, size, compressed_fq_64, compressedsize);
+    time_1 = high_resolution_clock::now();
+    auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
+
+    time_0 = high_resolution_clock::now();
+    decompress(compressed_fq_64, compressedsize, uncompressed_fq_64, uncompressedsize);
+    time_1 = high_resolution_clock::now();
+    auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
+
+    /**
+     * Check validity of results
+     */
+    assert(size == uncompressedsize);
+    verifyCompression(fq, uncompressed_fq_64);
     double compressratio = 0.0;
-    printf(" c/d ratio: %02.3f%% gained\n", compressratio);
+    printf("No-Compression: c/d: %04ld/%04ldus, %02.3f%% gained\n", encode_time, decode_time, compressratio);
 
 }
 
@@ -55,12 +67,13 @@ template <typename T>
 void NoCompression<T>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
         const size_t uncompressedsize) const
 {
+    assert(memcmp(fq, uncompressed_fq_64, uncompressedsize * sizeof(T)) == 0);
 }
 
 template <typename T>
 inline bool NoCompression<T>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
-    return false;
+    return (originalsize != compressedsize);
 }
 
 template <typename T>

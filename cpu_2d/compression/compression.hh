@@ -21,7 +21,7 @@ public:
     virtual bool isCompressed(const size_t originalsize, const size_t compressedsize) const = 0;
     virtual ~Compression()
     {
-    }
+    };
     virtual string name() const = 0;
 };
 
