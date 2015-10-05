@@ -399,33 +399,38 @@ invalid_level
 - Version 1.0
 - Last revision: 2nd November 2015
 
-## Hacking this code
+## Editing this code
 
-- Compilable code can be found on the `cpu_2d/` directory
-- The `INTEGRATION_README` files explain the files on each directory.
-- `astyle` can be used to format the code easily. Without time consumming formattings.
+- Compilable code is located on the `cpu_2d/` directory.
+- The `INTEGRATION_README` files contain information about each directory.
+- The command `astyle` (optional) may be used to easily format the code. Avoids time consumming changes, and makes the code structure uniform.
 
-1. Install `astyle`:
+1- Installing `astyle`:
 ```
-debian/ ubuntu:
+$ # On debian/ ubuntu:
 $ sudo apt-get install astyle
 
-mac:
+$ # On Mac:
 $ brew install astyle
 ```
 
-2. run:
+2- run:
 ```
-$ astyle  --style=allman --recursive --options=~/CHANGEME/bfs_multinode/cpu_2d/astyle.conf ~/CHANGEME/bfs_multinode/\*.cpp ~/CHANGEME/bfs_multinode/\*.h ~/CHANGEME/bfs_multinode/\*.hpp ~/CHANGEME/bfs_multinode/\*.hh ~/CHANGEME/bfs_multinode/\*.cu ~/CHANGEME/bfs_multinode/\*.cuh
+$ # Create a link to the script (Only once)
+$ cd cpu_2d
+$ ln -s ../scripts/astyle.sh ./
+
+$ # at any time:
+$ cd cpu_2d
+$ ./astyle.sh
+
 ```
 
 
 ## License
-This code contains a subset of Duane Merrill's BC40 repository of GPU-related functions, including his BFS implementation used in the paper, Scalable Graph Traversals.
-
-SIMDcompressionAndIntersection is licenced under Apache Licence.
-
-All copyrights reserved to their original owners.
+- This code contains a subset of Duane Merrill's BC40 repository of GPU-related functions, including his BFS implementation used in the paper, Scalable Graph Traversals.
+- SIMDcompressionAndIntersection is licenced under Apache Licence 2.0.
+- All copyrights reserved to their original owners.
 
 ## External Resources
 [https://www.rstudio.com/products/RStudio/](https://www.rstudio.com/products/RStudio/)
