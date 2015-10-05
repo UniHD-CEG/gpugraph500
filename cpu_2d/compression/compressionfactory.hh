@@ -15,18 +15,14 @@ using std::cerr;
 using std::endl;
 
 template <typename T>
-struct InitializeCompressFactory
+static map<string, shared_ptr<Compression<T>>> initializeCompressfactory(T)
 {
-    static map<string, shared_ptr<Compression<T>>> initializeCompressfactory()
-    {
-        map <string, shared_ptr<Compression<T>>> schemes;
-        schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
-        //schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
+    map <string, shared_ptr<Compression<T>>> schemes;
+    schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
+    //schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
 
-        return schemes;
-    }
+    return schemes;
 };
-
 
 
 template <typename T>
@@ -43,13 +39,12 @@ public:
         {
             cerr << "name " << name << " does not refer to a Compression Scheme." << endl;
             return defaultptr;
-        }
+        };
         return compressionschemes[name];
     }
 };
 template <typename T>
-map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionschemes =
-    InitializeCompressFactory<T>::initializeCompressfactory();
+map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionschemes = initializeCompressfactory<T>();
 template <typename T>
 shared_ptr<Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<Compression<T>>(nullptr);
 

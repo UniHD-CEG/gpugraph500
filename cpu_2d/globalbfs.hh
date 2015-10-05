@@ -32,10 +32,10 @@ using namespace std::chrono;
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template<typename Derived,
+template < typename Derived,
          typename FQ_T,  // Queue Type
          typename MType, // Bitmap mask
-         typename STORE> //Storage of Matrix
+         typename STORE > //Storage of Matrix
 class GlobalBFS
 {
 private:

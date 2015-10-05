@@ -549,8 +549,8 @@ int main()
     testSelectSimple<MaskedVByte<true>>();
     testSelectSimple<VariableByte<true>>();
     testSelectSimple<VByte<true>>();
-    testSelectSimple<SIMDBinaryPacking<SIMDIntegratedBlockPacker<
-    RegularDeltaSIMD, true>>>();
+    testSelectSimple < SIMDBinaryPacking < SIMDIntegratedBlockPacker <
+    RegularDeltaSIMD, true >>> ();
     testSelectSimple<StreamVByteD1>();
 
     testSelectSimpleOdd<SIMDFrameOfReference>();
@@ -569,8 +569,8 @@ int main()
     testSelectAdvanced<MaskedVByte<true>>();
     testSelectAdvanced<VariableByte<true>>();
     testSelectAdvanced<VByte<true>>();
-    testSelectAdvanced<SIMDBinaryPacking<SIMDIntegratedBlockPacker<
-    RegularDeltaSIMD, true>>>();
+    testSelectAdvanced < SIMDBinaryPacking < SIMDIntegratedBlockPacker <
+    RegularDeltaSIMD, true >>> ();
     testSelectAdvanced<StreamVByteD1>();
 
     testFindSimple<SIMDFrameOfReference>();
@@ -580,8 +580,8 @@ int main()
     testFindSimple<MaskedVByte<true>>();
     testFindSimple<VariableByte<true>>();
     testFindSimple<VByte<true>>();
-    testFindSimple<SIMDBinaryPacking<SIMDIntegratedBlockPacker<
-    RegularDeltaSIMD, true>>>();
+    testFindSimple < SIMDBinaryPacking < SIMDIntegratedBlockPacker <
+    RegularDeltaSIMD, true >>> ();
     testFindSimple<StreamVByteD1>();
 
     testFindAdvanced<SIMDFrameOfReference>();
@@ -591,8 +591,8 @@ int main()
     testFindAdvanced<MaskedVByte<true>>();
     testFindAdvanced<VariableByte<true>>();
     testFindAdvanced<VByte<true>>();
-    testFindAdvanced<SIMDBinaryPacking<SIMDIntegratedBlockPacker<
-    RegularDeltaSIMD, true>>>();
+    testFindAdvanced < SIMDBinaryPacking < SIMDIntegratedBlockPacker <
+    RegularDeltaSIMD, true >>> ();
     testFindAdvanced<StreamVByteD1>();
 
     for (string n : IntersectionFactory::allNames())
