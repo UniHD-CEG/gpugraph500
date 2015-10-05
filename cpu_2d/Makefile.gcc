@@ -478,40 +478,40 @@ cpusimd.o: compression/cpusimd.hh compression/cpusimd.cpp
 	@echo "    CCX       $@"
 
 utils.o: generator/utils.c generator/splittable_mrg.h generator/graph_generator.h generator/user_settings.h generator/utils.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPAT) -o $@ generator/utils.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ generator/utils.c
 	@echo "    MPICC     $@"
 
 splittable_mrg.o: generator/splittable_mrg.c generator/mod_arith.h generator/user_settings.h generator/mod_arith_64bit.h generator/mod_arith_32bit.h \
 		generator/splittable_mrg.h generator/mrg_transitions.c
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPAT) -o $@ generator/splittable_mrg.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ generator/splittable_mrg.c
 	@echo "    MPICC     $@"
 
 make_graph.o: generator/make_graph.c generator/graph_generator.h generator/user_settings.h generator/utils.h generator/splittable_mrg.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPAT) -o $@ generator/make_graph.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ generator/make_graph.c
 	@echo "    MPICC     $@"
 
 graph_generator.o: generator/graph_generator.c generator/user_settings.h generator/splittable_mrg.h generator/graph_generator.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPAT) -o $@ generator/graph_generator.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ generator/graph_generator.c
 	@echo "    MPICC     $@"
 
 simplecpubfs.o: simplecpubfs.cpp simplecpubfs.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPAT) -o $@ simplecpubfs.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) -o $@ simplecpubfs.cpp
 	@echo "    MPICXX    $@"
 
 onesided.o: validate/onesided.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPAT) -o $@ validate/onesided.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ validate/onesided.c
 	@echo "    MPICC     $@"
 
 onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPAT) -o $@ validate/onesided_emul.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ validate/onesided_emul.c
 	@echo "    MPICC     $@"
 
 bitlevelfunctions.o: bitlevelfunctions.h bitlevelfunctions.cpp
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPAT) -o $@ bitlevelfunctions.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) -o $@ bitlevelfunctions.cpp
 	@echo "    MPICXX    $@"
 
 cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPAT) -o $@ cpubfs_bin.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) -o $@ cpubfs_bin.cpp
 	@echo "    MPICXX    $@"
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
