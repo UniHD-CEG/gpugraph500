@@ -24,8 +24,12 @@ template<class T>
 void vreduce(std::function<void(T, long, T *, int)>
              &reduce, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
              std::function<void(T, long, T *&, int &)> &get, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
-             //std::function<void(T, long, T*&, int& )>& compress, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
-             //std::function<void(T, long, T*&, int& )>& decompress, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
+#ifdef _COMPRESSION
+             std::function<void(T *, const size_t &, T **, size_t &)>
+             &compress, //void (*compress)(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize),
+             //std::function < void(T *, const int,/*Out*/T **, /*InOut*/size_t &) >
+             //&decompress, //void (*decompress)(T *compressed_fq_64, const int size,/*Out*/T **uncompressed_fq_64, /*InOut*/size_t &uncompressedsize),
+#endif
              T *recv_buff,
              int &rsize, // size of the final result
              int ssize,  //size of the slice

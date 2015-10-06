@@ -624,7 +624,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
             std::bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
                       static_cast<Derived *>(this), _1, _2, _3, _4);
 
+#ifdef _COMPRESSION
+        std::function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress =
+            schema.compress;
+#endif
+
         vreduce(reduce, get,
+#ifdef _COMPRESSION
+                compress,
+                //schema.decompress,
+#endif
                 fq_64,
                 _outsize,
                 store.getLocColLength(),
