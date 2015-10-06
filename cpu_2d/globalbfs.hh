@@ -33,6 +33,10 @@ using std::function;
 using std::bind;
 using std::vector;
 
+// delete
+#include <typeinfo>
+#include <cxxabi.h>
+
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
@@ -49,6 +53,7 @@ private:
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
 
+    const std::string demangle(const char *name);
 
 #ifdef INSTRUMENTED
     std::size_t getTotalSystemMemory();
@@ -91,6 +96,7 @@ protected:
     void generatOwenMask();
 
     void bfsMemCpy(FQ_T *&dst, FQ_T *src, size_t size);
+
 
 public:
     /**
@@ -612,6 +618,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 
+
+
+
+
         static_cast<Derived *>(this)->getBackOutqueue();
 
 #ifdef INSTRUMENTED
@@ -630,12 +640,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 #ifdef _COMPRESSION
         //std::function <void (FQ_T &, const size_t &, FQ_T &, size_t &)>
+        //
+
+// GlobalBFS<CUDA_BFS, long long, unsigned char, DistMatrix2d<long long, unsigned int, true, 1, true> >::runBFS(long long, double&, double&, double&, double&, double&)::{lambda(long long*, unsigned long, long long**, unsigned long&)
+
         auto compress_fn = [&schema](FQ_T * a, const size_t b, FQ_T **c, size_t & d)
         {
             schema.compress(a, b, c, d);
         };
 
-        std::cout << typeid(compress_fn).name() << std::endl;
+
+        std::cout << demangle(typeid(compress_fn).name()) << std::endl;
 
 //        std::function < void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &) > decompress_fn =
 //            [&schema](FQ_T * a, const int b, FQ_T **c, size_t d)
@@ -922,5 +937,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 }
 
 
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+const std::string GlobalBFS<Derived, FQ_T, MType, STORE>::demangle(const char *name)
+{
+    int status = -4;
+    char *res = abi::__cxa_demangle(name, NULL, NULL, &status);
+    const char *const demangled_name = (status == 0) ? res : name;
+    std::string ret_val(demangled_name);
+    free(res);
+    return ret_val;
+}
 
 #endif // GLOBALBFS_HH
