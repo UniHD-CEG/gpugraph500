@@ -644,9 +644,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 // GlobalBFS<CUDA_BFS, long long, unsigned char, DistMatrix2d<long long, unsigned int, true, 1, true> >::runBFS(long long, double&, double&, double&, double&, double&)::{lambda(long long*, unsigned long, long long**, unsigned long&)
 
-        auto compress_fn = [&schema](FQ_T * a, const size_t b, FQ_T **c, size_t & d)
+        auto compress_fn = [&schema](FQ_T * a, const size_t & b, FQ_T **c, size_t & d)
         {
-            schema.compress(a, b, c, d);
+            schema.compress(a, b, &c, d);
         };
 
 
