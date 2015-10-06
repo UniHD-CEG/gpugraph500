@@ -625,14 +625,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                       static_cast<Derived *>(this), _1, _2, _3, _4);
 
 #ifdef _COMPRESSION
-        std::function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress =
-            std::bind(void (shared_ptr<Compression<FQ_T>>)(&(schema.compress)), _1, _2, _3, _4);
+        // std::function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress =
+        //std::function <void (FQ_T *, const size_t &, FQ_T **, size_t &)> compress_fn
+        std::function <void (FQ_T *, const size_t &, FQ_T **, size_t &)> compress_fn =
+                [&object](FQ_T *a, const size_t &b, FQ_T **c, size_t &d) {
+                    return object.compress(a,b,&c,d);
+                };
+        // auto compress_fn = std::bind(&schema.compress, _1, _2, _3, _4);
 #endif
 
         vreduce(reduce, get,
 #ifdef _COMPRESSION
-                compress,
-                //schema.decompress,
+                //compress_fn,
+                //decompress_fn,
 #endif
                 fq_64,
                 _outsize,
