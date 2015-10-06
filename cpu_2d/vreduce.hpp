@@ -25,10 +25,10 @@ void vreduce(std::function<void(T, long, T *, int)>
              &reduce, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
              std::function<void(T, long, T *&, int &)> &get, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
 #ifdef _COMPRESSION
-             std::function<void(T *, const size_t &, T **, size_t &)>
-             &compress,
-             std::function < void(T *, const int,/*Out*/T **, /*InOut*/size_t &) >
-             &decompress,
+             //std::function<void(T *, const size_t &, T **, size_t &)>
+             //&compress,
+             //std::function < void(T *, const int,/*Out*/T **, /*InOut*/size_t &) >
+             //&decompress,
 #endif
              T *recv_buff,
              int &rsize, // size of the final result
