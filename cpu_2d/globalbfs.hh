@@ -626,7 +626,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 #ifdef _COMPRESSION
         std::function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress =
-            schema.compress;
+            std::bind(void (shared_ptr<Compression<FQ_T>>)(&(schema.compress)), _1, _2, _3, _4);
 #endif
 
         vreduce(reduce, get,
