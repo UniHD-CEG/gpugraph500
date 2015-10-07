@@ -7,11 +7,12 @@
 
 #include "compression.hh"
 #include "codecfactory.h"
+
 #include <chrono>
+using namespace std::chrono;
 
 
 using namespace SIMDCompressionLib;
-using namespace std::chrono;
 
 using std::string;
 using std::vector;

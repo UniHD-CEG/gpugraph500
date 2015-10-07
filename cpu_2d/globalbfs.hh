@@ -52,6 +52,11 @@ private:
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
 
+#ifdef _COMPRESSION
+    Compression<FQ_T> &schema;
+    void compress_lambda(FQ_T *, const size_t &, FQ_T **, size_t &);
+#endif
+
 protected:
     const STORE &store;
     typename STORE::vtxtyp *predecessor;
@@ -469,7 +474,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _COMPRESSION
-    Compression<FQ_T> &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
+    &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
 #endif
 
 
@@ -629,15 +634,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
             bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
                  static_cast<Derived *>(this), _1, _2, _3, _4);
 
-
 #ifdef _COMPRESSION
-        function <void (FQ_T *, const size_t &, FQ_T **, size_t &)> compress_fn =
-            [&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
-        {
-            return schema.compress(a, b, c, d);
-        };
 
-        function <void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &)> decompress_fn =
+//function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress_lambda =
+//    [&schema](FQ_T *a, const size_t &b, FQ_T **c, size_t &d)
+//{
+//    return schema.compress(a, b, c, d);
+//};
+
+        function <void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &)> decompress_lambda =
             [&schema](FQ_T * a, const int b, FQ_T **c, size_t &d)
         {
             return schema.decompress(a, b, c, d);
@@ -646,8 +651,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
         vreduce(reduce, get,
 #ifdef _COMPRESSION
-                compress_fn,
-                decompress_fn,
+                compress_lambda,
+                decompress_lambda,
 #endif
                 fq_64,
                 _outsize,
@@ -714,7 +719,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                compress_fn(startaddr, uncompressedsize, &compressed_fq_64, compressedsize);
+                compress_lambda(startaddr, uncompressedsize, &compressed_fq_64, compressedsize);
 
 
 #ifdef _COMPRESSIONVERIFY
@@ -920,6 +925,21 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
         ++iter;
     }
 }
+
+
+#ifdef _COMPRESSION
+
+// https://stackoverflow.com/questions/14677997/stdfunction-vs-template/25356170#25356170
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+void GlobalBFS<Derived, FQ_T, MType, STORE>::compress_lambda(FQ_T *, const size_t &, FQ_T **, size_t &)
+{
+
+    return [&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
+    {
+        return schema.compress(a, b, c, d);
+    };
+
+#endif
 
 
 #endif // GLOBALBFS_HH
