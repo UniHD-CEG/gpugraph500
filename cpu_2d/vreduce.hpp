@@ -39,8 +39,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             )
 {
 
-    int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum, originalsize;
+    int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum;
     size_t compressedsize, uncompressedsize;
+    void *originalsize = malloc(sizeof(int));
 
     T *compressed_fq, *uncompressed_fq;
     //time mesurement
