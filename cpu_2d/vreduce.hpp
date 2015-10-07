@@ -27,6 +27,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
              function<void(T *, const size_t &, T **, size_t &)> &compress,
              function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
+             function <void (FQ_T *, const int)> &benchmarkCompression,
+             const function <void (const FQ_T *, const FQ_T *, const size_t)> &verifyCompression,
+             const function <bool (const size_t, const size_t)> &isCompressed,
 #endif
              T *recv_buff,
              int &rsize, // size of the final result
@@ -107,6 +110,11 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             endTimeQueueProcessing = MPI_Wtime();
             timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
+
+#ifdef _COMPRESSIONBENCHMARK
+            benchmarkCompression(send, psize_to);
+#endif
+
             MPI_Send(originalsize, 1, MPI_LONG, communicatorRank - 1, 1, comm); // originalsize
             compress(send, psize_to, &compressed_fq, compressedsize);
             MPI_Send(compressed_fq, compressedsize, type, communicatorRank - 1, 1, comm);
