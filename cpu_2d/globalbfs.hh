@@ -35,9 +35,6 @@ using std::vector;
 using std::is_sorted;
 using namespace std::placeholders;
 
-// delete
-#include <typeinfo>
-#include <cxxabi.h>
 
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
@@ -54,8 +51,6 @@ private:
     vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
-
-    const std::string demangle(const char *name);
 
 protected:
     const STORE &store;
@@ -634,35 +629,25 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
             bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
                  static_cast<Derived *>(this), _1, _2, _3, _4);
 
-std::cout << demangle(typeid(reduce).name()) << std::endl;
 
 #ifdef _COMPRESSION
-        //function <void (FQ_T &, const size_t &, FQ_T &, size_t &)>
-        //
-
-// GlobalBFS<CUDA_BFS, long long, unsigned char, DistMatrix2d<long long, unsigned int, true, 1, true> >::runBFS(long long, double&, double&, double&, double&, double&)::{lambda(long long*, unsigned long, long long**, unsigned long&)
-
-        function <void (FQ_T *, size_t const &, FQ_T **, size_t &)> compress_fn =
-	[&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
+        function <void (FQ_T *, const size_t &, FQ_T **, size_t &)> compress_fn =
+            [&schema, a, b, c, d](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
         {
-            schema.compress(a, b, c, d);
+            return schema.compress(a, b, c, d);
         };
 
-
-        std::cout << demangle(typeid(compress_fn).name()) << std::endl;
-        //std::cout << demangle(typeid(reduce).name()) << std::endl;
-
-//        function < void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &) > decompress_fn =
-//            [&schema](FQ_T * a, const int b, FQ_T **c, size_t d)
-//        {
-//            schema.decompress(a, b, c, d);
-//        };
+        function <void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &)> decompress_fn =
+            [&schema](FQ_T * a, const int b, FQ_T **c, size_t &d)
+        {
+            return schema.decompress(a, b, c, d);
+        };
 #endif
 
         vreduce(reduce, get,
 #ifdef _COMPRESSION
-                //compress_fn,
-                //decompress_fn,
+                compress_fn,
+                decompress_fn,
 #endif
                 fq_64,
                 _outsize,
@@ -936,16 +921,5 @@ std::cout << demangle(typeid(reduce).name()) << std::endl;
     }
 }
 
-
-template<typename Derived, typename FQ_T, typename MType, typename STORE>
-const std::string GlobalBFS<Derived, FQ_T, MType, STORE>::demangle(const char *name)
-{
-    int status = -4;
-    char *res = abi::__cxa_demangle(name, NULL, NULL, &status);
-    const char *const demangled_name = (status == 0) ? res : name;
-    std::string ret_val(demangled_name);
-    free(res);
-    return ret_val;
-}
 
 #endif // GLOBALBFS_HH

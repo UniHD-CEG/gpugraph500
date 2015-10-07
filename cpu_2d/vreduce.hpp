@@ -22,15 +22,11 @@
 using std::function;
 
 template<class T>
-void vreduce(function<void(T, long, T *, int)>
-             &reduce, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
-             function<void(T, long, T *&, int &)>
-             &get, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
+void vreduce(function<void(T, long, T *, int)> &reduce,
+             function<void(T, long, T *&, int &)> &get,
 #ifdef _COMPRESSION
-             //function<void(T *, size_t, T **, size_t &)>
-             //&compress,
-             //function < void(T *, const int,/*Out*/T **, /*InOut*/size_t &) >
-             //&decompress,
+             function<void(T *, const size_t &, T **, size_t &)> &compress,
+             function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
 #endif
              T *recv_buff,
              int &rsize, // size of the final result
