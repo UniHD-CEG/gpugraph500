@@ -470,14 +470,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _COMPRESSION
+    /**
+     * CompressionFactory()
+     * "nocopmression", "cpusimd", "gpusimt"
+     */
     Compression<FQ_T> &schema = *CompressionFactory<FQ_T>::getFromName("nocompression");
+#endif
 
-    // moved lambdas outside loop
+#ifdef _COMPRESSION
     function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress_lambda =
         [&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
     {
         return schema.compress(a, b, c, d);
     };
+
     function <void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &)> decompress_lambda =
         [&schema](FQ_T * a, const int b, FQ_T **c, size_t &d)
     {

@@ -39,8 +39,10 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             )
 {
 
-    int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum;
+    int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum, originalsize;
+    size_t compressedsize, uncompressedsize;
 
+    T *compressed_fq, *uncompressed_fq;
     //time mesurement
 #ifdef INSTRUMENTED
     double startTimeQueueProcessing;
@@ -61,14 +63,17 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         {
             MPI_Status status; int psize_from;
 
+            MPI_Recv(originalsize, 1, MPI_LONG, communicatorRank + 1, 1, comm, &status); // originalsize
             MPI_Recv(recv_buff, ssize, type, communicatorRank + 1, 1, comm, &status);
             MPI_Get_count(&status, type, &psize_from);
+            decompress(recv_buff, psize_from, uncompressed_fq, uncompressedsize);
 
 #ifdef INSTRUMENTED
             startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-            reduce(0, ssize, recv_buff, psize_from);
+            // reduce(0, ssize, recv_buff, psize_from);
+            reduce(0, ssize, &uncompressed_fq, uncompressedsize);
 
 #ifdef INSTRUMENTED
             endTimeQueueProcessing = MPI_Wtime();
@@ -91,7 +96,10 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             endTimeQueueProcessing = MPI_Wtime();
             timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
-            MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
+            MPI_Send(psize_to, 1, MPI_LONG, communicatorRank - 1, 1, comm); // originalsize
+            compress(send, psize_to, &compressed_fq, compressedsize);
+            MPI_Send(compressed_fq, compressedsize, type, communicatorRank - 1, 1, comm);
+            //MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
         }
     }
     const function<int (int)> newRank = [&residuum](int oldr)
@@ -221,9 +229,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
     // Transmission of the final results
     int *sizes = malloc(communicatorSize * sizeof(int));
-    assert (sizes != NULL);
+    assert(sizes != NULL);
     int *disps = malloc(communicatorSize * sizeof(int));
-    assert (disps != NULL);
+    assert(disps != NULL);
 
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, &sizes[0], 1, MPI_INT, comm);
