@@ -632,7 +632,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 #ifdef _COMPRESSION
         function <void (FQ_T *, const size_t &, FQ_T **, size_t &)> compress_fn =
-            [&schema, a, b, c, d](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
+            [&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
         {
             return schema.compress(a, b, c, d);
         };
