@@ -26,7 +26,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
              function<void(T, long, T *&, int &)> &get,
 #ifdef _COMPRESSION
              function<void(T *, const size_t &, T **, size_t &)> &compress,
-             function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
+             //function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
 #endif
              T *recv_buff,
              int &rsize, // size of the final result
