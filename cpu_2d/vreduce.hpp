@@ -208,7 +208,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             printf("Benchmark0: \n");
 #ifdef _COMPRESSIONBENCHMARK
             printf("Benchmark1: \n");
-            benchmarkCompression(offset, psizeTo);
+            benchmarkCompression(send, psizeTo);
 #endif
 
 #ifdef INSTRUMENTED
