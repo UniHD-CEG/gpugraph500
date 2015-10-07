@@ -32,6 +32,8 @@ using namespace std::chrono;
 using std::function;
 using std::bind;
 using std::vector;
+using std::placeholders;
+using std::is_sorted;
 
 // delete
 #include <typeinfo>
@@ -40,24 +42,20 @@ using std::vector;
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template < typename Derived,
-         typename FQ_T,  // Queue Type
-         typename MType, // Bitmap mask
-         typename STORE > //Storage of Matrix
+template <typename Derived,
+          typename FQ_T,  // Queue Type
+          typename MType, // Bitmap mask
+          typename STORE> //Storage of Matrix
 class GlobalBFS
 {
 private:
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
-    std::vector <typename STORE::fold_prop> fold_fq_props;
+    vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
 
     const std::string demangle(const char *name);
-
-#ifdef INSTRUMENTED
-    std::size_t getTotalSystemMemory();
-#endif
 
 protected:
     const STORE &store;
@@ -95,8 +93,10 @@ protected:
     void setBackInqueue();
     void generatOwenMask();
 
+    // Uses the device memory calls to copy the MPI buffer. This buffer is created on the device (CPU, CUDA, OPENGL, etc)
+    // using a malloc will cause a crash if the app is not in CPU mode. Implemented on the clidren class where also, the
+    // buffer is created.
     void bfsMemCpy(FQ_T *&dst, FQ_T *src, size_t size);
-
 
 public:
     /**
@@ -234,11 +234,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             MPI_Send(tmp, p, fq_tp_type, communicatorRank - 1, 1, col_comm);
         }
     }
-    const std::function <int(int)> newRank = [&residuum](int oldr)
+    const function <int(int)> newRank = [&residuum](int oldr)
     {
         return (oldr < 2 * residuum) ? oldr / 2 : oldr - residuum;
     };
-    const std::function <int(int)> oldRank = [&residuum](int newr)
+    const function <int(int)> oldRank = [&residuum](int newr)
     {
         return (newr < residuum) ? newr * 2 : newr + residuum;
     };
@@ -368,8 +368,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         }
     }
     //Computation of displacements
-    std::vector<int> sizes(communicatorSize);
-    std::vector<int> disps(communicatorSize);
+    vector<int> sizes(communicatorSize);
+    vector<int> disps(communicatorSize);
 
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -517,7 +517,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 
 #ifdef _COMPRESSION
-    std::size_t uncompressedsize, compressedsize;
+    size_t uncompressedsize, compressedsize;
 #endif
 
     /**
@@ -619,9 +619,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 
 
-
-
-
         static_cast<Derived *>(this)->getBackOutqueue();
 
 #ifdef INSTRUMENTED
@@ -630,29 +627,29 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
         int _outsize; //really int, because mpi supports no long message sizes :(
-        using namespace std::placeholders;
-        std::function <void(FQ_T, long, FQ_T *, int)> reduce =
-            std::bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
-                      static_cast<Derived *>(this), _1, _2, _3, _4);
-        std::function <void(FQ_T, long, FQ_T *&, int &)> get =
-            std::bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
-                      static_cast<Derived *>(this), _1, _2, _3, _4);
+        function <void(FQ_T, long, FQ_T *, int)> reduce =
+            bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
+                 static_cast<Derived *>(this), _1, _2, _3, _4);
+        function <void(FQ_T, long, FQ_T *&, int &)> get =
+            bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
+                 static_cast<Derived *>(this), _1, _2, _3, _4);
 
 #ifdef _COMPRESSION
-        //std::function <void (FQ_T &, const size_t &, FQ_T &, size_t &)>
+        //function <void (FQ_T &, const size_t &, FQ_T &, size_t &)>
         //
 
 // GlobalBFS<CUDA_BFS, long long, unsigned char, DistMatrix2d<long long, unsigned int, true, 1, true> >::runBFS(long long, double&, double&, double&, double&, double&)::{lambda(long long*, unsigned long, long long**, unsigned long&)
 
-        auto compress_fn = [&schema](FQ_T * a, const size_t & b, FQ_T **c, size_t & d)
+        auto compress_fn = [&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
         {
-            schema.compress(a, b, &c, d);
+            schema.compress(a, b, c, d);
         };
 
 
         std::cout << demangle(typeid(compress_fn).name()) << std::endl;
+        std::cout << demangle(typeid(reduce).name()) << std::endl;
 
-//        std::function < void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &) > decompress_fn =
+//        function < void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &) > decompress_fn =
 //            [&schema](FQ_T * a, const int b, FQ_T **c, size_t d)
 //        {
 //            schema.decompress(a, b, c, d);
@@ -699,7 +696,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
         int root_rank;
-        for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
+        for (typename vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
              it != fold_fq_props.end(); ++it)
         {
             root_rank = it->sendColSl;
@@ -768,7 +765,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 {
                     assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
                 }
-                assert(std::is_sorted(uncompressed_fq_64, uncompressed_fq_64 + uncompressedsize));
+                assert(is_sorted(uncompressed_fq_64, uncompressed_fq_64 + uncompressedsize));
                 schema.verifyCompression(startaddr, uncompressed_fq_64, originalsize);
 #endif
 
@@ -850,7 +847,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 }
 
 #ifdef _COMPRESSIONVERIFY
-                assert(std::is_sorted(fq_64, fq_64 + originalsize));
+                assert(is_sorted(fq_64, fq_64 + originalsize));
                 schema.verifyCompression(startaddr, fq_64, originalsize);
 #endif
 

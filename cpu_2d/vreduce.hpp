@@ -19,15 +19,17 @@
 #include <sstream>
 #include "bitlevelfunctions.h"
 
+using std::function;
 
 template<class T>
-void vreduce(std::function<void(T, long, T *, int)>
+void vreduce(function<void(T, long, T *, int)>
              &reduce, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
-             std::function<void(T, long, T *&, int &)> &get, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
+             function<void(T, long, T *&, int &)>
+             &get, //void (long start, long size, FQ_T* &startaddr, vtxtype& outsize)
 #ifdef _COMPRESSION
-             //std::function<void(T *, const size_t &, T **, size_t &)>
+             //function<void(T *, size_t, T **, size_t &)>
              //&compress,
-             //std::function < void(T *, const int,/*Out*/T **, /*InOut*/size_t &) >
+             //function < void(T *, const int,/*Out*/T **, /*InOut*/size_t &) >
              //&decompress,
 #endif
              T *recv_buff,
@@ -96,11 +98,11 @@ void vreduce(std::function<void(T, long, T *, int)>
             MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
         }
     }
-    const std::function<int (int)> newRank = [&residuum](int oldr)
+    const function<int (int)> newRank = [&residuum](int oldr)
     {
         return (oldr < 2 * residuum) ? oldr / 2 : oldr - residuum;
     };
-    const std::function<int (int)> oldRank = [&residuum](int newr)
+    const function<int (int)> oldRank = [&residuum](int newr)
     {
         return (newr <  residuum) ? newr * 2 : newr + residuum;
     };
