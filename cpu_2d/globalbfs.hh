@@ -470,18 +470,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _COMPRESSION
-    Compression<FQ_T> &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
-function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress_lambda =
-    [&schema](FQ_T *a, const size_t &b, FQ_T **c, size_t &d)
-{
-    return schema.compress(a, b, c, d);
-};
+    Compression<FQ_T> &schema = *CompressionFactory<FQ_T>::getFromName("nocompression");
 
-        function <void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &)> decompress_lambda =
-            [&schema](FQ_T * a, const int b, FQ_T **c, size_t &d)
-        {
-            return schema.decompress(a, b, c, d);
-        };
+    // moved lambdas outside loop
+    function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress_lambda =
+        [&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
+    {
+        return schema.compress(a, b, c, d);
+    };
+    function <void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &)> decompress_lambda =
+        [&schema](FQ_T * a, const int b, FQ_T **c, size_t &d)
+    {
+        return schema.decompress(a, b, c, d);
+    };
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
@@ -526,13 +527,13 @@ function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress_lambda =
     size_t uncompressedsize, compressedsize;
 #endif
 
-
-        function <void(FQ_T, long, FQ_T *, int)> reduce =
-            bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
-                 static_cast<Derived *>(this), _1, _2, _3, _4);
-        function <void(FQ_T, long, FQ_T *&, int &)> get =
-            bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
-                 static_cast<Derived *>(this), _1, _2, _3, _4);
+    // moved anonymous functions outside loop
+    function <void(FQ_T, long, FQ_T *, int)> reduce =
+        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
+             static_cast<Derived *>(this), _1, _2, _3, _4);
+    function <void(FQ_T, long, FQ_T *&, int &)> get =
+        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
+             static_cast<Derived *>(this), _1, _2, _3, _4);
 
     /**
      * Todo: refactor-extract
@@ -641,18 +642,11 @@ function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress_lambda =
 #endif
 
         int _outsize; //really int, because mpi supports no long message sizes :(
-//        function <void(FQ_T, long, FQ_T *, int)> reduce =
-//            bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
-//                 static_cast<Derived *>(this), _1, _2, _3, _4);
-//        function <void(FQ_T, long, FQ_T *&, int &)> get =
-//            bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
-//                 static_cast<Derived *>(this), _1, _2, _3, _4);
-
 
         vreduce(reduce, get,
 #ifdef _COMPRESSION
                 compress_lambda,
-                //decompress_lambda,
+                decompress_lambda,
 #endif
                 fq_64,
                 _outsize,

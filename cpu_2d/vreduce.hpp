@@ -26,7 +26,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
              function<void(T, long, T *&, int &)> &get,
 #ifdef _COMPRESSION
              function<void(T *, const size_t &, T **, size_t &)> &compress,
-             //function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
+             function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
 #endif
              T *recv_buff,
              int &rsize, // size of the final result
@@ -220,8 +220,10 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     }
 
     // Transmission of the final results
-    int *sizes = new int[communicatorSize];
-    int *disps = new int[communicatorSize];
+    int *sizes = malloc(communicatorSize * sizeof(int));
+    assert (sizes != NULL);
+    int *disps = malloc(communicatorSize * sizeof(int));
+    assert (disps != NULL);
 
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, &sizes[0], 1, MPI_INT, comm);
@@ -250,8 +252,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                    type, recv_buff, &sizes[0],
                    &disps[0], type, comm);
 
-    delete[] sizes;
-    delete[] disps;
+    free(sizes);
+    free(disps);
 
 }
 
