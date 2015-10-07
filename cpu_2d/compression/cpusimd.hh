@@ -19,7 +19,7 @@ using std::vector;
 using std::equal;
 
 IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
-uint32_t SIMDCOMPRESSION_THRESHOLD = 64;
+uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
 
 template <typename T>
 class CpuSimd: public Compression<T>
@@ -33,22 +33,8 @@ public:
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
     inline string name() const;
-    /**
-     * constructor & destructor
-     */
-    //CpuSimd();
-    //~CpuSimd();
 };
-/*
-template <typename T>
-CpuSimd<T>::CpuSimd()
-{
-    // &codec = *CODECFactory::getFromName("s4-bp128-dm");
-    SIMDCOMPRESSION_THRESHOLD = 512;
-    // Use 0xffffffff (2^32) to transparently deactivate compression.
-    // SIMDCOMPRESSION_THRESHOLD = 0xffffffff;
-}
-*/
+
 
 template <typename T>
 void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
