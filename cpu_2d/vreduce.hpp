@@ -244,9 +244,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     }
 
     // Transmission of the final results
-    int *sizes = malloc(communicatorSize * sizeof(int));
+    int *sizes = (int *)malloc(communicatorSize * sizeof(int));
     assert(sizes != NULL);
-    int *disps = malloc(communicatorSize * sizeof(int));
+    int *disps = (int *)malloc(communicatorSize * sizeof(int));
     assert(disps != NULL);
 
     // Transmission of the subslice sizes
