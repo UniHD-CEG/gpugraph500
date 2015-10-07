@@ -69,7 +69,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             MPI_Recv(originalsize, 1, MPI_LONG, communicatorRank + 1, 1, comm, &status); // originalsize
             MPI_Recv(recv_buff, ssize, type, communicatorRank + 1, 1, comm, &status);
             MPI_Get_count(&status, type, &psize_from);
-            decompress(recv_buff, psize_from, uncompressed_fq, uncompressedsize);
+            decompress(recv_buff, psize_from, &uncompressed_fq, uncompressedsize);
 
             if (originalsize != NULL)
             {
@@ -81,7 +81,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
             // reduce(0, ssize, recv_buff, psize_from);
-            reduce(0, ssize, &uncompressed_fq, uncompressedsize);
+            reduce(0, ssize, uncompressed_fq, uncompressedsize);
 
 #ifdef INSTRUMENTED
             endTimeQueueProcessing = MPI_Wtime();
