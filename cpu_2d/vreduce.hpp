@@ -205,6 +205,12 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
                 get(offset, lowerId, send, psizeTo);
 
+            printf("Benchmark0: \n");
+#ifdef _COMPRESSIONBENCHMARK
+            printf("Benchmark1: \n");
+            benchmarkCompression(offset, psizeTo);
+#endif
+
 #ifdef INSTRUMENTED
                 endTimeQueueProcessing = MPI_Wtime();
                 timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
