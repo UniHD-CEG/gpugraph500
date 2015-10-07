@@ -27,8 +27,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
              function<void(T *, const size_t &, T **, size_t &)> &compress,
              function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
-             function <void (FQ_T *, const int)> &benchmarkCompression,
-             const function <void (const FQ_T *, const FQ_T *, const size_t)> &verifyCompression,
+             function <void (T *, const int)> &benchmarkCompression,
+             const function <void (const T *, const T *, const size_t)> &verifyCompression,
              const function <bool (const size_t, const size_t)> &isCompressed,
 #endif
              T *recv_buff,
@@ -110,8 +110,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             endTimeQueueProcessing = MPI_Wtime();
             timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
-
+            printf("threshold: %li \n", psize_to);
 #ifdef _COMPRESSIONBENCHMARK
+            printf("entering benchmark \n");
             benchmarkCompression(send, psize_to);
 #endif
 

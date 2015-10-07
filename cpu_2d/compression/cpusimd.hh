@@ -19,7 +19,7 @@ using std::vector;
 using std::equal;
 
 IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
-uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
+uint32_t SIMDCOMPRESSION_THRESHOLD = 64;
 
 template <typename T>
 class CpuSimd: public Compression<T>
