@@ -32,8 +32,8 @@ using namespace std::chrono;
 using std::function;
 using std::bind;
 using std::vector;
-using std::placeholders;
 using std::is_sorted;
+using namespace std::placeholders;
 
 // delete
 #include <typeinfo>
@@ -634,20 +634,23 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
             bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
                  static_cast<Derived *>(this), _1, _2, _3, _4);
 
+std::cout << demangle(typeid(reduce).name()) << std::endl;
+
 #ifdef _COMPRESSION
         //function <void (FQ_T &, const size_t &, FQ_T &, size_t &)>
         //
 
 // GlobalBFS<CUDA_BFS, long long, unsigned char, DistMatrix2d<long long, unsigned int, true, 1, true> >::runBFS(long long, double&, double&, double&, double&, double&)::{lambda(long long*, unsigned long, long long**, unsigned long&)
 
-        auto compress_fn = [&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
+        function <void (FQ_T *, size_t const &, FQ_T **, size_t &)> compress_fn =
+	[&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
         {
             schema.compress(a, b, c, d);
         };
 
 
         std::cout << demangle(typeid(compress_fn).name()) << std::endl;
-        std::cout << demangle(typeid(reduce).name()) << std::endl;
+        //std::cout << demangle(typeid(reduce).name()) << std::endl;
 
 //        function < void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &) > decompress_fn =
 //            [&schema](FQ_T * a, const int b, FQ_T **c, size_t d)
