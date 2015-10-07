@@ -41,7 +41,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
     int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum;
     size_t compressedsize, uncompressedsize;
-    void *originalsize = malloc(sizeof(int));
 
     T *compressed_fq, *uncompressed_fq;
     //time mesurement
@@ -62,12 +61,20 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     {
         if ((communicatorRank & 1) == 0)  // even
         {
+            int *originalsize = (int *) malloc(sizeof(int));
+            assert(originalsize != NULL);
+
             MPI_Status status; int psize_from;
 
             MPI_Recv(originalsize, 1, MPI_LONG, communicatorRank + 1, 1, comm, &status); // originalsize
             MPI_Recv(recv_buff, ssize, type, communicatorRank + 1, 1, comm, &status);
             MPI_Get_count(&status, type, &psize_from);
             decompress(recv_buff, psize_from, uncompressed_fq, uncompressedsize);
+
+            if (originalsize != NULL)
+            {
+                free(originalsize);
+            }
 
 #ifdef INSTRUMENTED
             startTimeQueueProcessing = MPI_Wtime();
@@ -86,21 +93,29 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         {
             int psize_to;
             T *send;
+            int *originalsize = (int *) malloc(sizeof(int));
+            assert(originalsize != NULL);
 
 #ifdef INSTRUMENTED
             startTimeQueueProcessing = MPI_Wtime();
 #endif
 
             get(0, ssize, send, psize_to);
+            originalsize[0] = psize_to;
 
 #ifdef INSTRUMENTED
             endTimeQueueProcessing = MPI_Wtime();
             timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
-            MPI_Send(psize_to, 1, MPI_LONG, communicatorRank - 1, 1, comm); // originalsize
+            MPI_Send(originalsize, 1, MPI_LONG, communicatorRank - 1, 1, comm); // originalsize
             compress(send, psize_to, &compressed_fq, compressedsize);
             MPI_Send(compressed_fq, compressedsize, type, communicatorRank - 1, 1, comm);
             //MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
+
+            if (originalsize != NULL)
+            {
+                free(originalsize);
+            }
         }
     }
     const function<int (int)> newRank = [&residuum](int oldr)
