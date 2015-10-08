@@ -81,7 +81,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             MPI_Recv(originalsize, 1, MPI_LONG, communicatorRank + 1, 1, comm, &status); // originalsize
             MPI_Recv(recv_buff, ssize, type, communicatorRank + 1, 1, comm, &status);
             MPI_Get_count(&status, type, &psize_from);
-            //uncompressedsize = *originalsize;
+            uncompressedsize = *originalsize;
             decompress(recv_buff, psize_from, &uncompressed_fq, uncompressedsize);
 
 
