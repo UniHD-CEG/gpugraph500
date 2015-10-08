@@ -28,18 +28,20 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
              function<void(T *, const size_t &, T **, size_t &)> &compress,
              function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
              function <void (T *, const int)> &benchmarkCompression,
-             const function <void (const T *, const T *, const size_t)> &verifyCompression,
-             const function <bool (const size_t, const size_t)> &isCompressed,
+             const function < void (const T *, const T *, const si
+#ifdef _COMPRESSIONze_t)> &verifyCompression,
+                                    const function <bool (const size_t, const size_t)> &isCompressed,
 #endif
-             T *recv_buff,
-             int &rsize, // size of the final result
-             int ssize,  //size of the slice
-             MPI_Datatype type,
-             MPI_Comm comm
+                                    T *recv_buff,
+                                    int &rsize, // size of the final result
+                                    int ssize,  //size of the slice
+                                    MPI_Datatype type,
+                                    MPI_Comm comm
+#endif
 #ifdef INSTRUMENTED
-             , double &timeQueueProcessing // time of work
+                                    , double &timeQueueProcessing // time of work
 #endif
-            )
+                                   )
 {
 
     int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum;
@@ -86,6 +88,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             // reduce(0, ssize, recv_buff, psize_from);
             reduce(0, ssize, uncompressed_fq, uncompressedsize);
 
+#ifdef _COMPRESSION
             if (isCompressed(originalsize, psize_from))
             {
                 if (uncompressed_fq != NULL)
@@ -93,6 +96,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                     free(uncompressed_fq);
                 }
             }
+#endif
 
 #ifdef INSTRUMENTED
             endTimeQueueProcessing = MPI_Wtime();
@@ -224,7 +228,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 //reduce(offset, lowerId, recv_buff, psizeFrom);
                 reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
 
-                if (isCompressed(originalsize, psize_from))
+#ifdef _COMPRESSION
+                if (isCompressed(originalsize, psizeFrom))
                 {
                     if (uncompressed_fq != NULL)
                     {
@@ -235,6 +240,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                         free(compressed_fq);
                     }
                 }
+#endif
 
 #ifdef INSTRUMENTED
                 endTimeQueueProcessing = MPI_Wtime();
@@ -295,7 +301,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 // reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
                 reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
 
-                if (isCompressed(originalsize, psize_from))
+#ifdef _COMPRESSION
+                if (isCompressed(originalsize, psizeFrom))
                 {
                     if (uncompressed_fq != NULL)
                     {
@@ -306,6 +313,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                         free(compressed_fq);
                     }
                 }
+#endif
 
 #ifdef INSTRUMENTED
                 endTimeQueueProcessing = MPI_Wtime();
