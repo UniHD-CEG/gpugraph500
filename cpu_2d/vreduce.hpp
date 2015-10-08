@@ -36,7 +36,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
              int ssize,  //size of the slice
              MPI_Datatype type,
              MPI_Comm comm
-#endif
 #ifdef INSTRUMENTED
              , double &timeQueueProcessing // time of work
 #endif
