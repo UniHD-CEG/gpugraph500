@@ -42,8 +42,10 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 {
 
     int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum, previousRank;
+#ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
     T *compressed_fq, *uncompressed_fq;
+#endif
     int *originalsize = (int *) malloc(sizeof(int));
 
     // auxiliar lambdas
