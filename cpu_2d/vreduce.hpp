@@ -81,6 +81,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             MPI_Recv(originalsize, 1, MPI_LONG, communicatorRank + 1, 1, comm, &status); // originalsize
             MPI_Recv(recv_buff, ssize, type, communicatorRank + 1, 1, comm, &status);
             MPI_Get_count(&status, type, &psize_from);
+            //uncompressedsize = *originalsize;
             decompress(recv_buff, psize_from, &uncompressed_fq, uncompressedsize);
 
 
@@ -207,12 +208,12 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-
+                //uncompressedsize = *originalsize;
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 
 
-                reduce(offset, lowerId, recv_buff, psizeFrom);
-                //reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
+                //reduce(offset, lowerId, recv_buff, psizeFrom);
+                reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
 
 #ifdef _COMPRESSION
                 if (isCompressed(static_cast<size_t>(*originalsize), static_cast<size_t>(psizeFrom)))
@@ -279,11 +280,12 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
+                //uncompressedsize = *originalsize;
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 
 
-                reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
-                //reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
+                //reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
+                reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
 
 #ifdef _COMPRESSION
                 if (isCompressed(static_cast<size_t>(*originalsize), static_cast<size_t>(psizeFrom)))
@@ -316,6 +318,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
         get(offset, currentSliceSize, send, psizeTo);
+        originalsize[0] = psizeTo;
 
 #ifdef INSTRUMENTED
         endTimeQueueProcessing = MPI_Wtime();
