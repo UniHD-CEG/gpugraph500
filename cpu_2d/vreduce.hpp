@@ -227,10 +227,11 @@ std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFro
                     {
                         free(uncompressed_fq);
                     }
+                    /*
                     if (compressed_fq != NULL)
                     {
                         free(compressed_fq);
-                    }
+                    }*/
                 }
 #endif
 
@@ -306,10 +307,11 @@ std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFro
                     {
                         free(uncompressed_fq);
                     }
+                    /*
                     if (compressed_fq != NULL)
                     {
                         free(compressed_fq);
-                    }
+                    }*/
                 }
 #endif
 
