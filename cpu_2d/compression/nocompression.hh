@@ -71,7 +71,7 @@ void NoCompression<T>::verifyCompression(const T *fq, const T *uncompressed_fq_6
 template <typename T>
 inline bool NoCompression<T>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
-    return (originalsize != compressedsize);
+    return (false && originalsize != compressedsize);
 }
 
 template <typename T>
