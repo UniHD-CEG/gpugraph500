@@ -28,7 +28,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
              function<void(T *, const size_t &, T **, size_t &)> &compress,
              function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
              function <void (T *, const int)> &benchmarkCompression,
-             //const function <void (const T *, const T *, const size_t)> &verifyCompression,
              const function <bool (const size_t, const size_t)> &isCompressed,
 #endif
              T *recv_buff,
@@ -182,8 +181,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
                 get(offset + lowerId, upperId, send, psizeTo);
+#ifdef _COMPRESSION
                 compress(send, psizeTo, &compressed_fq, compressedsize);
-
+#endif
 
 #ifdef _COMPRESSIONBENCHMARK
                 benchmarkCompression(send, psizeTo);
@@ -223,9 +223,10 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
+#ifdef _COMPRESSION
                 uncompressedsize = *originalsize;
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
-
+#endif
 
 #ifdef _COMPRESSION
                 reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
@@ -258,7 +259,10 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
                 get(offset, lowerId, send, psizeTo);
+
+#ifdef _COMPRESSION
                 compress(send, psizeTo, &compressed_fq, compressedsize);
+#endif
 
 #ifdef _COMPRESSIONBENCHMARK
                 benchmarkCompression(send, psizeTo);
@@ -299,8 +303,10 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
+#ifdef _COMPRESSION
                 uncompressedsize = *originalsize;
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+#endif
 
 #ifdef _COMPRESSION
                 reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
@@ -328,7 +334,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             }
         }
 
-        // Datas to send to the other nodes
+        // Data to send to the other nodes
 
 #ifdef INSTRUMENTED
         startTimeQueueProcessing = MPI_Wtime();
@@ -349,10 +355,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         send = 0;
     }
 
-    //
-    // todo: add compression-decompression here.
-    //
-    //
 
     // Transmission of the final results
     int *sizes = (int *)malloc(communicatorSize * sizeof(int));
@@ -361,16 +363,17 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     assert(disps != NULL);
 
     // Transmission of the subslice sizes
-    MPI_Allgather(&psizeTo, 1, MPI_INT, &sizes[0], 1, MPI_INT, comm);
+    MPI_Allgather(&psizeTo, 1, MPI_INT, &sizes, 1, MPI_INT, comm);
     //Computation of displacements
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
     disps[lastTargetNode] = 0;
 
+    unsigned int reversedSliceIDs, targetNode;
     for (unsigned int slice = 1; slice < power2intLdSize; ++slice)
     {
-        unsigned int reversedSliceIDs = reverse(slice, intLdSize);
-        unsigned int targetNode = oldRank(reversedSliceIDs);
+        reversedSliceIDs = reverse(slice, intLdSize);
+        targetNode = oldRank(reversedSliceIDs);
         disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
         lastTargetNode = targetNode;
     }
@@ -380,12 +383,11 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     {
         disps[2 * node + 1] = 0;
     }
-
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
     MPI_Allgatherv(send, sizes[communicatorRank],
-                   type, recv_buff, &sizes[0],
-                   &disps[0], type, comm);
+                   type, recv_buff, sizes,
+                   disps, type, comm);
 
     free(sizes);
     free(disps);

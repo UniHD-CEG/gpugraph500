@@ -496,12 +496,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
         return schema.benchmarkCompression(a, b);
     };
 
-    //const function <void (const FQ_T *, const FQ_T *, const size_t)> verifyCompression_lambda =
-    //    [&schema](const FQ_T * a, const FQ_T * b, const size_t c)
-    //{
-    //    return schema.verifyCompression(a, b, c);
-    //};
-
     const function <bool (const size_t, const size_t)> isCompressed_lambda =
         [&schema](const size_t a, const size_t b)
     {
@@ -672,7 +666,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 compress_lambda,
                 decompress_lambda,
                 benchmarkCompression_lambda,
-                //verifyCompression_lambda,
                 isCompressed_lambda,
 #endif
                 fq_64,
@@ -736,7 +729,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
 
 #ifdef _COMPRESSIONBENCHMARK
-                //schema.benchmarkCompression(startaddr, originalsize);
+                schema.benchmarkCompression(startaddr, originalsize);
 #endif
 
                 uncompressedsize = static_cast<size_t>(originalsize);
