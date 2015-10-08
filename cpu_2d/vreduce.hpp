@@ -28,7 +28,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
              function<void(T *, const size_t &, T **, size_t &)> &compress,
              function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
              function <void (T *, const int)> &benchmarkCompression,
-             const function <void (const T *, const T *, const size_t)> &verifyCompression,
+             //const function <void (const T *, const T *, const size_t)> &verifyCompression,
              const function <bool (const size_t, const size_t)> &isCompressed,
 #endif
              T *recv_buff,
@@ -78,19 +78,25 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
             MPI_Status status; int psize_from;
 
-            MPI_Recv(originalsize, 1, MPI_LONG, communicatorRank + 1, 1, comm, &status); // originalsize
+#ifdef _COMPRESSION
+            MPI_Recv(originalsize, 1, MPI_LONG, communicatorRank + 1, 1, comm, &status);
+#endif
             MPI_Recv(recv_buff, ssize, type, communicatorRank + 1, 1, comm, &status);
             MPI_Get_count(&status, type, &psize_from);
+#ifdef _COMPRESSION
             uncompressedsize = *originalsize;
             decompress(recv_buff, psize_from, &uncompressed_fq, uncompressedsize);
-
+#endif
 
 #ifdef INSTRUMENTED
             startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-            // reduce(0, ssize, recv_buff, psize_from);
+#ifdef _COMPRESSION
             reduce(0, ssize, uncompressed_fq, uncompressedsize);
+#else
+            reduce(0, ssize, recv_buff, psize_from);
+#endif
 
 #ifdef _COMPRESSION
             if (isCompressed(*originalsize, psize_from))
@@ -129,10 +135,14 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             benchmarkCompression(send, psize_to);
 #endif
 
-            MPI_Send(originalsize, 1, MPI_LONG, communicatorRank - 1, 1, comm); // originalsize
+#ifdef _COMPRESSION
+            MPI_Send(originalsize, 1, MPI_LONG, communicatorRank - 1, 1, comm);
             compress(send, psize_to, &compressed_fq, compressedsize);
             MPI_Send(compressed_fq, compressedsize, type, communicatorRank - 1, 1, comm);
-            //MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
+#else
+            MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
+#endif
+
         }
     }
 
@@ -174,7 +184,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 get(offset + lowerId, upperId, send, psizeTo);
                 compress(send, psizeTo, &compressed_fq, compressedsize);
 
-std::cout << "Pre-Send: orig: " << psizeTo << " compressed: " << compressedsize << " rank: " << vrank << std::endl;
 
 #ifdef _COMPRESSIONBENCHMARK
                 benchmarkCompression(send, psizeTo);
@@ -186,6 +195,8 @@ std::cout << "Pre-Send: orig: " << psizeTo << " compressed: " << compressedsize 
 #endif
 
                 previousRank = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
+
+#ifdef _COMPRESSION
                 originalsize[0] = psizeTo;
                 MPI_Sendrecv(originalsize, 1, MPI_LONG,
                              previousRank, it + 2,
@@ -198,15 +209,14 @@ std::cout << "Pre-Send: orig: " << psizeTo << " compressed: " << compressedsize 
                              previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
-                /*
+#else
                 MPI_Sendrecv(send, psizeTo, type,
-                             oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), it + 2,
+                             previousRank, it + 2,
                              recv_buff, lowerId, type,
-                             oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), it + 2,
+                             previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
-                */
-std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFrom << " rank: " << vrank << std::endl;
+#endif
 
 
 #ifdef INSTRUMENTED
@@ -217,8 +227,11 @@ std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFro
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 
 
-                //reduce(offset, lowerId, recv_buff, psizeFrom);
+#ifdef _COMPRESSION
                 reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
+#else
+                reduce(offset, lowerId, recv_buff, psizeFrom);
+#endif
 
 #ifdef _COMPRESSION
                 if (isCompressed(*originalsize, psizeFrom))
@@ -227,11 +240,6 @@ std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFro
                     {
                         free(uncompressed_fq);
                     }
-                    /*
-                    if (compressed_fq != NULL)
-                    {
-                        free(compressed_fq);
-                    }*/
                 }
 #endif
 
@@ -261,10 +269,10 @@ std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFro
                 timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
 
-std::cout << "Pre-Send: orig: " << psizeTo << " compressed: " << compressedsize << " rank: " << vrank << std::endl;
-
 
                 previousRank = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
+
+#ifdef _COMPRESSION
                 originalsize[0] = psizeTo;
                 MPI_Sendrecv(originalsize, 1, MPI_LONG,
                              previousRank, it + 2,
@@ -277,16 +285,14 @@ std::cout << "Pre-Send: orig: " << psizeTo << " compressed: " << compressedsize 
                              previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
-                /*
+#else
                 MPI_Sendrecv(send, psizeTo, type,
-                             oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), it + 2,
+                             previousRank, it + 2,
                              recv_buff, upperId, type,
-                             oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), it + 2,
+                             previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
-                */
-
-std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFrom << " rank: " << vrank << std::endl;
+#endif
 
 
 #ifdef INSTRUMENTED
@@ -296,9 +302,11 @@ std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFro
                 uncompressedsize = *originalsize;
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 
-
-                //reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
+#ifdef _COMPRESSION
                 reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
+#else
+                reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
+#endif
 
 #ifdef _COMPRESSION
                 if (isCompressed(*originalsize, psizeFrom))
@@ -307,11 +315,6 @@ std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFro
                     {
                         free(uncompressed_fq);
                     }
-                    /*
-                    if (compressed_fq != NULL)
-                    {
-                        free(compressed_fq);
-                    }*/
                 }
 #endif
 
