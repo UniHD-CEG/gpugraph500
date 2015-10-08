@@ -165,8 +165,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         currentSliceSize  = ssize;
         offset = 0;
 
-        // get(offset, csize, send, psize_to);
-
 
         for (int it = 0; it < intLdSize; ++it)
         {
@@ -194,6 +192,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
                 originalsize[0] = psizeTo;
+                /*
                 MPI_Sendrecv(originalsize, 1, MPI_LONG,
                              oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), it + 2,
                              originalsize, 1, MPI_LONG,
@@ -205,16 +204,18 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                              oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
-                //MPI_Sendrecv(send, psizeTo, type,
-                //             oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), it + 2,
-                //             recv_buff, lowerId, type,
-                //             oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), it + 2,
-                //             comm, &status);
-                //MPI_Get_count(&status, type, &psizeFrom);
+                */
+                MPI_Sendrecv(send, psizeTo, type,
+                             oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), it + 2,
+                             recv_buff, lowerId, type,
+                             oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), it + 2,
+                             comm, &status);
+                MPI_Get_count(&status, type, &psizeFrom);
 
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
+
 
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 
@@ -223,8 +224,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                     free(originalsize);
                 }
 
-                //reduce(offset, lowerId, recv_buff, psizeFrom);
-                reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
+                reduce(offset, lowerId, recv_buff, psizeFrom);
+                //reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
 
 #ifdef _COMPRESSION
                 if (isCompressed(static_cast<size_t>(*originalsize), static_cast<size_t>(psizeFrom)))
@@ -267,6 +268,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
                 originalsize[0] = psizeTo;
+                /*
                 MPI_Sendrecv(originalsize, 1, MPI_LONG,
                              oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), it + 2,
                              originalsize, 1, MPI_LONG,
@@ -278,12 +280,13 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                              oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
-                //MPI_Sendrecv(send, psizeTo, type,
-                //             oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), it + 2,
-                //             recv_buff, upperId, type,
-                //             oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), it + 2,
-                //             comm, &status);
-                //MPI_Get_count(&status, type, &psizeFrom);
+                */
+                MPI_Sendrecv(send, psizeTo, type,
+                             oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), it + 2,
+                             recv_buff, upperId, type,
+                             oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), it + 2,
+                             comm, &status);
+                MPI_Get_count(&status, type, &psizeFrom);
 
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();
@@ -296,8 +299,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                     free(originalsize);
                 }
 
-                // reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
-                reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
+                reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
+                //reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
 
 #ifdef _COMPRESSION
                 if (isCompressed(static_cast<size_t>(*originalsize), static_cast<size_t>(psizeFrom)))
