@@ -87,7 +87,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             reduce(0, ssize, uncompressed_fq, uncompressedsize);
 
 #ifdef _COMPRESSION
-            if (isCompressed(static_cast<size_t>(originalsize), static_cast<size_t>(psize_from)))
+            if (isCompressed(static_cast<size_t>(*originalsize), static_cast<size_t>(psize_from)))
             {
                 if (uncompressed_fq != NULL)
                 {
@@ -227,7 +227,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
 
 #ifdef _COMPRESSION
-                if (isCompressed(static_cast<size_t>(originalsize), static_cast<size_t>(psizeFrom)))
+                if (isCompressed(static_cast<size_t>(*originalsize), static_cast<size_t>(psizeFrom)))
                 {
                     if (uncompressed_fq != NULL)
                     {
@@ -300,7 +300,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
 
 #ifdef _COMPRESSION
-                if (isCompressed(static_cast<size_t>(originalsize), static_cast<size_t>(psizeFrom)))
+                if (isCompressed(static_cast<size_t>(*originalsize), static_cast<size_t>(psizeFrom)))
                 {
                     if (uncompressed_fq != NULL)
                     {
