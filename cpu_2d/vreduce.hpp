@@ -42,7 +42,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             )
 {
 
-    int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum, oldRank;
+    int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum, previousRank;
     size_t compressedsize, uncompressedsize;
     T *compressed_fq, *uncompressed_fq;
     int *originalsize = (int *) malloc(sizeof(int));
@@ -118,7 +118,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
             get(0, ssize, send, psize_to);
-            originalsize = psize_to;
+            originalsize[0] = psize_to;
 
 #ifdef INSTRUMENTED
             endTimeQueueProcessing = MPI_Wtime();
@@ -185,17 +185,17 @@ std::cout << "Pre-Send: orig: " << psizeTo << " compressed: " << compressedsize 
                 timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
 
-                oldRank = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
-                originalsize = psizeTo;
+                previousRank = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
+                originalsize[0] = psizeTo;
                 MPI_Sendrecv(originalsize, 1, MPI_LONG,
-                             oldRank, it + 2,
+                             previousRank, it + 2,
                              originalsize, 1, MPI_LONG,
-                             oldRank, it + 2,
+                             previousRank, it + 2,
                              comm, &status);
                 MPI_Sendrecv(compressed_fq, compressedsize, type,
-                             oldRank, it + 2,
+                             previousRank, it + 2,
                              recv_buff, lowerId, type,
-                             oldRank, it + 2,
+                             previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
                 /*
@@ -263,17 +263,17 @@ std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFro
 std::cout << "Pre-Send: orig: " << psizeTo << " compressed: " << compressedsize << " rank: " << vrank << std::endl;
 
 
-                oldRank = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
-                originalsize = psizeTo;
+                previousRank = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
+                originalsize[0] = psizeTo;
                 MPI_Sendrecv(originalsize, 1, MPI_LONG,
-                             oldRank, it + 2,
+                             previousRank, it + 2,
                              originalsize, 1, MPI_LONG,
-                             oldRank, it + 2,
+                             previousRank, it + 2,
                              comm, &status);
                 MPI_Sendrecv(compressed_fq, compressedsize, type,
-                             oldRank, it + 2,
+                             previousRank, it + 2,
                              recv_buff, upperId, type,
-                             oldRank, it + 2,
+                             previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
                 /*
@@ -330,7 +330,7 @@ std::cout << "Post-Send: orig: " << *originalsize << " compressed: " << psizeFro
 #endif
 
         get(offset, currentSliceSize, send, psizeTo);
-        originalsize = psizeTo;
+        originalsize[0] = psizeTo;
 
 #ifdef INSTRUMENTED
         endTimeQueueProcessing = MPI_Wtime();
