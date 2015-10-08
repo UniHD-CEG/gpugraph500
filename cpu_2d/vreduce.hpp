@@ -44,8 +44,19 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
     int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum;
     size_t compressedsize, uncompressedsize;
-
     T *compressed_fq, *uncompressed_fq;
+    int *originalsize = (int *) malloc(sizeof(int));
+
+    // auxiliar lambdas
+    const function<int (int)> newRank = [&residuum](int oldr)
+    {
+        return (oldr < 2 * residuum) ? oldr / 2 : oldr - residuum;
+    };
+    const function<int (int)> oldRank = [&residuum](int newr)
+    {
+        return (newr <  residuum) ? newr * 2 : newr + residuum;
+    };
+
     //time mesurement
 #ifdef INSTRUMENTED
     double startTimeQueueProcessing;
@@ -64,8 +75,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     {
         if ((communicatorRank & 1) == 0)  // even
         {
-            int *originalsize = (int *) malloc(sizeof(int));
-            assert(originalsize != NULL);
 
             MPI_Status status; int psize_from;
 
@@ -74,10 +83,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             MPI_Get_count(&status, type, &psize_from);
             decompress(recv_buff, psize_from, &uncompressed_fq, uncompressedsize);
 
-            if (originalsize != NULL)
-            {
-                free(originalsize);
-            }
 
 #ifdef INSTRUMENTED
             startTimeQueueProcessing = MPI_Wtime();
@@ -106,8 +111,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         {
             int psize_to;
             T *send;
-            int *originalsize = (int *) malloc(sizeof(int));
-            assert(originalsize != NULL);
 
 #ifdef INSTRUMENTED
             startTimeQueueProcessing = MPI_Wtime();
@@ -129,27 +132,15 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             compress(send, psize_to, &compressed_fq, compressedsize);
             MPI_Send(compressed_fq, compressedsize, type, communicatorRank - 1, 1, comm);
             //MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
-
-            if (originalsize != NULL)
-            {
-                free(originalsize);
-            }
         }
     }
-    const function<int (int)> newRank = [&residuum](int oldr)
-    {
-        return (oldr < 2 * residuum) ? oldr / 2 : oldr - residuum;
-    };
-    const function<int (int)> oldRank = [&residuum](int newr)
-    {
-        return (newr <  residuum) ? newr * 2 : newr + residuum;
-    };
+
 
     MPI_Status status;
     int psizeTo;
     int psizeFrom;
     T *send;
-    int *originalsize = (int *) malloc(sizeof(int));
+
 
     if ((((communicatorRank & 1) == 0)
          && (communicatorRank < 2 * residuum)) || (communicatorRank >= 2 * residuum))
@@ -219,10 +210,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 
-                if (originalsize != NULL)
-                {
-                    free(originalsize);
-                }
 
                 reduce(offset, lowerId, recv_buff, psizeFrom);
                 //reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
@@ -294,10 +281,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 
-                if (originalsize != NULL)
-                {
-                    free(originalsize);
-                }
 
                 reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
                 //reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
@@ -346,12 +329,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         send = 0;
     }
 
-    if (originalsize != NULL)
-    {
-        free(originalsize);
-    }
-
-
     //
     // todo: add compression-decompression here.
     //
@@ -392,6 +369,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
     free(sizes);
     free(disps);
+    free(originalsize);
 
 }
 

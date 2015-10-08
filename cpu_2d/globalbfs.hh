@@ -60,7 +60,7 @@ protected:
     // FQ_T*  __restrict__ fq_64; - conflicts with void* ref
     FQ_T *fq_64;
     // FQ_T *fq_64_slice;
-    //, *compressed_fq_64; // uncompressed and compressed column-buffers
+    //, *compressed_fq; // uncompressed and compressed column-buffers
     long fq_64_length;
     MType *owenmask;
     MType *tmpmask;
@@ -720,7 +720,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 int originalsize;
                 FQ_T *startaddr;
 #ifdef _COMPRESSION
-                FQ_T *compressed_fq_64, *uncompressed_fq_64;
+                FQ_T *compressed_fq, *uncompressed_fq;
 #endif
 
 #ifdef INSTRUMENTED
@@ -740,12 +740,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                compress_lambda(startaddr, uncompressedsize, &compressed_fq_64, compressedsize);
+                compress_lambda(startaddr, uncompressedsize, &compressed_fq, compressedsize);
 
 
 #ifdef _COMPRESSIONVERIFY
-                schema.decompress(compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
-                schema.verifyCompression(startaddr, uncompressed_fq_64, originalsize);
+                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
 #endif
 
 #endif
@@ -759,7 +759,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
-                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
+                MPI_Bcast(compressed_fq, compressedsize, fq_tp_type, root_rank, row_comm);
 #else
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
@@ -768,26 +768,26 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                schema.decompress(compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
+                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
 
 #ifdef _COMPRESSIONVERIFY
                 if (schema.isCompressed(originalsize, compressedsize))
                 {
-                    assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
+                    assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                 }
                 else
                 {
-                    assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
+                    assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                 }
-                assert(is_sorted(uncompressed_fq_64, uncompressed_fq_64 + uncompressedsize));
-                schema.verifyCompression(startaddr, uncompressed_fq_64, originalsize);
+                assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
+                schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
 #endif
 
                 // Todo: Save (G/C)PU cycles. decompression not needed for MPI rank Root. The original array is available.
                 /*
                 if (rank != root_rank){
-                    schema.decompress(compressed_fq_64, compressedsize, startaddr, uncompressedsize);
-                    delete[] compressed_fq_64;
+                    schema.decompress(compressed_fq, compressedsize, startaddr, uncompressedsize);
+                    delete[] compressed_fq;
                 }
                 */
 
@@ -799,7 +799,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 
 #ifdef _COMPRESSION
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq, originalsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #endif
@@ -807,13 +807,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
                 if (schema.isCompressed(originalsize, compressedsize))
                 {
-                    if (uncompressed_fq_64 != NULL)
+                    if (uncompressed_fq != NULL)
                     {
-                        free(uncompressed_fq_64);
+                        free(uncompressed_fq);
                     }
-                    if (compressed_fq_64 != NULL)
+                    if (compressed_fq != NULL)
                     {
-                        free(compressed_fq_64);
+                        free(compressed_fq);
                     }
                 }
 #endif
@@ -832,12 +832,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 #ifdef _COMPRESSION
 
-                FQ_T *compressed_fq_64 = NULL, *uncompressed_fq_64 = NULL;
+                FQ_T *compressed_fq = NULL, *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
                 assert(originalsize <= fq_64_length);
-                compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
+                compressed_fq = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
 
 #ifdef _COMPRESSIONVERIFY
                 FQ_T *startaddr = NULL;
@@ -852,12 +852,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
                 MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
-                memcpy(compressed_fq_64, fq_64, compressedsize * sizeof(FQ_T));
+                memcpy(compressed_fq, fq_64, compressedsize * sizeof(FQ_T));
                 uncompressedsize = static_cast<size_t>(originalsize);
-                schema.decompress(compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
+                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
                 if (schema.isCompressed(originalsize, compressedsize))
                 {
-                    static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq_64, originalsize);
+                    static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq, originalsize);
                 }
 
 #ifdef _COMPRESSIONVERIFY
@@ -887,13 +887,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
                 if (schema.isCompressed(originalsize, compressedsize))
                 {
-                    if (uncompressed_fq_64 != NULL)
+                    if (uncompressed_fq != NULL)
                     {
-                        free(uncompressed_fq_64);
+                        free(uncompressed_fq);
                     }
-                    if (compressed_fq_64 != NULL)
+                    if (compressed_fq != NULL)
                     {
-                        free(compressed_fq_64);
+                        free(compressed_fq);
                     }
 
 #ifdef _COMPRESSIONVERIFY
@@ -906,9 +906,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 }
                 else
                 {
-                    if (compressed_fq_64 != NULL)
+                    if (compressed_fq != NULL)
                     {
-                        free(compressed_fq_64);
+                        free(compressed_fq);
                     }
 
 #ifdef _COMPRESSIONVERIFY
