@@ -665,7 +665,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
                 compress_lambda,
                 decompress_lambda,
+#ifdef _COMPRESSIONBENCHMARK
                 benchmarkCompression_lambda,
+#endif
                 isCompressed_lambda,
 #endif
                 fq_64,
