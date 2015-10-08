@@ -85,8 +85,10 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
             MPI_Recv(originalsize, 1, MPI_LONG, communicatorRank + 1, 1, comm, &status);
 #endif
+
             MPI_Recv(recv_buff, ssize, type, communicatorRank + 1, 1, comm, &status);
             MPI_Get_count(&status, type, &psize_from);
+
 #ifdef _COMPRESSION
             uncompressedsize = *originalsize;
             decompress(recv_buff, psize_from, &uncompressed_fq, uncompressedsize);
@@ -150,7 +152,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         }
     }
 
-
     MPI_Status status;
     int psizeTo;
     int psizeFrom;
@@ -170,7 +171,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         vrank  = newRank(communicatorRank);
         currentSliceSize  = ssize;
         offset = 0;
-
 
         for (int it = 0; it < intLdSize; ++it)
         {
@@ -222,7 +222,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
 #endif
-
 
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();
@@ -277,7 +276,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 endTimeQueueProcessing = MPI_Wtime();
                 timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
-
 
                 previousRank = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
 
@@ -391,8 +389,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
     MPI_Allgatherv(send, sizes[communicatorRank],
-                   type, recv_buff, sizes,
-                   disps, type, comm);
+                   type, recv_buff, &sizes[0],
+                   &disps[0], type, comm);
 
     free(sizes);
     free(disps);
