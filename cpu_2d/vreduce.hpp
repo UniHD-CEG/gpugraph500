@@ -27,7 +27,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
              function<void(T *, const size_t &, T **, size_t &)> &compress,
              function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
+#ifdef _COMPRESSIONBENCHMARK
              function <void (T *, const int)> &benchmarkCompression,
+#endif
              const function <bool (const size_t, const size_t)> &isCompressed,
 #endif
              T *recv_buff,
@@ -42,11 +44,12 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 {
 
     int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum, previousRank;
+    int *originalsize = (int *) malloc(sizeof(int));
+
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
     T *compressed_fq, *uncompressed_fq;
 #endif
-    int *originalsize = (int *) malloc(sizeof(int));
 
     // auxiliar lambdas
     const function<int (int)> newRank = [&residuum](int oldr)
