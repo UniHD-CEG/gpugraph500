@@ -44,10 +44,10 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 {
 
     int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum, previousRank;
-    int originalsize;
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
+    int originalsize;
     T *compressed_fq, *uncompressed_fq;
 #endif
 
@@ -130,7 +130,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
             get(0, ssize, send, psize_to);
-            originalsize = psize_to;
 
 #ifdef INSTRUMENTED
             endTimeQueueProcessing = MPI_Wtime();
@@ -142,6 +141,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
+            originalsize = psize_to;
             MPI_Send(&originalsize, 1, MPI_LONG, communicatorRank - 1, 1, comm);
             compress(send, psize_to, &compressed_fq, compressedsize);
             MPI_Send(compressed_fq, compressedsize, type, communicatorRank - 1, 1, comm);
@@ -344,7 +344,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
         get(offset, currentSliceSize, send, psizeTo);
-        originalsize = psizeTo;
 
 #ifdef INSTRUMENTED
         endTimeQueueProcessing = MPI_Wtime();
