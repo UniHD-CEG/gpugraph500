@@ -45,30 +45,6 @@ void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
 
     if (size > 0)
     {
-        /*
-                    char const *codec_name = "s4-bp128-dm";
-                    IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
-                    high_resolution_clock::time_point time_0, time_1;
-                    vector<uint32_t>  fq_32(fq, fq + size);
-                    vector<uint32_t>  compressed_fq_32(size + 1024);
-                    vector<uint32_t>  uncompressed_fq_32(size);
-                    size_t compressedsize = compressed_fq_32.size();
-                    size_t uncompressedsize = uncompressed_fq_32.size();
-                    time_0 = high_resolution_clock::now();
-                    codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
-                    time_1 = high_resolution_clock::now();
-                    auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
-                    compressed_fq_32.resize(compressedsize);
-                    compressed_fq_32.shrink_to_fit();
-                    vector<T> compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
-                    time_0 = high_resolution_clock::now();
-                    codec.decodeArray(compressed_fq_32.data(), compressed_fq_32.size(), uncompressed_fq_32.data(), uncompressedsize);
-                    time_1 = high_resolution_clock::now();
-                    auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
-                    uncompressed_fq_32.resize(uncompressedsize);
-                    vector<T> uncompressed_fq_64(uncompressed_fq_32.begin(), uncompressed_fq_32.end());
-            */
-
         size_t compressedsize, uncompressedsize = static_cast<size_t>(size);
         T *compressed_fq, *uncompressed_fq;
         high_resolution_clock::time_point time_0, time_1;
@@ -88,33 +64,31 @@ void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
         /**
          * Check validity of results
          */
-        // assert(size == uncompressedsize && equal(uncompressed_fq.begin(), uncompressed_fq.end(), fq));
-        //double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
         double compressionratio = (static_cast<double>(compressedsize) / static_cast<double>(uncompressedsize));
         double compresspercent = (100.0 - 100.0 * compressionratio);
         long dataSize = (size * sizeof(int));
-        string dataMetric;
+        string dataUnit;
         if (dataSize < 1000)
         {
-            dataMetric = "B";
+            dataUnit = "B";
         }
         else if (dataSize < 1000000)
         {
-            dataMetric = "KB";
+            dataUnit = "KB";
             dataSize /= 1000;
         }
         else if (dataSize < 1000000000)
         {
-            dataMetric = "MB";
+            dataUnit = "MB";
             dataSize /= 1000;
         }
         else if (dataSize < 1000000000000)
         {
-            dataMetric = "GB";
+            dataUnit = "GB";
             dataSize /= 1000;
         }
-        printf("cpu-simd (%s), dataSize: %ld%s c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name.c_str(), dataSize,
-               dataMetric.c_str(), encode_time, decode_time,
+        printf("bMark: cpu-simd (%s), data: %ld%s, c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name.c_str(), dataSize,
+               dataUnit.c_str(), encode_time, decode_time,
                compresspercent);
     }
 }
