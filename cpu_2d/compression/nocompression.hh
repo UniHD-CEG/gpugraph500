@@ -41,7 +41,8 @@ void NoCompression<T>::benchmarkCompression(T *fq, const int size)
      */
     verifyCompression(fq, uncompressed_fq_64, uncompressedsize);
     double compressratio = 0.0;
-    printf("No-Compression: c/d: %04ld/%04ldus, %02.3f%% gained\n", encode_time, decode_time, compressratio);
+    printf("No-Compression: dataSize: %ldB c/d: %04ld/%04ldus, %02.3f%% gained\n", size * sizeof(int), encode_time,
+           decode_time, compressratio);
 
 }
 

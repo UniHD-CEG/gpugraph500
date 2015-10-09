@@ -25,6 +25,7 @@ template <typename T>
 class CpuSimd: public Compression<T>
 {
 private:
+    inline bool isCompressible(int size) const { return (originalsize > SIMDCOMPRESSION_THRESHOLD); };
 public:
     void benchmarkCompression(T *fq, const int size);
     void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
@@ -39,45 +40,63 @@ public:
 template <typename T>
 void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
 {
-    if (size > SIMDCOMPRESSION_THRESHOLD)
-    {
-        char const *codec_name = "s4-bp128-dm";
-        IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
-        high_resolution_clock::time_point time_0, time_1;
-        vector<uint32_t>  fq_32(fq, fq + size);
-        vector<uint32_t>  compressed_fq_32(size + 1024);
-        vector<uint32_t>  uncompressed_fq_32(size);
-        size_t compressedsize = compressed_fq_32.size();
-        size_t uncompressedsize = uncompressed_fq_32.size();
-        time_0 = high_resolution_clock::now();
-        codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
-        time_1 = high_resolution_clock::now();
-        auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
-        compressed_fq_32.resize(compressedsize);
-        compressed_fq_32.shrink_to_fit();
-        vector<T> compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
-        time_0 = high_resolution_clock::now();
-        codec.decodeArray(compressed_fq_32.data(), compressed_fq_32.size(), uncompressed_fq_32.data(), uncompressedsize);
-        time_1 = high_resolution_clock::now();
-        auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
-        uncompressed_fq_32.resize(uncompressedsize);
-        vector<T> uncompressed_fq_64(uncompressed_fq_32.begin(), uncompressed_fq_32.end());
-        /**
-         * Check validity of results
-         */
-        assert(size == uncompressedsize && equal(uncompressed_fq_64.begin(), uncompressed_fq_64.end(), fq));
-        double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
-        double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
-        printf("SIMD.codec: %s, c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name, encode_time, decode_time,
-               compressratio);
-    }
+
+    /*
+        if (size > SIMDCOMPRESSION_THRESHOLD)
+        {
+            char const *codec_name = "s4-bp128-dm";
+            IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
+            high_resolution_clock::time_point time_0, time_1;
+            vector<uint32_t>  fq_32(fq, fq + size);
+            vector<uint32_t>  compressed_fq_32(size + 1024);
+            vector<uint32_t>  uncompressed_fq_32(size);
+            size_t compressedsize = compressed_fq_32.size();
+            size_t uncompressedsize = uncompressed_fq_32.size();
+            time_0 = high_resolution_clock::now();
+            codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
+            time_1 = high_resolution_clock::now();
+            auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
+            compressed_fq_32.resize(compressedsize);
+            compressed_fq_32.shrink_to_fit();
+            vector<T> compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
+            time_0 = high_resolution_clock::now();
+            codec.decodeArray(compressed_fq_32.data(), compressed_fq_32.size(), uncompressed_fq_32.data(), uncompressedsize);
+            time_1 = high_resolution_clock::now();
+            auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
+            uncompressed_fq_32.resize(uncompressedsize);
+            vector<T> uncompressed_fq_64(uncompressed_fq_32.begin(), uncompressed_fq_32.end());
+    */
+
+    size_t compressedsize, uncompressedsize = static_cast<size_t>(size);
+    T *compressed_fq, *uncompressed_fq;
+    high_resolution_clock::time_point time_0, time_1;
+    time_0 = high_resolution_clock::now();
+    compress(fq, uncompressedsize, &compressed_fq, compressedsize);
+    time_1 = high_resolution_clock::now();
+    auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
+    time_0 = high_resolution_clock::now();
+    decompress(compressed_fq, compressedsize, &uncompressed_fq, uncompressedsize);
+    time_1 = high_resolution_clock::now();
+    auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
+    verifyCompression(fq, uncompressed_fq, uncompressedsize);
+    /**
+     * Check validity of results
+     */
+    // assert(size == uncompressedsize && equal(uncompressed_fq.begin(), uncompressed_fq.end(), fq));
+    //double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
+    double compressionratio = (compressedsize / uncompressedsize);
+    double compressedbits = (32.0 * compressionratio);
+    double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
+    printf("cpu-simd (%s), c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name, encode_time, decode_time,
+           compressratio);
+//    }
 }
 
 template <typename T>
 void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
                           size_t &compressedsize)
 {
-    if (size > SIMDCOMPRESSION_THRESHOLD)
+    if (isCompressible(size))
     {
         uint32_t *fq_32 = (uint32_t *)malloc(size * sizeof(uint32_t));
         uint32_t *compressed_fq_32 = (uint32_t *)malloc(size * sizeof(uint32_t));
@@ -169,7 +188,7 @@ template <typename T>
 void CpuSimd<T>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
                                    const size_t uncompressedsize) const
 {
-    if (uncompressedsize > SIMDCOMPRESSION_THRESHOLD)
+    if (isCompressible(uncompressedsize))
     {
         assert(memcmp(fq, uncompressed_fq_64, uncompressedsize * sizeof(T)) == 0);
     }
@@ -178,7 +197,7 @@ void CpuSimd<T>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
 template <typename T>
 inline bool CpuSimd<T>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
-    return (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize);
+    return (isCompressible(originalsize) && originalsize != compressedsize);
 }
 
 template <typename T>

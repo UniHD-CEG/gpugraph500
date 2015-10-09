@@ -91,7 +91,9 @@
 #   Values: yes | no
 #   Default value: no
 #   Description: "sends both compressed, and decompressed data through
-#   			  the network. Checks decompression at peer node"
+#   			  the network. Checks decompression at peer node. This option
+#   			  impacts severely on performance since the original Frontier Queue
+#   			  has to be transmitted along with the compressed one."
 #
 # enable_simd_compression
 #   Values: yes | no
@@ -154,7 +156,7 @@ scorep_custom_basedir                     :=/home/jromera/scorep
 use_avx_instructions                      :="yes"
 enable_compression                        :="yes"
 enable_compression_verify                 :="no"
-enable_compression_benchmark              :="no"
+enable_compression_benchmark              :="yes"
 enable_simd_compression                   :="yes"
 use_cuda                                  :="yes"
 debug                                     :="no"
