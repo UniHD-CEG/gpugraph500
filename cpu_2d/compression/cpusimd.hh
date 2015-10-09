@@ -87,10 +87,31 @@ void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
         // assert(size == uncompressedsize && equal(uncompressed_fq.begin(), uncompressed_fq.end(), fq));
         //double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
         double compressionratio = (compressedsize / uncompressedsize);
-        double compressedbits = (32.0 * compressionratio);
-        double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
-        printf("cpu-simd (%s), c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name.c_str(), encode_time, decode_time,
-               compressratio);
+        double compresspercent = (100.0 - 100.0 * compressionratio);
+        long dataSize = (size * sizeof(int));
+        string dataMetric;
+        if (dataSize < 1000)
+        {
+            dataMetric("B");
+        }
+        else if (dataSize < 1000000)
+        {
+            dataMetric("KB");
+            dataSize /= 1000;
+        }
+        else if (dataSize < 1000000000)
+        {
+            dataMetric("MB");
+            dataSize /= 1000;
+        }
+        else if (dataSize < 1000000000000)
+        {
+            dataMetric("GB");
+            dataSize /= 1000;
+        }
+        printf("cpu-simd (%s), dataSize: %ld%s c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name.c_str(), dataSize,
+               dataMetric.c_str(), encode_time, decode_time,
+               compresspercent);
     }
 }
 
