@@ -81,6 +81,10 @@ void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
         time_1 = high_resolution_clock::now();
         auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
         verifyCompression(fq, uncompressed_fq, uncompressedsize);
+        if (isCompressed(uncompressedsize, compressedsize)) {
+            free(compressed_fq);
+            free(uncompressed_fq);
+        }
         /**
          * Check validity of results
          */
