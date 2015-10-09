@@ -18,7 +18,7 @@ using std::string;
 using std::vector;
 using std::equal;
 
-string codec_name("s4-bp128-dm");
+string codec_name = "s4-bp128-dm";
 IntegerCODEC &codec = *CODECFactory::getFromName(codec_name);
 uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
 
@@ -90,27 +90,27 @@ void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
          */
         // assert(size == uncompressedsize && equal(uncompressed_fq.begin(), uncompressed_fq.end(), fq));
         //double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
-        double compressionratio = (compressedsize / uncompressedsize);
+        double compressionratio = (static_cast<double>(compressedsize) / static_cast<double>(uncompressedsize));
         double compresspercent = (100.0 - 100.0 * compressionratio);
         long dataSize = (size * sizeof(int));
         string dataMetric;
         if (dataSize < 1000)
         {
-            dataMetric("B");
+            dataMetric = "B";
         }
         else if (dataSize < 1000000)
         {
-            dataMetric("KB");
+            dataMetric = "KB";
             dataSize /= 1000;
         }
         else if (dataSize < 1000000000)
         {
-            dataMetric("MB");
+            dataMetric = "MB";
             dataSize /= 1000;
         }
         else if (dataSize < 1000000000000)
         {
-            dataMetric("GB");
+            dataMetric = "GB";
             dataSize /= 1000;
         }
         printf("cpu-simd (%s), dataSize: %ld%s c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name.c_str(), dataSize,
