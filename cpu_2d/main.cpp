@@ -20,9 +20,9 @@
 
 
 #if __cplusplus > 199711L  //C++11 check
-    #include <random>
+#include <random>
 #else
-    #error This library needs at least a C++11 compliant compiler
+#error This library needs at least a C++11 compliant compiler
 #endif
 
 /**
@@ -33,16 +33,17 @@
  *
  */
 #ifdef _CUDA
-    #include "cuda/cuda_bfs.h"
+#include "cuda/cuda_bfs.h"
 #elif defined _OPENCL
-    #include "opencl/OCLrunner.hh"
-    #include "opencl/opencl_bfs.h"
+#include "opencl/OCLrunner.hh"
+#include "opencl/opencl_bfs.h"
 #else
-    #include "cpubfs_bin.h"
+#include "cpubfs_bin.h"
 #endif
 
 
-struct statistic {
+struct statistic
+{
     double min;
     double firstquartile;
     double thirdquartile;
@@ -54,7 +55,8 @@ struct statistic {
     double hstddev;
 };
 
-enum GGen {
+enum GGen
+{
     G500 = 0,
     OLD_G500
 };
@@ -69,21 +71,22 @@ enum GGen {
  */
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
-                                          int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
-                                                                                      int &graph_gen, int &gpus, double &queue_sizing);
+                              int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
+                              int &graph_gen, int &gpus, double &queue_sizing);
 void outputIterationStatistics(statistic &bfs_time_s, statistic &nedge_s, statistic &teps_s);
 void outputIterationInstrumentedStatistics(statistic &valid_time_s, statistic &lbfs_time_s, statistic &lbfs_share_s,
-                                                            statistic &lqueue_time_s, statistic &lqueue_share_s, statistic &rest_time_s,
-                                                            statistic &rest_share_s, statistic &lrowcom_s, statistic &lrowcom_share_s,
-                                                            statistic &lcolcom_s, statistic &lcolcom_share_s, statistic &lpredlistred_s,
-                                                            statistic &lpredlistred_share_s);
-vtxtyp generateStartNode(const int64_t &vertices, std::knuth_b & generator);
+        statistic &lqueue_time_s, statistic &lqueue_share_s, statistic &rest_time_s,
+        statistic &rest_share_s, statistic &lrowcom_s, statistic &lrowcom_share_s,
+        statistic &lcolcom_s, statistic &lcolcom_share_s, statistic &lpredlistred_s,
+        statistic &lpredlistred_share_s);
+vtxtyp generateStartNode(const int64_t &vertices, std::knuth_b &generator);
 template <class T> statistic getStatistics(std::vector <T> &input);
 void outputMatrixGenerationResults(int size, const int64_t &global_edges, double constr_time, long global_edges_wd);
 void printStat(statistic &input, const char *name, bool harmonic);
-void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid, double make_graph_time, int iterations);
+void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
+                             double make_graph_time, int iterations);
 void outputBfsRunIterationResults(double rtstart, double rtstop, double gmax_lexp, double gmax_lqueue,
-                                                                double gmax_rowcom, double gmax_colcom, double gmax_predlistred);
+                                  double gmax_rowcom, double gmax_colcom, double gmax_predlistred);
 void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C);
 
 /**
@@ -95,7 +98,8 @@ void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C);
  *
  */
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
     int64_t scale = 21;
     int64_t edgefactor = 16;
@@ -113,7 +117,8 @@ int main(int argc, char **argv) {
     int level, this_valid;
     int next, maxiterations;
     long local_edges, elem, global_edges_wd;
-    int iterations = 0, maxgenvtx = 32; // relative number of maximum attempts to find a valid start vertix per possible attempt
+    int iterations = 0, maxgenvtx =
+                         32; // relative number of maximum attempts to find a valid start vertix per possible attempt
     std::vector <vtxtyp> tries;
     std::vector <double> bfs_time;
     std::vector <long> nedge; //number of edges
@@ -121,7 +126,7 @@ int main(int argc, char **argv) {
 
 #ifdef INSTRUMENTED
     double lexp, lqueue, rowcom, colcom, predlistred;
-    double gmax_lexp,gmax_lqueue, gmax_rowcom, gmax_colcom, gmax_predlistred;
+    double gmax_lexp, gmax_lqueue, gmax_rowcom, gmax_colcom, gmax_predlistred;
     std::vector<double> valid_time;
     std::vector<double> bfs_local;
     std::vector<double> bfs_local_share;
@@ -146,7 +151,8 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    if (rank == 0) {
+    if (rank == 0)
+    {
         externalArgumentsIterate(argc, argv, scale, edgefactor, num_of_iterations, verbosity,
                                  R, C, R_set, C_set, graph_gen,
                                  gpus, queue_sizing);
@@ -161,13 +167,14 @@ int main(int argc, char **argv) {
     MPI_Bcast(&C, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef _CUDA
-    MPI_Bcast(&gpus      ,1,MPI_INT,0,MPI_COMM_WORLD);
-    MPI_Bcast(&queue_sizing,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    MPI_Bcast(&gpus      , 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&queue_sizing, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 #endif
 
     MPI_Bcast(&verbosity, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
     // Close unnecessary nodes
-    if (R * C != size) {
+    if (R * C != size)
+    {
         printf("Number of nodes and size of grid do not match.\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
@@ -185,7 +192,8 @@ int main(int argc, char **argv) {
 
     MPI_Reduce(&number_of_edges, &global_edges_wd, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
     make_graph_time = tstop - tstart;
-    if (rank == 0) {
+    if (rank == 0)
+    {
         printf("Input list of edges genereted.\n");
         printf("%e edge(s) generated in %fs (%f Medges/s on %d processor(s))\n", static_cast<double>(global_edges_wd),
                make_graph_time, global_edges_wd / make_graph_time * 1.e-6, size);
@@ -206,20 +214,24 @@ int main(int argc, char **argv) {
     // Matrix generation
     MatrixT store(R, C);
     store.setupMatrix2(edgelist, number_of_edges);
-    if ((verbosity >= 1) && (rank == 0)) {
+    if ((verbosity >= 1) && (rank == 0))
+    {
         printf("Global matrix redistribution done!\n");
     }
 
 #ifdef _SIMDCOMPRESS
     // Check Matrix. Values lower than 32 bits are needed for SIMDcompression
-    if (rank == 0) {
+    if (rank == 0)
+    {
         printf("Check matrix values...");
     }
-    if (!store.allValuesSmallerThan32Bits()) {
+    if (!store.allValuesSmallerThan32Bits())
+    {
         printf("[ERROR:: values grater that 2exp32]\n");
         exit(1);
     }
-    if (rank == 0) {
+    if (rank == 0)
+    {
         printf(" done!\n");
     }
 #endif
@@ -237,18 +249,22 @@ int main(int argc, char **argv) {
     local_edges = store.getEdgeCount();
     MPI_Reduce(&local_edges, &global_edges, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
     constr_time = tstop - tstart;
-    if (rank == 0) {
+    if (rank == 0)
+    {
         outputMatrixGenerationResults(size, global_edges, constr_time, global_edges_wd);
     }
 
 #if INSTRUMENTED
-    if (verbosity >= 16) {
+    if (verbosity >= 16)
+    {
         // print matrix
         const rowtyp *rowp = store.getRowPointer();
         const vtxtyp *columnp = store.getColumnIndex();
-        for (int i = 0; i < store.getLocRowLength(); ++i) {
+        for (int i = 0; i < store.getLocRowLength(); ++i)
+        {
             printf("%lX: ", static_cast<int64_t>(store.localtoglobalRow(i)));
-            for (rowtyp j = rowp[i]; j < rowp[i + 1]; ++j) {
+            for (rowtyp j = rowp[i]; j < rowp[i + 1]; ++j)
+            {
                 printf("%lX ", static_cast<int64_t>(columnp[j]));
             }
             printf("\n");
@@ -258,19 +274,22 @@ int main(int argc, char **argv) {
 
     // random number generator
     std::knuth_b generator;
-    std::uniform_int_distribution<vtxtyp> distribution(0,vertices-1);
+    std::uniform_int_distribution<vtxtyp> distribution(0, vertices - 1);
 
     maxiterations = num_of_iterations * maxgenvtx;
 
-    if (rank == 0) {
+    if (rank == 0)
+    {
         int giteration = 0; // number of tried iterations
-        while (iterations < num_of_iterations && giteration < maxiterations) {
+        while (iterations < num_of_iterations && giteration < maxiterations)
+        {
             ++giteration;
             start = distribution(generator);
 
             // generate start node
             //skip already visited
-            if (std::find(tries.begin(), tries.end(), start) != tries.end()) {
+            if (std::find(tries.begin(), tries.end(), start) != tries.end())
+            {
                 continue;
             }
             // tell other nodes that there is another vertex to check
@@ -279,13 +298,15 @@ int main(int argc, char **argv) {
             // test if vertex has edges to other vertices
             elem = 0;
             MPI_Bcast(&start, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-            if (store.isLocalRow(start)) {
+            if (store.isLocalRow(start))
+            {
                 vtxtyp locstart = store.globaltolocalRow(start);
                 elem = store.getRowPointer()[locstart + 1] - store.getRowPointer()[locstart];
             }
             MPI_Reduce(MPI_IN_PLACE, &elem, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
 
-            if (elem > 0) {
+            if (elem > 0)
+            {
                 tries.push_back(start);
                 ++iterations;
             }
@@ -293,15 +314,20 @@ int main(int argc, char **argv) {
         next = 0;
         MPI_Bcast(&next, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    } else {
-        while (true) {
+    }
+    else
+    {
+        while (true)
+        {
             MPI_Bcast(&next, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            if (next == 0) {
+            if (next == 0)
+            {
                 break;
             }
             elem = 0;
             MPI_Bcast(&start, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-            if (store.isLocalRow(start)) {
+            if (store.isLocalRow(start))
+            {
                 locstart = store.globaltolocalRow(start);
                 elem = store.getRowPointer()[locstart + 1] - store.getRowPointer()[locstart];
             }
@@ -312,21 +338,28 @@ int main(int argc, char **argv) {
     // BFS runs start
     MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    for (int i = 0; i < iterations; ++i) {
+    for (int i = 0; i < iterations; ++i)
+    {
         // BFS
         MPI_Barrier(MPI_COMM_WORLD);
         rtstart = MPI_Wtime();
 
 #ifdef INSTRUMENTED
-        if(rank == 0){
+        if (rank == 0)
+        {
             runBfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred);
-        }else{
+        }
+        else
+        {
             runBfs.runBFS(-1, lexp, lqueue, rowcom, colcom, predlistred);
         }
 #else
-        if (rank == 0) {
+        if (rank == 0)
+        {
             runBfs.runBFS(tries[i]);
-        } else {
+        }
+        else
+        {
             runBfs.runBFS(-1);
         }
 #endif
@@ -338,51 +371,59 @@ int main(int argc, char **argv) {
         MPI_Reduce(&colcom, &gmax_colcom, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
         MPI_Reduce(&predlistred, &gmax_predlistred, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 #endif
-        if (rank == 0) {
-            if (verbosity >= 1) {
+        if (rank == 0)
+        {
+            if (verbosity >= 1)
+            {
                 printf("BFS Iteration %d: Finished in %fs\n", i, (rtstop - rtstart));
             }
 #ifdef INSTRUMENTED
-            if(verbosity >= 1){
+            if (verbosity >= 1)
+            {
                 outputBfsRunIterationResults(rtstart, rtstop, gmax_lexp, gmax_lqueue, gmax_rowcom, gmax_colcom,
                                              gmax_predlistred);
             }
 
             bfs_local.push_back(gmax_lexp);
-            bfs_local_share.push_back(gmax_lexp/(rtstop-rtstart));
+            bfs_local_share.push_back(gmax_lexp / (rtstop - rtstart));
             queue_local.push_back(gmax_lqueue);
-            queue_local_share.push_back(gmax_lqueue/(rtstop-rtstart));
-            rest.push_back((rtstop-rtstart)-gmax_lexp-gmax_lqueue);
-            rest_share.push_back(1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart));
+            queue_local_share.push_back(gmax_lqueue / (rtstop - rtstart));
+            rest.push_back((rtstop - rtstart) - gmax_lexp - gmax_lqueue);
+            rest_share.push_back(1. - (gmax_lexp + gmax_lqueue) / (rtstop - rtstart));
 
             lrowcom.push_back(gmax_rowcom);
-            lrowcom_share.push_back(gmax_rowcom/(rtstop-rtstart));
+            lrowcom_share.push_back(gmax_rowcom / (rtstop - rtstart));
             lcolcom.push_back(gmax_colcom);
-            lcolcom_share.push_back(gmax_colcom/(rtstop-rtstart));
+            lcolcom_share.push_back(gmax_colcom / (rtstop - rtstart));
             lpredlistred.push_back(gmax_predlistred);
-            lpredlistred_share.push_back(gmax_predlistred/(rtstop-rtstart));
+            lpredlistred_share.push_back(gmax_predlistred / (rtstop - rtstart));
 #endif
 
         }
         // Validation
         tstart = MPI_Wtime();
-        if (rank == 0) {
+        if (rank == 0)
+        {
             start = tries[i];
             MPI_Bcast(&start, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-        } else {
+        }
+        else
+        {
             MPI_Bcast(&start, 1, MPI_LONG, 0, MPI_COMM_WORLD);
         }
         this_valid = validate_bfs_result<MatrixT>(store, edgelist, number_of_edges,
-                                                  vertices, static_cast<int64_t>(start), runBfs.getPredecessor(),
-                                                  &num_edges, &level);
+                     vertices, static_cast<int64_t>(start), runBfs.getPredecessor(),
+                     &num_edges, &level);
         tstop = MPI_Wtime();
-        if (rank == 0) {
+        if (rank == 0)
+        {
             printf("Validation of iteration %d finished in %fs\n", i, (tstop - tstart));
         }
         valid = valid && this_valid;
 
         //print and save statistic
-        if (rank == 0) {
+        if (rank == 0)
+        {
             printf("Result: %s %ld Edge(s) processed, %f MTeps\n", (this_valid) ? "Valid" : "Invalid",
                    static_cast<long>(num_edges), num_edges / (rtstop - rtstart) * 1E-6);
             //for statistic
@@ -397,7 +438,8 @@ int main(int argc, char **argv) {
     } // BFS runs end
     free(edgelist);
     // Output statistics
-    if (rank == 0) {
+    if (rank == 0)
+    {
         outputGeneralStatistics(scale, edgefactor, size, valid, make_graph_time, iterations);
 #ifdef _CUDA
         printf("gpus_per_process: %d\n", gpus);
@@ -444,17 +486,20 @@ int main(int argc, char **argv) {
  */
 
 void outputBfsRunIterationResults(double rtstart, double rtstop, double gmax_lexp, double gmax_lqueue,
-double gmax_rowcom, double gmax_colcom, double gmax_predlistred) {
-    printf("max. local exp.:     %fs(%f%%)\n", gmax_lexp,  100.*gmax_lexp/(rtstop-rtstart));
-    printf("max. queue handling: %fs(%f%%)\n", gmax_lqueue,100.*gmax_lqueue/(rtstop-rtstart));
-    printf("est. rest:           %fs(%f%%)\n",(rtstop-rtstart)-gmax_lexp-gmax_lqueue, 100.*(1. - (gmax_lexp+gmax_lqueue)/(rtstop-rtstart)));
-    printf("max. row com.:       %fs(%f%%)\n", gmax_rowcom,  100.*gmax_rowcom/(rtstop-rtstart));
-    printf("max. col com.:       %fs(%f%%)\n", gmax_colcom,  100.*gmax_colcom/(rtstop-rtstart));
-    printf("max. pred. list. red:%fs(%f%%)\n", gmax_predlistred,  100.*gmax_predlistred/(rtstop-rtstart));
+                                  double gmax_rowcom, double gmax_colcom, double gmax_predlistred)
+{
+    printf("max. local exp.:     %fs(%f%%)\n", gmax_lexp,  100.*gmax_lexp / (rtstop - rtstart));
+    printf("max. queue handling: %fs(%f%%)\n", gmax_lqueue, 100.*gmax_lqueue / (rtstop - rtstart));
+    printf("est. rest:           %fs(%f%%)\n", (rtstop - rtstart) - gmax_lexp - gmax_lqueue,
+           100.*(1. - (gmax_lexp + gmax_lqueue) / (rtstop - rtstart)));
+    printf("max. row com.:       %fs(%f%%)\n", gmax_rowcom,  100.*gmax_rowcom / (rtstop - rtstart));
+    printf("max. col com.:       %fs(%f%%)\n", gmax_colcom,  100.*gmax_colcom / (rtstop - rtstart));
+    printf("max. pred. list. red:%fs(%f%%)\n", gmax_predlistred,  100.*gmax_predlistred / (rtstop - rtstart));
 }
 
 void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
-double make_graph_time, int iterations) {
+                             double make_graph_time, int iterations)
+{
     printf("Validation: %s\n", (valid) ? "passed" : "failed!");
     printf("SCALE: %ld\n", scale);
     printf("edgefactor: %ld\n", edgefactor);
@@ -464,19 +509,21 @@ double make_graph_time, int iterations) {
 
 }
 
-void outputMatrixGenerationResults(int size, const int64_t &global_edges, double constr_time, long global_edges_wd) {
+void outputMatrixGenerationResults(int size, const int64_t &global_edges, double constr_time, long global_edges_wd)
+{
     printf("Adjacency Matrix setup.\n");
     printf("%e edge(s) removed, because they are duplicates or self loops.\n",
-               static_cast<double>(global_edges_wd - global_edges / 2));
+           static_cast<double>(global_edges_wd - global_edges / 2));
     printf("%e unique edge(s) processed in %fs (%f Medges/s on %d processor(s))\n",
-               static_cast<double>(global_edges), constr_time, global_edges / constr_time * 1.e-6, size);
+           static_cast<double>(global_edges), constr_time, global_edges / constr_time * 1.e-6, size);
 }
 
 void outputIterationInstrumentedStatistics(statistic &valid_time_s, statistic &lbfs_time_s, statistic &lbfs_share_s,
-statistic &lqueue_time_s, statistic &lqueue_share_s, statistic &rest_time_s,
-statistic &rest_share_s, statistic &lrowcom_s, statistic &lrowcom_share_s,
-statistic &lcolcom_s, statistic &lcolcom_share_s, statistic &lpredlistred_s,
-statistic &lpredlistred_share_s) {
+        statistic &lqueue_time_s, statistic &lqueue_share_s, statistic &rest_time_s,
+        statistic &rest_share_s, statistic &lrowcom_s, statistic &lrowcom_share_s,
+        statistic &lcolcom_s, statistic &lcolcom_share_s, statistic &lpredlistred_s,
+        statistic &lpredlistred_share_s)
+{
 
     printStat(valid_time_s, "validation_time", false);
     printStat(lbfs_time_s, "local_bfs_time", false);
@@ -493,28 +540,41 @@ statistic &lpredlistred_share_s) {
     printStat(lpredlistred_share_s, "predecessor_list_reduction_share", true);
 }
 
-void outputIterationStatistics(statistic &bfs_time_s, statistic &nedge_s, statistic &teps_s) {
+void outputIterationStatistics(statistic &bfs_time_s, statistic &nedge_s, statistic &teps_s)
+{
     printStat(bfs_time_s, "time", false);
     printStat(nedge_s, "nedge", false);
     printStat(teps_s, "TEPS", true);
 }
 
-void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C) {
-    if (R_set && !C_set) {
-        if (R > size) {
+void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C)
+{
+    if (R_set && !C_set)
+    {
+        if (R > size)
+        {
             printf("Error not enought nodesRequested: %d available: %d\n", R, size);
             MPI_Abort(MPI_COMM_WORLD, 1);
-        } else {
+        }
+        else
+        {
             C = size / R;
         }
-    } else if (!R_set && C_set) {
-        if (C > size) {
+    }
+    else if (!R_set && C_set)
+    {
+        if (C > size)
+        {
             printf("Error not enought nodes. Requested: %d available: %d\n", C, size);
             MPI_Abort(MPI_COMM_WORLD, 1);
-        } else {
+        }
+        else
+        {
             R = size / C;
         }
-    } else {
+    }
+    else
+    {
         R = size;
         C = 1;
     }
@@ -522,57 +582,88 @@ void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C) {
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
-                              int &graph_gen, int &gpus, double &queue_sizing) {
+                              int &graph_gen, int &gpus, double &queue_sizing)
+{
 
     int i = 0;
-    while (i < argc) {
-        if (!strcmp(argv[i], "-s")) {
-            if (i + 1 < argc) {
+    while (i < argc)
+    {
+        if (!strcmp(argv[i], "-s"))
+        {
+            if (i + 1 < argc)
+            {
                 int s_tmp = atol(argv[i + 1]);
-                if (s_tmp < 1) {
+                if (s_tmp < 1)
+                {
                     printf("Invalid scale factor: %s\n", argv[i + 1]);
-                } else {
+                }
+                else
+                {
                     scale = s_tmp;
                     ++i;
                 }
             }
-        } else if (!strcmp(argv[i], "-e")) {
-            if (i + 1 < argc) {
+        }
+        else if (!strcmp(argv[i], "-e"))
+        {
+            if (i + 1 < argc)
+            {
                 int e_tmp = atol(argv[i + 1]);
-                if (e_tmp < 1) {
+                if (e_tmp < 1)
+                {
                     printf("Invalid edge factor: %s\n", argv[i + 1]);
-                } else {
+                }
+                else
+                {
                     edgefactor = e_tmp;
                     ++i;
                 }
             }
-        } else if (!strcmp(argv[i], "-i")) {
-            if (i + 1 < argc) {
+        }
+        else if (!strcmp(argv[i], "-i"))
+        {
+            if (i + 1 < argc)
+            {
                 int i_tmp = atol(argv[i + 1]);
-                if (i_tmp < 1) {
+                if (i_tmp < 1)
+                {
                     printf("Invalid number of iterations: %s\n", argv[i + 1]);
-                } else {
+                }
+                else
+                {
                     num_of_iterations = i_tmp;
                     ++i;
                 }
             }
-        } else if (!strcmp(argv[i], "-R")) {
-            if (i + 1 < argc) {
+        }
+        else if (!strcmp(argv[i], "-R"))
+        {
+            if (i + 1 < argc)
+            {
                 int R_tmp = atoi(argv[i + 1]);
-                if (R_tmp < 1) {
+                if (R_tmp < 1)
+                {
                     printf("Invalid row slice number: %s\n", argv[i + 1]);
-                } else {
+                }
+                else
+                {
                     R_set = true;
                     R = R_tmp;
                     ++i;
                 }
             }
-        } else if (!strcmp(argv[i], "-C")) {
-            if (i + 1 < argc) {
+        }
+        else if (!strcmp(argv[i], "-C"))
+        {
+            if (i + 1 < argc)
+            {
                 int C_tmp = atoi(argv[i + 1]);
-                if (C_tmp < 1) {
+                if (C_tmp < 1)
+                {
                     printf("Invalid column slice number: %s\n", argv[i + 1]);
-                } else {
+                }
+                else
+                {
                     C_set = true;
                     C = C_tmp;
                     ++i;
@@ -580,29 +671,43 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
             }
 
 #ifdef _CUDA
-            }else if(!strcmp(argv[i], "-gpus")){
-                if(i+1 < argc){
-                    int gpus_tmp = atoi(argv[i+1]);
-                    if(gpus_tmp < 1 || gpus_tmp > 8){
-                         printf("Invalid gpu number: %s\n", argv[i+1]);
-                    } else{
-                        gpus = gpus_tmp;
-                        ++i;
-                    }
-                 }
-            }else if(!strcmp(argv[i], "-qs")){
-                if(i+1 < argc){
-                    double qs_tmp = atof(argv[i+1]);
-                    if(qs_tmp < 1.){
-                         printf("Invalid queue sizing: %s\n", argv[i+1]);
-                    } else{
-                        queue_sizing = qs_tmp;
-                        ++i;
-                    }
-                 }
+        }
+        else if (!strcmp(argv[i], "-gpus"))
+        {
+            if (i + 1 < argc)
+            {
+                int gpus_tmp = atoi(argv[i + 1]);
+                if (gpus_tmp < 1 || gpus_tmp > 8)
+                {
+                    printf("Invalid gpu number: %s\n", argv[i + 1]);
+                }
+                else
+                {
+                    gpus = gpus_tmp;
+                    ++i;
+                }
+            }
+        }
+        else if (!strcmp(argv[i], "-qs"))
+        {
+            if (i + 1 < argc)
+            {
+                double qs_tmp = atof(argv[i + 1]);
+                if (qs_tmp < 1.)
+                {
+                    printf("Invalid queue sizing: %s\n", argv[i + 1]);
+                }
+                else
+                {
+                    queue_sizing = qs_tmp;
+                    ++i;
+                }
+            }
 #endif
 
-        } else if (!strcmp(argv[i], "-v")) {
+        }
+        else if (!strcmp(argv[i], "-v"))
+        {
             /* Verbosity level:
              * 0: Suppress all unnessesary output
              * 1: Level infos
@@ -610,25 +715,37 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
              * 16: Output Matrix
              * 24: problem pointer
              */
-            if (i + 1 < argc) {
+            if (i + 1 < argc)
+            {
                 long verbosity_tmp = atol(argv[i + 1]);
-                if (verbosity_tmp < 0) {
+                if (verbosity_tmp < 0)
+                {
                     printf("Invalid verbosity: %s\n", argv[i + 1]);
-                } else {
+                }
+                else
+                {
                     verbosity = verbosity_tmp;
                     ++i;
                 }
             }
-        } else if (!strcmp(argv[i], "-g")) {
+        }
+        else if (!strcmp(argv[i], "-g"))
+        {
             // graph genarator
-            if (i + 1 < argc) {
-                if (!strcmp(argv[i + 1], "g500")) {
+            if (i + 1 < argc)
+            {
+                if (!strcmp(argv[i + 1], "g500"))
+                {
                     graph_gen = G500;
                     ++i;
-                } else if (!strcmp(argv[i + 1], "old_g500")) {
+                }
+                else if (!strcmp(argv[i + 1], "old_g500"))
+                {
                     graph_gen = OLD_G500;
                     ++i;
-                } else {
+                }
+                else
+                {
                     printf("Generator %s unknown!\n", argv[i + 1]);
                     ++i;
                 }
@@ -638,24 +755,29 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
     }
 }
 
-void printStat(statistic &input, const char *name, bool harmonic) {
+void printStat(statistic &input, const char *name, bool harmonic)
+{
     printf("min_%s: %2.3e\n", name, input.min);
     printf("firstquartile_%s: %2.3e\n", name, input.firstquartile);
     printf("median_%s: %2.3e\n", name, input.median);
     printf("thirdquartile_%s: %2.3e\n", name, input.thirdquartile);
     printf("max_%s: %2.3e\n", name, input.max);
 
-    if (harmonic) {
+    if (harmonic)
+    {
         printf("harmonic_mean_%s: %2.3e\n", name, input.hmean);
         printf("harmonic_stddev_%s: %2.3e\n", name, input.hstddev);
-    } else {
+    }
+    else
+    {
         printf("mean_%s: %2.3e\n", name, input.mean);
         printf("stddev_%s: %2.3e\n", name, input.stddev);
     }
 }
 
 template<class T>
-statistic getStatistics(std::vector <T> &input) {
+statistic getStatistics(std::vector <T> &input)
+{
     statistic out;
     std::sort(input.begin(), input.end());
     out.min = static_cast<double>(input.front());
@@ -673,7 +795,8 @@ statistic getStatistics(std::vector <T> &input) {
         out.thirdquartile = static_cast<double>(input[3 * input.size() / 4]);
     out.max = static_cast<double>(input.back());
     double qsum = 0.0, sum = 0.0;
-    for (typename std::vector<T>::iterator it = input.begin(); it != input.end(); it++) {
+    for (typename std::vector<T>::iterator it = input.begin(); it != input.end(); it++)
+    {
         double it_val = static_cast<double>(*it);
         sum += it_val;
         qsum += it_val * it_val;
@@ -682,7 +805,8 @@ statistic getStatistics(std::vector <T> &input) {
     out.stddev = sqrt((qsum - sum * sum / static_cast<double>(input.size())) /
                       (static_cast<double>(input.size()) - 1));
     double iv_sum = 0;
-    for (typename std::vector<T>::iterator it = input.begin(); it != input.end(); it++) {
+    for (typename std::vector<T>::iterator it = input.begin(); it != input.end(); it++)
+    {
         double it_val = static_cast<double>(*it);
         iv_sum += 1 / it_val;
     }
@@ -692,7 +816,8 @@ statistic getStatistics(std::vector <T> &input) {
     // Means and Their Application to Index Numbers, 1940.
     // http://www.jstor.org/stable/2235723
     double qiv_dif = 0.;
-    for (typename std::vector<T>::iterator it = input.begin(); it != input.end(); it++) {
+    for (typename std::vector<T>::iterator it = input.begin(); it != input.end(); it++)
+    {
         double it_val = 1 / static_cast<double>(*it) - 1 / out.hmean;
         qiv_dif += it_val * it_val;
     }

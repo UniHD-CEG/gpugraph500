@@ -3,26 +3,29 @@
 
 #define __restrict__
 #ifdef __CUDACC__
-    #include "cuda_support.hh" //for enactor_base.cuh
-    #include "b40c/graph/bfs/csr_problem_2d.cuh"
-    #include "b40c/graph/bfs/enactor_multi_gpu_2d.cuh"
+#include "cuda_support.hh" //for enactor_base.cuh
+#include "b40c/graph/bfs/csr_problem_2d.cuh"
+#include "b40c/graph/bfs/enactor_multi_gpu_2d.cuh"
 #else
-    namespace b40c {
-        namespace graph {
-            namespace bfs {
-                template<typename _VertexId, typename _SizeT, bool MARK_PREDECESSORS>
-                struct CsrProblem;
-                template<typename Csr, bool INSTRUMENT>
-                class EnactorMultiGpu;
-            }
-        }
-    }
+namespace b40c
+{
+namespace graph
+{
+namespace bfs
+{
+template<typename _VertexId, typename _SizeT, bool MARK_PREDECESSORS>
+struct CsrProblem;
+template<typename Csr, bool INSTRUMENT>
+class EnactorMultiGpu;
+}
+}
+}
 #endif
 
 #include "../globalbfs.hh"
 
 #ifdef _DEBUG
-    #include "../validate/checkqueue.h"
+#include "../validate/checkqueue.h"
 #endif
 
 using namespace b40c::graph::bfs;
@@ -31,14 +34,15 @@ using namespace b40c::graph::bfs;
 typedef long long vtxtyp;
 typedef unsigned int rowtyp;
 
-class CUDA_BFS : public GlobalBFS<CUDA_BFS,
-        vtxtyp,
-        unsigned char,
-        DistMatrix2d<vtxtyp, rowtyp, true, 1, true>  // use local ids
-> {
+class CUDA_BFS : public GlobalBFS <CUDA_BFS,
+    vtxtyp,
+    unsigned char,
+    DistMatrix2d<vtxtyp, rowtyp, true, 1, true>  // use local ids
+    >
+{
     typedef unsigned char MType;
 
-    typedef CsrProblem<vtxtyp,
+    typedef CsrProblem <vtxtyp,
             rowtyp,
             true> Csr;
     int64_t verbosity;
@@ -56,7 +60,7 @@ class CUDA_BFS : public GlobalBFS<CUDA_BFS,
 
     Csr *csr_problem;
 #ifdef INSTRUMENTED
-    EnactorMultiGpu<Csr, true>* bfsGPU;
+    EnactorMultiGpu<Csr, true> *bfsGPU;
 #else
     EnactorMultiGpu<Csr, false> *bfsGPU;
 #endif

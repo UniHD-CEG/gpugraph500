@@ -74,6 +74,25 @@
 #   Description: "CPU SSExx and AMD compatible AVX will be used.
 #   				Required for SIMDcompression librasy"
 #
+# enable_compression
+#   Values: yes | no
+#   Default value: yes
+#   Description: "Enables any type of compression through the network. Switch this option
+#   				to "no" to disable completely compression.
+#
+# enable_compression_benchmark
+#   Values: yes | no
+#   Default value: no
+#   Description: "shows statistics of compression rate, time of compression
+#   			  decompression fot the compression schema used (cpusimd, gpusimt, etc),
+#   			  and for each codec (in the case id at Lemire's simdcompress) if available."
+#
+# enable_compression_verify
+#   Values: yes | no
+#   Default value: no
+#   Description: "sends both compressed, and decompressed data through
+#   			  the network. Checks decompression at peer node"
+#
 # enable_simd_compression
 #   Values: yes | no
 #   Default value: yes
@@ -81,18 +100,6 @@
 #   			  D. Lemire SIMDCompression library"
 #   External links:
 #   			- https://github.com/lemire/SIMDCompressionAndIntersection
-#
-# enable_simd_compression_benchmark
-#   Values: yes | no
-#   Default value: no
-#   Description: "shows statistics of compression rate, time of compression
-#   			  decompression for each codec at Lemire's library"
-#
-# enable_simd_compression_verify
-#   Values: yes | no
-#   Default value: no
-#   Description: "sends both compressed, and decompressed data through
-#   			  the network. Checks decompression at peer node"
 #
 # debug
 #   Values: yes | no
@@ -145,9 +152,10 @@ scorep_profiler_automatic_instrumentation :="yes"
 scorep_custom                             :="yes"
 scorep_custom_basedir                     :=/home/jromera/scorep
 use_avx_instructions                      :="yes"
+enable_compression                        :="yes"
+enable_compression_verify                 :="no"
+enable_compression_benchmark              :="no"
 enable_simd_compression                   :="yes"
-enable_simd_compression_benchmark         :="no"
-enable_simd_compression_verify            :="no"
 use_cuda                                  :="yes"
 debug                                     :="no"
 debug_code                                :="no"
@@ -208,17 +216,13 @@ ifeq ($(nvidia_ptxas_otimize), "yes")
 endif
 
 
-ifeq ($(nvidia_architecture), "auto")
-	NV_ARCHITECTURE := $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
-else
 ifeq ($(nvidia_architecture), "fermi")
 	NV_ARCHITECTURE := $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
 else
 ifeq ($(nvidia_architecture), "kepler")
 	NV_ARCHITECTURE := $(PTXAS) -arch=sm_35
 else
-	NV_ARCHITECTURE := $(PTXAS) -arch=sm_52
-endif
+	NV_ARCHITECTURE := $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 endif
 endif
 
@@ -280,30 +284,42 @@ ifeq ($(debug), "yes")
 	DEFINES +=-D_DEBUG
 endif
 
-#
-# SIMDcompression block.
-#
-# CPU with SSE4 support is required.
-# CPU with AVX support is recommended.
-#
-#
 
-
-ifeq ($(enable_simd_compression), "yes")
-	DEFINES += -D_SIMDCOMPRESS
-	INCPATH := -I. -Icompression/include
-	HEADERS := $(shell ls compression/include/*h)
-ifeq ($(enable_simd_compression_benchmark), "yes")
-	DEFINES += -D_SIMDCOMPRESSBENCHMARK
+ifeq ($(enable_compression), "yes")
+	DEFINES += -D_COMPRESSION
+ifeq ($(enable_compression_benchmark), "yes")
+	DEFINES += -D_COMPRESSIONBENCHMARK
 	LLIBC := -static-libstdc++
 endif
-ifeq ($(enable_simd_compression_verify), "yes")
-	DEFINES += -D_SIMDCOMPRESSVERIFY
+ifeq ($(enable_compression_verify), "yes")
+	DEFINES += -D_COMPRESSIONVERIFY
 endif
+#
+#
+# Compression Block
+#
+#
+
+# 1. CPU/SIMD Compression.
+#    CPU with SSE4 support is required. CPU with AVX support is recommended.
+#
+ifeq ($(enable_simd_compression), "yes")
+	DEFINES += -D_SIMDCOMPRESS
+	INCPATH := -I. -Icompression/cpusimd/include
+	HEADERS := $(shell ls compression/cpusimd/include/*h)
 else
 	INCPATH := -I.
 	HEADERS :=
 endif
+# 2. XXX/XXXX Compression.
+# ...
+#
+endif
+
+#
+# Miscellanous
+#
+#
 
 ifeq ($(use_cuda), "yes")
 	DEFINE_CUDA := -D_CUDA
@@ -399,13 +415,14 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		../b40c/graph/bfs/partition_contract/upsweep/tile.cuh ../b40c/graph/bfs/partition_contract/upsweep/kernel_policy.cuh ../b40c/partition/upsweep/kernel_policy.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel.cuh \
 		../b40c/graph/bfs/partition_contract/downsweep/cta.cuh ../b40c/partition/downsweep/cta.cuh ../b40c/graph/bfs/partition_contract/downsweep/tile.cuh \
 		../b40c/partition/downsweep/tile.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh ../b40c/partition/downsweep/kernel_policy.cuh \
-		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h
+		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h \
+		compression/cpusimd.hh compression/nocompression.hh
 	@echo ""
 	@echo "--- Compiling g500"
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_INSTRUMENTATION) $(SCOREP_CPPFLAGS) $(INCPATH) -o main.o main.cpp
 	@echo "    MPICC     $@"
 
-bitpacking.o: compression/include/bitpacking.h compression/src/bitpacking.cpp
+bitpacking.o: compression/cpusimd/include/bitpacking.h compression/cpusimd/src/bitpacking.cpp
 ifeq ($(enable_simd_compression), "yes")
 	@echo ""
 	@echo "============================================================================"
@@ -413,85 +430,85 @@ ifeq ($(enable_simd_compression), "yes")
 	@echo "============================================================================"
 endif
 	@echo ""
-	@echo "--- Compiling SIMDCompression"
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/bitpacking.cpp -Icompression/include
+	@echo "--- Compiling CPU/SIMD compression"
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/bitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
-integratedbitpacking.o: compression/include/integratedbitpacking.h compression/src/integratedbitpacking.cpp
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/integratedbitpacking.cpp -Icompression/include
+integratedbitpacking.o: compression/cpusimd/include/integratedbitpacking.h compression/cpusimd/src/integratedbitpacking.cpp
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/integratedbitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
-simdpackedsearch.o:  compression/src/simdpackedsearch.c
-	$(Q)$(CC) $(CCFLAGS) -c compression/src/simdpackedsearch.c
+simdpackedsearch.o:  compression/cpusimd/src/simdpackedsearch.c
+	$(Q)$(CC) $(CCFLAGS) -c compression/cpusimd/src/simdpackedsearch.c
 	@echo "    CC        $@"
 
-simdpackedselect.o:  compression/src/simdpackedselect.c
-	$(Q)$(CC) $(CCFLAGS) -c compression/src/simdpackedselect.c
+simdpackedselect.o:  compression/cpusimd/src/simdpackedselect.c
+	$(Q)$(CC) $(CCFLAGS) -c compression/cpusimd/src/simdpackedselect.c
 	@echo "    CC        $@"
 
-streamvbyte.o:  compression/src/streamvbyte.c
-	$(Q)$(CC) $(CCFLAGS) -c compression/src/streamvbyte.c
+streamvbyte.o:  compression/cpusimd/src/streamvbyte.c
+	$(Q)$(CC) $(CCFLAGS) -c compression/cpusimd/src/streamvbyte.c
 	@echo "    CC        $@"
 
-varintdecode.o:  compression/src/varintdecode.c
-	$(Q)$(CC) $(CCFLAGS) -c compression/src/varintdecode.c
+varintdecode.o:  compression/cpusimd/src/varintdecode.c
+	$(Q)$(CC) $(CCFLAGS) -c compression/cpusimd/src/varintdecode.c
 	@echo "    CC        $@"
 
-simdbitpacking.o: compression/include/simdbitpacking.h compression/src/simdbitpacking.cpp
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/simdbitpacking.cpp -Icompression/include
+simdbitpacking.o: compression/cpusimd/include/simdbitpacking.h compression/cpusimd/src/simdbitpacking.cpp
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/simdbitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
-usimdbitpacking.o: compression/include/usimdbitpacking.h compression/src/usimdbitpacking.cpp
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/usimdbitpacking.cpp -Icompression/include
+usimdbitpacking.o: compression/cpusimd/include/usimdbitpacking.h compression/cpusimd/src/usimdbitpacking.cpp
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/usimdbitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
-frameofreference.o: compression/src/frameofreference.cpp $(HEADERS)
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/frameofreference.cpp -Icompression/include
+frameofreference.o: compression/cpusimd/src/frameofreference.cpp $(HEADERS)
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/frameofreference.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
-for.o: compression/src/for.c $(HEADERS)
-	$(Q)$(CC) $(CCFLAGS) -c compression/src/for.c -Icompression/include
+for.o: compression/cpusimd/src/for.c $(HEADERS)
+	$(Q)$(CC) $(CCFLAGS) -c compression/cpusimd/src/for.c -Icompression/cpusimd/include
 	@echo "    CC        $@"
 
-simdintegratedbitpacking.o: compression/include/simdintegratedbitpacking.h compression/include/delta.h compression/src/simdintegratedbitpacking.cpp
-	$(Q)$(CXX) $(CXXFLAGS) -c compression/src/simdintegratedbitpacking.cpp -Icompression/include
+simdintegratedbitpacking.o: compression/cpusimd/include/simdintegratedbitpacking.h compression/cpusimd/include/delta.h compression/cpusimd/src/simdintegratedbitpacking.cpp
+	$(Q)$(CXX) $(CXXFLAGS) -c compression/cpusimd/src/simdintegratedbitpacking.cpp -Icompression/cpusimd/include
 	@echo "    CCX       $@"
 
 utils.o: generator/utils.c generator/splittable_mrg.h generator/graph_generator.h generator/user_settings.h generator/utils.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ generator/utils.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ generator/utils.c
 	@echo "    MPICC     $@"
 
 splittable_mrg.o: generator/splittable_mrg.c generator/mod_arith.h generator/user_settings.h generator/mod_arith_64bit.h generator/mod_arith_32bit.h \
 		generator/splittable_mrg.h generator/mrg_transitions.c
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ generator/splittable_mrg.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ generator/splittable_mrg.c
 	@echo "    MPICC     $@"
 
 make_graph.o: generator/make_graph.c generator/graph_generator.h generator/user_settings.h generator/utils.h generator/splittable_mrg.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ generator/make_graph.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ generator/make_graph.c
 	@echo "    MPICC     $@"
 
 graph_generator.o: generator/graph_generator.c generator/user_settings.h generator/splittable_mrg.h generator/graph_generator.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ generator/graph_generator.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ generator/graph_generator.c
 	@echo "    MPICC     $@"
 
 simplecpubfs.o: simplecpubfs.cpp simplecpubfs.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ simplecpubfs.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) -o $@ simplecpubfs.cpp
 	@echo "    MPICXX    $@"
 
 onesided.o: validate/onesided.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ validate/onesided.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ validate/onesided.c
 	@echo "    MPICC     $@"
 
 onesided_emul.o: validate/onesided_emul.c validate/mpi_workarounds.h validate/onesided.h generator/utils.h generator/splittable_mrg.h
-	$(Q)$(MPICC) -c $(MPICFLAGS) $(INCPATH) -o $@ validate/onesided_emul.c
+	$(Q)$(MPICC) -c $(MPICFLAGS) -o $@ validate/onesided_emul.c
 	@echo "    MPICC     $@"
 
 bitlevelfunctions.o: bitlevelfunctions.h bitlevelfunctions.cpp
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ bitlevelfunctions.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) -o $@ bitlevelfunctions.cpp
 	@echo "    MPICXX    $@"
 
 cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(INCPATH) -o $@ cpubfs_bin.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) -o $@ cpubfs_bin.cpp
 	@echo "    MPICXX    $@"
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
@@ -524,11 +541,7 @@ clean:
 	@echo "============================================================================"
 	@echo ""
 	$(Q)rm -rf $(OUTFILES) $(OBJECTS)
-	$(Q)rm -rf *~ core *.core example g500
+	$(Q)rm -rf *~ core *.core g500
 	@echo "--- Cleaning"
-
-example:  $(HEADERS) compression/example.cpp  $(COMPRESSION_OBJECTS)
-	$(Q)$(CXX) $(CXXFLAGS)  -o example compression/example.cpp  $(COMPRESSION_OBJECTS) -Icompression/include
-	@echo "    CCX       $@"
 
 .PHONY: g500 clean

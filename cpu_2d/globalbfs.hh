@@ -16,74 +16,57 @@
 #include <stdlib.h>
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    #include "scorep/SCOREP_User.h"
-#endif
-
-#ifdef _SIMDCOMPRESS
-    #include "codecfactory.h"
-    using namespace SIMDCompressionLib;
+#include "scorep/SCOREP_User.h"
 #endif
 
 #ifdef INSTRUMENTED
-    #include <unistd.h>
-    #include <chrono>
-    using namespace std::chrono;
+#include <unistd.h>
+#include <chrono>
+using namespace std::chrono;
 #endif
+
+#ifdef _COMPRESSION
+#include "compression/compressionfactory.hh"
+#endif
+
+using std::function;
+using std::bind;
+using std::vector;
+using std::is_sorted;
+using namespace std::placeholders;
 
 
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template<class Derived,
-        class FQ_T,  // Queue Type
-        class MType, // Bitmap mask
-        class STORE> //Storage of Matrix
-class GlobalBFS {
+template <typename Derived,
+          typename FQ_T,  // Queue Type
+          typename MType, // Bitmap mask
+          typename STORE> //Storage of Matrix
+class GlobalBFS
+{
 private:
-    // Set to 0xffffffff (2^32) to transparently disable SIMD(de)compression
-    // uint32_t SIMDCOMPRESSION_THRESHOLD = 0xffffffff; // transparently deactivate de/compression.
-    uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
-    std::vector <typename STORE::fold_prop> fold_fq_props;
+    vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
-
-// Todo: export-to-class
-#ifdef _SIMDCOMPRESS
-
-    /**
-     * SIMD integration calls
-     *
-     *
-     */
-    void SIMDbenchmarkCompression(const FQ_T *fq, const int size, const int rank) const;
-    void SIMDverifyCompression(const FQ_T *fq, const FQ_T *uncompressed_fq_64, const size_t uncompressedsize) const;
-    void SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, const size_t &size, FQ_T **compressed_fq_64, size_t &compressedsize) const;
-    void SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, const int size, FQ_T **uncompressed_fq_64,
-                                                                                                    size_t &uncompressedsize) const;
-    inline bool SIMDthereWasCompression(const size_t originalsize, const size_t compressedsize) const;
-
-#endif
-
-#ifdef INSTRUMENTED
-    std::size_t getTotalSystemMemory();
-#endif
 
 protected:
     const STORE &store;
     typename STORE::vtxtyp *predecessor;
-    MPI_Datatype fq_tp_type; //Frontier Queue Transport Type
+    MPI_Datatype fq_tp_type; //Frontier Queue Type
     MPI_Datatype bm_type;    // Bitmap Type
     // FQ_T*  __restrict__ fq_64; - conflicts with void* ref
     FQ_T *fq_64;
     // FQ_T *fq_64_slice;
-    //, *compressed_fq_64; // uncompressed and compressed column-buffers
+    //, *compressed_fq; // uncompressed and compressed column-buffers
     long fq_64_length;
     MType *owenmask;
     MType *tmpmask;
     int64_t mask_size;
     int rank;
+
 
     /**
      * Inherited methods in children classes: cuda_bfs.cu (CUDA), cpubfs_bin.cpp (CPU improved) and simplecpubfs.cpp (CPU basic)
@@ -106,6 +89,9 @@ protected:
     void setBackInqueue();
     void generatOwenMask();
 
+    // Uses the device memory calls to copy the MPI buffer. This buffer is created on the device (CPU, CUDA, OPENGL, etc)
+    // using a malloc will cause a crash if the app is not in CPU mode. Implemented on the clidren class where also, the
+    // buffer is created.
     void bfsMemCpy(FQ_T *&dst, FQ_T *src, size_t size);
 
 public:
@@ -118,7 +104,8 @@ public:
     typename STORE::vtxtyp *getPredecessor();
 
 #ifdef INSTRUMENTED
-    void runBFS(typename STORE::vtxtyp startVertex, double& lexp, double &lqueue, double& rowcom, double& colcom, double& predlistred);
+    void runBFS(typename STORE::vtxtyp startVertex, double &lexp, double &lqueue, double &rowcom, double &colcom,
+                double &predlistred);
 #else
     void runBFS(typename STORE::vtxtyp startVertex);
 #endif
@@ -130,8 +117,9 @@ public:
  * Constructor
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
-GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : store(_store) {
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : store(_store)
+{
     int mtypesize = 8 * sizeof(MType);
     int local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
     // Split communicator into row and column communicator
@@ -150,21 +138,20 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : st
  * Destructor
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
-GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS() {
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS()
+{
     delete[] owenmask;
     delete[] tmpmask;
-
-    // MPI_Type_free(&fq_tp_type);
-    // MPI_Type_free(&bm_type);
 }
 
 /**
  * getPredecessor()
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
-typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor() {
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
+{
     return predecessor;
 }
 
@@ -173,10 +160,11 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
  * Bitmap compression on predecessor reduction
  *
  */
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vtxtyp *&owen,
-                                                                    typename STORE::vtxtyp *&tmp, MType *&owenmap,
-                                                                    MType *&tmpmap) {
+        typename STORE::vtxtyp *&tmp, MType *&owenmap,
+        MType *&tmpmap)
+{
     MPI_Status status;
     int communicatorSize, communicatorRank, intLdSize, power2intLdSize, residuum;
     int psize = mask_size;
@@ -190,21 +178,26 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     residuum = communicatorSize - (1 << intLdSize);
 
     //step 2
-    if (communicatorRank < 2 * residuum) {
-        if ((communicatorRank & 1) == 0) { // even
+    if (communicatorRank < 2 * residuum)
+    {
+        if ((communicatorRank & 1) == 0)   // even
+        {
             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank + 1, 0, tmpmap, psize, bm_type, communicatorRank + 1, 0,
                          col_comm, &status);
-            for (int i = 0; i < psize; ++i) {
+            for (int i = 0; i < psize; ++i)
+            {
                 tmpmap[i] &= ~owenmap[i];
                 owenmap[i] |= tmpmap[i];
             }
 
             MPI_Recv(tmp, store.getLocColLength(), fq_tp_type, communicatorRank + 1, 1, col_comm, &status);
             int p = 0;
-            for (int i = 0; i < psize; ++i) {
+            for (int i = 0; i < psize; ++i)
+            {
                 MType tmpm = tmpmap[i];
                 int size = i * mtypesize;
-                while (tmpm != 0) {
+                while (tmpm != 0)
+                {
                     int last = ffsl(tmpm) - 1;
                     owen[size + last] = tmp[p];
                     ++p;
@@ -212,17 +205,22 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 }
             }
 
-        } else { // odd
+        }
+        else     // odd
+        {
             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank - 1, 0, tmpmap, psize, bm_type, communicatorRank - 1, 0,
-                                                                                                    col_comm, &status);
-            for (int i = 0; i < psize; ++i) {
+                         col_comm, &status);
+            for (int i = 0; i < psize; ++i)
+            {
                 tmpmap[i] = ~tmpmap[i] & owenmap[i];
             }
             int p = 0;
-            for (int i = 0; i < psize; ++i) {
+            for (int i = 0; i < psize; ++i)
+            {
                 MType tmpm = tmpmap[i];
                 int size = i * mtypesize;
-                while (tmpm != 0) {
+                while (tmpm != 0)
+                {
                     int last = ffsl(tmpm) - 1;
                     tmp[p] = owen[size + last];
                     ++p;
@@ -232,46 +230,55 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             MPI_Send(tmp, p, fq_tp_type, communicatorRank - 1, 1, col_comm);
         }
     }
-    const std::function <int(int)> newRank = [&residuum](int oldr) {
+    const function <int(int)> newRank = [&residuum](int oldr)
+    {
         return (oldr < 2 * residuum) ? oldr / 2 : oldr - residuum;
     };
-    const std::function <int(int)> oldRank = [&residuum](int newr) {
+    const function <int(int)> oldRank = [&residuum](int newr)
+    {
         return (newr < residuum) ? newr * 2 : newr + residuum;
     };
 
-    if ((((communicatorRank & 1) == 0) && (communicatorRank < 2 * residuum)) || (communicatorRank >= 2 * residuum)) {
+    if ((((communicatorRank & 1) == 0) && (communicatorRank < 2 * residuum)) || (communicatorRank >= 2 * residuum))
+    {
         int ssize, vrank, offset, lowers, uppers, size, index, ioffset;
 
         ssize = psize;
         vrank = newRank(communicatorRank);
         offset = 0;
 
-        for (int it = 0; it < intLdSize; ++it) {
+        for (int it = 0; it < intLdSize; ++it)
+        {
             lowers = ssize / 2; //lower slice size
             uppers = ssize - lowers; //upper slice size
             size = lowers * mtypesize;
 
-            if (((vrank >> it) & 1) == 0) {// even
+            if (((vrank >> it) & 1) == 0)  // even
+            {
                 //Transmission of the the bitmap
                 MPI_Sendrecv(owenmap + offset, ssize, bm_type, oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), (it << 1) + 2,
                              tmpmap + offset, ssize, bm_type, oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), (it << 1) + 2,
                              col_comm, &status);
 
-                for (int i = 0; i < lowers; ++i) {
+                for (int i = 0; i < lowers; ++i)
+                {
                     ioffset = i + offset;
                     tmpmap[ioffset] &= ~owenmap[ioffset];
                     owenmap[ioffset] |= tmpmap[ioffset];
                 }
-                for (int i = lowers; i < ssize; ++i) {
+                for (int i = lowers; i < ssize; ++i)
+                {
                     ioffset = i + offset;
                     tmpmap[ioffset] = (~tmpmap[ioffset]) & owenmap[ioffset];
                 }
                 //Generation of foreign updates
                 int p = 0;
-                for (int i = 0; i < uppers; ++i) {
+                for (int i = 0; i < uppers; ++i)
+                {
                     MType tmpm = tmpmap[i + offset + lowers];
                     index = (i + offset + lowers) * mtypesize;
-                    while (tmpm != 0) {
+                    while (tmpm != 0)
+                    {
                         int last = ffsl(tmpm) - 1;
                         tmp[size + p] = owen[index + last];
                         ++p;
@@ -286,10 +293,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                              col_comm, &status);
                 //Updates for own data
                 p = 0;
-                for (int i = 0; i < lowers; ++i) {
+                for (int i = 0; i < lowers; ++i)
+                {
                     MType tmpm = tmpmap[offset + i];
                     index = (i + offset) * mtypesize;
-                    while (tmpm != 0) {
+                    while (tmpm != 0)
+                    {
                         int last = ffsl(tmpm) - 1;
                         owen[index + last] = tmp[p];
                         ++p;
@@ -297,25 +306,31 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     }
                 }
                 ssize = lowers;
-            } else { // odd
+            }
+            else     // odd
+            {
                 //Transmission of the the bitmap
                 MPI_Sendrecv(owenmap + offset, ssize, bm_type,
                              oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 2,
                              tmpmap + offset, ssize, bm_type,
                              oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 2,
                              col_comm, &status);
-                for (int i = 0; i < lowers; ++i) {
+                for (int i = 0; i < lowers; ++i)
+                {
                     tmpmap[i + offset] = (~tmpmap[i + offset]) & owenmap[i + offset];
                 }
-                for (int i = lowers; i < ssize; ++i) {
+                for (int i = lowers; i < ssize; ++i)
+                {
                     tmpmap[i + offset] &= ~owenmap[i + offset];
                     owenmap[i + offset] |= tmpmap[i + offset];
                 }
                 //Generation of foreign updates
                 int p = 0;
-                for (int i = 0; i < lowers; ++i) {
+                for (int i = 0; i < lowers; ++i)
+                {
                     MType tmpm = tmpmap[i + offset];
-                    while (tmpm != 0) {
+                    while (tmpm != 0)
+                    {
                         int last = ffsl(tmpm) - 1;
                         tmp[p] = owen[(i + offset) * mtypesize + last];
                         ++p;
@@ -331,10 +346,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
                 //Updates for own data
                 p = 0;
-                for (int i = 0; i < uppers; ++i) {
+                for (int i = 0; i < uppers; ++i)
+                {
                     MType tmpm = tmpmap[offset + lowers + i];
                     int lindex = (i + offset + lowers) * mtypesize;
-                    while (tmpm != 0) {
+                    while (tmpm != 0)
+                    {
                         int last = ffsl(tmpm) - 1;
                         owen[lindex + last] = tmp[p + size];
                         ++p;
@@ -347,8 +364,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         }
     }
     //Computation of displacements
-    std::vector<int> sizes(communicatorSize);
-    std::vector<int> disps(communicatorSize);
+    vector<int> sizes(communicatorSize);
+    vector<int> disps(communicatorSize);
 
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -356,7 +373,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     sizes[lastTargetNode] = ((psize) >> intLdSize) * mtypesize;
     disps[lastTargetNode] = 0;
 
-    for (unsigned int slice = 1; slice < power2intLdSize; ++slice) {
+    for (unsigned int slice = 1; slice < power2intLdSize; ++slice)
+    {
         unsigned int reversedSliceIDs = reverse(slice, intLdSize);
         unsigned int targetNode = oldRank(reversedSliceIDs);
         sizes[targetNode] = (psize >> intLdSize) * mtypesize;
@@ -365,7 +383,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     }
     //nodes without a partial resulty
     int index;
-    for (unsigned int node = 0; node < residuum; ++node) {
+    for (unsigned int node = 0; node < residuum; ++node)
+    {
         index = 2 * node + 1;
         sizes[index] = 0;
         disps[index] = 0;
@@ -375,20 +394,21 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                    owen, &sizes[0], &disps[0], fq_tp_type, col_comm);
 }
 
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::getBackPredecessor() { }
 
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::getBackOutqueue() { }
 
-template<class Derived, class FQ_T, class MType, class STORE>
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::setBackInqueue() { }
 
 /*
  * Generates a map of the vertex with predecessor
  */
-template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
+{
     int mtypesize, store_col_length;
 
     mtypesize = 8 * sizeof(MType);
@@ -398,12 +418,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
     #pragma omp parallel for
 #endif
 
-    for (long i = 0; i < mask_size; ++i) {
+    for (long i = 0; i < mask_size; ++i)
+    {
         MType tmp = 0;
         int jindex, iindex = i * mtypesize;
-        for (long j = 0; j < mtypesize; ++j) {
+        for (long j = 0; j < mtypesize; ++j)
+        {
             jindex = iindex + j;
-            if ((predecessor[jindex] != -1) && (jindex < store_col_length)) {
+            if ((predecessor[jindex] != -1) && (jindex < store_col_length))
+            {
                 tmp |= 1 << j;
             }
         }
@@ -429,32 +452,67 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
  *
  */
 #ifdef INSTRUMENTED
-    template<class Derived,class FQ_T,class MType,class STORE>
-    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double& lexp, double& lqueue, double& rowcom, double& colcom, double& predlistred)
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double &lexp, double &lqueue,
+        double &rowcom, double &colcom, double &predlistred)
 #else
-    template<class Derived, class FQ_T, class MType, class STORE>
-    void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex)
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex)
 #endif
 {
 #ifdef INSTRUMENTED
     double tstart, tend;
-    lexp =0;
-    lqueue =0;
+    lexp = 0;
+    lqueue = 0;
     double comtstart, comtend;
     rowcom = 0;
     colcom = 0;
 #endif
 
+#ifdef _COMPRESSION
+    /**
+     * CompressionFactory()
+     * "nocopmression", "cpusimd", "gpusimt"
+     */
+    Compression<FQ_T> &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
+#endif
+
+#ifdef _COMPRESSION
+    function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress_lambda =
+        [&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
+    {
+        return schema.compress(a, b, c, d);
+    };
+
+    function <void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &)> decompress_lambda =
+        [&schema](FQ_T * a, const int b, FQ_T **c, size_t &d)
+    {
+        return schema.decompress(a, b, c, d);
+    };
+
+    function <void (FQ_T *, const int)> benchmarkCompression_lambda =
+        [&schema](FQ_T * a, const int b)
+    {
+        return schema.benchmarkCompression(a, b);
+    };
+
+    const function <bool (const size_t, const size_t)> isCompressed_lambda =
+        [&schema](const size_t a, const size_t b)
+    {
+        return schema.isCompressed(a, b);
+    };
+#endif
+
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_DEFINE( BFSRUN_region_vertexBroadcast )
-    SCOREP_USER_REGION_BEGIN( BFSRUN_region_vertexBroadcast, "BFSRUN_region_vertexBroadcast",SCOREP_USER_REGION_TYPE_COMMON )
+    SCOREP_USER_REGION_DEFINE(BFSRUN_region_vertexBroadcast)
+    SCOREP_USER_REGION_BEGIN(BFSRUN_region_vertexBroadcast, "BFSRUN_region_vertexBroadcast", SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
 // 0) Node 0 sends start vertex to all nodes
     MPI_Bcast(&startVertex, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_END( BFSRUN_region_vertexBroadcast )
+    SCOREP_USER_REGION_END(BFSRUN_region_vertexBroadcast)
 #endif
 
 // 1) Nodes test, if they are responsible for this vertex and push it, if they are in there fq
@@ -463,14 +521,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_DEFINE( BFSRUN_region_nodesTest )
-    SCOREP_USER_REGION_BEGIN( BFSRUN_region_nodesTest, "BFSRUN_region_nodesTest",SCOREP_USER_REGION_TYPE_COMMON )
+    SCOREP_USER_REGION_DEFINE(BFSRUN_region_nodesTest)
+    SCOREP_USER_REGION_BEGIN(BFSRUN_region_nodesTest, "BFSRUN_region_nodesTest", SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
     static_cast<Derived *>(this)->setStartVertex(startVertex);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_END( BFSRUN_region_nodesTest )
+    SCOREP_USER_REGION_END(BFSRUN_region_nodesTest)
 #endif
 
 #ifdef INSTRUMENTED
@@ -482,72 +540,82 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 // 2) Local expansion
     int iter = 0;
 
-#ifdef _SIMDCOMPRESS
-        IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
-        std::size_t uncompressedsize, compressedsize;
+
+#ifdef _COMPRESSION
+    size_t uncompressedsize, compressedsize;
 #endif
 
+    // moved anonymous functions outside loop
+    function <void(FQ_T, long, FQ_T *, int)> reduce =
+        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
+             static_cast<Derived *>(this), _1, _2, _3, _4);
+    function <void(FQ_T, long, FQ_T *&, int &)> get =
+        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
+             static_cast<Derived *>(this), _1, _2, _3, _4);
 
-/**
- * Todo: refactor-extract
- *
- */
-    while (true) {
+    /**
+     * Todo: refactor-extract
+     *
+     */
+    while (true)
+    {
 
 #ifdef INSTRUMENTED
-    tstart = MPI_Wtime();
+        tstart = MPI_Wtime();
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_DEFINE( BFSRUN_region_localExpansion )
-    SCOREP_USER_REGION_BEGIN( BFSRUN_region_localExpansion, "BFSRUN_region_localExpansion",SCOREP_USER_REGION_TYPE_COMMON )
+        SCOREP_USER_REGION_DEFINE(BFSRUN_region_localExpansion)
+        SCOREP_USER_REGION_BEGIN(BFSRUN_region_localExpansion, "BFSRUN_region_localExpansion", SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
         static_cast<Derived *>(this)->runLocalBFS();
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_END( BFSRUN_region_localExpansion )
+        SCOREP_USER_REGION_END(BFSRUN_region_localExpansion)
 #endif
 
 #ifdef INSTRUMENTED
-    tend = MPI_Wtime();
-    lexp += tend - tstart;
+        tend = MPI_Wtime();
+        lexp += tend - tstart;
 #endif
 
 // 3) Test if anything is done
         int anynewnodes, anynewnodes_global;
 
 #ifdef INSTRUMENTED
-    tstart = MPI_Wtime();
+        tstart = MPI_Wtime();
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_DEFINE( BFSRUN_region_testSomethingHasBeenDone )
-    SCOREP_USER_REGION_BEGIN( BFSRUN_region_testSomethingHasBeenDone, "BFSRUN_region_testSomethingHasBeenDone",SCOREP_USER_REGION_TYPE_COMMON )
+        SCOREP_USER_REGION_DEFINE(BFSRUN_region_testSomethingHasBeenDone)
+        SCOREP_USER_REGION_BEGIN(BFSRUN_region_testSomethingHasBeenDone, "BFSRUN_region_testSomethingHasBeenDone",
+                                 SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
         anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
 
 #ifdef INSTRUMENTED
-    tend = MPI_Wtime();
-    lqueue += tend - tstart;
+        tend = MPI_Wtime();
+        lqueue += tend - tstart;
 #endif
 
         MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
 
 
-        if (!anynewnodes_global) {
+        if (!anynewnodes_global)
+        {
 
 
 #ifdef INSTRUMENTED
-    tstart = MPI_Wtime();
+            tstart = MPI_Wtime();
 #endif
 
             static_cast<Derived *>(this)->getBackPredecessor();
 
 #ifdef INSTRUMENTED
-    tend = MPI_Wtime();
-    lqueue += tend - tstart;
+            tend = MPI_Wtime();
+            lqueue += tend - tstart;
 #endif
 
             // MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
@@ -558,12 +626,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 
 #ifdef INSTRUMENTED
-    tend = MPI_Wtime();
-    predlistred = tend - tstart;
+            tend = MPI_Wtime();
+            predlistred = tend - tstart;
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_END( BFSRUN_region_testSomethingHasBeenDone )
+            SCOREP_USER_REGION_END(BFSRUN_region_testSomethingHasBeenDone)
 #endif
 
             return; // There is nothing to do. Finish iteration.
@@ -572,33 +640,36 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 // 4) global expansion
 #ifdef INSTRUMENTED
-    comtstart = MPI_Wtime();
-    tstart = MPI_Wtime();
+        comtstart = MPI_Wtime();
+        tstart = MPI_Wtime();
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_DEFINE( BFSRUN_region_columnCommunication )
-    SCOREP_USER_REGION_BEGIN( BFSRUN_region_columnCommunication, "BFSRUN_region_columnCommunication",SCOREP_USER_REGION_TYPE_COMMON )
+        SCOREP_USER_REGION_DEFINE(BFSRUN_region_columnCommunication)
+        SCOREP_USER_REGION_BEGIN(BFSRUN_region_columnCommunication, "BFSRUN_region_columnCommunication",
+                                 SCOREP_USER_REGION_TYPE_COMMON)
 #endif
+
 
 
         static_cast<Derived *>(this)->getBackOutqueue();
 
 #ifdef INSTRUMENTED
-    tend = MPI_Wtime();
-    lqueue += tend - tstart;
+        tend = MPI_Wtime();
+        lqueue += tend - tstart;
 #endif
 
         int _outsize; //really int, because mpi supports no long message sizes :(
-        using namespace std::placeholders;
-        std::function <void(FQ_T, long, FQ_T *, int)> reduce =
-                std::bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
-                          static_cast<Derived *>(this), _1, _2, _3, _4);
-        std::function <void(FQ_T, long, FQ_T *&, int &)> get =
-                std::bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
-                          static_cast<Derived *>(this), _1, _2, _3, _4);
 
         vreduce(reduce, get,
+#ifdef _COMPRESSION
+                compress_lambda,
+                decompress_lambda,
+#ifdef _COMPRESSIONBENCHMARK
+                benchmarkCompression_lambda,
+#endif
+                isCompressed_lambda,
+#endif
                 fq_64,
                 _outsize,
                 store.getLocColLength(),
@@ -606,130 +677,138 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
                 col_comm
 
 #ifdef INSTRUMENTED
-                 ,lqueue
+                , lqueue
 #endif
-                );
+               );
 
         static_cast<Derived *>(this)->setModOutgoingFQ(fq_64, _outsize);
 
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_END( BFSRUN_region_columnCommunication )
+        SCOREP_USER_REGION_END(BFSRUN_region_columnCommunication)
 #endif
 
 #ifdef INSTRUMENTED
-    comtend = MPI_Wtime();
-    colcom += comtend-comtstart;
+        comtend = MPI_Wtime();
+        colcom += comtend - comtstart;
 #endif
 
 // 5) global fold
 #ifdef INSTRUMENTED
-    comtstart = MPI_Wtime();
+        comtstart = MPI_Wtime();
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_DEFINE( BFSRUN_region_rowCommunication )
-    SCOREP_USER_REGION_BEGIN( BFSRUN_region_rowCommunication, "BFSRUN_region_rowCommunication",SCOREP_USER_REGION_TYPE_COMMON )
+        SCOREP_USER_REGION_DEFINE(BFSRUN_region_rowCommunication)
+        SCOREP_USER_REGION_BEGIN(BFSRUN_region_rowCommunication, "BFSRUN_region_rowCommunication",
+                                 SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
         int root_rank;
-        for (typename std::vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
-                                                                            it != fold_fq_props.end(); ++it) {
+        for (typename vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin();
+             it != fold_fq_props.end(); ++it)
+        {
             root_rank = it->sendColSl;
-            if (root_rank == store.getLocalColumnID()) {
+            if (root_rank == store.getLocalColumnID())
+            {
 
                 int originalsize;
                 FQ_T *startaddr;
-#ifdef _SIMDCOMPRESS
-                FQ_T *compressed_fq_64, *uncompressed_fq_64;
+#ifdef _COMPRESSION
+                FQ_T *compressed_fq, *uncompressed_fq;
 #endif
 
 #ifdef INSTRUMENTED
-    tstart = MPI_Wtime();
+                tstart = MPI_Wtime();
 #endif
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, originalsize);
 
 #ifdef INSTRUMENTED
-    tend = MPI_Wtime();
-    lqueue += tend - tstart;
+                tend = MPI_Wtime();
+                lqueue += tend - tstart;
 #endif
 
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
 
-#ifdef _SIMDCOMPRESSBENCHMARK
-                SIMDbenchmarkCompression(startaddr, originalsize, rank);
+#ifdef _COMPRESSIONBENCHMARK
+                schema.benchmarkCompression(startaddr, originalsize);
 #endif
-
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                SIMDcompression(codec, startaddr, uncompressedsize, &compressed_fq_64, compressedsize);
+                compress_lambda(startaddr, uncompressedsize, &compressed_fq, compressedsize);
 
 
-#ifdef _SIMDCOMPRESSVERIFY
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
-                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+#ifdef _COMPRESSIONVERIFY
+                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
 #endif
 
 #endif
 
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
 
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
 
-#ifdef _SIMDCOMPRESSVERIFY
+#ifdef _COMPRESSIONVERIFY
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
-                MPI_Bcast(compressed_fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
+                MPI_Bcast(compressed_fq, compressedsize, fq_tp_type, root_rank, row_comm);
 #else
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
+                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
 
-#ifdef _SIMDCOMPRESSVERIFY
-                if (SIMDthereWasCompression(originalsize, compressedsize)) {
-                        assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
-                } else {
-                        assert(memcmp(startaddr, uncompressed_fq_64, originalsize * sizeof(FQ_T)) == 0);
+#ifdef _COMPRESSIONVERIFY
+                if (schema.isCompressed(originalsize, compressedsize))
+                {
+                    assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                 }
-                assert (std::is_sorted(uncompressed_fq_64, uncompressed_fq_64+uncompressedsize));
-                SIMDverifyCompression(startaddr, uncompressed_fq_64, originalsize);
+                else
+                {
+                    assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
+                }
+                assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
+                schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
 #endif
 
                 // Todo: Save (G/C)PU cycles. decompression not needed for MPI rank Root. The original array is available.
                 /*
                 if (rank != root_rank){
-                    SIMDdecompression(codec, compressed_fq_64, compressedsize, startaddr, uncompressedsize);
-                    delete[] compressed_fq_64;
+                    schema.decompress(compressed_fq, compressedsize, startaddr, uncompressedsize);
+                    delete[] compressed_fq;
                 }
                 */
 
 #endif
 
 #ifdef INSTRUMENTED
-    tstart = MPI_Wtime();
+                tstart = MPI_Wtime();
 #endif
 
 
-#ifdef _SIMDCOMPRESS
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq_64, originalsize);
+#ifdef _COMPRESSION
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq, originalsize);
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #endif
 
-#ifdef _SIMDCOMPRESS
-                if (SIMDthereWasCompression(originalsize, compressedsize)) {
-                    if (uncompressed_fq_64 != NULL) {
-                        free(uncompressed_fq_64);
+#ifdef _COMPRESSION
+                if (schema.isCompressed(originalsize, compressedsize))
+                {
+                    if (uncompressed_fq != NULL)
+                    {
+                        free(uncompressed_fq);
                     }
-                    if (compressed_fq_64 != NULL) {
-                        free(compressed_fq_64);
+                    if (compressed_fq != NULL)
+                    {
+                        free(compressed_fq);
                     }
                 }
 #endif
@@ -737,26 +816,29 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 
 #ifdef INSTRUMENTED
-    tend = MPI_Wtime();
-    lqueue += tend - tstart;
+                tend = MPI_Wtime();
+                lqueue += tend - tstart;
 #endif
 
-            } else {
+            }
+            else
+            {
 
 
-#ifdef _SIMDCOMPRESS
+#ifdef _COMPRESSION
 
-                FQ_T *compressed_fq_64=NULL, *uncompressed_fq_64=NULL;
+                FQ_T *compressed_fq = NULL, *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
                 assert(originalsize <= fq_64_length);
-                compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
+                compressed_fq = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
 
-#ifdef _SIMDCOMPRESSVERIFY
-                FQ_T *startaddr=NULL;
+#ifdef _COMPRESSIONVERIFY
+                FQ_T *startaddr = NULL;
                 startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
-                if (startaddr == NULL) {
+                if (startaddr == NULL)
+                {
                     printf("\nERROR: Memory allocation error!");
                     abort();
                 }
@@ -765,16 +847,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
                 MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
-                memcpy(compressed_fq_64, fq_64, compressedsize * sizeof(FQ_T));
+                memcpy(compressed_fq, fq_64, compressedsize * sizeof(FQ_T));
                 uncompressedsize = static_cast<size_t>(originalsize);
-                SIMDdecompression(codec, compressed_fq_64, compressedsize, /*Out*/ &uncompressed_fq_64, /*In Out*/ uncompressedsize);
-                if (SIMDthereWasCompression(originalsize, compressedsize)) {
-                    static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq_64, originalsize);
+                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                if (schema.isCompressed(originalsize, compressedsize))
+                {
+                    static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq, originalsize);
                 }
 
-#ifdef _SIMDCOMPRESSVERIFY
-                assert (std::is_sorted(fq_64, fq_64 + originalsize));
-                SIMDverifyCompression(startaddr, fq_64, originalsize);
+#ifdef _COMPRESSIONVERIFY
+                assert(is_sorted(fq_64, fq_64 + originalsize));
+                schema.verifyCompression(startaddr, fq_64, originalsize);
 #endif
 
 #else
@@ -785,39 +868,47 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 #endif
 
 #ifdef INSTRUMENTED
-    tstart = MPI_Wtime();
+                tstart = MPI_Wtime();
 #endif
 
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 
 
 #ifdef INSTRUMENTED
-    tend = MPI_Wtime();
-    lqueue += tend - tstart;
+                tend = MPI_Wtime();
+                lqueue += tend - tstart;
 #endif
 
-#ifdef _SIMDCOMPRESS
-                if (SIMDthereWasCompression(originalsize, compressedsize)) {
-                    if (uncompressed_fq_64 != NULL) {
-                        free(uncompressed_fq_64);
+#ifdef _COMPRESSION
+                if (schema.isCompressed(originalsize, compressedsize))
+                {
+                    if (uncompressed_fq != NULL)
+                    {
+                        free(uncompressed_fq);
                     }
-                    if (compressed_fq_64 != NULL) {
-                        free(compressed_fq_64);
+                    if (compressed_fq != NULL)
+                    {
+                        free(compressed_fq);
                     }
 
-#ifdef _SIMDCOMPRESSVERIFY
-                    if (startaddr != NULL) {
+#ifdef _COMPRESSIONVERIFY
+                    if (startaddr != NULL)
+                    {
                         free(startaddr);
                     }
 #endif
 
-                } else {
-                    if (compressed_fq_64 != NULL) {
-                        free(compressed_fq_64);
+                }
+                else
+                {
+                    if (compressed_fq != NULL)
+                    {
+                        free(compressed_fq);
                     }
 
-#ifdef _SIMDCOMPRESSVERIFY
-                    if (startaddr != NULL) {
+#ifdef _COMPRESSIONVERIFY
+                    if (startaddr != NULL)
+                    {
                         free(startaddr);
                     }
 #endif
@@ -829,212 +920,25 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask() {
 
 
 #ifdef INSTRUMENTED
-    tstart = MPI_Wtime();
+        tstart = MPI_Wtime();
 #endif
 
         static_cast<Derived *>(this)->setBackInqueue();
 
 #ifdef INSTRUMENTED
-    tend = MPI_Wtime();
-    lqueue += tend - tstart;
+        tend = MPI_Wtime();
+        lqueue += tend - tstart;
 #endif
 
 #ifdef INSTRUMENTED
-    comtend = MPI_Wtime();
-    rowcom += comtend - comtstart;
+        comtend = MPI_Wtime();
+        rowcom += comtend - comtstart;
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_END( BFSRUN_region_rowCommunication )
+        SCOREP_USER_REGION_END(BFSRUN_region_rowCommunication)
 #endif
         ++iter;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifdef _SIMDCOMPRESS
-/**
- *
- * TODO: extract to compression factory
- * simd-cpu-compression
- *
- *
- *
- */
-
-/**
- * Benchmark compression/decompression.
- *
- */
-template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDbenchmarkCompression(const FQ_T *fq, const int size, const int _rank) const {
-    if (size > SIMDCOMPRESSION_THRESHOLD) {
-        char const *codec_name = "s4-bp128-dm";
-        IntegerCODEC &codec =  *CODECFactory::getFromName(codec_name);
-        high_resolution_clock::time_point time_0, time_1;
-        std::vector<uint32_t>  fq_32(fq, fq + size);
-        std::vector<uint32_t>  compressed_fq_32(size + 1024);
-        std::vector<uint32_t>  uncompressed_fq_32(size);
-        std::size_t compressedsize = compressed_fq_32.size();
-        std::size_t uncompressedsize = uncompressed_fq_32.size();
-        time_0 = high_resolution_clock::now();
-        codec.encodeArray(fq_32.data(), fq_32.size(), compressed_fq_32.data(), compressedsize);
-        time_1 = high_resolution_clock::now();
-        auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1-time_0).count();
-        compressed_fq_32.resize(compressedsize);
-        compressed_fq_32.shrink_to_fit();
-        std::vector<FQ_T> compressed_fq_64(compressed_fq_32.begin(), compressed_fq_32.end());
-        time_0 = high_resolution_clock::now();
-        codec.decodeArray(compressed_fq_32.data(), compressed_fq_32.size(), uncompressed_fq_32.data(), uncompressedsize);
-        time_1 = high_resolution_clock::now();
-        auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1-time_0).count();
-        uncompressed_fq_32.resize(uncompressedsize);
-        std::vector<FQ_T> uncompressed_fq_64(uncompressed_fq_32.begin(), uncompressed_fq_32.end());
-        /**
-         * Check validity of results
-         */
-        assert (size == uncompressedsize && std::equal(uncompressed_fq_64.begin(), uncompressed_fq_64.end(), fq));
-        double compressedbits = 32.0 * static_cast<double>(compressed_fq_32.size()) / static_cast<double>(fq_32.size());
-        double compressratio = (100.0 - 100.0 * compressedbits / 32.0);
-        printf("SIMD.codec: %s, rank: %02d, c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name, _rank, encode_time, decode_time, compressratio);
-    }
-}
-
-/**
- * SIMD compression.
- *
- */
-template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDcompression(IntegerCODEC &codec, FQ_T *fq_64, const size_t &size, FQ_T **compressed_fq_64,
-                                                                                                        size_t &compressedsize) const {
-     if (size > SIMDCOMPRESSION_THRESHOLD) {
-        uint32_t *fq_32 = (uint32_t *)malloc(size * sizeof(uint32_t));
-        uint32_t *compressed_fq_32 = (uint32_t *)malloc(size * sizeof(uint32_t));
-        if(compressed_fq_32 == NULL || fq_32 == NULL) {
-            printf("\nERROR: Memory allocation error!");
-            abort();
-        }
-
-        compressedsize = size;
-        for (int i=0; i<size;++i){
-            fq_32[i] = static_cast<uint32_t>(fq_64[i]);
-        }
-        codec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
-        // if this condition is met it can not be known whether or not there has been a compression.
-        // Todo: find solution
-        assert (compressedsize < size);
-        *compressed_fq_64 = NULL;
-        *compressed_fq_64 = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
-        if(*compressed_fq_64 == NULL) {
-            printf("\nERROR: Memory allocation error!");
-            abort();
-        }
-        for (auto i=0; i<compressedsize;++i){
-            (*compressed_fq_64)[i] = static_cast<FQ_T>(compressed_fq_32[i]);
-        }
-        free(fq_32);
-        free(compressed_fq_32);
-     } else {
-        /**
-         * Buffer will not be compressed (Small size. Not worthed)
-         */
-        compressedsize = size;
-        *compressed_fq_64 = fq_64;
-     }
-}
-
-/**
- * SIMD decompression.
- *
- */
-template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDdecompression(IntegerCODEC &codec, FQ_T *compressed_fq_64, const int size,
-                                                    /*Out*/ FQ_T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const {
-    if (SIMDthereWasCompression(uncompressedsize, size)) {
-        uint32_t *uncompressed_fq_32 = (uint32_t *) malloc(uncompressedsize * sizeof(uint32_t));
-        uint32_t *compressed_fq_32 = (uint32_t *) malloc(size * sizeof(uint32_t));
-        if(compressed_fq_32 == NULL || uncompressed_fq_32 == NULL) {
-            printf("\nERROR: Memory allocation error!");
-            abort();
-        }
-        // memcpy((uint32_t *)compressed_fq_32, (uint32_t *)compressed_fq_64, size * sizeof(uint32_t));
-        for (int i=0; i<size;++i){
-            compressed_fq_32[i] = static_cast<uint32_t>(compressed_fq_64[i]);
-        }
-        codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
-        *uncompressed_fq_64 = (FQ_T *)malloc(uncompressedsize * sizeof(FQ_T));
-        if(*uncompressed_fq_64 == NULL) {
-            printf("\nERROR: Memory allocation error!");
-            abort();
-        }
-        // memcpy((FQ_T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, uncompressedsize * sizeof(uint32_t));
-        for (auto i=0; i<uncompressedsize;++i){
-            (*uncompressed_fq_64)[i] = static_cast<FQ_T>(uncompressed_fq_32[i]);
-        }
-        free(compressed_fq_32);
-        free(uncompressed_fq_32);
-    } else {
-        /**
-         * Buffer was not compressed (Small size. Not worthed)
-         */
-        uncompressedsize = size;
-        *uncompressed_fq_64 = compressed_fq_64;
-    }
-}
-
-/**
- * SIMD compression/decompression verification.
- *
- */
-template<class Derived, class FQ_T, class MType, class STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDverifyCompression(const FQ_T *fq, const FQ_T *uncompressed_fq_64, const size_t uncompressedsize) const {
-    if (uncompressedsize > SIMDCOMPRESSION_THRESHOLD) {
-        assert(memcmp(fq, uncompressed_fq_64, uncompressedsize * sizeof(FQ_T)) == 0);
-    }
-}
-
-/**
- * SIMDthereWasCompression.
- * returns whether or not there was compression.
- */
-template<class Derived, class FQ_T, class MType, class STORE>
-inline bool GlobalBFS<Derived, FQ_T, MType, STORE>::SIMDthereWasCompression(const size_t originalsize, const size_t compressedsize) const {
-    return (originalsize > SIMDCOMPRESSION_THRESHOLD && originalsize != compressedsize);
-}
-#endif
-
 #endif // GLOBALBFS_HH

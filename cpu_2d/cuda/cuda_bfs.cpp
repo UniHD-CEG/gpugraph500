@@ -1,6 +1,6 @@
 #include "cuda\cuda_bfs.h"
 
-CUDA_BFS::CUDA_BFS(MatrixT &_store):GlobalBFS<false,1>(_store)
+CUDA_BFS::CUDA_BFS(MatrixT &_store): GlobalBFS<false, 1>(_store)
 {
 }
 
