@@ -6,8 +6,6 @@
  *
  *
  */
-
-
 #include "mpi.h"
 #include <cstring>
 #include <assert.h>
@@ -19,7 +17,7 @@
 
 
 
-#if __cplusplus > 199711L  //C++11 check
+#if __cplusplus > 199711L  //std c++11 is a requirement
 #include <random>
 #else
 #error This library needs at least a C++11 compliant compiler
@@ -27,7 +25,7 @@
 
 /**
  * Children of GlobalBFS
- * Implements the BFS algorithm
+ * Implement the BFS algorithm
  *
  *
  *
@@ -41,6 +39,13 @@
 #include "cpubfs_bin.h"
 #endif
 
+using std::vector;
+using std::knuth_b;
+using std::uniform_int_distribution;
+using std::find;
+using std::sort;
+using std::string;
+using std::copy;
 
 struct statistic
 {
@@ -72,15 +77,15 @@ enum GGen
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
-                              int &graph_gen, int &gpus, double &queue_sizing);
+                              int &graph_gen, int &gpus, double &queue_sizing, string &benchmarkExtraArgument, int &benchmarkCThreshold);
 void outputIterationStatistics(statistic &bfs_time_s, statistic &nedge_s, statistic &teps_s);
 void outputIterationInstrumentedStatistics(statistic &valid_time_s, statistic &lbfs_time_s, statistic &lbfs_share_s,
         statistic &lqueue_time_s, statistic &lqueue_share_s, statistic &rest_time_s,
         statistic &rest_share_s, statistic &lrowcom_s, statistic &lrowcom_share_s,
         statistic &lcolcom_s, statistic &lcolcom_share_s, statistic &lpredlistred_s,
         statistic &lpredlistred_share_s);
-vtxtyp generateStartNode(const int64_t &vertices, std::knuth_b &generator);
-template <class T> statistic getStatistics(std::vector <T> &input);
+vtxtyp generateStartNode(const int64_t &vertices, knuth_b &generator);
+template <class T> statistic getStatistics(vector <T> &input);
 void outputMatrixGenerationResults(int size, const int64_t &global_edges, double constr_time, long global_edges_wd);
 void printStat(statistic &input, const char *name, bool harmonic);
 void outputGeneralStatistics(const int64_t &scale, const int64_t &edgefactor, int size, bool valid,
@@ -100,7 +105,6 @@ void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C);
 
 int main(int argc, char **argv)
 {
-
     int64_t scale = 21;
     int64_t edgefactor = 16;
     int64_t num_of_iterations = 64;
@@ -117,29 +121,32 @@ int main(int argc, char **argv)
     int level, this_valid;
     int next, maxiterations;
     long local_edges, elem, global_edges_wd;
-    int iterations = 0, maxgenvtx =
-                         32; // relative number of maximum attempts to find a valid start vertix per possible attempt
-    std::vector <vtxtyp> tries;
-    std::vector <double> bfs_time;
-    std::vector <long> nedge; //number of edges
-    std::vector <double> teps;
+    string benchmarkExtraArgument;
+    int benchmarkCThreshold;
+    int iterations = 0, maxgenvtx = 32; // relative number of maximum attempts to find a valid start vertix per possible attempt
+    vector <vtxtyp> tries;
+    vector <double> bfs_time;
+    vector <long> nedge; //number of edges
+    vector <double> teps;
+    int benchmarkExtraArgumentLength;
+    char *benchmarkExtraArgumentBuffer=NULL;
 
 #ifdef INSTRUMENTED
     double lexp, lqueue, rowcom, colcom, predlistred;
     double gmax_lexp, gmax_lqueue, gmax_rowcom, gmax_colcom, gmax_predlistred;
-    std::vector<double> valid_time;
-    std::vector<double> bfs_local;
-    std::vector<double> bfs_local_share;
-    std::vector<double> queue_local;
-    std::vector<double> queue_local_share;
-    std::vector<double> rest;
-    std::vector<double> rest_share;
-    std::vector<double> lrowcom;
-    std::vector<double> lrowcom_share;
-    std::vector<double> lcolcom;
-    std::vector<double> lcolcom_share;
-    std::vector<double> lpredlistred;
-    std::vector<double> lpredlistred_share;
+    vector<double> valid_time;
+    vector<double> bfs_local;
+    vector<double> bfs_local_share;
+    vector<double> queue_local;
+    vector<double> queue_local_share;
+    vector<double> rest;
+    vector<double> rest_share;
+    vector<double> lrowcom;
+    vector<double> lrowcom_share;
+    vector<double> lcolcom;
+    vector<double> lcolcom_share;
+    vector<double> lpredlistred;
+    vector<double> lpredlistred_share;
 #endif
 
 #ifdef _CUDA
@@ -155,9 +162,12 @@ int main(int argc, char **argv)
     {
         externalArgumentsIterate(argc, argv, scale, edgefactor, num_of_iterations, verbosity,
                                  R, C, R_set, C_set, graph_gen,
-                                 gpus, queue_sizing);
+                                 gpus, queue_sizing, benchmarkExtraArgument, benchmarkCThreshold);
         externalArgumentsVerify(R_set, C_set, size, R, C);
         printf("row slices: %d, column slices: %d\n", R, C);
+        benchmarkExtraArgumentLength = benchmarkExtraArgument.size()+1;
+        benchmarkExtraArgumentBuffer = new char[benchmarkExtraArgumentLength];
+        strncpy(benchmarkExtraArgumentBuffer, benchmarkExtraArgument.c_str(), benchmarkExtraArgumentLength);
     }
 
     MPI_Bcast(&scale, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
@@ -165,6 +175,16 @@ int main(int argc, char **argv)
     MPI_Bcast(&num_of_iterations, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
     MPI_Bcast(&R, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&C, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&benchmarkCThreshold, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&benchmarkExtraArgumentLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (rank != 0)
+    {
+        benchmarkExtraArgumentBuffer = new char[benchmarkExtraArgumentLength];
+    }
+    MPI_Bcast(benchmarkExtraArgumentBuffer, benchmarkExtraArgumentLength, MPI_CHAR, 0, MPI_COMM_WORLD);
+    benchmarkExtraArgument = benchmarkExtraArgumentBuffer;
+
+    std::cout << benchmarkExtraArgument << " bt: " << benchmarkCThreshold << std::endl;
 
 #ifdef _CUDA
     MPI_Bcast(&gpus      , 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -227,7 +247,7 @@ int main(int argc, char **argv)
     }
     if (!store.allValuesSmallerThan32Bits())
     {
-        printf("[ERROR:: values grater that 2exp32]\n");
+        printf("[ERROR::cpusimd-compression: Not all values in the graph are lower than 2^32]\n");
         exit(1);
     }
     if (rank == 0)
@@ -273,8 +293,8 @@ int main(int argc, char **argv)
 #endif
 
     // random number generator
-    std::knuth_b generator;
-    std::uniform_int_distribution<vtxtyp> distribution(0, vertices - 1);
+    knuth_b generator;
+    uniform_int_distribution<vtxtyp> distribution(0, vertices - 1);
 
     maxiterations = num_of_iterations * maxgenvtx;
 
@@ -288,7 +308,7 @@ int main(int argc, char **argv)
 
             // generate start node
             //skip already visited
-            if (std::find(tries.begin(), tries.end(), start) != tries.end())
+            if (find(tries.begin(), tries.end(), start) != tries.end())
             {
                 continue;
             }
@@ -313,7 +333,6 @@ int main(int argc, char **argv)
         }
         next = 0;
         MPI_Bcast(&next, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
     }
     else
     {
@@ -471,6 +490,7 @@ int main(int argc, char **argv)
 #endif
 
     }
+    delete[] benchmarkExtraArgumentBuffer;
     MPI_Finalize();
 }
 
@@ -582,9 +602,8 @@ void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C)
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
-                              int &graph_gen, int &gpus, double &queue_sizing)
+                              int &graph_gen, int &gpus, double &queue_sizing, string &benchmarkExtraArgument, int &benchmarkCThreshold)
 {
-
     int i = 0;
     while (i < argc)
     {
@@ -704,7 +723,6 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
                 }
             }
 #endif
-
         }
         else if (!strcmp(argv[i], "-v"))
         {
@@ -751,6 +769,45 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
                 }
             }
         }
+        else if (!strcmp(argv[i], "-bt"))
+        {
+            /**
+             * benchmark compression-threshold value
+             */
+            if (i + 1 < argc)
+            {
+                int benchmarkCThreshold_tmp = atoi(argv[i + 1]);
+                if (benchmarkCThreshold_tmp < 1 || benchmarkCThreshold_tmp > 0xffffff)
+                {
+                    printf("Invalid benchmark compression-threshold value: %s\n", argv[i + 1]);
+                }
+                else
+                {
+                    benchmarkCThreshold = benchmarkCThreshold_tmp;
+                    ++i;
+                }
+            }
+        }
+        else if (!strcmp(argv[i], "-be"))
+        {
+            /**
+             * benchmark extra string (e.g used for SIMDcomp codec string)
+             */
+            if (i + 1 < argc)
+            {
+                string benchmarkExtraArgument_tmp = argv[i + 1];
+                unsigned int extraArgLength = benchmarkExtraArgument_tmp.length();
+                if (extraArgLength > 128)
+                {
+                    printf("Invalid benchmark extra argument (required string): %s\n", argv[i + 1]);
+                }
+                else
+                {
+                    benchmarkExtraArgument = benchmarkExtraArgument_tmp;
+                    ++i;
+                }
+            }
+        }
         ++i;
     }
 }
@@ -776,10 +833,10 @@ void printStat(statistic &input, const char *name, bool harmonic)
 }
 
 template<class T>
-statistic getStatistics(std::vector <T> &input)
+statistic getStatistics(vector <T> &input)
 {
     statistic out;
-    std::sort(input.begin(), input.end());
+    sort(input.begin(), input.end());
     out.min = static_cast<double>(input.front());
     if (1 * input.size() % 4 == 0)
         out.firstquartile = 0.5 * (input[1 * input.size() / 4 - 1] + input[1 * input.size() / 4]);
@@ -795,7 +852,7 @@ statistic getStatistics(std::vector <T> &input)
         out.thirdquartile = static_cast<double>(input[3 * input.size() / 4]);
     out.max = static_cast<double>(input.back());
     double qsum = 0.0, sum = 0.0;
-    for (typename std::vector<T>::iterator it = input.begin(); it != input.end(); it++)
+    for (typename vector<T>::iterator it = input.begin(); it != input.end(); it++)
     {
         double it_val = static_cast<double>(*it);
         sum += it_val;
@@ -805,7 +862,7 @@ statistic getStatistics(std::vector <T> &input)
     out.stddev = sqrt((qsum - sum * sum / static_cast<double>(input.size())) /
                       (static_cast<double>(input.size()) - 1));
     double iv_sum = 0;
-    for (typename std::vector<T>::iterator it = input.begin(); it != input.end(); it++)
+    for (typename vector<T>::iterator it = input.begin(); it != input.end(); it++)
     {
         double it_val = static_cast<double>(*it);
         iv_sum += 1 / it_val;
@@ -816,7 +873,7 @@ statistic getStatistics(std::vector <T> &input)
     // Means and Their Application to Index Numbers, 1940.
     // http://www.jstor.org/stable/2235723
     double qiv_dif = 0.;
-    for (typename std::vector<T>::iterator it = input.begin(); it != input.end(); it++)
+    for (typename vector<T>::iterator it = input.begin(); it != input.end(); it++)
     {
         double it_val = 1 / static_cast<double>(*it) - 1 / out.hmean;
         qiv_dif += it_val * it_val;

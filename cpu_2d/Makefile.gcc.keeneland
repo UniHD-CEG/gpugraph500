@@ -80,7 +80,7 @@
 #   Description: "Enables any type of compression through the network. Switch this option
 #   				to "no" to disable completely compression.
 #
-# enable_compression_benchmark
+# enable_compression_debug
 #   Values: yes | no
 #   Default value: no
 #   Description: "shows statistics of compression rate, time of compression
@@ -156,7 +156,7 @@ scorep_custom_basedir                     :=/home/jromera/scorep
 use_avx_instructions                      :="yes"
 enable_compression                        :="yes"
 enable_compression_verify                 :="no"
-enable_compression_benchmark              :="yes"
+enable_compression_debug              :="yes"
 enable_simd_compression                   :="yes"
 use_cuda                                  :="yes"
 debug                                     :="no"
@@ -289,7 +289,7 @@ endif
 
 ifeq ($(enable_compression), "yes")
 	DEFINES += -D_COMPRESSION
-ifeq ($(enable_compression_benchmark), "yes")
+ifeq ($(enable_compression_debug), "yes")
 	DEFINES += -D_COMPRESSIONDEBUG
 	LLIBC := -static-libstdc++
 endif
