@@ -290,7 +290,7 @@ endif
 ifeq ($(enable_compression), "yes")
 	DEFINES += -D_COMPRESSION
 ifeq ($(enable_compression_benchmark), "yes")
-	DEFINES += -D_COMPRESSIONBENCHMARK
+	DEFINES += -D_COMPRESSIONDEBUG
 	LLIBC := -static-libstdc++
 endif
 ifeq ($(enable_compression_verify), "yes")

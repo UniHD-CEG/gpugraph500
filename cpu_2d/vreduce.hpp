@@ -26,8 +26,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
              function<void(T, long, T *&, int &)> &get,
 #ifdef _COMPRESSION
              function<void(T *, const size_t &, T **, size_t &)> &compress,
-             function <void(T *, const int,/*Out*/T **, /*InOut*/size_t &)> &decompress,
-#ifdef _COMPRESSIONBENCHMARK
+             function < void(T *, const int,/*Out*/T **, /*InOut*/size_t &) > &decompress,
+#ifdef _COMPRESSIONDEBUG
              function <void (T *, const int)> &benchmarkCompression,
 #endif
              const function <bool (const size_t, const size_t)> &isCompressed,
@@ -136,7 +136,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
 
-#ifdef _COMPRESSIONBENCHMARK
+#ifdef _COMPRESSIONDEBUG
             benchmarkCompression(send, psize_to);
 #endif
 
@@ -190,7 +190,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
-#ifdef _COMPRESSIONBENCHMARK
+#ifdef _COMPRESSIONDEBUG
                 benchmarkCompression(send, psizeTo);
 #endif
 
@@ -268,7 +268,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
-#ifdef _COMPRESSIONBENCHMARK
+#ifdef _COMPRESSIONDEBUG
                 benchmarkCompression(send, psizeTo);
 #endif
 

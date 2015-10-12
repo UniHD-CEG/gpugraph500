@@ -39,10 +39,10 @@ using namespace std::placeholders;
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template <typename Derived,
-          typename FQ_T,  // Queue Type
-          typename MType, // Bitmap mask
-          typename STORE> //Storage of Matrix
+template < typename Derived,
+         typename FQ_T,  // Queue Type
+         typename MType, // Bitmap mask
+         typename STORE > //Storage of Matrix
 class GlobalBFS
 {
 private:
@@ -479,13 +479,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 #ifdef _COMPRESSION
     function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress_lambda =
-        [&schema](FQ_T * a, const size_t &b, FQ_T **c, size_t &d)
+        [&schema](FQ_T * a, const size_t & b, FQ_T **c, size_t & d)
     {
         return schema.compress(a, b, c, d);
     };
 
-    function <void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &)> decompress_lambda =
-        [&schema](FQ_T * a, const int b, FQ_T **c, size_t &d)
+    function < void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &) > decompress_lambda =
+        [&schema](FQ_T * a, const int b, FQ_T **c, size_t & d)
     {
         return schema.decompress(a, b, c, d);
     };
@@ -665,7 +665,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
                 compress_lambda,
                 decompress_lambda,
-#ifdef _COMPRESSIONBENCHMARK
+#ifdef _COMPRESSIONDEBUG
                 benchmarkCompression_lambda,
 #endif
                 isCompressed_lambda,
@@ -730,7 +730,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 #ifdef _COMPRESSION
 
-#ifdef _COMPRESSIONBENCHMARK
+#ifdef _COMPRESSIONDEBUG
                 schema.benchmarkCompression(startaddr, originalsize);
 #endif
 
