@@ -34,7 +34,7 @@ using namespace b40c::graph::bfs;
 typedef long long vtxtyp;
 typedef unsigned int rowtyp;
 
-class CUDA_BFS : public GlobalBFS <CUDA_BFS,
+class CUDA_BFS : public GlobalBFS < CUDA_BFS,
     vtxtyp,
     unsigned char,
     DistMatrix2d<vtxtyp, rowtyp, true, 1, true>  // use local ids
@@ -42,9 +42,9 @@ class CUDA_BFS : public GlobalBFS <CUDA_BFS,
 {
     typedef unsigned char MType;
 
-    typedef CsrProblem <vtxtyp,
+    typedef CsrProblem < vtxtyp,
             rowtyp,
-            true> Csr;
+            true > Csr;
     int64_t verbosity;
     double queue_sizing;
     uint64_t qb_length, rb_length;

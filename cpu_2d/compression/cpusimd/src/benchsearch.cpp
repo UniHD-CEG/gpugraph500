@@ -376,8 +376,8 @@ int main()
     if (r < 0) return r;
     r = benchmarkSearch<SIMDCompressionLib::VByte<true>>();
     if (r < 0) return r;
-    r = benchmarkSearch <SIMDBinaryPacking <SIMDIntegratedBlockPacker <
-        RegularDeltaSIMD, true>>> ();
+    r = benchmarkSearch < SIMDBinaryPacking < SIMDIntegratedBlockPacker <
+        RegularDeltaSIMD, true >>> ();
     if (r < 0) return r;
     r = benchmarkSearch<SIMDCompressionLib::StreamVByteD1>();
     if (r < 0) return r;
@@ -396,8 +396,8 @@ int main()
     if (r < 0) return r;
     r = benchmarkSelect<SIMDCompressionLib::VByte<true>>();
     if (r < 0) return r;
-    r = benchmarkSelect <SIMDBinaryPacking <SIMDIntegratedBlockPacker <
-        RegularDeltaSIMD, true>>> ();
+    r = benchmarkSelect < SIMDBinaryPacking < SIMDIntegratedBlockPacker <
+        RegularDeltaSIMD, true >>> ();
     if (r < 0) return r;
     r = benchmarkSelect<SIMDCompressionLib::StreamVByteD1>();
     if (r < 0) return r;
