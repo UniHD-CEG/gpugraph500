@@ -51,6 +51,9 @@ private:
     vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
+    int rank;
+    int benchmarkCThreshold;
+    string benchmarkExtraArgument;
 
 protected:
     const STORE &store;
@@ -65,8 +68,6 @@ protected:
     MType *owenmask;
     MType *tmpmask;
     int64_t mask_size;
-    int rank;
-
 
     /**
      * Inherited methods in children classes: cuda_bfs.cu (CUDA), cpubfs_bin.cpp (CPU improved) and simplecpubfs.cpp (CPU basic)
@@ -112,13 +113,13 @@ public:
 
 };
 
-
 /**
  * Constructor
  *
  */
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
-GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : store(_store)
+GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank, int _benchmarkCThreshold,
+                                                                            string _benchmarkExtraArgument) : store(_store)
 {
     int mtypesize = 8 * sizeof(MType);
     int local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
@@ -132,6 +133,9 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank) : st
     owenmask = new MType[mask_size];
     tmpmask = new MType[mask_size];
     rank = _rank;
+    benchmarkCThreshold = _benchmarkCThreshold;
+    benchmarkExtraArgument = _benchmarkExtraArgument;
+
 }
 
 /**

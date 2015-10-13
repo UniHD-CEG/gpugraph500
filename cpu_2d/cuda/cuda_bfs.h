@@ -28,37 +28,30 @@ class EnactorMultiGpu;
 #include "../validate/checkqueue.h"
 #endif
 
+using std::string;
 using namespace b40c::graph::bfs;
 
 //cuda types have to be chosen, what might be a problem
 typedef long long vtxtyp;
 typedef unsigned int rowtyp;
 
-class CUDA_BFS : public GlobalBFS < CUDA_BFS,
-    vtxtyp,
-    unsigned char,
+class CUDA_BFS : public GlobalBFS < CUDA_BFS, vtxtyp, unsigned char,
     DistMatrix2d<vtxtyp, rowtyp, true, 1, true>  // use local ids
     >
 {
+private:
     typedef unsigned char MType;
-
-    typedef CsrProblem < vtxtyp,
-            rowtyp,
-            true > Csr;
+    typedef CsrProblem < vtxtyp, rowtyp, true > Csr;
     int64_t verbosity;
     double queue_sizing;
     uint64_t qb_length, rb_length;
-
     vtxtyp *__restrict__ queuebuff;
     vtxtyp *__restrict__ redbuff;
     //Csr::VisitedMask** __restrict__ vmask;
     MType *__restrict__ vmask;
-
-
-
     bool done;
-
     Csr *csr_problem;
+
 #ifdef INSTRUMENTED
     EnactorMultiGpu<Csr, true> *bfsGPU;
 #else
@@ -71,10 +64,9 @@ class CUDA_BFS : public GlobalBFS < CUDA_BFS,
 
 public:
     typedef DistMatrix2d<vtxtyp, rowtyp, true, 1, true> MatrixT;
-
-    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank);
+    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank, int _benchmarkCThreshold,
+                                                                                string _benchmarkExtraArgument);
     ~CUDA_BFS();
-
     void getBackPredecessor();
     void getBackOutqueue();
     void setBackInqueue();

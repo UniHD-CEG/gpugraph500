@@ -45,7 +45,6 @@ using std::uniform_int_distribution;
 using std::find;
 using std::sort;
 using std::string;
-using std::copy;
 
 struct statistic
 {
@@ -247,7 +246,7 @@ int main(int argc, char **argv)
     }
     if (!store.allValuesSmallerThan32Bits())
     {
-        printf("[ERROR::cpusimd-compression: Not all values in the graph are lower than 2^32]\n");
+        printf("error::cpusimd-compression: Not all values in the graph are lower than 2^32\n");
         exit(1);
     }
     if (rank == 0)
@@ -260,7 +259,7 @@ int main(int argc, char **argv)
     OCLRunner oclrun;
     OpenCL_BFS runBfs(store, *oclrun);
 #elif defined _CUDA
-    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, rank);
+    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, rank, benchmarkCThreshold, benchmarkExtraArgument);
 #else
     CPUBFS_bin runBfs(store, verbosity, rank);
 #endif
