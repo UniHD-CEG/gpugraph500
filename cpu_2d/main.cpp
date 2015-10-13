@@ -122,13 +122,14 @@ int main(int argc, char **argv)
     long local_edges, elem, global_edges_wd;
     string benchmarkExtraArgument;
     int benchmarkCThreshold;
-    int iterations = 0, maxgenvtx = 32; // relative number of maximum attempts to find a valid start vertix per possible attempt
+    int iterations = 0, maxgenvtx =
+                         32; // relative number of maximum attempts to find a valid start vertix per possible attempt
     vector <vtxtyp> tries;
     vector <double> bfs_time;
     vector <long> nedge; //number of edges
     vector <double> teps;
     int benchmarkExtraArgumentLength;
-    char *benchmarkExtraArgumentBuffer=NULL;
+    char *benchmarkExtraArgumentBuffer = NULL;
 
 #ifdef INSTRUMENTED
     double lexp, lqueue, rowcom, colcom, predlistred;
@@ -164,7 +165,7 @@ int main(int argc, char **argv)
                                  gpus, queue_sizing, benchmarkExtraArgument, benchmarkCThreshold);
         externalArgumentsVerify(R_set, C_set, size, R, C);
         printf("row slices: %d, column slices: %d\n", R, C);
-        benchmarkExtraArgumentLength = benchmarkExtraArgument.size()+1;
+        benchmarkExtraArgumentLength = benchmarkExtraArgument.size() + 1;
         benchmarkExtraArgumentBuffer = new char[benchmarkExtraArgumentLength];
         strncpy(benchmarkExtraArgumentBuffer, benchmarkExtraArgument.c_str(), benchmarkExtraArgumentLength);
     }
@@ -182,8 +183,6 @@ int main(int argc, char **argv)
     }
     MPI_Bcast(benchmarkExtraArgumentBuffer, benchmarkExtraArgumentLength, MPI_CHAR, 0, MPI_COMM_WORLD);
     benchmarkExtraArgument = benchmarkExtraArgumentBuffer;
-
-    std::cout << benchmarkExtraArgument << " bt: " << benchmarkCThreshold << std::endl;
 
 #ifdef _CUDA
     MPI_Bcast(&gpus      , 1, MPI_INT, 0, MPI_COMM_WORLD);

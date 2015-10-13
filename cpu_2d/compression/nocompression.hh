@@ -9,7 +9,6 @@ using namespace std::chrono;
 template <typename T>
 class NoCompression: public Compression<T>
 {
-private:
 public:
     void benchmarkCompression(T *fq, const int size);
     void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
@@ -18,7 +17,16 @@ public:
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
     inline string name() const;
+    void configure(int compressionThreshold, string compressionExtraArgument);
 };
+
+template <typename T>
+void NoCompression<T>::configure(int compressionThreshold, string compressionExtraArgument)
+{
+    assert(compressionThreshold >= 0);
+    assert(compressionExtraArgument.length() >= 0);
+}
+
 
 template <typename T>
 void NoCompression<T>::benchmarkCompression(T *fq, const int size)

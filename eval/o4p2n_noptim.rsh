@@ -26,6 +26,6 @@ if [ "x$G500_ENABLE_RUNTIME_SCALASCA" = "xyes" ]; then
   scalasca="scalasca -analyze -f filter.scorep -e scorep_g500_testreduce`date +"%F-%s"`"
   $scalasca $mpirun -np 4 --display-map "-rf hosts-noptimum" ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1
 else
-  $mpirun -np 4 --display-map -rf hosts-noptimum ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1 -be test -bt 1024
+  $mpirun -np 4 --display-map -rf hosts-noptimum ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1 -be s4-bp128-d4 -bt 1024
 fi
 

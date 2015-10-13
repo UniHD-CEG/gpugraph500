@@ -3,31 +3,27 @@
 
 #ifdef _SIMDCOMPRESS
 
-
-
 #include "compression.hh"
 #include "codecfactory.h"
-
 #include <chrono>
+
 using namespace std::chrono;
-
-
 using namespace SIMDCompressionLib;
 
 using std::string;
 using std::vector;
 using std::equal;
 
-string codec_name = "s4-bp128-dm";
-IntegerCODEC &codec = *CODECFactory::getFromName(codec_name);
-uint32_t SIMDCOMPRESSION_THRESHOLD = 512;
-
 template <typename T>
 class CpuSimd: public Compression<T>
 {
 private:
+    uint32_t SIMDCOMPRESSION_THRESHOLD;
+    string codecName;
+    IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
     inline bool isCompressible(int size) const { return (size > SIMDCOMPRESSION_THRESHOLD); };
 public:
+    CpuSimd();
     void benchmarkCompression(T *fq, const int size);
     void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
     void decompress(T *compressed_fq_64, const int size,
@@ -35,14 +31,30 @@ public:
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
     inline string name() const;
+    void configure(int compressionThreshold, string compressionCodec);
 };
 
+template <typename T>
+CpuSimd<T>::CpuSimd()
+{
+    SIMDCOMPRESSION_THRESHOLD = 512;
+    codecName = "s4-bp128-dm";
+    codec = *CODECFactory::getFromName(codecName);
+}
+
+template <typename T>
+void CpuSimd<T>::configure(int compressionThreshold, string compressionCodec)
+{
+    assert(compressionThreshold > 0);
+    assert(compressionCodec.length() > 0);
+    codecName = compressionCodec;
+    codec = *CODECFactory::getFromName(codecName);
+    SIMDCOMPRESSION_THRESHOLD = static_cast<uint32_t>(compressionThreshold);
+}
 
 template <typename T>
 void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
 {
-
-
     if (size > 0)
     {
         size_t compressedsize, uncompressedsize = static_cast<size_t>(size);
@@ -88,7 +100,7 @@ void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
             dataUnit = "GB";
             dataSize /= 1000;
         }
-        printf("bMark: cpu-simd (%s), data: %ld%s, c/d: %04ld/%04ldus, %02.3f%% gained\n", codec_name.c_str(), dataSize,
+        printf("bMark: cpu-simd (%s), data: %ld%s, c/d: %04ld/%04ldus, %02.3f%% gained\n", codecName.c_str(), dataSize,
                dataUnit.c_str(), encode_time, decode_time,
                compresspercent);
     }
@@ -113,7 +125,6 @@ void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
         {
             fq_32[i] = static_cast<uint32_t>(fq_64[i]);
         }
-        IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
         codec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
         // if this condition is met it can not be known whether or not there has been a compression.
         // Todo: find solution
@@ -160,7 +171,6 @@ void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
         {
             compressed_fq_32[i] = static_cast<uint32_t>(compressed_fq_64[i]);
         }
-        IntegerCODEC &codec =  *CODECFactory::getFromName("s4-bp128-dm");
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
         if (*uncompressed_fq_64 == NULL)

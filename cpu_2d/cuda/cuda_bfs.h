@@ -41,7 +41,7 @@ class CUDA_BFS : public GlobalBFS < CUDA_BFS, vtxtyp, unsigned char,
 {
 private:
     typedef unsigned char MType;
-    typedef CsrProblem < vtxtyp, rowtyp, true > Csr;
+    typedef CsrProblem <vtxtyp, rowtyp, true> Csr;
     int64_t verbosity;
     double queue_sizing;
     uint64_t qb_length, rb_length;
@@ -65,7 +65,7 @@ private:
 public:
     typedef DistMatrix2d<vtxtyp, rowtyp, true, 1, true> MatrixT;
     CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank, int _benchmarkCThreshold,
-                                                                                string _benchmarkExtraArgument);
+             string _benchmarkExtraArgument);
     ~CUDA_BFS();
     void getBackPredecessor();
     void getBackOutqueue();

@@ -32,6 +32,7 @@ using namespace std::chrono;
 using std::function;
 using std::bind;
 using std::vector;
+using std::string;
 using std::is_sorted;
 using namespace std::placeholders;
 
@@ -51,9 +52,6 @@ private:
     vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
-    int rank;
-    int benchmarkCThreshold;
-    string benchmarkExtraArgument;
 
 protected:
     const STORE &store;
@@ -68,6 +66,9 @@ protected:
     MType *owenmask;
     MType *tmpmask;
     int64_t mask_size;
+    int rank;
+    int compressionThreshold;
+    string compressionExtraArgument;
 
     /**
      * Inherited methods in children classes: cuda_bfs.cu (CUDA), cpubfs_bin.cpp (CPU improved) and simplecpubfs.cpp (CPU basic)
@@ -99,7 +100,7 @@ public:
     /**
      * Constructor & destructor declaration
      */
-    GlobalBFS(STORE &_store, int _rank);
+    GlobalBFS(STORE &_store, int _rank, int _compressionThreshold, string _compressionExtraArgument);
     ~GlobalBFS();
 
     typename STORE::vtxtyp *getPredecessor();
@@ -118,8 +119,8 @@ public:
  *
  */
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
-GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank, int _benchmarkCThreshold,
-                                                                            string _benchmarkExtraArgument) : store(_store)
+GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank, int _compressionThreshold,
+        string _compressionExtraArgument) : store(_store)
 {
     int mtypesize = 8 * sizeof(MType);
     int local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
@@ -133,8 +134,8 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank, int 
     owenmask = new MType[mask_size];
     tmpmask = new MType[mask_size];
     rank = _rank;
-    benchmarkCThreshold = _benchmarkCThreshold;
-    benchmarkExtraArgument = _benchmarkExtraArgument;
+    compressionThreshold = _compressionThreshold;
+    compressionExtraArgument = _compressionExtraArgument;
 
 }
 
@@ -479,6 +480,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
      * "nocopmression", "cpusimd", "gpusimt"
      */
     Compression<FQ_T> &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
+    schema.configure(compressionThreshold, compressionExtraArgument /*usually codec*/);
 #endif
 
 #ifdef _COMPRESSION

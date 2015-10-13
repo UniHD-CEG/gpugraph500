@@ -12,9 +12,10 @@
 #endif
 
 
-CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank, int _benchmarkCThreshold,
-                                                                                string _benchmarkExtraArgument) :
-    GlobalBFS<CUDA_BFS, vtxtyp, unsigned char, MatrixT>(_store, _rank),
+CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank,
+                   int _benchmarkCThreshold,
+                   string _benchmarkExtraArgument) :
+    GlobalBFS<CUDA_BFS, vtxtyp, unsigned char, MatrixT>(_store, _rank, _benchmarkCThreshold, _benchmarkExtraArgument),
     verbosity(_verbosity),
     queue_sizing(_queue_sizing),
     vmask(0)
@@ -22,9 +23,6 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
     , checkQueue(0, _store.getLocRowLength(), 0, _store.getLocColLength())
 #endif
 {
-
-    benchmarkExtraArgument = _benchmarkExtraArgument;
-    benchmarkCThreshold = _benchmarkCThreshold;
 
     int cpro_verbosity;
     b40c::util::B40CPerror(cudaSetDeviceFlags(cudaDeviceMapHost),
