@@ -81,29 +81,36 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         {
 
             MPI_Status status; int psize_from;
-
+/*
 #ifdef _COMPRESSION
             MPI_Recv(&originalsize, 1, MPI_LONG, communicatorRank + 1, 1, comm, &status);
 #endif
-
+*/
             MPI_Recv(recv_buff, ssize, type, communicatorRank + 1, 1, comm, &status);
             MPI_Get_count(&status, type, &psize_from);
 
+
+//#ifdef _COMPRESSION
+std::cout << "ssize: " << ssize << " psize_from: " <<psize_from << std::endl;
+//#endif
+/*
 #ifdef _COMPRESSION
             uncompressedsize = originalsize;
             decompress(recv_buff, psize_from, &uncompressed_fq, uncompressedsize);
 #endif
+*/
 
 #ifdef INSTRUMENTED
             startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-#ifdef _COMPRESSION
-            reduce(0, ssize, uncompressed_fq, uncompressedsize);
-#else
+//#ifdef _COMPRESSION
+//            reduce(0, ssize, uncompressed_fq, uncompressedsize);
+//#else
             reduce(0, ssize, recv_buff, psize_from);
-#endif
+//#endif
 
+/*
 #ifdef _COMPRESSION
             if (isCompressed(originalsize, psize_from))
             {
@@ -113,7 +120,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 }
             }
 #endif
-
+*/
 #ifdef INSTRUMENTED
             endTimeQueueProcessing = MPI_Wtime();
             timeQueueProcessing += (endTimeQueueProcessing - startTimeQueueProcessing);
@@ -136,18 +143,20 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
 
+/*
 #ifdef _COMPRESSIONDEBUG
             benchmarkCompression(send, psize_to);
 #endif
-
+*/
+/*
 #ifdef _COMPRESSION
             originalsize = psize_to;
             MPI_Send(&originalsize, 1, MPI_LONG, communicatorRank - 1, 1, comm);
             compress(send, psize_to, &compressed_fq, compressedsize);
             MPI_Send(compressed_fq, compressedsize, type, communicatorRank - 1, 1, comm);
-#else
+#else*/
             MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
-#endif
+//#endif
 
         }
     }
