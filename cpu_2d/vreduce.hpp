@@ -75,57 +75,31 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     residuum = communicatorSize - (1 << intLdSize);
 
     //step 2
+    /**
+     * Is this block used? (testing shows that it isnt. )
+     * todo: test more the previous statement
+     *
+     */
     if (communicatorRank < 2 * residuum)
     {
         if ((communicatorRank & 1) == 0)  // even
         {
 
-            MPI_Status status; int psize_from;
-/*
-#ifdef _COMPRESSION
-            MPI_Recv(&originalsize, 1, MPI_LONG, communicatorRank + 1, 1, comm, &status);
-#endif
-*/
+            MPI_Status status;
+            int psize_from;
             MPI_Recv(recv_buff, ssize, type, communicatorRank + 1, 1, comm, &status);
             MPI_Get_count(&status, type, &psize_from);
-
-
-//#ifdef _COMPRESSION
-std::cout << "ssize: " << ssize << " psize_from: " <<psize_from << std::endl;
-//#endif
-/*
-#ifdef _COMPRESSION
-            uncompressedsize = originalsize;
-            decompress(recv_buff, psize_from, &uncompressed_fq, uncompressedsize);
-#endif
-*/
 
 #ifdef INSTRUMENTED
             startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-//#ifdef _COMPRESSION
-//            reduce(0, ssize, uncompressed_fq, uncompressedsize);
-//#else
             reduce(0, ssize, recv_buff, psize_from);
-//#endif
 
-/*
-#ifdef _COMPRESSION
-            if (isCompressed(originalsize, psize_from))
-            {
-                if (uncompressed_fq != NULL)
-                {
-                    free(uncompressed_fq);
-                }
-            }
-#endif
-*/
 #ifdef INSTRUMENTED
             endTimeQueueProcessing = MPI_Wtime();
             timeQueueProcessing += (endTimeQueueProcessing - startTimeQueueProcessing);
 #endif
-
         }
         else     // odd
         {
@@ -143,23 +117,21 @@ std::cout << "ssize: " << ssize << " psize_from: " <<psize_from << std::endl;
             timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
 
-/*
-#ifdef _COMPRESSIONDEBUG
-            benchmarkCompression(send, psize_to);
-#endif
-*/
-/*
-#ifdef _COMPRESSION
-            originalsize = psize_to;
-            MPI_Send(&originalsize, 1, MPI_LONG, communicatorRank - 1, 1, comm);
-            compress(send, psize_to, &compressed_fq, compressedsize);
-            MPI_Send(compressed_fq, compressedsize, type, communicatorRank - 1, 1, comm);
-#else*/
             MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
-//#endif
-
         }
     }
+
+    /**
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     *
+     */
 
     MPI_Status status;
     int psizeTo;
@@ -195,14 +167,15 @@ std::cout << "ssize: " << ssize << " psize_from: " <<psize_from << std::endl;
 #endif
 
                 get(offset + lowerId, upperId, send, psizeTo);
-#ifdef _COMPRESSION
-                compress(send, psizeTo, &compressed_fq, compressedsize);
-#endif
-
-#ifdef _COMPRESSIONDEBUG
-                benchmarkCompression(send, psizeTo);
-#endif
-
+                /*#ifdef _COMPRESSION
+                                compress(send, psizeTo, &compressed_fq, compressedsize);
+                #endif
+                */
+                /*
+                #ifdef _COMPRESSIONDEBUG
+                                benchmarkCompression(send, psizeTo);
+                #endif
+                */
 #ifdef INSTRUMENTED
                 endTimeQueueProcessing = MPI_Wtime();
                 timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
@@ -210,53 +183,55 @@ std::cout << "ssize: " << ssize << " psize_from: " <<psize_from << std::endl;
 
                 previousRank = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
 
-#ifdef _COMPRESSION
-                originalsize = psizeTo;
-                MPI_Sendrecv(&originalsize, 1, MPI_LONG,
-                             previousRank, it + 2,
-                             &originalsize, 1, MPI_LONG,
-                             previousRank, it + 2,
-                             comm, &status);
-                MPI_Sendrecv(compressed_fq, compressedsize, type,
-                             previousRank, it + 2,
-                             recv_buff, lowerId, type,
-                             previousRank, it + 2,
-                             comm, &status);
-                MPI_Get_count(&status, type, &psizeFrom);
-#else
+                /*#ifdef _COMPRESSION
+                                originalsize = psizeTo;
+                                MPI_Sendrecv(&originalsize, 1, MPI_LONG,
+                                             previousRank, it + 2,
+                                             &originalsize, 1, MPI_LONG,
+                                             previousRank, it + 2,
+                                             comm, &status);
+                                MPI_Sendrecv(compressed_fq, compressedsize, type,
+                                             previousRank, it + 2,
+                                             recv_buff, lowerId, type,
+                                             previousRank, it + 2,
+                                             comm, &status);
+                                MPI_Get_count(&status, type, &psizeFrom);
+                #else*/
                 MPI_Sendrecv(send, psizeTo, type,
                              previousRank, it + 2,
                              recv_buff, lowerId, type,
                              previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
-#endif
+//#endif
 
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-#ifdef _COMPRESSION
-                uncompressedsize = originalsize;
-                decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
-#endif
+                /*#ifdef _COMPRESSION
+                                uncompressedsize = originalsize;
+                                decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                #endif
 
-#ifdef _COMPRESSION
-                reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
-#else
+                #ifdef _COMPRESSION
+                                reduce(offset, lowerId, uncompressed_fq, uncompressedsize);
+                #else*/
                 reduce(offset, lowerId, recv_buff, psizeFrom);
-#endif
+//#endif
 
-#ifdef _COMPRESSION
-                if (isCompressed(originalsize, psizeFrom))
-                {
-                    if (uncompressed_fq != NULL)
-                    {
-                        free(uncompressed_fq);
-                    }
-                }
-#endif
-
+                /*#ifdef _COMPRESSION
+                //std::cout << "free1: "<< "originalsize: " << originalsize << " compressedsize: " << psizeFrom << std::endl;
+                                if (isCompressed(originalsize, psizeFrom))
+                                {
+                std::cout << "--> freed1: "<< "originalsize: " << originalsize << " compressedsize: " << psizeFrom << std::endl;
+                                    if (uncompressed_fq != NULL)
+                                    {
+                                        free(uncompressed_fq);
+                                    }
+                                }
+                #endif
+                */
 #ifdef INSTRUMENTED
                 endTimeQueueProcessing = MPI_Wtime();
                 timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
@@ -273,14 +248,14 @@ std::cout << "ssize: " << ssize << " psize_from: " <<psize_from << std::endl;
 
                 get(offset, lowerId, send, psizeTo);
 
-#ifdef _COMPRESSION
-                compress(send, psizeTo, &compressed_fq, compressedsize);
-#endif
-
-#ifdef _COMPRESSIONDEBUG
-                benchmarkCompression(send, psizeTo);
-#endif
-
+                /*#ifdef _COMPRESSION
+                                compress(send, psizeTo, &compressed_fq, compressedsize);
+                #endif
+                */
+                /*#ifdef _COMPRESSIONDEBUG
+                                benchmarkCompression(send, psizeTo);
+                #endif
+                */
 #ifdef INSTRUMENTED
                 endTimeQueueProcessing = MPI_Wtime();
                 timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
@@ -288,53 +263,55 @@ std::cout << "ssize: " << ssize << " psize_from: " <<psize_from << std::endl;
 
                 previousRank = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
 
-#ifdef _COMPRESSION
-                originalsize = psizeTo;
-                MPI_Sendrecv(&originalsize, 1, MPI_LONG,
-                             previousRank, it + 2,
-                             &originalsize, 1, MPI_LONG,
-                             previousRank, it + 2,
-                             comm, &status);
-                MPI_Sendrecv(compressed_fq, compressedsize, type,
-                             previousRank, it + 2,
-                             recv_buff, upperId, type,
-                             previousRank, it + 2,
-                             comm, &status);
-                MPI_Get_count(&status, type, &psizeFrom);
-#else
+                /*#ifdef _COMPRESSION
+                                originalsize = psizeTo;
+                                MPI_Sendrecv(&originalsize, 1, MPI_LONG,
+                                             previousRank, it + 2,
+                                             &originalsize, 1, MPI_LONG,
+                                             previousRank, it + 2,
+                                             comm, &status);
+                                MPI_Sendrecv(compressed_fq, compressedsize, type,
+                                             previousRank, it + 2,
+                                             recv_buff, upperId, type,
+                                             previousRank, it + 2,
+                                             comm, &status);
+                                MPI_Get_count(&status, type, &psizeFrom);
+                #else*/
                 MPI_Sendrecv(send, psizeTo, type,
                              previousRank, it + 2,
                              recv_buff, upperId, type,
                              previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
-#endif
+//#endif
 
 
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-#ifdef _COMPRESSION
-                uncompressedsize = originalsize;
-                decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
-#endif
-
-#ifdef _COMPRESSION
-                reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
-#else
+                /*#ifdef _COMPRESSION
+                                uncompressedsize = originalsize;
+                                decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                #endif
+                */
+                /*#ifdef _COMPRESSION
+                                reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
+                #else*/
                 reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
-#endif
+//#endif
 
-#ifdef _COMPRESSION
-                if (isCompressed(originalsize, psizeFrom))
-                {
-                    if (uncompressed_fq != NULL)
-                    {
-                        free(uncompressed_fq);
-                    }
-                }
-#endif
+                /*#ifdef _COMPRESSION
+                //std::cout << "free2: "<< "originalsize: " << originalsize << " compressedsize: " << psizeFrom << std::endl;
+                                if (isCompressed(originalsize, psizeFrom))
+                                {
+                std::cout << "--> freed2: "<< "originalsize: " << originalsize << " compressedsize: " << psizeFrom << std::endl;
+                                    if (uncompressed_fq != NULL)
+                                    {
+                                        free(uncompressed_fq);
+                                    }
+                                }
+                #endif*/
 
 #ifdef INSTRUMENTED
                 endTimeQueueProcessing = MPI_Wtime();
@@ -369,9 +346,7 @@ std::cout << "ssize: " << ssize << " psize_from: " <<psize_from << std::endl;
 
     // Transmission of the final results
     int *sizes = (int *)malloc(communicatorSize * sizeof(int));
-    assert(sizes != NULL);
     int *disps = (int *)malloc(communicatorSize * sizeof(int));
-    assert(disps != NULL);
 
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);

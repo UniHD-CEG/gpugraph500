@@ -110,7 +110,6 @@ template <typename T>
 void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
                           size_t &compressedsize)
 {
-std::cout << "[c]-->codec: "<< codecName<< "thresh:"<< SIMDCOMPRESSION_THRESHOLD << std::endl;
     if (isCompressible(size))
     {
         uint32_t *fq_32 = (uint32_t *)malloc(size * sizeof(uint32_t));
@@ -143,6 +142,7 @@ std::cout << "[c]-->codec: "<< codecName<< "thresh:"<< SIMDCOMPRESSION_THRESHOLD
         }
         free(fq_32);
         free(compressed_fq_32);
+        std::cout << "[c]-->origsize: " << size << " compressedsize:" << compressedsize << std::endl;
     }
     else
     {
@@ -158,7 +158,6 @@ template <typename T>
 void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
                             /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize)
 {
-std::cout << "[d]-->codec: "<< codecName<< "thresh:"<< SIMDCOMPRESSION_THRESHOLD << std::endl;
     if (isCompressed(uncompressedsize, size))
     {
         uint32_t *uncompressed_fq_32 = (uint32_t *) malloc(uncompressedsize * sizeof(uint32_t));
@@ -187,6 +186,7 @@ std::cout << "[d]-->codec: "<< codecName<< "thresh:"<< SIMDCOMPRESSION_THRESHOLD
         }
         free(compressed_fq_32);
         free(uncompressed_fq_32);
+        std::cout << "[d]-->origsize: " << uncompressedsize << " compressedsize:" << size << std::endl;
     }
     else
     {

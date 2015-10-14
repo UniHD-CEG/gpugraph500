@@ -479,7 +479,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
      * CompressionFactory()
      * "nocompression", "cpusimd", "gpusimt"
      */
-    Compression<FQ_T> &schema = *CompressionFactory<FQ_T>::getFromName("nocompression");
+    Compression<FQ_T> &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
     schema.configure(compressionThreshold, compressionExtraArgument /*usually codec*/);
 #endif
 
