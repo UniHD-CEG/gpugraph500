@@ -31,19 +31,19 @@ public:
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
     inline string name() const;
-    void configure(int compressionThreshold, string compressionCodec);
+    void reconfigure(int compressionThreshold, string compressionCodec);
 };
 
 template <typename T>
 CpuSimd<T>::CpuSimd()
 {
-    SIMDCOMPRESSION_THRESHOLD = 512;
+    SIMDCOMPRESSION_THRESHOLD = 512; // use 0xffffff (2^32) to transparently disable
     codecName = "s4-bp128-dm";
     codec = *CODECFactory::getFromName(codecName);
 }
 
 template <typename T>
-void CpuSimd<T>::configure(int compressionThreshold, string compressionCodec)
+void CpuSimd<T>::reconfigure(int compressionThreshold, string compressionCodec)
 {
     assert(compressionThreshold > 0);
     assert(compressionCodec.length() > 0);
@@ -142,7 +142,7 @@ void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
         }
         free(fq_32);
         free(compressed_fq_32);
-        std::cout << "[c]-->origsize: " << size << " compressedsize:" << compressedsize << std::endl;
+        //std::cout << "[c]-->origsize: " << size << " compressedsize:" << compressedsize << std::endl;
     }
     else
     {
@@ -186,7 +186,7 @@ void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
         }
         free(compressed_fq_32);
         free(uncompressed_fq_32);
-        std::cout << "[d]-->origsize: " << uncompressedsize << " compressedsize:" << size << std::endl;
+        //std::cout << "[d]-->origsize: " << uncompressedsize << " compressedsize:" << size << std::endl;
     }
     else
     {

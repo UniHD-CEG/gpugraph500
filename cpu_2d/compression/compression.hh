@@ -19,7 +19,7 @@ public:
     virtual void verifyCompression(const T *fq, const T *uncompressed_fq_64,
                                    const size_t uncompressedsize) const = 0;
     virtual bool isCompressed(const size_t originalsize, const size_t compressedsize) const = 0;
-    virtual void configure(int compressionThreshold, string compressionExtraArgument) = 0;
+    virtual void reconfigure(int compressionThreshold, string compressionExtraArgument) = 0;
     virtual ~Compression()
     {
     };

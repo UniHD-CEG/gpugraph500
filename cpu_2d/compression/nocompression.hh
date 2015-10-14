@@ -17,11 +17,11 @@ public:
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
     inline string name() const;
-    void configure(int compressionThreshold, string compressionExtraArgument);
+    void reconfigure(int compressionThreshold, string compressionExtraArgument);
 };
 
 template <typename T>
-void NoCompression<T>::configure(int compressionThreshold, string compressionExtraArgument)
+void NoCompression<T>::reconfigure(int compressionThreshold, string compressionExtraArgument)
 {
     assert(compressionThreshold >= 0);
     assert(compressionExtraArgument.length() >= 0);
