@@ -7,6 +7,24 @@
 #SBATCH -t 10:00
 
 MAX_SF=21
+CODEC=s4-bp128-d4
+THRESHOLD=512
+
+if [ "x$G500_SIMDCOMPRESSION_CODE" != "x" ]; then
+  echo "Using CPUSIMD-CODEC $G500_SIMDCOMPRESSION_CODE"
+  codec=$G500_SIMDCOMPRESSION_CODE
+else
+  echo "Using CPUSIMD-CODEC $CODEC"
+  codec=$CODEC
+fi
+
+if [ "x$G500_COMPRESSION_THRESHOLD" != "x" ]; then
+  echo "Using COMPRESSION-THRESHOLD $G500_COMPRESSION_THRESHOLD"
+  threshold=$G500_COMPRESSION_THRESHOLD
+else
+  echo "Using COMPRESSION-THRESHOLD $THRESHOLD"
+  threshold=$THRESHOLD
+fi
 
 if [ "x$G500_SCALE_FACTOR" != "x" ]; then
   echo "Using SCALE-FACTOR $G500_SCALE_FACTOR"
@@ -27,6 +45,6 @@ if [ "x$G500_ENABLE_RUNTIME_SCALASCA" = "xyes" ]; then
   scalasca="scalasca -analyze -f filter.scorep -e scorep_g500_testreduce`date +"%F-%s"`"
   $scalasca $mpirun -np 9 --display-map ./../cpu_2d/g500 -s $scale_factor -C 3 -gpus 1 -qs 2.1
 else
-  $mpirun -np 9 --display-map ../cpu_2d/g500 -s $scale_factor -C 3 -gpus 1 -qs 2.1
+  $mpirun -np 9 --display-map ../cpu_2d/g500 -s $scale_factor -C 3 -gpus 1 -qs 2.1 -be $codec -bt $threshold
 fi
 
