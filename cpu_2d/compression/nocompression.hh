@@ -10,7 +10,7 @@ template <typename T>
 class NoCompression: public Compression<T>
 {
 public:
-    void benchmarkCompression(T *fq, const int size);
+    void debugCompression(T *fq, const int size);
     void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
     void decompress(T *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize);
@@ -29,7 +29,7 @@ void NoCompression<T>::reconfigure(int compressionThreshold, string compressionE
 
 
 template <typename T>
-void NoCompression<T>::benchmarkCompression(T *fq, const int size)
+void NoCompression<T>::debugCompression(T *fq, const int size)
 {
 
     size_t compressedsize, uncompressedsize = static_cast<size_t>(size);
@@ -49,7 +49,7 @@ void NoCompression<T>::benchmarkCompression(T *fq, const int size)
      */
     verifyCompression(fq, uncompressed_fq_64, uncompressedsize);
     double compressratio = 0.0;
-    printf("bMark: No-Compression, data: %ldB c/d: %04ld/%04ldus, %02.3f%% gained\n", size * sizeof(int), encode_time,
+    printf("debug:: no-compression, data: %ldB c/d: %04ld/%04ldus, %02.3f%% gained\n", size * sizeof(int), encode_time,
            decode_time, compressratio);
 
 }

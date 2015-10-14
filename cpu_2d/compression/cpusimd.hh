@@ -24,7 +24,7 @@ private:
     inline bool isCompressible(int size) const { return (size > SIMDCOMPRESSION_THRESHOLD); };
 public:
     CpuSimd();
-    void benchmarkCompression(T *fq, const int size);
+    void debugCompression(T *fq, const int size);
     void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
     void decompress(T *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize);
@@ -53,7 +53,7 @@ void CpuSimd<T>::reconfigure(int compressionThreshold, string compressionCodec)
 }
 
 template <typename T>
-void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
+void CpuSimd<T>::debugCompression(T *fq, const int size)
 {
     if (size > 0)
     {
@@ -100,7 +100,7 @@ void CpuSimd<T>::benchmarkCompression(T *fq, const int size)
             dataUnit = "GB";
             dataSize /= 1000;
         }
-        printf("bMark: cpu-simd (%s), data: %ld%s, c/d: %04ld/%04ldus, %02.3f%% gained\n", codecName.c_str(), dataSize,
+        printf("debug:: cpu-simd (%s), data: %ld%s, c/d: %04ld/%04ldus, %02.3f%% gained\n", codecName.c_str(), dataSize,
                dataUnit.c_str(), encode_time, decode_time,
                compresspercent);
     }

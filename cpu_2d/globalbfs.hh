@@ -496,10 +496,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
         return schema.decompress(a, b, c, d);
     };
 
-    function <void (FQ_T *, const int)> benchmarkCompression_lambda =
+    function <void (FQ_T *, const int)> debugCompression_lambda =
         [&schema](FQ_T * a, const int b)
     {
-        return schema.benchmarkCompression(a, b);
+        return schema.debugCompression(a, b);
     };
 
     const function <bool (const size_t, const size_t)> isCompressed_lambda =
@@ -672,7 +672,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 compress_lambda,
                 decompress_lambda,
 #ifdef _COMPRESSIONDEBUG
-                benchmarkCompression_lambda,
+                debugCompression_lambda,
 #endif
                 isCompressed_lambda,
 #endif
@@ -737,7 +737,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
 
 #ifdef _COMPRESSIONDEBUG
-                schema.benchmarkCompression(startaddr, originalsize);
+                schema.debugCompression(startaddr, originalsize);
 #endif
 
                 uncompressedsize = static_cast<size_t>(originalsize);

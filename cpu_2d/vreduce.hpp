@@ -28,7 +28,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
              function<void(T *, const size_t &, T **, size_t &)> &compress,
              function < void(T *, const int, T ** /*Out*/, size_t & /*In-Out*/) > &decompress,
 #ifdef _COMPRESSIONDEBUG
-             function <void (T *, const int)> &benchmarkCompression,
+             function <void (T *, const int)> &debugCompression,
 #endif
              const function <bool (const size_t, const size_t)> &isCompressed,
 #endif
@@ -75,11 +75,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     residuum = communicatorSize - (1 << intLdSize);
 
     //step 2
-    /**
-     * Is this block used? (traces shows that not)
-     * todo: is really used?
-     *
-     */
     if (communicatorRank < 2 * residuum)
     {
         if ((communicatorRank & 1) == 0)  // even
@@ -172,7 +167,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSIONDEBUG
-                benchmarkCompression(send, psizeTo);
+                debugCompression(send, psizeTo);
 #endif
 
 #ifdef INSTRUMENTED
@@ -221,13 +216,13 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 reduce(offset, lowerId, recv_buff, psizeFrom);
 #endif
 
+                std::cout << "rank: " << communicatorRank << std::endl;
+
 #ifdef _COMPRESSION
                 if (isCompressed(originalsize, psizeFrom))
                 {
-                    if (uncompressed_fq != NULL)
-                    {
-                        free(uncompressed_fq);
-                    }
+                    std::cout << "rank: " << communicatorRank << std::endl;
+                    free(uncompressed_fq);
                 }
 #endif
 
@@ -252,7 +247,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSIONDEBUG
-                benchmarkCompression(send, psizeTo);
+                debugCompression(send, psizeTo);
 #endif
 
 #ifdef INSTRUMENTED
@@ -304,10 +299,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
                 if (isCompressed(originalsize, psizeFrom))
                 {
-                    if (uncompressed_fq != NULL)
-                    {
-                        free(uncompressed_fq);
-                    }
+                    std::cout << "rank: " << communicatorRank << std::endl;
+                    free(uncompressed_fq);
                 }
 #endif
 
@@ -340,6 +333,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         psizeTo = 0;
         send = 0;
     }
+
+    //std::cout << "----> psizeTo: " << psizeTo <<std::endl;
 
     /*
     std::cout << std::endl;
