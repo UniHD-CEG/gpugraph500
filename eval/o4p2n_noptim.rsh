@@ -4,7 +4,6 @@
 #SBATCH --tasks=4
 #SBATCH --ntasks-per-node=2
 #SBATCH --gres=gpu:1
-#SBATCH -t 10:00
 
 MAX_SF=21
 CODEC=s4-bp128-d4
