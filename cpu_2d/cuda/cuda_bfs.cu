@@ -13,9 +13,9 @@
 
 
 CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank,
-                   int _benchmarkCThreshold,
-                   string _benchmarkExtraArgument) :
-    GlobalBFS<CUDA_BFS, vtxtyp, unsigned char, MatrixT>(_store, _rank, _benchmarkCThreshold, _benchmarkExtraArgument),
+                   int _compressionThreshold,
+                   string _compressionCodec) :
+    GlobalBFS<CUDA_BFS, vtxtyp, unsigned char, MatrixT>(_store, _rank, _compressionThreshold, _compressionCodec),
     verbosity(_verbosity),
     queue_sizing(_queue_sizing),
     vmask(0)

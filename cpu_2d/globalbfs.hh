@@ -68,7 +68,7 @@ protected:
     int64_t mask_size;
     int rank;
     int compressionThreshold;
-    string compressionExtraArgument;
+    string compressionCodec;
 
     /**
      * Inherited methods in children classes: cuda_bfs.cu (CUDA), cpubfs_bin.cpp (CPU improved) and simplecpubfs.cpp (CPU basic)
@@ -100,7 +100,7 @@ public:
     /**
      * Constructor & destructor declaration
      */
-    GlobalBFS(STORE &_store, int _rank, int _compressionThreshold, string _compressionExtraArgument);
+    GlobalBFS(STORE &_store, int _rank, int _compressionThreshold, string _compressionCodec);
     ~GlobalBFS();
 
     typename STORE::vtxtyp *getPredecessor();
@@ -120,7 +120,7 @@ public:
  */
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank, int _compressionThreshold,
-        string _compressionExtraArgument) : store(_store)
+        string _compressionCodec) : store(_store)
 {
     int mtypesize = 8 * sizeof(MType);
     int local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
@@ -135,7 +135,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store, int _rank, int 
     tmpmask = new MType[mask_size];
     rank = _rank;
     compressionThreshold = _compressionThreshold;
-    compressionExtraArgument = _compressionExtraArgument;
+    compressionCodec = _compressionCodec;
 
 }
 
@@ -475,12 +475,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _COMPRESSION
-    /**
-     * CompressionFactory()
-     * "nocompression", "cpusimd", "gpusimt"
-     */
+
+    // "nocompression", "cpusimd", "gpusimt"
     Compression<FQ_T> &schema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
-    // schema.reconfigure(compressionThreshold, compressionExtraArgument /*usually codec*/);
+    schema.reconfigure(compressionThreshold, compressionCodec);
 #endif
 
 #ifdef _COMPRESSION
@@ -808,14 +806,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
                 if (schema.isCompressed(originalsize, compressedsize))
                 {
-                    if (uncompressed_fq != NULL)
-                    {
-                        free(uncompressed_fq);
-                    }
-                    if (compressed_fq != NULL)
-                    {
-                        free(compressed_fq);
-                    }
+                    free(uncompressed_fq);
+                    free(compressed_fq);
                 }
 #endif
 
@@ -837,10 +829,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                 int originalsize, compressedsize;
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
-                assert(originalsize <= fq_64_length);
                 compressed_fq = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
 
 #ifdef _COMPRESSIONVERIFY
+                assert(originalsize <= fq_64_length);
                 FQ_T *startaddr = NULL;
                 startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
                 if (startaddr == NULL)
@@ -869,7 +861,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #else
                 int originalsize;
                 MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+#ifdef _COMPRESSIONVERIFY
                 assert(originalsize <= fq_64_length);
+#endif
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
@@ -888,37 +882,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
                 if (schema.isCompressed(originalsize, compressedsize))
                 {
-                    if (uncompressed_fq != NULL)
-                    {
-                        free(uncompressed_fq);
-                    }
-                    if (compressed_fq != NULL)
-                    {
-                        free(compressed_fq);
-                    }
-
+                    free(uncompressed_fq);
+                    free(compressed_fq);
 #ifdef _COMPRESSIONVERIFY
-                    if (startaddr != NULL)
-                    {
-                        free(startaddr);
-                    }
+                    free(startaddr);
 #endif
-
                 }
                 else
                 {
-                    if (compressed_fq != NULL)
-                    {
-                        free(compressed_fq);
-                    }
-
+                    free(compressed_fq);
 #ifdef _COMPRESSIONVERIFY
-                    if (startaddr != NULL)
-                    {
-                        free(startaddr);
-                    }
+                    free(startaddr);
 #endif
-
                 }
 #endif
             }

@@ -76,7 +76,7 @@ enum GGen
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
-                              int &graph_gen, int &gpus, double &queue_sizing, string &benchmarkExtraArgument, int &benchmarkCThreshold);
+                              int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &compressionThreshold);
 void outputIterationStatistics(statistic &bfs_time_s, statistic &nedge_s, statistic &teps_s);
 void outputIterationInstrumentedStatistics(statistic &valid_time_s, statistic &lbfs_time_s, statistic &lbfs_share_s,
         statistic &lqueue_time_s, statistic &lqueue_share_s, statistic &rest_time_s,
@@ -120,16 +120,16 @@ int main(int argc, char **argv)
     int level, this_valid;
     int next, maxiterations;
     long local_edges, elem, global_edges_wd;
-    string benchmarkExtraArgument;
-    int benchmarkCThreshold;
+    string compressionCodec;
+    int compressionThreshold;
     int iterations = 0, maxgenvtx =
                          32; // relative number of maximum attempts to find a valid start vertix per possible attempt
     vector <vtxtyp> tries;
     vector <double> bfs_time;
     vector <long> nedge; //number of edges
     vector <double> teps;
-    int benchmarkExtraArgumentLength;
-    char *benchmarkExtraArgumentBuffer = NULL;
+    int compressionCodecLength;
+    char *compressionCodecBuffer = NULL;
 
 #ifdef INSTRUMENTED
     double lexp, lqueue, rowcom, colcom, predlistred;
@@ -162,12 +162,12 @@ int main(int argc, char **argv)
     {
         externalArgumentsIterate(argc, argv, scale, edgefactor, num_of_iterations, verbosity,
                                  R, C, R_set, C_set, graph_gen,
-                                 gpus, queue_sizing, benchmarkExtraArgument, benchmarkCThreshold);
+                                 gpus, queue_sizing, compressionCodec, compressionThreshold);
         externalArgumentsVerify(R_set, C_set, size, R, C);
         printf("row slices: %d, column slices: %d\n", R, C);
-        benchmarkExtraArgumentLength = benchmarkExtraArgument.size() + 1;
-        benchmarkExtraArgumentBuffer = new char[benchmarkExtraArgumentLength];
-        strncpy(benchmarkExtraArgumentBuffer, benchmarkExtraArgument.c_str(), benchmarkExtraArgumentLength);
+        compressionCodecLength = compressionCodec.size() + 1;
+        compressionCodecBuffer = new char[compressionCodecLength];
+        strncpy(compressionCodecBuffer, compressionCodec.c_str(), compressionCodecLength);
     }
 
     MPI_Bcast(&scale, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
@@ -175,14 +175,14 @@ int main(int argc, char **argv)
     MPI_Bcast(&num_of_iterations, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
     MPI_Bcast(&R, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&C, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&benchmarkCThreshold, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&benchmarkExtraArgumentLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&compressionThreshold, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&compressionCodecLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (rank != 0)
     {
-        benchmarkExtraArgumentBuffer = new char[benchmarkExtraArgumentLength];
+        compressionCodecBuffer = new char[compressionCodecLength];
     }
-    MPI_Bcast(benchmarkExtraArgumentBuffer, benchmarkExtraArgumentLength, MPI_CHAR, 0, MPI_COMM_WORLD);
-    benchmarkExtraArgument = benchmarkExtraArgumentBuffer;
+    MPI_Bcast(compressionCodecBuffer, compressionCodecLength, MPI_CHAR, 0, MPI_COMM_WORLD);
+    compressionCodec = compressionCodecBuffer;
 
 #ifdef _CUDA
     MPI_Bcast(&gpus      , 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -258,7 +258,7 @@ int main(int argc, char **argv)
     OCLRunner oclrun;
     OpenCL_BFS runBfs(store, *oclrun);
 #elif defined _CUDA
-    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, rank, benchmarkCThreshold, benchmarkExtraArgument);
+    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, rank, compressionThreshold, compressionCodec);
 #else
     CPUBFS_bin runBfs(store, verbosity, rank);
 #endif
@@ -488,7 +488,7 @@ int main(int argc, char **argv)
 #endif
 
     }
-    delete[] benchmarkExtraArgumentBuffer;
+    delete[] compressionCodecBuffer;
     MPI_Finalize();
 }
 
@@ -600,7 +600,7 @@ void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C)
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
-                              int &graph_gen, int &gpus, double &queue_sizing, string &benchmarkExtraArgument, int &benchmarkCThreshold)
+                              int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &compressionThreshold)
 {
     int i = 0;
     while (i < argc)
@@ -770,18 +770,18 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
         else if (!strcmp(argv[i], "-bt"))
         {
             /**
-             * benchmark compression-threshold value
+             * compression-threshold value
              */
             if (i + 1 < argc)
             {
-                int benchmarkCThreshold_tmp = atoi(argv[i + 1]);
-                if (benchmarkCThreshold_tmp < 1 || benchmarkCThreshold_tmp > 0xffffff)
+                int compressionThreshold_tmp = atoi(argv[i + 1]);
+                if (compressionThreshold_tmp < 1 || compressionThreshold_tmp > 0xffffff)
                 {
-                    printf("Invalid benchmark compression-threshold value: %s\n", argv[i + 1]);
+                    printf("Invalid compression-threshold value: %s\n", argv[i + 1]);
                 }
                 else
                 {
-                    benchmarkCThreshold = benchmarkCThreshold_tmp;
+                    compressionThreshold = compressionThreshold_tmp;
                     ++i;
                 }
             }
@@ -789,19 +789,19 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
         else if (!strcmp(argv[i], "-be"))
         {
             /**
-             * benchmark extra string (e.g used for SIMDcomp codec string)
+             * Compression extra string (e.g used for SIMDcomp codec string)
              */
             if (i + 1 < argc)
             {
-                string benchmarkExtraArgument_tmp = argv[i + 1];
-                unsigned int extraArgLength = benchmarkExtraArgument_tmp.length();
+                string compressionCodec_tmp = argv[i + 1];
+                unsigned int extraArgLength = compressionCodec_tmp.length();
                 if (extraArgLength > 128)
                 {
-                    printf("Invalid benchmark extra argument (required string): %s\n", argv[i + 1]);
+                    printf("Invalid compression extra argument (required string): %s\n", argv[i + 1]);
                 }
                 else
                 {
-                    benchmarkExtraArgument = benchmarkExtraArgument_tmp;
+                    compressionCodec = compressionCodec_tmp;
                     ++i;
                 }
             }

@@ -155,15 +155,21 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             {
                 MPI_Status status;
                 int psizeFrom;
+#ifdef _COMPRESSION
                 int originalsize;
+#endif
 
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
                 get(offset + lowerId, upperId, send/*Out*/, psizeTo/*Out*/);
-#ifdef _COMPRESSION
+
+#ifdef _COMPRESSIONVERIFY
                 assert(is_sorted(send, send + psizeTo));
+#endif
+
+#ifdef _COMPRESSION
                 compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
@@ -179,7 +185,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 previousRank = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
 
 #ifdef _COMPRESSION
-//std::cout << "[ -- ] -------> compressedsize1: " << compressedsize << " originalsize: " << psizeTo <<  " rank: " << communicatorRank << std::endl;
                 MPI_Sendrecv(&psizeTo, 1, MPI_LONG,
                              previousRank, it + 2,
                              &originalsize, 1, MPI_LONG,
@@ -208,18 +213,19 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-#ifdef _COMPRESSION
-//std::cout << "[ ++ ] -------> psizeFrom1: " << psizeFrom << " compressedsize: " << compressedsize << " originalsize: " << originalsize <<  " rank: " << communicatorRank << std::endl;
-                //assert(originalsize > 0);
+#ifdef _COMPRESSIONVERIFY
                 assert(psizeFrom <= lowerId);
                 assert(psizeFrom <= originalsize);
+#endif
+
+#ifdef _COMPRESSION
                 uncompressedsize = originalsize;
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+#endif
+
+#ifdef _COMPRESSIONVERIFY
                 assert(uncompressedsize == originalsize);
                 assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
-
-                //uncompressedsize = originalsize;
-                //decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 #endif
 
 #ifdef _COMPRESSION
@@ -247,7 +253,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             {
                 MPI_Status status;
                 int psizeFrom;
+#ifdef _COMPRESSION
                 int originalsize;
+#endif
 
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();
@@ -255,8 +263,11 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
                 get(offset, lowerId, send/*Out*/, psizeTo/*Out*/);
 
-#ifdef _COMPRESSION
+#ifdef _COMPRESSIONVERIFY
                 assert(is_sorted(send, send + psizeTo));
+#endif
+
+#ifdef _COMPRESSION
                 compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
@@ -272,7 +283,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 previousRank = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
 
 #ifdef _COMPRESSION
-//std::cout << "[ -- ] -------> compressedsize2: " << compressedsize << " originalsize: " << psizeTo <<  " rank: " << communicatorRank << std::endl;
                 MPI_Sendrecv(&psizeTo, 1, MPI_LONG,
                              previousRank, it + 2,
                              &originalsize, 1, MPI_LONG,
@@ -299,16 +309,21 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-#ifdef _COMPRESSION
-//std::cout << "[ ++ ] -------> psizeFrom2: " << psizeFrom << " compressedsize: " << compressedsize << " originalsize: " << originalsize <<  " rank: " << communicatorRank << std::endl;
-                //assert(originalsize > 0);
-                assert(psizeFrom <= originalsize);
+#ifdef _COMPRESSIONVERIFY
                 assert(psizeFrom <= lowerId);
+                assert(psizeFrom <= originalsize);
+#endif
+
+#ifdef _COMPRESSION
                 uncompressedsize = originalsize;
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+#endif
+
+#ifdef _COMPRESSIONVERIFY
                 assert(uncompressedsize == originalsize);
                 assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
 #endif
+
 
 #ifdef _COMPRESSION
                 reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
@@ -340,7 +355,11 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
         get(offset, currentSliceSize, send/*Out*/, psizeTo/*Out*/);
+
+#ifdef _COMPRESSIONVERIFY
         assert(is_sorted(send, send + psizeTo));
+#endif
+
 
 #ifdef INSTRUMENTED
         endTimeQueueProcessing = MPI_Wtime();
@@ -354,7 +373,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         send = 0;
     }
 
-    ////std::cout << "----> psizeTo: " << psizeTo <<std::endl;
 
     /*
     //std::cout << std::endl;
