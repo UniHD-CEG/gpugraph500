@@ -7,14 +7,14 @@ echo "ps. set 'debug_code=yes' in Makefile"
 
 if [ "$#" != "2" ]; then
 	echo "usage: $0 <N> <SF>"
-	echo "   - where <N> is the numbre of MPI Nodes/ GPUs"
-	echo "   - where <SF> is Scale Factor for the Graph500"
+	echo "   - where <N^2> is the number of MPI Nodes/ GPUS"
+	echo "   - where <SF> is Scale Factor for the Graph500."
 	exit 1
 fi
 
 number='^[0-9]+$'
 if ! [[ $1 =~ $number ]] || [ $1 -gt 4 ] || [ $1 -lt 2 ]; then
-	echo "error:: the maximun supported Nodes is 4^2"
+	echo "error:: the range of supported Nodes is 2^2 to 4^2."
 	exit 1
 else
 	N=$1

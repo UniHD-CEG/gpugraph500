@@ -20,6 +20,7 @@
 #include "bitlevelfunctions.h"
 
 using std::function;
+using std::is_sorted;
 
 template<class T>
 void vreduce(function<void(T, long, T *, int)> &reduce,
@@ -47,7 +48,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
-    int originalsize;
     T *compressed_fq, *uncompressed_fq;
 #endif
 
@@ -127,10 +127,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
      *
      *
      */
-
-    MPI_Status status;
     int psizeTo;
-    int psizeFrom;
     T *send;
 
     // step 3
@@ -156,6 +153,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
             if (((vrank >> it) & 1) == 0)   // even
             {
+                MPI_Status status;
+                int psizeFrom;
+                int originalsize;
 
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();
@@ -163,6 +163,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
                 get(offset + lowerId, upperId, send/*Out*/, psizeTo/*Out*/);
 #ifdef _COMPRESSION
+                assert(is_sorted(send, send + psizeTo));
                 compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
@@ -178,8 +179,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 previousRank = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
 
 #ifdef _COMPRESSION
-                originalsize = psizeTo;
-                MPI_Sendrecv(&originalsize, 1, MPI_LONG,
+//std::cout << "[ -- ] -------> compressedsize1: " << compressedsize << " originalsize: " << psizeTo <<  " rank: " << communicatorRank << std::endl;
+                MPI_Sendrecv(&psizeTo, 1, MPI_LONG,
                              previousRank, it + 2,
                              &originalsize, 1, MPI_LONG,
                              previousRank, it + 2,
@@ -199,6 +200,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 MPI_Get_count(&status, type, &psizeFrom);
 #endif
 
+
+
                 assert(psizeFrom != MPI_UNDEFINED);
 
 #ifdef INSTRUMENTED
@@ -206,8 +209,17 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
+//std::cout << "[ ++ ] -------> psizeFrom1: " << psizeFrom << " compressedsize: " << compressedsize << " originalsize: " << originalsize <<  " rank: " << communicatorRank << std::endl;
+                //assert(originalsize > 0);
+                assert(psizeFrom <= lowerId);
+                assert(psizeFrom <= originalsize);
                 uncompressedsize = originalsize;
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                assert(uncompressedsize == originalsize);
+                assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
+
+                //uncompressedsize = originalsize;
+                //decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 #endif
 
 #ifdef _COMPRESSION
@@ -216,12 +228,10 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 reduce(offset, lowerId, recv_buff, psizeFrom);
 #endif
 
-                std::cout << "rank: " << communicatorRank << std::endl;
-
 #ifdef _COMPRESSION
                 if (isCompressed(originalsize, psizeFrom))
                 {
-                    std::cout << "rank: " << communicatorRank << std::endl;
+
                     free(uncompressed_fq);
                 }
 #endif
@@ -235,6 +245,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             }
             else     // odd
             {
+                MPI_Status status;
+                int psizeFrom;
+                int originalsize;
 
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();
@@ -243,6 +256,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 get(offset, lowerId, send/*Out*/, psizeTo/*Out*/);
 
 #ifdef _COMPRESSION
+                assert(is_sorted(send, send + psizeTo));
                 compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
@@ -258,8 +272,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 previousRank = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
 
 #ifdef _COMPRESSION
-                originalsize = psizeTo;
-                MPI_Sendrecv(&originalsize, 1, MPI_LONG,
+//std::cout << "[ -- ] -------> compressedsize2: " << compressedsize << " originalsize: " << psizeTo <<  " rank: " << communicatorRank << std::endl;
+                MPI_Sendrecv(&psizeTo, 1, MPI_LONG,
                              previousRank, it + 2,
                              &originalsize, 1, MPI_LONG,
                              previousRank, it + 2,
@@ -286,8 +300,14 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
+//std::cout << "[ ++ ] -------> psizeFrom2: " << psizeFrom << " compressedsize: " << compressedsize << " originalsize: " << originalsize <<  " rank: " << communicatorRank << std::endl;
+                //assert(originalsize > 0);
+                assert(psizeFrom <= originalsize);
+                assert(psizeFrom <= lowerId);
                 uncompressedsize = originalsize;
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                assert(uncompressedsize == originalsize);
+                assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
 #endif
 
 #ifdef _COMPRESSION
@@ -299,7 +319,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
                 if (isCompressed(originalsize, psizeFrom))
                 {
-                    std::cout << "rank: " << communicatorRank << std::endl;
                     free(uncompressed_fq);
                 }
 #endif
@@ -321,6 +340,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
         get(offset, currentSliceSize, send/*Out*/, psizeTo/*Out*/);
+        assert(is_sorted(send, send + psizeTo));
 
 #ifdef INSTRUMENTED
         endTimeQueueProcessing = MPI_Wtime();
@@ -334,14 +354,14 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         send = 0;
     }
 
-    //std::cout << "----> psizeTo: " << psizeTo <<std::endl;
+    ////std::cout << "----> psizeTo: " << psizeTo <<std::endl;
 
     /*
-    std::cout << std::endl;
+    //std::cout << std::endl;
     for (int i= 0; i< psizeTo; ++i){
-        std::cout << send[i] << " ";
+        //std::cout << send[i] << " ";
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
     */
     // Transmission of the final results
     int *sizes = (int *)malloc(communicatorSize * sizeof(int));
