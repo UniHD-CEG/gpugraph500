@@ -64,8 +64,8 @@ private:
 
 public:
     typedef DistMatrix2d<vtxtyp, rowtyp, true, 1, true> MatrixT;
-    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank, int _benchmarkCThreshold,
-             string _benchmarkExtraArgument);
+    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank, int _rowCompressionThreshold,
+        int _columnCompressionThreshold, string _benchmarkExtraArgument);
     ~CUDA_BFS();
     void getBackPredecessor();
     void getBackOutqueue();
