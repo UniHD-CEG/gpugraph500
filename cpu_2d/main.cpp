@@ -76,7 +76,8 @@ enum GGen
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
-                              int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &compressionThreshold);
+                              int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &rowCompressionThreshold,
+                              int &columnCompressionThreshold);
 void outputIterationStatistics(statistic &bfs_time_s, statistic &nedge_s, statistic &teps_s);
 void outputIterationInstrumentedStatistics(statistic &valid_time_s, statistic &lbfs_time_s, statistic &lbfs_share_s,
         statistic &lqueue_time_s, statistic &lqueue_share_s, statistic &rest_time_s,
@@ -120,8 +121,9 @@ int main(int argc, char **argv)
     int level, this_valid;
     int next, maxiterations;
     long local_edges, elem, global_edges_wd;
-    string compressionCodec;
-    int compressionThreshold;
+    string compressionCodec = "";
+    int rowCompressionThreshold = 0;
+    int columnCompressionThreshold = 0;
     int iterations = 0, maxgenvtx =
                          32; // relative number of maximum attempts to find a valid start vertix per possible attempt
     vector <vtxtyp> tries;
@@ -162,7 +164,8 @@ int main(int argc, char **argv)
     {
         externalArgumentsIterate(argc, argv, scale, edgefactor, num_of_iterations, verbosity,
                                  R, C, R_set, C_set, graph_gen,
-                                 gpus, queue_sizing, compressionCodec, compressionThreshold);
+                                 gpus, queue_sizing, compressionCodec, rowCompressionThreshold,
+                                 columnCompressionThreshold);
         externalArgumentsVerify(R_set, C_set, size, R, C);
         printf("row slices: %d, column slices: %d\n", R, C);
         compressionCodecLength = compressionCodec.size() + 1;
@@ -175,7 +178,8 @@ int main(int argc, char **argv)
     MPI_Bcast(&num_of_iterations, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
     MPI_Bcast(&R, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&C, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&compressionThreshold, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&rowCompressionThreshold, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&columnCompressionThreshold, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&compressionCodecLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (rank != 0)
     {
@@ -258,7 +262,7 @@ int main(int argc, char **argv)
     OCLRunner oclrun;
     OpenCL_BFS runBfs(store, *oclrun);
 #elif defined _CUDA
-    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, rank, compressionThreshold, compressionCodec);
+    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, rank, rowCompressionThreshold, columnCompressionThreshold, compressionCodec);
 #else
     CPUBFS_bin runBfs(store, verbosity, rank);
 #endif
@@ -600,7 +604,8 @@ void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C)
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
-                              int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &compressionThreshold)
+                              int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &rowCompressionThreshold,
+                              int &columnCompressionThreshold)
 {
     int i = 0;
     while (i < argc)
@@ -767,21 +772,40 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
                 }
             }
         }
-        else if (!strcmp(argv[i], "-bt"))
+        else if (!strcmp(argv[i], "-btr"))
         {
             /**
-             * compression-threshold value
+             * compression-threshold value for rows
              */
             if (i + 1 < argc)
             {
                 int compressionThreshold_tmp = atoi(argv[i + 1]);
                 if (compressionThreshold_tmp < 1 || compressionThreshold_tmp > 0xffffff)
                 {
-                    printf("Invalid compression-threshold value: %s\n", argv[i + 1]);
+                    printf("Invalid row compression-threshold value: %s\n", argv[i + 1]);
                 }
                 else
                 {
-                    compressionThreshold = compressionThreshold_tmp;
+                    rowCompressionThreshold = compressionThreshold_tmp;
+                    ++i;
+                }
+            }
+        }
+        else if (!strcmp(argv[i], "-btc"))
+        {
+            /**
+             * compression-threshold value for columns
+             */
+            if (i + 1 < argc)
+            {
+                int compressionThreshold_tmp = atoi(argv[i + 1]);
+                if (compressionThreshold_tmp < 1 || compressionThreshold_tmp > 0xffffff)
+                {
+                    printf("Invalid column compression-threshold value: %s\n", argv[i + 1]);
+                }
+                else
+                {
+                    columnCompressionThreshold = compressionThreshold_tmp;
                     ++i;
                 }
             }
