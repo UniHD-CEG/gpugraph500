@@ -480,8 +480,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
 
     // "nocompression", "cpusimd", "gpusimt"
-    Compression<FQ_T> &rowSchema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
-    rowSchema.reconfigure(rowCompressionThreshold, compressionCodec);
+    Compression<FQ_T> &rowSchema = *CompressionFactory<FQ_T>::getFromName("nocompression");
+    //rowSchema.reconfigure(rowCompressionThreshold, compressionCodec);
 
     Compression<FQ_T> &columnSchema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
     columnSchema.reconfigure(columnCompressionThreshold, compressionCodec);
