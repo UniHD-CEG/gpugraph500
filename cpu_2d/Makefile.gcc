@@ -55,8 +55,9 @@
 # scorep_profiler_automatic_instrument
 #   Values: yes | no
 #   Default value: yes
-#   Description: "this option set to no enables manual instrumentation,
-#  				  and reads the already added zones!
+#   Description: "setting this option to no, manual instrumentation is enabled.
+#  				  Thus, the zones to be instrumented will be the currently
+#  				  added zones using code wrappers (i.e: globalbfs.hh file)"
 #
 # scorep_custom
 #   Values: yes | no
@@ -152,13 +153,13 @@ openmp_on_cuda                            :="no"
 openmp_on_other_compilers                 :="no"
 custom_openmpi                            :="yes"
 custom_openmpi_basedir                    :=/home/jromera/openmpi
-scorep_profiler_enable                    :="no"
-scorep_profiler_automatic_instrumentation :="yes"
+scorep_profiler_enable                    :="yes"
+scorep_profiler_automatic_instrumentation :="no"
 scorep_custom                             :="yes"
 scorep_custom_basedir                     :=/home/jromera/scorep
 use_avx_instructions                      :="yes"
 enable_compression                        :="yes"
-enable_simd_compression                   :="yes"
+enable_simd_compression                   :="no"
 enable_compression_verify                 :="no"
 enable_compression_debug                  :="no"
 use_cuda                                  :="yes"

@@ -38,11 +38,11 @@ void NoCompression<T>::debugCompression(T *fq, const int size)
     time_0 = high_resolution_clock::now();
     compress(fq, uncompressedsize, &compressed_fq_64, compressedsize);
     time_1 = high_resolution_clock::now();
-    auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
+    auto encode_time = duration_cast<nanoseconds>(time_1 - time_0).count();
     time_0 = high_resolution_clock::now();
     decompress(compressed_fq_64, compressedsize, &uncompressed_fq_64, uncompressedsize);
     time_1 = high_resolution_clock::now();
-    auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
+    auto decode_time = duration_cast<nanoseconds>(time_1 - time_0).count();
 
     /**
      * Check validity of results

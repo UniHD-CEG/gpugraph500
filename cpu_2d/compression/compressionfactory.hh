@@ -6,7 +6,9 @@
 #include <map>
 #include <string>
 #include "compression.hh"
+#ifdef _SIMDCOMPRESS
 #include "cpusimd.hh"
+#endif
 #include "nocompression.hh"
 
 using std::map;
@@ -19,8 +21,14 @@ template <typename T>
 static map<string, shared_ptr<Compression<T>>> initializeCompressfactory()
 {
     map <string, shared_ptr<Compression<T>>> schemes;
+
+#ifdef _SIMDCOMPRESS // CPU-SIMD
     schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
-    //schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
+#else
+#ifdef _SIMTCOMPRESS // GPU-SIMT
+    schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
+#endif
+#endif
     schemes["nocompression"] = shared_ptr<Compression<T>>(new NoCompression<T>());
 
     return schemes;
