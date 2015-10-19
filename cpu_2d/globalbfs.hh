@@ -68,7 +68,7 @@ protected:
     int64_t mask_size;
     int rank;
     int rowCompressionThreshold;
-    int columCompressionThreshold;
+    int columnCompressionThreshold;
     string compressionCodec;
 
     /**
