@@ -7,7 +7,8 @@
 
 MAX_SF=21
 CODEC=s4-bp128-d4
-THRESHOLD=512
+ROWTHRESHOLD=64
+COLUMNTHRESHOLD=512
 
 if [ "x$G500_SIMDCOMPRESSION_CODE" != "x" ]; then
   echo "Using CPUSIMD-CODEC $G500_SIMDCOMPRESSION_CODE"
@@ -17,12 +18,20 @@ else
   codec=$CODEC
 fi
 
-if [ "x$G500_COMPRESSION_THRESHOLD" != "x" ]; then
-  echo "Using COMPRESSION-THRESHOLD $G500_COMPRESSION_THRESHOLD"
-  threshold=$G500_COMPRESSION_THRESHOLD
+if [ "x$G500_ROW_COMPRESSION_THRESHOLD" != "x" ]; then
+  echo "Using ROW COMPRESSION-THRESHOLD $G500_ROW_COMPRESSION_THRESHOLD"
+  rowthreshold=$G500_ROW_COMPRESSION_THRESHOLD
 else
-  echo "Using COMPRESSION-THRESHOLD $THRESHOLD"
-  threshold=$THRESHOLD
+  echo "Using ROW COMPRESSION-THRESHOLD $ROWTHRESHOLD"
+  rowthreshold=$ROWTHRESHOLD
+fi
+
+if [ "x$G500_COLUMN_COMPRESSION_THRESHOLD" != "x" ]; then
+  echo "Using COLUMN COMPRESSION-THRESHOLD $G500_COLUMN_COMPRESSION_THRESHOLD"
+  columnthreshold=$G500_COLUMN_COMPRESSION_THRESHOLD
+else
+  echo "Using COLUMN COMPRESSION-THRESHOLD $COLUMNTHRESHOLD"
+  columnthreshold=$COLUMNTHRESHOLD
 fi
 
 if [ "x$G500_SCALE_FACTOR" != "x" ]; then
@@ -45,7 +54,7 @@ if [ "x$G500_ENABLE_RUNTIME_SCALASCA" = "xyes" ]; then
   scalasca="scalasca -analyze -f filter.scorep -e scorep_g500_testreduce`date +"%F-%s"`"
   $scalasca $mpirun --display-map -np 16 $valgrind ../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 2
 else
-  $mpirun --display-map -np 16 $valgrind ../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 2 -be $codec -bt $threshold
+  $mpirun --display-map -np 16 $valgrind ../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 2 -be $codec -btr $rowthreshold -btc $columnthreshold
 fi
 
 
