@@ -79,7 +79,9 @@
 #   Values: yes | no
 #   Default value: yes
 #   Description: "Enables any type of compression through the network. Switch this option
-#   				to "no" to disable completely compression.
+#   				to "no" to disable completely compression. This option requires that
+#   				either enable_simd_compression (CPU) or enable_simd_compression (GPU)
+#   				are enabled.
 #
 # enable_compression_debug
 #   Values: yes | no
@@ -158,8 +160,9 @@ scorep_profiler_automatic_instrumentation :="no"
 scorep_custom                             :="yes"
 scorep_custom_basedir                     :=/home/jromera/scorep
 use_avx_instructions                      :="yes"
-enable_compression                        :="yes"
+enable_compression                        :="no"
 enable_simd_compression                   :="no"
+enable_simt_compression                   :="no"
 enable_compression_verify                 :="no"
 enable_compression_debug                  :="no"
 use_cuda                                  :="yes"
@@ -168,6 +171,7 @@ debug_code                                :="no"
 quiet_output                              :="yes"
 code_optimization_level                   :="O4"
 code_optimization_flags                   :=-funroll-loops -flto
+
 
 
 #
@@ -249,7 +253,8 @@ ifeq ($(scorep_profiler_enable), "yes")
 ifeq ($(scorep_custom), "yes")
 ifeq ($(scorep_profiler_automatic_instrumentation), "no")
 	# https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html#manual_instrumentation
-	scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access --instrument-filter="filter.scorep"
+	# scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access --instrument-filter="filter.scorep"
+	scorep_instrumentation_flag :=--user --cuda --mpp=mpi --thread=$(threads) --nopdt --online-access
 	SCOREP_INSTRUMENTATION := -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
 	SCOREP_CPPFLAGS := `scorep-config --cppflags`
 	SCOREP_LLIBS := `scorep-config --libs`
@@ -292,6 +297,19 @@ endif
 
 
 ifeq ($(enable_compression), "yes")
+
+#
+#
+# Check that either enable_simd_compression (CPU) or enable_simd_compression (GPU)
+# compressions are enables. If both are enabled, it will secet simd (CPU)
+#
+ifneq ($(enable_simd_compression), "yes")
+ifneq ($(enable_simt_compression), "yes")
+$(error $(color_red)General compression is enabled, but neither CPU nor GPU compression is set$(color_end))
+endif
+endif
+
+
 	DEFINES += -D_COMPRESSION
 ifeq ($(enable_compression_debug), "yes")
 	DEFINES += -D_COMPRESSIONDEBUG
@@ -370,6 +388,7 @@ MPICXXFLAGS := $(arch) -std=c++11 -pedantic -m64 $(o_level) $(code_optimization_
 NVCXXFLAGS := $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
 LFLAGS := -m64 $(SCOREP_LFLAGS) $(OPENMP) -Wl,$(o_level)
 LLIBS := $(SCOREP_LLIBS) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
+
 
 NVDIR := $(NVDIR)
 CXX := $(CXX)
