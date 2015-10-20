@@ -144,7 +144,7 @@ function add_to_path {
 
 function confirm_install {
   counter=$1
-  echo -n "Do you want to install ${array_of_apps[$counter,1]}? [Y/n] "
+  echo -n "Do you want to install a local ${array_of_apps[$counter,1]}? [Y/n] "
   read yesno < /dev/tty
   if [ "x$yesno" = "xn" ] || [ "x$yesno" = "xN" ];then
     let counter--
@@ -248,7 +248,6 @@ echo -n "Select a CUDA library: "
 read cudanum < /dev/tty
 
 if [[ $cudanum =~ $number ]] && [ $cudanum -lt $i ]; then
-  echo "${cuda_array[$cudanum]}"
   cuda_dir=${cuda_array[$cudanum]}
 else
   exit_error 1 "The selected CUDA libary is not correct. ${cuda_array[$cudanum]}"
@@ -267,7 +266,9 @@ if [ ! -d ${cuda_dir}/lib ]; then
   exit_error 1 "CUDA lib directory (${cuda_dir}/lib) must exist."
 fi
 
+echo ""
 echo "Using CUDA:: $cuda_dir"
+add_to_path $cuda_dir
 
 if [ ! -d $temporaldirectory_prefix ]; then
   makedir $temporaldirectory_prefix
@@ -298,7 +299,7 @@ let number_of_apps++
 # no dependencies
 array_of_apps[$number_of_apps,1]="Cube" # Name of application
 array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/cube/4.3/dist/cube-4.3.2.tar.gz" # Download url
-array_of_apps[$number_of_apps,3]="" # ./config script's parameters # --without-gui
+array_of_apps[$number_of_apps,3]="--without-gui" # ./config script's parameters
 get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
 cube_installdirectory=${installdirectory_prefix}$shortname
 
