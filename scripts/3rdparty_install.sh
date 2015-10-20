@@ -118,11 +118,8 @@ function install {
   local url="$2"
   local configureparams="$3"
   get_filename $url filename # filename.tar.gz
-  echo $filename
   get_shortfilename $url shortname # filename
-  echo $shortname
   installdirectory=${installdirectory_prefix}${shortname} #~/filename
-  echo $installdirectory
   banner $banner
   if [ ! -f ${temporaldirectory_prefix}${filename} ]; then
     section_banner "Downloading ${filename} to ${temporaldirectory_prefix}${shortname}"
@@ -226,5 +223,11 @@ array_of_apps[$number_of_apps,3]="--with-cube=${cube_installdirectory}/bin --wit
 
 for i in `seq 1 $number_of_apps`; do
   install "${array_of_apps[$i,1]}" "${array_of_apps[$i,2]}" "${array_of_apps[$i,3]}"
+done
+
+section_banner "Installation summary"
+for i in `seq 1 $number_of_apps`; do
+  get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
+  echo "==> Installed ${array_of_apps[$i,1]} in directory [${installdirectory_prefix}${shortname}]"
 done
 exit $?
