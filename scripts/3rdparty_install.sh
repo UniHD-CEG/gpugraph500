@@ -78,17 +78,17 @@ function download {
 }
 
 function confirm_install {
-  local number_of_apps=$1
-  echo -n "Do you want to install ${array_of_apps[$number_of_apps,1]}? [Y/n]"
+  counter=$1
+  echo -n "Do you want to install ${array_of_apps[$counter,1]}? [Y/n] "
   read yesno < /dev/tty
   if [ "x$yesno" = "xn" ] || [ "x$yesno" = "xN" ];then
-    let number_of_apps--
+    let counter--
   fi
-  eval "$2='$number_of_apps'"
+  eval "$2='$counter'"
 }
 
 #
-# error checking
+# error output & exit
 #
 function exit_error {
   local error=$1
@@ -103,6 +103,9 @@ function exit_error {
   fi
 }
 
+#
+# let user review error
+#
 function review_error {
   local error=$1
   local msg="error:: $2"
@@ -112,7 +115,7 @@ function review_error {
   if [ $error -ne 0 ]; then
     echo ""
     echo $msg
-    echo -n "Do continue the installation? [Y/n]"
+    echo -n "Continue installation? [Y/n] "
     read yesno < /dev/tty
     if [ "x$yesno" = "xn" ] || [ "x$yesno" = "xN" ];then
       exit 1
@@ -218,8 +221,8 @@ cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$,,'`
 
 export LD_LIBRARY_PATH=$openmpi_installdirectory/lib:$LD_LIBRARY_PATH
 export PATH=$openmpi_installdirectory/bin:$PATH
-export OMPI_CC=$cc
-export OMPI_CXX=$cxx
+# export OMPI_CC=$cc
+# export OMPI_CXX=$cxx
 
 
 #
@@ -237,7 +240,7 @@ let number_of_apps++
 # no dependencies
 array_of_apps[$number_of_apps,1]="OpenMPI" # Name of application
 array_of_apps[$number_of_apps,2]="http://www.open-mpi.de/software/ompi/v1.10/downloads/openmpi-1.10.0.tar.gz" # Download url
-array_of_apps[$number_of_apps,3]="CC=$cc CXX=$cxx --enable-mpirun-prefix-by-default" # ./config script's parameters
+array_of_apps[$number_of_apps,3]="--enable-mpirun-prefix-by-default" # ./config script's parameters # CC=$cc CXX=$cxx
 
 confirm_install $number_of_apps number_of_apps
 
@@ -245,7 +248,7 @@ let number_of_apps++
 # no dependencies
 array_of_apps[$number_of_apps,1]="Opari" # Name of application
 array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/opari2/opari2-1.1.2.tar.gz" # Download url
-array_of_apps[$number_of_apps,3]="CC=$cc CXX=$cxx" # ./config script's parameters
+array_of_apps[$number_of_apps,3]="" # ./config script's parameters # CC=$cc CXX=$cxx
 get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
 opari_installdirectory=${installdirectory_prefix}$shortname
 
@@ -286,7 +289,7 @@ done
 
 section_banner "Installation summary"
 for i in `seq 1 $number_of_apps`; do
-  get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
+  get_shortfilename ${array_of_apps[$i,2]} shortname
   echo "==> Installed ${array_of_apps[$i,1]} in directory [${installdirectory_prefix}${shortname}]"
 done
 exit $?
