@@ -142,6 +142,12 @@ function add_to_path {
 
 function confirm_install {
   counter=$1
+  #
+  # TODO:
+  # if forceall
+  #   eval "$2='$counter'"
+  #   echo Setting up ${array_of_apps[$counter,1]} for installation ...
+
   echo -n "Do you want to install a local ${array_of_apps[$counter,1]}? [Y/n] "
   read yesno < /dev/tty
   if [ "x$yesno" = "xn" ] || [ "x$yesno" = "xN" ];then
@@ -162,18 +168,14 @@ function install {
   get_shortfilename $url shortname # filename
   installdirectory=${installdirectory_prefix}${shortname} #~/filename
   banner $banner
-
   # re-download if neccesary
-  #
   if [ ! -f ${temporaldirectory_prefix}${filename} ]; then
     section_banner "Downloading ${filename} to ${temporaldirectory_prefix}${filename}"
     test_url $url
     exit_error $? "url ($url) is invalid."
     download $url "${temporaldirectory_prefix}${filename}"
   fi
-
   # decompress and clean previous installation if neccesary
-  #
   configfile="`ls ${temporaldirectory_prefix}${shortname}/configure 2> /dev/null`"
   if [ ! -d ${temporaldirectory_prefix}${shortname} ] || [ "x$configfile" = "x" ]; then
     section_banner "Decompressing ${filename} to ${temporaldirectory_prefix}${shortname}"
@@ -195,12 +197,7 @@ function install {
     make -j4 clean 2> /dev/null
     cd ..
   fi
-
-  # Installation:
-  # 1. ./configure
-  # 2. make
-  # 3. make install
-  #
+  # Installation: ./configure; make; make install
   makedir ${installdirectory}
   cd ${temporaldirectory_prefix}${shortname}
   section_banner "Configuring ${temporaldirectory_prefix}${shortname}"
