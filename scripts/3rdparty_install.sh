@@ -77,15 +77,6 @@ function download {
   fi
 }
 
-function confirm_install {
-  counter=$1
-  echo -n "Do you want to install ${array_of_apps[$counter,1]}? [Y/n] "
-  read yesno < /dev/tty
-  if [ "x$yesno" = "xn" ] || [ "x$yesno" = "xN" ];then
-    let counter--
-  fi
-  eval "$2='$counter'"
-}
 
 #
 # error output & exit
@@ -143,6 +134,25 @@ function get_shortfilename {
   temporal_url=${temporal_url%%\-*}
   temporal_url=${temporal_url%%\.*}
   eval "$2='$temporal_url'"
+}
+
+function add_to_path {
+  dir="$1"
+  export LD_LIBRARY_PATH=$dir/lib:$LD_LIBRARY_PATH
+  export PATH=$dir/bin:$PATH
+}
+
+function confirm_install {
+  counter=$1
+  echo -n "Do you want to install ${array_of_apps[$counter,1]}? [Y/n] "
+  read yesno < /dev/tty
+  if [ "x$yesno" = "xn" ] || [ "x$yesno" = "xN" ];then
+    let counter--
+  else
+    get_shortfilename ${array_of_apps[$counter,2]} shortname
+    add_to_path ${installdirectory_prefix}$shortname
+  fi
+  eval "$2='$counter'"
 }
 
 
@@ -207,32 +217,62 @@ function install {
   # review_error exit_error $? "Error making application $banner."
   section_banner "Installing ${temporaldirectory_prefix}${shortname}"
   make -j4 install
-  review_error $? "Error installing application ($banner)."
+  review_error $? "Error installing application $banner. Try removing temporal directory (rm -rf ${temporaldirectory_prefix}${shortname})"
 }
 
-
-#
-# Find binaries. used in Creek cluster.
-#
-cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
-cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
-nvcc=`locate bin/nvcc | grep bin/nvcc$ | tail -1`
-cuda_dir=`echo $nvcc | sed 's,/bin/nvcc$,,'`
-
-export LD_LIBRARY_PATH=$openmpi_installdirectory/lib:$LD_LIBRARY_PATH
-export PATH=$openmpi_installdirectory/bin:$PATH
+# cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
+# cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
 # export OMPI_CC=$cc
 # export OMPI_CXX=$cxx
 
+#
+# Cuda libraries. Change as desired
+#
+
+cudas=`locate bin/nvcc | grep bin/nvcc$`
+number='^[0-9]+$'
+if [ `echo $cudas | wc -l` -eq 0 ]; then
+  exit_error 1 "CUDA must be installed."
+fi
+
+declare -A cuda_array
+let i=0
+echo ""
+for cuda in $cudas; do
+  cuda_trimmed=`echo $cuda | sed 's,/bin/nvcc$,,'`
+  echo "[$i] $cuda_trimmed"
+  cuda_array[$i]=$cuda_trimmed
+  let i++
+done
+echo -n "Select a CUDA library: "
+read cudanum < /dev/tty
+
+if [[ $cudanum =~ $number ]] && [ $cudanum -lt $i ]; then
+  echo "${cuda_array[$cudanum]}"
+  cuda_dir=${cuda_array[$cudanum]}
+else
+  exit_error 1 "The selected CUDA libary is not correct. ${cuda_array[$cudanum]}"
+fi
 
 #
 # Array of apps to install
+# Directory checks
 #
 
+if [ ! -d ${cuda_dir}/include ]; then
+  exit_error 1 "CUDA includes directory (${cuda_dir}/include) must exist."
+fi
+
+if [ ! -d ${cuda_dir}/lib ]; then
+  exit_error 1 "CUDA lib directory (${cuda_dir}/lib) must exist."
+fi
+
+echo "Using CUDA:: $cuda_dir"
 
 if [ ! -d $temporaldirectory_prefix ]; then
   makedir $temporaldirectory_prefix
 fi
+
 declare -A array_of_apps
 number_of_apps=0
 
@@ -258,7 +298,7 @@ let number_of_apps++
 # no dependencies
 array_of_apps[$number_of_apps,1]="Cube" # Name of application
 array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/cube/4.3/dist/cube-4.3.2.tar.gz" # Download url
-array_of_apps[$number_of_apps,3]="--without-gui" # ./config script's parameters
+array_of_apps[$number_of_apps,3]="" # ./config script's parameters # --without-gui
 get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
 cube_installdirectory=${installdirectory_prefix}$shortname
 
@@ -268,7 +308,7 @@ let number_of_apps++
 # depends on Opari and Cube
 array_of_apps[$number_of_apps,1]="Score-P" # Name of application
 array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/scorep/scorep-1.4.1.tar.gz" # Download url
-array_of_apps[$number_of_apps,3]="--with-cube=$cube_installdirectory --with-opari2=$opari_installdirectory --with-libcudart=$cuda_dir --enable-mpi --enable-cuda" # ./config script's parameters
+array_of_apps[$number_of_apps,3]="--with-cube=${cube_installdirectory}/bin --with-opari2=${opari_installdirectory}/bin --with-libcudart=$cuda_dir --enable-mpi --enable-cuda" # ./config script's parameters
 get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
 scorep_installdirectory=${installdirectory_prefix}$shortname
 
@@ -291,5 +331,11 @@ section_banner "Installation summary"
 for i in `seq 1 $number_of_apps`; do
   get_shortfilename ${array_of_apps[$i,2]} shortname
   echo "==> Installed ${array_of_apps[$i,1]} in directory [${installdirectory_prefix}${shortname}]"
+  # todo: print "export LD_LIBRARY=/app/lib:$LD_LIBRARY ... ETC" & PATH=/app/bin:$PATH ETC
+done
+
+for i in `seq 1 $number_of_apps`; do
+  echo -n ""
+  # todo: print "export LD_LIBRARY=/app/lib:$LD_LIBRARY ... ETC" & PATH=/app/bin:$PATH ETC
 done
 exit $?
