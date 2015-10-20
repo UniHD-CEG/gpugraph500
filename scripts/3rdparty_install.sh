@@ -16,24 +16,6 @@ installdirectory_prefix="$HOME/"
 # End Configuration
 
 
-
-
-#
-# error checking
-#
-function exit_error {
-  local error=$1
-  local msg="error:: $2"
-  if [ "x$msg" = "x" ]; then
-    msg="Error detected. Quitting..."
-  fi
-  if [ $error -ne 0 ]; then
-    echo ""
-    echo $msg
-    exit 1
-  fi
-}
-
 #
 # Banners
 #
@@ -49,6 +31,7 @@ function section_banner {
   local text="$1"
   echo
   echo "--- $text"
+  sleep 3
 }
 
 #
@@ -67,8 +50,11 @@ function makedir {
 #
 function test_url {
   local url="$1"
-  curl -s --head $url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
-  exit_error $? "Cannot access file $url . check that the url is correct."
+  # curl -s --head $url | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
+  output="`wget -S --spider $url  2>&1 | grep 'HTTP/1.1 200 OK'`"
+  if [ "x$output" = "x" ];then
+    exit_error $? "Cannot access file $url . check that the url is correct."
+  fi
 }
 
 #
@@ -77,7 +63,8 @@ function test_url {
 function download {
   local url="$1"
   local file="$2"
-  curl $url --output $file # --silent
+  # curl $url --output $file -o nul -#
+  wget $url -O $file
   if [ ! -f $file ]; then
     exit_error 1 "Error downloading $file. Is the url valid?"
     exit 1
@@ -90,8 +77,51 @@ function download {
   fi
 }
 
+function confirm_install {
+  local number_of_apps=$1
+  echo -n "Do you want to install ${array_of_apps[$number_of_apps,1]}? [Y/n]"
+  read yesno < /dev/tty
+  if [ "x$yesno" = "xn" ] || [ "x$yesno" = "xN" ];then
+    let number_of_apps--
+  fi
+  eval "$2='$number_of_apps'"
+}
+
 #
-# e.g: from "http://user:pass@www.domain.tld/path/path/path/filename-1.2.3.tar.gz?query&option=op" returns "filename-1.2.3.tar.gz"
+# error checking
+#
+function exit_error {
+  local error=$1
+  local msg="error:: $2"
+  if [ "x$msg" = "x" ]; then
+    msg="Error detected. Quitting..."
+  fi
+  if [ $error -ne 0 ]; then
+    echo ""
+    echo $msg
+    exit 1
+  fi
+}
+
+function review_error {
+  local error=$1
+  local msg="error:: $2"
+  if [ "x$msg" = "x" ]; then
+    msg="Error detected. Quitting..."
+  fi
+  if [ $error -ne 0 ]; then
+    echo ""
+    echo $msg
+    echo -n "Do continue the installation? [Y/n]"
+    read yesno < /dev/tty
+    if [ "x$yesno" = "xn" ] || [ "x$yesno" = "xN" ];then
+      exit 1
+    fi
+  fi
+}
+
+#
+# e.g: from "http://user:pass@www.domain.tld/path/path/path/filename-1.2.3.tar.gz?query&option=op" ---> "filename-1.2.3.tar.gz"
 #
 function get_filename {
   local url="$1"
@@ -101,7 +131,7 @@ function get_filename {
 }
 
 #
-# e.g: from "http://user:pass@www.domain.tld/path/path/path/filename-1.2.3.tar.gz?query&option=op" returns "filename"
+# e.g: from "http://user:pass@www.domain.tld/path/path/path/filename-1.2.3.tar.gz?query&option=op" ---> "filename"
 #
 function get_shortfilename {
   local url="$1"
@@ -121,17 +151,25 @@ function install {
   get_shortfilename $url shortname # filename
   installdirectory=${installdirectory_prefix}${shortname} #~/filename
   banner $banner
+
+  # re-download if neccesary
+  #
   if [ ! -f ${temporaldirectory_prefix}${filename} ]; then
-    section_banner "Downloading ${filename} to ${temporaldirectory_prefix}${shortname}"
+    section_banner "Downloading ${filename} to ${temporaldirectory_prefix}${filename}"
     test_url $url
     exit_error $? "url ($url) is invalid."
-    download $url "${temporaldirectory_prefix}${shortname}"
+    download $url "${temporaldirectory_prefix}${filename}"
   fi
-  if [ ! -d ${temporaldirectory_prefix}${shortname} ]; then
+
+  # decompress and clean previous installation if neccesary
+  #
+  configfile="`ls ${temporaldirectory_prefix}${shortname}/configure 2> /dev/null`"
+  if [ ! -d ${temporaldirectory_prefix}${shortname} ] || [ "x$configfile" = "x" ]; then
     section_banner "Decompressing ${filename} to ${temporaldirectory_prefix}${shortname}"
     if [ ! -d ${temporaldirectory_prefix}${shortname} ]; then
-      # directory to be deleted is inside /home/
+      # directory to be deleted is inside /home/. Safety.
       if [ "x`echo ${temporaldirectory_prefix}${shortname}| grep -i "/home/"`" != "x" ]; then
+      section_banner "Deleting previous directory ${temporaldirectory_prefix}${shortname}"
         rm -rf ${temporaldirectory_prefix}${shortname} 2> /dev/null
       fi
       makedir ${temporaldirectory_prefix}${shortname}
@@ -146,24 +184,28 @@ function install {
     make -j4 clean 2> /dev/null
     cd ..
   fi
+
+  # Installation:
+  # 1. ./configure
+  # 2. make
+  # 3. make install
+  #
   makedir ${installdirectory}
   cd ${temporaldirectory_prefix}${shortname}
   section_banner "Configuring ${temporaldirectory_prefix}${shortname}"
   if [ ! -f "${temporaldirectory_prefix}${shortname}/configure" ]; then
     exit_error $? "Error in installed application. Consider deleting ${temporaldirectory_prefix}${shortname} and reinstall."
   else
-    ./configure --prefix=${installdirectory} $configureparams
+    ./configure --prefix=${installdirectory} "${configureparams}"
     exit_error $? "Error running ./config script."
   fi
   section_banner "Making ${temporaldirectory_prefix}${shortname}"
   make -j4
-  # exit_error $?
+  # review_error exit_error $? "Error making application $banner."
   section_banner "Installing ${temporaldirectory_prefix}${shortname}"
   make -j4 install
-  exit_error $? "Error installing application."
+  review_error $? "Error installing application ($banner)."
 }
-
-
 
 
 #
@@ -180,6 +222,9 @@ export OMPI_CC=$cc
 export OMPI_CXX=$cxx
 
 
+#
+# Array of apps to install
+#
 
 
 if [ ! -d $temporaldirectory_prefix ]; then
@@ -189,36 +234,50 @@ declare -A array_of_apps
 number_of_apps=0
 
 let number_of_apps++
+# no dependencies
 array_of_apps[$number_of_apps,1]="OpenMPI" # Name of application
 array_of_apps[$number_of_apps,2]="http://www.open-mpi.de/software/ompi/v1.10/downloads/openmpi-1.10.0.tar.gz" # Download url
 array_of_apps[$number_of_apps,3]="CC=$cc CXX=$cxx --enable-mpirun-prefix-by-default" # ./config script's parameters
 
+confirm_install $number_of_apps number_of_apps
+
 let number_of_apps++
+# no dependencies
 array_of_apps[$number_of_apps,1]="Opari" # Name of application
 array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/opari2/opari2-1.1.2.tar.gz" # Download url
 array_of_apps[$number_of_apps,3]="CC=$cc CXX=$cxx" # ./config script's parameters
 get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
 opari_installdirectory=${installdirectory_prefix}$shortname
 
+confirm_install $number_of_apps number_of_apps
+
 let number_of_apps++
+# no dependencies
 array_of_apps[$number_of_apps,1]="Cube" # Name of application
 array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/cube/4.3/dist/cube-4.3.2.tar.gz" # Download url
 array_of_apps[$number_of_apps,3]="--without-gui" # ./config script's parameters
 get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
 cube_installdirectory=${installdirectory_prefix}$shortname
 
+confirm_install $number_of_apps number_of_apps
+
 let number_of_apps++
+# depends on Opari and Cube
 array_of_apps[$number_of_apps,1]="Score-P" # Name of application
 array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/scorep/scorep-1.4.1.tar.gz" # Download url
 array_of_apps[$number_of_apps,3]="--with-cube=$cube_installdirectory --with-opari2=$opari_installdirectory --with-libcudart=$cuda_dir --enable-mpi --enable-cuda" # ./config script's parameters
 get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
 scorep_installdirectory=${installdirectory_prefix}$shortname
 
+confirm_install $number_of_apps number_of_apps
+
 let number_of_apps++
+# depends on ScoreP
 array_of_apps[$number_of_apps,1]="Scalasca" # Name of application
 array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/scalasca/2.2/dist/scalasca-2.2.2.tar.gz" # Download url
 array_of_apps[$number_of_apps,3]="--with-cube=${cube_installdirectory}/bin --with-mpi=openmpi --with-otf2=${scorep_installdirectory}/bin" # ./config script's parameters
 
+confirm_install $number_of_apps number_of_apps
 
 
 for i in `seq 1 $number_of_apps`; do
