@@ -6,14 +6,7 @@
 #
 
 
-# Configuration
-#
-
-temporaldirectory_prefix="$HOME/tmp/"
-installdirectory_prefix="$HOME/"
-
-#
-# End Configuration
+# todo: add --cleanall (rm -rf $HOME/tmp/cube $HOME/tmp/opari2 $HOME/tmp/openmpi $HOME/tmp/scorep)
 
 
 #
@@ -100,6 +93,10 @@ function exit_error {
 function review_error {
   local error=$1
   local msg="error:: $2"
+
+  if [ $yestoall ];then
+    return
+  fi
   if [ "x$msg" = "x" ]; then
     msg="Error detected. Quitting..."
   fi
@@ -220,69 +217,93 @@ function install {
   review_error $? "Error installing application $banner. Try removing temporal directory (rm -rf ${temporaldirectory_prefix}${shortname})"
 }
 
-# cxx=`locate bin/g++- | grep "bin/g++-[0-9]" | tail -1`
-# cc=`locate bin/gcc- | grep "bin/gcc-[0-9]" | tail -1`
-# export OMPI_CC=$cc
-# export OMPI_CXX=$cxx
+#
+# check available cuda libraries
+#
+function get_cudaconfig {
+  cudas=`locate bin/nvcc | grep bin/nvcc$`
+  number='^[0-9]+$'
+  if [ `echo $cudas | wc -l` -eq 0 ]; then
+    exit_error 1 "CUDA must be installed."
+  fi
+  declare -A cuda_array
+  let i=0
+  echo ""
+  for cuda in $cudas; do
+    cuda_trimmed=`echo $cuda | sed 's,/bin/nvcc$,,'`
+    echo "[$i] $cuda_trimmed"
+    cuda_array[$i]=$cuda_trimmed
+    let i++
+  done
+  echo -n "Select a CUDA library: "
+  read cudanum < /dev/tty
+  if [[ $cudanum =~ $number ]] && [ $cudanum -lt $i ]; then
+    cuda_dir=${cuda_array[$cudanum]}
+  else
+    exit_error 1 "The selected CUDA libary is not correct. ${cuda_array[$cudanum]}"
+  fi
+  if [ ! -d ${cuda_dir}/include ]; then
+    exit_error 1 "CUDA includes directory (${cuda_dir}/include) must exist."
+  fi
+  if [ ! -d ${cuda_dir}/lib ]; then
+    exit_error 1 "CUDA lib directory (${cuda_dir}/lib) must exist."
+  fi
+  echo ""
+  echo "Using CUDA:: $cuda_dir"
+  add_to_path $cuda_dir
+  if [ ! -d $temporaldirectory_prefix ]; then
+    makedir $temporaldirectory_prefix
+  fi
+  eval "$1='$cuda_dir'"
+}
 
 #
-# Cuda libraries. Change as desired
+# run scripts for selected apps
 #
+function do_iterate {
+  for i in `seq 1 $number_of_apps`; do
+    install "${array_of_apps[$i,1]}" "${array_of_apps[$i,2]}" "${array_of_apps[$i,3]}"
+  done
 
-cudas=`locate bin/nvcc | grep bin/nvcc$`
-number='^[0-9]+$'
-if [ `echo $cudas | wc -l` -eq 0 ]; then
-  exit_error 1 "CUDA must be installed."
-fi
+  section_banner "Installation summary"
+  for i in `seq 1 $number_of_apps`; do
+    get_shortfilename ${array_of_apps[$i,2]} shortname
+    echo "==> Installed ${array_of_apps[$i,1]} in directory [${installdirectory_prefix}${shortname}]"
+    # todo: print "export LD_LIBRARY=/app/lib:$LD_LIBRARY ... ETC" & PATH=/app/bin:$PATH ETC
+  done
 
-declare -A cuda_array
-let i=0
-echo ""
-for cuda in $cudas; do
-  cuda_trimmed=`echo $cuda | sed 's,/bin/nvcc$,,'`
-  echo "[$i] $cuda_trimmed"
-  cuda_array[$i]=$cuda_trimmed
-  let i++
-done
-echo -n "Select a CUDA library: "
-read cudanum < /dev/tty
+  for i in `seq 1 $number_of_apps`; do
+    echo -n ""
+    # todo: print "export LD_LIBRARY=/app/lib:$LD_LIBRARY ... ETC" & PATH=/app/bin:$PATH ETC
+  done
+  exit $?
+}
 
-if [[ $cudanum =~ $number ]] && [ $cudanum -lt $i ]; then
-  cuda_dir=${cuda_array[$cudanum]}
-else
-  exit_error 1 "The selected CUDA libary is not correct. ${cuda_array[$cudanum]}"
-fi
+function usage {
+    echo "This script will install 3rd-party software locally."
+    echo "Usage: $0 [--force]"
+}
 
-#
-# Array of apps to install
-# Directory checks
-#
-
-if [ ! -d ${cuda_dir}/include ]; then
-  exit_error 1 "CUDA includes directory (${cuda_dir}/include) must exist."
-fi
-
-if [ ! -d ${cuda_dir}/lib ]; then
-  exit_error 1 "CUDA lib directory (${cuda_dir}/lib) must exist."
-fi
-
-echo ""
-echo "Using CUDA:: $cuda_dir"
-add_to_path $cuda_dir
-
-if [ ! -d $temporaldirectory_prefix ]; then
-  makedir $temporaldirectory_prefix
-fi
 
 declare -A array_of_apps
 number_of_apps=0
+
+usage
+get_cudaconfig cuda_dir
+
+#
+# Change as desired.
+#
+
+temporaldirectory_prefix="$HOME/tmp/"
+installdirectory_prefix="$HOME/"
+
 
 let number_of_apps++
 # no dependencies
 array_of_apps[$number_of_apps,1]="OpenMPI" # Name of application
 array_of_apps[$number_of_apps,2]="http://www.open-mpi.de/software/ompi/v1.10/downloads/openmpi-1.10.0.tar.gz" # Download url
 array_of_apps[$number_of_apps,3]="--enable-mpirun-prefix-by-default" # ./config script's parameters # CC=$cc CXX=$cxx
-
 confirm_install $number_of_apps number_of_apps
 
 let number_of_apps++
@@ -292,7 +313,6 @@ array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/opari2/o
 array_of_apps[$number_of_apps,3]="" # ./config script's parameters # CC=$cc CXX=$cxx
 get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
 opari_installdirectory=${installdirectory_prefix}$shortname
-
 confirm_install $number_of_apps number_of_apps
 
 let number_of_apps++
@@ -302,7 +322,6 @@ array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/cu
 array_of_apps[$number_of_apps,3]="--without-gui" # ./config script's parameters
 get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
 cube_installdirectory=${installdirectory_prefix}$shortname
-
 confirm_install $number_of_apps number_of_apps
 
 let number_of_apps++
@@ -312,7 +331,6 @@ array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/scorep/s
 array_of_apps[$number_of_apps,3]="--with-cube=${cube_installdirectory}/bin --with-opari2=${opari_installdirectory}/bin --with-libcudart=$cuda_dir --enable-mpi --enable-cuda" # ./config script's parameters
 get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
 scorep_installdirectory=${installdirectory_prefix}$shortname
-
 confirm_install $number_of_apps number_of_apps
 
 let number_of_apps++
@@ -320,23 +338,14 @@ let number_of_apps++
 array_of_apps[$number_of_apps,1]="Scalasca" # Name of application
 array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/scalasca/2.2/dist/scalasca-2.2.2.tar.gz" # Download url
 array_of_apps[$number_of_apps,3]="--with-cube=${cube_installdirectory}/bin --with-mpi=openmpi --with-otf2=${scorep_installdirectory}/bin" # ./config script's parameters
-
 confirm_install $number_of_apps number_of_apps
 
 
-for i in `seq 1 $number_of_apps`; do
-  install "${array_of_apps[$i,1]}" "${array_of_apps[$i,2]}" "${array_of_apps[$i,3]}"
-done
 
-section_banner "Installation summary"
-for i in `seq 1 $number_of_apps`; do
-  get_shortfilename ${array_of_apps[$i,2]} shortname
-  echo "==> Installed ${array_of_apps[$i,1]} in directory [${installdirectory_prefix}${shortname}]"
-  # todo: print "export LD_LIBRARY=/app/lib:$LD_LIBRARY ... ETC" & PATH=/app/bin:$PATH ETC
-done
+if [ "x$1" = "x--force" ];then
+  yestoall=true
+else
+  yestoall=false
+fi
 
-for i in `seq 1 $number_of_apps`; do
-  echo -n ""
-  # todo: print "export LD_LIBRARY=/app/lib:$LD_LIBRARY ... ETC" & PATH=/app/bin:$PATH ETC
-done
-exit $?
+do_iterate
