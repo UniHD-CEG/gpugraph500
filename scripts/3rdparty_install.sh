@@ -5,8 +5,9 @@
 #
 #
 
-
-# todo: add --cleanall (rm -rf $HOME/tmp/cube $HOME/tmp/opari2 $HOME/tmp/openmpi $HOME/tmp/scorep)
+# todo: add --help
+# todo: add --installed-cleanall (rm -rf $HOME/cube $HOME/opari2 $HOME/openmpi $HOME/scorep)
+# todo: add --temp-cleanall (rm -rf $HOME/tmp/cube $HOME/tmp/opari2 $HOME/tmp/openmpi $HOME/tmp/scorep)
 
 
 #
