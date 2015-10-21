@@ -15,8 +15,8 @@ Available repositories are:(Replace the token **Your_Bitbucket_User**)
 - [https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git) **(Updated daily)**
 - [https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git) **(Updated weekly)**
 
-```
-$ REPLACE the token Your_Bitbucket_User
+```shell
+$ # REPLACE the token Your_Bitbucket_User
 $ git clone https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git
 $ git checkout -b architectural_tuning
 $ git pull origin architectural_tuning
@@ -27,8 +27,8 @@ $ git pull origin architectural_tuning
 
 Add this text to your ~/.bashrc
 
-```
-UPDATE NEXT LINE
+```shell
+# UPDATE NEXT LINE
 export CUDA_PATH=/usr/local/cuda-7.0
 export PATH=$CUDA_PATH/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_PATH/lib64:$CUDA_PATH/lib:$CUDA_PATH/extras/CUPTI/lib64:$CUDA_PATH/extras/CUPTI/lib:$LD_LIBRARY_PATH
@@ -36,8 +36,8 @@ export LD_LIBRARY_PATH=$CUDA_PATH/lib64:$CUDA_PATH/lib:$CUDA_PATH/extras/CUPTI/l
 
 2- Optional. In case of using EXTOLL add these lines to your ~/.bashrc
 
-```
-Adjust next line to your actual path
+```shell
+# Adjust next line to your actual path
 export EXTOLL_HOME=/extoll2
 if [ -d /extoll2 ]; then
        source $EXTOLL_HOME/extoll_env.bash
@@ -68,13 +68,13 @@ The Makefiles in the list below are currently being developed:
 
 The file `Makefile` is a symbolic link to the Makefile.___ being used. It may be created/ edited using:
 
-```
+```shell
 $ cd bfs_multinode/cpu_2d
 $ rm -f Makefile
 $ ln -s Makefile.gcc Makefile
 ```
 
-```
+```shell
 $ cd bfs_multinode/cpu_2d
 $ make
 $ cd ../eval
@@ -85,25 +85,29 @@ The Makefiles in the `cpu_2d/` folder are configurable. Edit the Makefile file t
 
 The default variables-values for Makefile.gcc.keeneland are:
 
-```
-nvidia_architecture                       :="auto"
+```Makefile
+nvidia_architecture                       :="fermi"
 nvidia_ptxas_otimize                      :="no"
 manual_profiler_cuda                      :="no"
 manual_profiler_other_compilers           :="yes"
 openmp_on_cuda                            :="no"
 openmp_on_other_compilers                 :="no"
-custom_openmpi                            :="no"
-custom_openmpi_basedir                    :=/home/CHANGE_ME/openmpi
-scorep_profiler_enable                    :="no"
-scorep_profiler_automatic_instrumentation :="yes"
+custom_openmpi                            :="yes"
+custom_openmpi_basedir                    :=/home/jromera/openmpi
+scorep_profiler_enable                    :="yes"
+scorep_profiler_automatic_instrumentation :="no"
 scorep_custom                             :="yes"
-scorep_custom_basedir                     :=/home/CHANGE_ME/scorep
+scorep_custom_basedir                     :=/home/jromera/scorep
 use_avx_instructions                      :="yes"
-enable_simd_compression                   :="yes"
-enable_simd_compression_benchmark         :="no"
-debug                                     :="no"
-quiet_output                              :="no"
+enable_compression                        :="no"
+enable_simd_compression                   :="no"
+enable_simt_compression                   :="no"
+enable_compression_verify                 :="no"
+enable_compression_debug                  :="no"
 use_cuda                                  :="yes"
+debug                                     :="no"
+debug_code                                :="no"
+quiet_output                              :="yes"
 code_optimization_level                   :="O4"
 code_optimization_flags                   :=-funroll-loops -flto
 ```
@@ -127,14 +131,14 @@ The part "4p2n" indicates 4 Processes will be run in 2 Nodes. These scripts are 
 ## Runing tests
 Ensure that the Slurm queue is empty
 
-```
+```shell
 $ squeue
 JOBID PARTITION NAME USER ST TIME NODES NODELIST(REASON)
 ```
 
 Use Sbatch to execute the .rsh file. Add a numeric argument at the end (Sf)
 
-```
+```shell
 $ sbatch o4p2n_roptim.rsh 21
 Submitted batch job 423
 $ sbatch o4p2n_coptim.rsh 21vv
@@ -148,7 +152,8 @@ Submitted batch job 425
 * r-ify.sh
 * r-compare.sh
 * check-all.sh
-* scorep_install.sh
+* external-apps-installer.sh
+
 
 ## Installing scripts
 Scripts are located under the `scripts/` folder
@@ -161,7 +166,7 @@ To install
 
 Run:
 
-```
+```shell
 $ cd bfs_multinode
 $ # Make a symlink from eval to the script file
 $ cd eval
@@ -173,14 +178,14 @@ $ chmod u+x *.sh
 
 To install (Useful for Profiling and Tracing)
 
-- scorep_install.sh
+- external-apps-installer.sh
 
 Run:
 
-```
-cp scripts/scorep_install.sh $HOME
-cd $HOME
-chmod u+x scorep_install.sh
+```shell
+$ cp scripts/external-apps-installer.sh $HOME
+$ cd $HOME
+$ chmod u+x external-apps-installer.sh
 ...
 ```
 
@@ -190,7 +195,7 @@ It uses the execution traces to generate R-code. This R-code (once run) shows th
 
 ### Execution
 
-```
+```shell
 $ ./r-ify.sh 423 424 425
 
 -> File slurm-423.out. Validation passed (Tasks: 4, GPUS/Task: 1, Scale Factor: 21).
@@ -210,7 +215,7 @@ As the previous script, this also uses the execution traces to generate R-code. 
 
 ### Execution
 
-```
+```shell
 $ ./r-ify.sh
 (to be completed)
 ```
@@ -221,13 +226,13 @@ This script automatizes the execution of tests for different Scale Factors.
 
 ### Execution
 
-```
+```shell
 $ check-all.sh 15 30
 ```
 
 This will run the tests with format `o*.rsh` in the `eval/` folder for Scale Factors 15 to 30. Process is shown in ncurses-like format.
 
-## Script scorep_install.sh
+## Script external-apps-installer.sh
 ### Description
 This script downloads, decompress, builds and installs Score-P, Scalasca and CUBE locally. Optionally it installs also a compatible version of OpenMPI.<br>This script is configurable. The configuration may be changed editing the script.
 
@@ -235,9 +240,9 @@ Root priviledges are not required to perform the installation.
 
 ### Execution
 
-```
+```shell
 $ cd $HOME
-$ ./scorep_install.sh
+$ ./external-apps-installer.sh
 ```
 
 # Changelog and Improvements
@@ -288,11 +293,11 @@ C) Implementation & Algorthmic improvements
 ## Profiling and Tracing
 This BFS application allows the code to be instrumented in Zones using Score-P with very low overhead. This requires Score-P and Scalasca to be installed in the system. The results may be analyzed either visually (using CUBE) or through console using `scorep-score`.
 
-These tools may be installed locally (no priviledged user is needed) using the scorep_install.sh aforementioned.
+These tools may be installed locally (no priviledged user is needed) using the external-apps-installer.sh aforementioned.
 
 The names of the instrumentable Zones are listed below. Other Zones may be added if needed.
 
-```
+```c
 BFSRUN_region_vertexBroadcast
 BFSRUN_region_nodesTest
 BFSRUN_region_localExpansion
@@ -305,7 +310,7 @@ The first step is to update the system variables. This may be done either on .ba
 
 Update the paths in the variables below
 
-```
+```shell
 $ cat >> ~/.bashrc << EOF
 export G500_ENABLE_RUNTIME_SCALASCA=yes
 
@@ -342,14 +347,14 @@ Results will be stored on a folder with format `scorep-*` in the `/eval` folder.
 
 To instrument graphically with CUBE run:
 
-```
+```shell
 $ cd eval/scorep-____FOLDER_NAME____
 $ cube profile.cubex
 ```
 
 To instrument through the console run:
 
-```
+```shell
 $ cd eval/scorep-____FOLDER_NAME____
 $ scorep-score -r profile.cubex
 ```
@@ -435,7 +440,7 @@ invalid_level
 
   Disable it with:
 
-  ```
+  ```shell
   $ export G500_ENABLE_RUNTIME_SCALASCA=no
   ```
 
@@ -459,7 +464,7 @@ $ brew install astyle
 ```
 
 2- run:
-```
+```shell
 $ # Create a link to the script (Only once)
 $ cd cpu_2d
 $ ln -s ../scripts/astyle.sh ./
