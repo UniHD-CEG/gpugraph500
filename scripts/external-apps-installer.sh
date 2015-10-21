@@ -23,49 +23,49 @@ function configuration {
     installdirectory_prefix="$HOME/"
 
     let number_of_apps++
-    # NO dependencies.
     array_of_apps[$number_of_apps,1]="OpenMPI" # Name of application
     array_of_apps[$number_of_apps,2]="http://www.open-mpi.de/software/ompi/v1.10/downloads/openmpi-1.10.0.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--enable-mpirun-prefix-by-default" # ./config script's parameters # CC=$cc CXX=$cxx
+    array_of_apps[$number_of_apps,4]="no dependencies." # notes about the app. For user information
     get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
     add_to_path ${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
 
     let number_of_apps++
-    # NO dependencies.
-    array_of_apps[$number_of_apps,1]="Opari" # Name of application
+    array_of_apps[$number_of_apps,1]="Opari2" # Name of application
     array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/opari2/opari2-1.1.2.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="" # ./config script's parameters # CC=$cc CXX=$cxx
+    array_of_apps[$number_of_apps,4]="no dependencies." # notes about the app. For user information
     get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
     add_to_path ${installdirectory_prefix}$shortname
     opari_installdirectory=${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
 
     let number_of_apps++
-    # NO dependencies.
     array_of_apps[$number_of_apps,1]="Cube" # Name of application
     array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/cube/4.3/dist/cube-4.3.2.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--without-gui --without-plugin-example --without-java-reader" # ./config script's parameters #
+    array_of_apps[$number_of_apps,4]="no dependencies." # notes about the app. For user information
     get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
     add_to_path ${installdirectory_prefix}$shortname
     cube_installdirectory=${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
 
     let number_of_apps++
-    # depends on OpenMPI, Cuda, Opari and Cube.
     array_of_apps[$number_of_apps,1]="Score-P" # Name of application
     array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/scorep/scorep-1.4.1.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--with-mpi=openmpi --with-cube=${cube_installdirectory}/bin --with-opari2=${opari_installdirectory}/bin --with-libcudart=$cuda_dir --enable-mpi --enable-cuda" # ./config script's parameters
+    array_of_apps[$number_of_apps,4]="this built requires openmpi and Cuda. dependencies: opari2 and cube. \nIMPORTANT: due to an error in v1.4.1 you must add \"#include <iomanip>\" at the begining of ${temporaldirectory_prefix}scorep/src/tools/score/SCOREP_Score_Estimator.cpp" # notes about the app. For user information
     get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
     add_to_path ${installdirectory_prefix}$shortname
     scorep_installdirectory=${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
 
     let number_of_apps++
-    # depends on OpenMPI, Cuda and ScoreP.
     array_of_apps[$number_of_apps,1]="Scalasca" # Name of application
     array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/scalasca/2.2/dist/scalasca-2.2.2.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--with-cube=${cube_installdirectory}/bin --with-mpi=openmpi --with-otf2=${scorep_installdirectory}/bin" # ./config script's parameters
+    array_of_apps[$number_of_apps,4]="this built require openmpi and Cuda. dependencies: score-p." # notes about the app. For user information
     add_to_path ${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
 
@@ -92,10 +92,9 @@ function section_banner {
 }
 
 function get_bits {
-  local system
-  system=`uname -m`;
+  system="`uname -m`"
   system=${system##*_}
-  if [ $system -ne 32 ] || [ $system -ne 64 ] || [ ! $system -ne 128 ]; then
+  if [ "x$system" != "x32" ] && [ "x$system" != "x64" ] && [ "x$system" != "x128" ]; then
     exit_error 1 "Could not autodetect the number of bits in the architecture of the system. Set this manually in script variable \$bits"
   fi
   eval "$1='$system'"
@@ -216,7 +215,9 @@ function confirm_install {
     #   eval "$2='$counter'"
     #   echo Setting up ${array_of_apps[$counter,1]} for installation ...
 
-    echo -n "Do you want to install a local ${array_of_apps[$counter,1]}? [Y/n] "
+    echo "Installing ${array_of_apps[$counter,1]}"
+    echo "[+] notes:: ${array_of_apps[$counter,4]}"
+    echo -n "[+] Do you want to continue? [Y/n] "
     read yesno < /dev/tty
     if [ "x$yesno" = "xn" ] || [ "x$yesno" = "xN" ];then
       let counter--
@@ -237,7 +238,7 @@ function get_cudaconfig {
       exit_error 1 "CUDA must be installed."
     elif [ $cudalibs -gt 1 ]; then
       echo ""
-      echo "Several CUDA libraries detected:"
+      echo "Several CUDA libraries were found"
     fi
     declare -A cuda_array
     let i=0
@@ -247,7 +248,7 @@ function get_cudaconfig {
       cuda_array[$i]=$cuda_trimmed
       let i++
     done
-    echo -n "Select an option: "
+    echo -n "Select one: "
     read cudanum < /dev/tty
     if [[ $cudanum =~ $number ]] && [ $cudanum -lt $i ]; then
       cuda_dir=${cuda_array[$cudanum]}
@@ -314,11 +315,12 @@ function install {
     else
       echo "running ./configure --prefix=${installdirectory} ${configureparams}"
       ./configure --prefix=${installdirectory} ${configureparams}
-      exit_error $? "Error running ./config script."
+      review_error $? "Error running ./config script for $banner."
+      # exit_error $? "Error running ./config script."
     fi
     section_banner "Making ${temporaldirectory_prefix}${shortname}"
     make
-    # review_error exit_error $? "Error making application $banner."
+    review_error $? "Error making application $banner."
     section_banner "Installing ${temporaldirectory_prefix}${shortname}"
     make install
     review_error $? "Error installing application $banner. Try removing temporal directory (rm -rf ${temporaldirectory_prefix}${shortname})"
@@ -349,8 +351,8 @@ function main {
 # usage
 #
 function show_usage {
-    echo "Usage: $0 [--help] [--yes] [--cleanall-installed] [--cleanall-tempdirs]"
-    echo "This script will install 3rd-party software in your home directory."
+    echo "\nthis script will build and install external applications on your /home/ directory."
+    echo "usage:: $0 [--help] [--yes] [--clean-installed] [--clean-temp]"
 }
 
 

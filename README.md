@@ -244,24 +244,45 @@ $ ./scorep_install.sh
 
 ## Current Changelog
 * version 1.1 (tag v1.1)
-  * Added Row compression (~7% improvement).
-  * Compression packetsize threshold tuning. (~???% increasement).
+    * Added Row compression (~7% improvement).
+    * Compression packetsize threshold tuning. (~?% improvement).
+
 * version 1.0 (tag v1.0)
-  * Compile-time optimizations (-ON flag).
-  * Column compression uses SIMD (on CPU). No row Compression (~20% improvement).
+    * Compile-time optimizations (-ON flag).
+    * Column compression uses SIMD (on CPU). No row Compression (~20% improvement).
+
+
 * initial version
+
 
 ## Further future improvements/ challenges
 
 A) Implementation improvements
+
 * Replace Thrust order() with CUB order().
-  * Motivation for this: We order our integer FQ secuence on each BFS. We use Thrust library for this
-  * Duane Merrill from NVIDIA states that due to the configurability/ tuning options of this library, designed for NVIDIA cards, a boost in performance may be achieved. Futher reding here [Merrill's CUB](http://nvlabs.github.io/cub/#sec4)
-* Optimize Bitwise operations. Further reading [Sean Eron's bithacks](https://graphics.stanford.edu/~seander/bithacks.html)
+    * Motivation for this: We order our integer FQ secuence on each BFS. We use Thrust library for this
+    * Duane Merrill from NVIDIA states that due to the configurability/ tuning options of this library, designed for NVIDIA cards, a boost in performance may be expected. Futher reading in [Duane Merrill's Why CUB?](http://nvlabs.github.io/cub/#sec4)
+* Optimize Bitwise operations. Further reading in [Sean Eron's Bit Twiddling Hacks page](https://graphics.stanford.edu/~seander/bithacks.html)
 * Use memcpy instead of Indexed Loops in compression/ decompression calls.
-  * Motivation. Several experiments point a better memory usage with block memory copying. Furter reading [David Nadeau's blog](http://nadeausoftware.com/articles/2012/05/c_c_tip_how_copy_memory_quickly)
-  * The Indexed Loops where used due to memory data convertion complexity.
+    * Motivation. Several experiments on Internet, point a better memory usage with block memory copying. Furter reading in [David Nadeau's blog](http://nadeausoftware.com/articles/2012/05/c_c_tip_how_copy_memory_quickly)
+    * Indexed Loops are now used instead, to "Keep it Simple".
+* Move the generation of the Compression code and the generation of the Compression integration calls (both, by a software Factory pattern) to main.cpp (outside the BFSrun code)
+    * Motivation. Passing the created object as a mem pointer instear of creating/deleting on each call, may slightly decrease the observed overhead.
+
 B) Algorthmic improvements
+
+* None yet. Research. Read about the State of Art of BFS, Titech
+
+C) Implementation & Algorthmic improvements
+
+* Select an optimum SIMD codec for the patterns of integer sequences used in this app.
+* Porting codec implementation to GPU, some of the measured compression overhead will dissapear.
+* Check and recode the column-reduction's data transfer.
+    * Motivation. currently 4 MPI_Sendrecv() One-to-One, blocking calls are being used for data transfer. Study if the observed column's unarcheived performance increasement is due to an impairement on the transfer throught using this MPI_Sendrecv() calls.
+* Study the possibility of using non-blocking data transfer MPI calls in column reduction.
+
+
+
 
 # Other
 ## Profiling and Tracing
