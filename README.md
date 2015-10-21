@@ -240,6 +240,15 @@ $ cd $HOME
 $ ./scorep_install.sh
 ```
 
+# Changelog and Improvements
+
+## Current Changelog
+- version 1.1 (tag v1.1)
+- version 1.0 (tag v1.0)
+- initial version
+
+## Further future improvements/ challenges
+
 # Other
 ## Profiling and Tracing
 This BFS application allows the code to be instrumented in Zones using Score-P with very low overhead. This requires Score-P and Scalasca to be installed in the system. The results may be analyzed either visually (using CUBE) or through console using `scorep-score`.
@@ -425,7 +434,6 @@ $ cd cpu_2d
 $ ./astyle.sh
 
 ```
-
 
 ## License
 - This code contains a subset of Duane Merrill's BC40 repository of GPU-related functions, including his BFS implementation used in the paper, Scalable Graph Traversals.

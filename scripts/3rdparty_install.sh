@@ -42,7 +42,7 @@ function configuration {
     # no dependencies
     array_of_apps[$number_of_apps,1]="Cube" # Name of application
     array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/cube/4.3/dist/cube-4.3.2.tar.gz" # Download url
-    array_of_apps[$number_of_apps,3]="" # ./config script's parameters #--without-gui
+    array_of_apps[$number_of_apps,3]="--without-gui --without-plugin-example --without-java-reader" # ./config script's parameters #
     get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
     cube_installdirectory=${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
@@ -296,7 +296,8 @@ function install {
     if [ ! -f "${temporaldirectory_prefix}${shortname}/configure" ]; then
       exit_error $? "Error in installed application. Consider deleting ${temporaldirectory_prefix}${shortname} and reinstall."
     else
-      ./configure --prefix=${installdirectory} "${configureparams}"
+      echo "running ./configure --prefix=${installdirectory} ${configureparams}"
+      ./configure "--prefix=${installdirectory} ${configureparams}"
       exit_error $? "Error running ./config script."
     fi
     section_banner "Making ${temporaldirectory_prefix}${shortname}"
