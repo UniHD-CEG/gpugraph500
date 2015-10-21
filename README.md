@@ -244,7 +244,11 @@ $ ./scorep_install.sh
 
 ## Current Changelog
 * version 1.1 (tag v1.1)
+  * Added Row compression (~7% improvement).
+  * Compression packetsize threshold tuning. (~???% increasement).
 * version 1.0 (tag v1.0)
+  * Compile-time optimizations (-ON flag).
+  * Column compression uses SIMD (on CPU). No row Compression (~20% improvement).
 * initial version
 
 ## Further future improvements/ challenges
@@ -252,8 +256,11 @@ $ ./scorep_install.sh
 A) Implementation improvements
 * Replace Thrust order() with CUB order().
   * Motivation for this: We order our integer FQ secuence on each BFS. We use Thrust library for this
-  * Dual Merril from NVIDIA states that due to the configurability/ tuning options of this library, designed for NVIDIA cards, a boost in performance may be achieved. Futher reding here [nvlab](http://nvlabs.github.io/cub/#sec4)
-* Optimize Bitwise operations. Further reading [Bithacks](https://graphics.stanford.edu/~seander/bithacks.html)
+  * Duane Merrill from NVIDIA states that due to the configurability/ tuning options of this library, designed for NVIDIA cards, a boost in performance may be achieved. Futher reding here [Merrill's CUB](http://nvlabs.github.io/cub/#sec4)
+* Optimize Bitwise operations. Further reading [Sean Eron's bithacks](https://graphics.stanford.edu/~seander/bithacks.html)
+* Use memcpy instead of Indexed Loops in compression/ decompression calls.
+  * Motivation. Several experiments point a better memory usage with block memory copying. Furter reading [David Nadeau's blog](http://nadeausoftware.com/articles/2012/05/c_c_tip_how_copy_memory_quickly)
+  * The Indexed Loops where used due to memory data convertion complexity.
 B) Algorthmic improvements
 
 # Other

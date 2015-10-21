@@ -27,6 +27,8 @@ function configuration {
     array_of_apps[$number_of_apps,1]="OpenMPI" # Name of application
     array_of_apps[$number_of_apps,2]="http://www.open-mpi.de/software/ompi/v1.10/downloads/openmpi-1.10.0.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--enable-mpirun-prefix-by-default" # ./config script's parameters # CC=$cc CXX=$cxx
+    get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
+    add_to_path ${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
 
     let number_of_apps++
@@ -35,6 +37,7 @@ function configuration {
     array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/opari2/opari2-1.1.2.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="" # ./config script's parameters # CC=$cc CXX=$cxx
     get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
+    add_to_path ${installdirectory_prefix}$shortname
     opari_installdirectory=${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
 
@@ -44,6 +47,7 @@ function configuration {
     array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/cube/4.3/dist/cube-4.3.2.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--without-gui --without-plugin-example --without-java-reader" # ./config script's parameters #
     get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
+    add_to_path ${installdirectory_prefix}$shortname
     cube_installdirectory=${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
 
@@ -51,8 +55,9 @@ function configuration {
     # depends on Opari and Cube
     array_of_apps[$number_of_apps,1]="Score-P" # Name of application
     array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/scorep/scorep-1.4.1.tar.gz" # Download url
-    array_of_apps[$number_of_apps,3]="--with-cube=${cube_installdirectory}/bin --with-opari2=${opari_installdirectory}/bin --with-libcudart=$cuda_dir --enable-mpi --enable-cuda" # ./config script's parameters
+    array_of_apps[$number_of_apps,3]="--with-mpi=openmpi --with-cube=${cube_installdirectory}/bin --with-opari2=${opari_installdirectory}/bin --with-libcudart=$cuda_dir --enable-mpi --enable-cuda" # ./config script's parameters
     get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
+    add_to_path ${installdirectory_prefix}$shortname
     scorep_installdirectory=${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
 
@@ -61,6 +66,7 @@ function configuration {
     array_of_apps[$number_of_apps,1]="Scalasca" # Name of application
     array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/scalasca/2.2/dist/scalasca-2.2.2.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--with-cube=${cube_installdirectory}/bin --with-mpi=openmpi --with-otf2=${scorep_installdirectory}/bin" # ./config script's parameters
+    add_to_path ${installdirectory_prefix}$shortname
     confirm_install $number_of_apps number_of_apps
 
     #
@@ -184,8 +190,12 @@ function get_shortfilename {
 
 function add_to_path {
     dir="$1"
-    export LD_LIBRARY_PATH=$dir/lib:$LD_LIBRARY_PATH
-    export PATH=$dir/bin:$PATH
+    if [ -d ${dir}/lib ]; then
+      export LD_LIBRARY_PATH=$dir/lib:$LD_LIBRARY_PATH
+    fi
+    if [ -d ${dir}/bin ]; then
+      export PATH=$dir/bin:$PATH
+    fi
 }
 
 function confirm_install {
@@ -202,7 +212,6 @@ function confirm_install {
       let counter--
     else
       get_shortfilename ${array_of_apps[$counter,2]} shortname
-      add_to_path ${installdirectory_prefix}$shortname
     fi
     eval "$2='$counter'"
 }
@@ -284,9 +293,9 @@ function install {
     else
       cd ${temporaldirectory_prefix}${shortname}
       section_banner "Un-Installing ${temporaldirectory_prefix}${shortname}"
-      make -j4 uninstall 2> /dev/null
+      make uninstall 2> /dev/null
       section_banner "Cleaning ${temporaldirectory_prefix}${shortname}"
-      make -j4 clean 2> /dev/null
+      make clean 2> /dev/null
       cd ..
     fi
     # Installation: ./configure; make; make install
@@ -297,7 +306,7 @@ function install {
       exit_error $? "Error in installed application. Consider deleting ${temporaldirectory_prefix}${shortname} and reinstall."
     else
       echo "running ./configure --prefix=${installdirectory} ${configureparams}"
-      ./configure "--prefix=${installdirectory} ${configureparams}"
+      ./configure --prefix=${installdirectory} ${configureparams}
       exit_error $? "Error running ./config script."
     fi
     section_banner "Making ${temporaldirectory_prefix}${shortname}"

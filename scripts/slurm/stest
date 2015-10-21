@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cat ./slurm-$1.out | grep -i "validation:"
+
