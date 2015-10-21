@@ -91,6 +91,16 @@ function section_banner {
     sleep 3
 }
 
+function get_bits {
+  local system
+  system=`uname -m`;
+  system=${system##*_}
+  if [ $system -ne 32 ] || [ $system -ne 64 ] || [ ! $system -ne 128 ]; then
+    exit_error 1 "Could not autodetect the number of bits in the architecture of the system. Set this manually in script variable \$bits"
+  fi
+  eval "$1='$system'"
+}
+
 # Enforces makedir.
 #
 function makedir {
@@ -351,7 +361,7 @@ number_of_apps=0
 cuda_dir=""
 temporaldirectory_prefix=""
 installdirectory_prefix=""
-
+get_bits bits
 
 
 
