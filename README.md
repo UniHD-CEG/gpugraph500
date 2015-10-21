@@ -243,11 +243,18 @@ $ ./scorep_install.sh
 # Changelog and Improvements
 
 ## Current Changelog
-- version 1.1 (tag v1.1)
-- version 1.0 (tag v1.0)
-- initial version
+* version 1.1 (tag v1.1)
+* version 1.0 (tag v1.0)
+* initial version
 
 ## Further future improvements/ challenges
+
+A) Implementation improvements
+* Replace Thrust order() with CUB order().
+  * Motivation for this: We order our integer FQ secuence on each BFS. We use Thrust library for this
+  * Dual Merril from NVIDIA states that due to the configurability/ tuning options of this library, designed for NVIDIA cards, a boost in performance may be achieved. Futher reding here [nvlab](http://nvlabs.github.io/cub/#sec4)
+* Optimize Bitwise operations. Further reading [Bithacks](https://graphics.stanford.edu/~seander/bithacks.html)
+B) Algorthmic improvements
 
 # Other
 ## Profiling and Tracing

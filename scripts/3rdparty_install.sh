@@ -301,10 +301,10 @@ function install {
       exit_error $? "Error running ./config script."
     fi
     section_banner "Making ${temporaldirectory_prefix}${shortname}"
-    make -j4
+    make
     # review_error exit_error $? "Error making application $banner."
     section_banner "Installing ${temporaldirectory_prefix}${shortname}"
-    make -j4 install
+    make install
     review_error $? "Error installing application $banner. Try removing temporal directory (rm -rf ${temporaldirectory_prefix}${shortname})"
 }
 
