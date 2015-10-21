@@ -23,7 +23,7 @@ function configuration {
     installdirectory_prefix="$HOME/"
 
     let number_of_apps++
-    # no dependencies
+    # NO dependencies.
     array_of_apps[$number_of_apps,1]="OpenMPI" # Name of application
     array_of_apps[$number_of_apps,2]="http://www.open-mpi.de/software/ompi/v1.10/downloads/openmpi-1.10.0.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--enable-mpirun-prefix-by-default" # ./config script's parameters # CC=$cc CXX=$cxx
@@ -32,7 +32,7 @@ function configuration {
     confirm_install $number_of_apps number_of_apps
 
     let number_of_apps++
-    # no dependencies
+    # NO dependencies.
     array_of_apps[$number_of_apps,1]="Opari" # Name of application
     array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/opari2/opari2-1.1.2.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="" # ./config script's parameters # CC=$cc CXX=$cxx
@@ -42,7 +42,7 @@ function configuration {
     confirm_install $number_of_apps number_of_apps
 
     let number_of_apps++
-    # no dependencies
+    # NO dependencies.
     array_of_apps[$number_of_apps,1]="Cube" # Name of application
     array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/cube/4.3/dist/cube-4.3.2.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--without-gui --without-plugin-example --without-java-reader" # ./config script's parameters #
@@ -52,7 +52,7 @@ function configuration {
     confirm_install $number_of_apps number_of_apps
 
     let number_of_apps++
-    # depends on Opari and Cube
+    # depends on OpenMPI, Cuda, Opari and Cube.
     array_of_apps[$number_of_apps,1]="Score-P" # Name of application
     array_of_apps[$number_of_apps,2]="http://www.vi-hps.org/upload/packages/scorep/scorep-1.4.1.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--with-mpi=openmpi --with-cube=${cube_installdirectory}/bin --with-opari2=${opari_installdirectory}/bin --with-libcudart=$cuda_dir --enable-mpi --enable-cuda" # ./config script's parameters
@@ -62,7 +62,7 @@ function configuration {
     confirm_install $number_of_apps number_of_apps
 
     let number_of_apps++
-    # depends on ScoreP
+    # depends on OpenMPI, Cuda and ScoreP.
     array_of_apps[$number_of_apps,1]="Scalasca" # Name of application
     array_of_apps[$number_of_apps,2]="http://apps.fz-juelich.de/scalasca/releases/scalasca/2.2/dist/scalasca-2.2.2.tar.gz" # Download url
     array_of_apps[$number_of_apps,3]="--with-cube=${cube_installdirectory}/bin --with-mpi=openmpi --with-otf2=${scorep_installdirectory}/bin" # ./config script's parameters
@@ -246,9 +246,6 @@ function get_cudaconfig {
     fi
     if [ ! -d ${cuda_dir}/include ]; then
       exit_error 1 "CUDA includes directory (${cuda_dir}/include) must exist."
-    fi
-    if [ ! -d ${cuda_dir}/lib ]; then
-      exit_error 1 "CUDA lib directory (${cuda_dir}/lib) must exist."
     fi
     echo ""
     echo "Using CUDA:: $cuda_dir"

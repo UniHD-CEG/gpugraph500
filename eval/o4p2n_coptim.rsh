@@ -8,7 +8,7 @@
 MAX_SF=21
 CODEC=s4-bp128-d4
 ROWTHRESHOLD=64
-COLUMNTHRESHOLD=512
+COLUMNTHRESHOLD=64
 
 if [ "x$G500_SIMDCOMPRESSION_CODE" != "x" ]; then
   echo "Using CPUSIMD-CODEC $G500_SIMDCOMPRESSION_CODE"
@@ -53,6 +53,6 @@ if [ "x$G500_ENABLE_RUNTIME_SCALASCA" = "xyes" ]; then
   $scalasca $mpirun -np 4 --display-map "-rf hosts-coptimum" ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1
 else
   # $mpirun -np 4 --display-map -rf hosts-coptimum valgrind --leak-check=full --track-origins=yes --show-reachable=yes -v ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1
-  $mpirun -np 4 --display-map -rf hosts-coptimum ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1 -be $codec -btr $rowthreshold -btc $columnthreshold
+  $mpirun -np 4 -x LD_LIBRARY_PATH=$LD_LIBRARY_PATH -x PATH=$PATH --display-map -rf hosts-coptimum ../cpu_2d/g500 -s $scale_factor -C 2 -gpus 1 -qs 1 -be $codec -btr $rowthreshold -btc $columnthreshold
 fi
 
