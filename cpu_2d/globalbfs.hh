@@ -516,15 +516,21 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_DEFINE(BFSRUN_region_vertexBroadcast)
-    SCOREP_USER_REGION_BEGIN(BFSRUN_region_vertexBroadcast, "BFSRUN_region_vertexBroadcast", SCOREP_USER_REGION_TYPE_COMMON)
+    SCOREP_USER_REGION_DEFINE(vertexBroadcast_handle)
+    SCOREP_USER_REGION_DEFINE(localExpansion_handle)
+    SCOREP_USER_REGION_DEFINE(columnCommunication_handle)
+    SCOREP_USER_REGION_DEFINE(rowCommunication_handle)
+#endif
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_BEGIN(vertexBroadcast_handle, "BFSRUN_region_vertexBroadcast", SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
 // 0) Node 0 sends start vertex to all nodes
     MPI_Bcast(&startVertex, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_END(BFSRUN_region_vertexBroadcast)
+    SCOREP_USER_REGION_END(vertexBroadcast_handle)
 #endif
 
 // 1) Nodes test, if they are responsible for this vertex and push it, if they are in there fq
@@ -532,22 +538,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
     tstart = MPI_Wtime();
 #endif
 
-#ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_DEFINE(BFSRUN_region_nodesTest)
-    SCOREP_USER_REGION_BEGIN(BFSRUN_region_nodesTest, "BFSRUN_region_nodesTest", SCOREP_USER_REGION_TYPE_COMMON)
-#endif
-
     static_cast<Derived *>(this)->setStartVertex(startVertex);
 
-#ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_END(BFSRUN_region_nodesTest)
-#endif
 
 #ifdef INSTRUMENTED
     tend = MPI_Wtime();
     lqueue += tend - tstart;
 #endif
-
 
 // 2) Local expansion
     int iter = 0;
@@ -577,14 +574,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-        SCOREP_USER_REGION_DEFINE(BFSRUN_region_localExpansion)
-        SCOREP_USER_REGION_BEGIN(BFSRUN_region_localExpansion, "BFSRUN_region_localExpansion", SCOREP_USER_REGION_TYPE_COMMON)
+        SCOREP_USER_REGION_BEGIN(localExpansion_handle, "BFSRUN_region_localExpansion", SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
         static_cast<Derived *>(this)->runLocalBFS();
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-        SCOREP_USER_REGION_END(BFSRUN_region_localExpansion)
+        SCOREP_USER_REGION_END(localExpansion_handle)
 #endif
 
 #ifdef INSTRUMENTED
@@ -647,8 +643,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-        SCOREP_USER_REGION_DEFINE(BFSRUN_region_columnCommunication)
-        SCOREP_USER_REGION_BEGIN(BFSRUN_region_columnCommunication, "BFSRUN_region_columnCommunication",
+        SCOREP_USER_REGION_BEGIN(columnCommunication_handle, "BFSRUN_region_columnCommunication",
                                  SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
@@ -687,7 +682,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-        SCOREP_USER_REGION_END(BFSRUN_region_columnCommunication)
+        SCOREP_USER_REGION_END(columnCommunication_handle)
 #endif
 
 #ifdef INSTRUMENTED
@@ -701,9 +696,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-        SCOREP_USER_REGION_DEFINE(BFSRUN_region_rowCommunication)
-        SCOREP_USER_REGION_BEGIN(BFSRUN_region_rowCommunication, "BFSRUN_region_rowCommunication",
-                                 SCOREP_USER_REGION_TYPE_COMMON)
+        SCOREP_USER_REGION_BEGIN(rowCommunication_handle, "BFSRUN_region_rowCommunication",
+                                 SCOREP_USER_REGION_TYPE_LOOP)
 #endif
 
         int root_rank;
@@ -915,7 +909,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-        SCOREP_USER_REGION_END(BFSRUN_region_rowCommunication)
+        SCOREP_USER_REGION_END(rowCommunication_handle)
 #endif
         ++iter;
     }
