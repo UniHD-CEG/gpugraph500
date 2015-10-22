@@ -599,12 +599,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
         tstart = MPI_Wtime();
 #endif
 
-#ifdef _SCOREP_USER_INSTRUMENTATION
-        SCOREP_USER_REGION_DEFINE(BFSRUN_region_testSomethingHasBeenDone)
-        SCOREP_USER_REGION_BEGIN(BFSRUN_region_testSomethingHasBeenDone, "BFSRUN_region_testSomethingHasBeenDone",
-                                 SCOREP_USER_REGION_TYPE_COMMON)
-#endif
-
         anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
 
 #ifdef INSTRUMENTED
@@ -640,10 +634,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef INSTRUMENTED
             tend = MPI_Wtime();
             predlistred = tend - tstart;
-#endif
-
-#ifdef _SCOREP_USER_INSTRUMENTATION
-            SCOREP_USER_REGION_END(BFSRUN_region_testSomethingHasBeenDone)
 #endif
 
             return; // There is nothing to do. Finish iteration.
