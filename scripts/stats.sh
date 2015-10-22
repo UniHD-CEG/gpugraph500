@@ -49,8 +49,11 @@ if [ ! -f "$1/profile.cubex" ]; then
 	error "$1/profile.cubex is not a file."
 fi
 
+cube_stat=`which cube_stat`
 
-
+if [ ! -x $cube_stat ];then
+	error "scalasca, scorep and CUBE (non Qt version), must be installed"
+fi
 
 
 declare -a metrics=("time" "bytes_sent" "bytes_received")
