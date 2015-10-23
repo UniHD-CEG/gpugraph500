@@ -12,7 +12,7 @@ Create an account in [https://bitbucket.org](https://bitbucket.org) Request acce
 Available repositories are:(Replace the token **Your_Bitbucket_User**)
 
 
-- [https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/julianromera/bfs_multinode.git) **(Updated daily)**
+- [https://Your_Bitbucket_User@bitbucket.org/g500optimization/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/g500optimization/g500optimization.git) **(Updated daily)**
 - [https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git](https://Your_Bitbucket_User@bitbucket.org/jyoung3131/bfs_multinode.git) **(Updated weekly)**
 
 ```shell
