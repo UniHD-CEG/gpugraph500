@@ -245,6 +245,36 @@ $ cd $HOME
 $ ./external-apps-installer.sh
 ```
 
+# Current compression results
+
+## Data Volumes
+
+- Test uses 16 proccesses, 8 Nodes, ScaleFactor 22
+- HW: Gigabit Ethernet. 2xNVIDIA Fermi cards per node.
+
+
+| Vertex broadcast                         |                                        |
+| :--------------------------------------: | :------------------------------------- |
+| Before                                   | CPU-SIMD threshold64 Codec s4-bp128-d4 |
+| 8192 bytes                               | 8192 bytes                             |
+| Difference: 0 bytes                      |                                        |
+| 0% gain                                  |                                        |
+
+| Column communication                     |                                        |
+| :--------------------------------------: | :------------------------------------: |
+| Before                                   | CPU-SIMD threshold64 Codec s4-bp128-d4 |
+| 7160177440 bytes                         | 5314394624 bytes                       |
+| Difference: 1845782816 bytes             |                                        |
+| 26% gain                                 |                                        |
+
+
+| Column communication                     |                                        |
+| :--------------------------------------: | :------------------------------------: |
+| Before                                   | CPU-SIMD threshold64 Codec s4-bp128-d4 |
+| 4904056832 bytes                         | 806405024 bytes                        |
+| Difference: 4097651808 bytes             |                                        |
+| 84% gain                                 |                                        |
+
 # Changelog and Improvements
 
 ## Current Changelog
