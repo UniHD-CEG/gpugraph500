@@ -160,8 +160,8 @@ scorep_profiler_automatic_instrumentation :="no"
 scorep_custom                             :="yes"
 scorep_custom_basedir                     :=/home/jromera/scorep
 use_avx_instructions                      :="yes"
-enable_compression                        :="yes"
-enable_simd_compression                   :="yes"
+enable_compression                        :="no"
+enable_simd_compression                   :="no"
 enable_simt_compression                   :="no"
 enable_compression_verify                 :="no"
 enable_compression_debug                  :="no"
@@ -564,8 +564,8 @@ clean:
 	@echo "== Cleaning"
 	@echo "============================================================================"
 	@echo ""
-	$(Q)rm -rf $(OUTFILES) $(OBJECTS)
-	$(Q)rm -rf *~ core *.core g500
+	$(Q)rm -rf $(OUTFILES) $(OBJECTS) 2> /dev/null
+	$(Q)rm -rf *~ core *.core g500 2> /dev/null
 	@echo "--- Cleaning"
 
 .PHONY: g500 clean
