@@ -268,7 +268,7 @@ $ ./external-apps-installer.sh
 | 26% gain                                 |                                        |
 
 
-| Column communication                     |                                        |
+| Row communication                        |                                        |
 | :--------------------------------------: | :------------------------------------: |
 | Before                                   | CPU-SIMD threshold64 Codec s4-bp128-d4 |
 | 4904056832 bytes                         | 806405024 bytes                        |
