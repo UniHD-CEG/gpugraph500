@@ -56,7 +56,8 @@ if [ ! -x $cube_stat ];then
 fi
 
 
-declare -a metrics=("time" "bytes_sent" "bytes_received")
+# declare -a metrics=("time" "bytes_sent" "bytes_received")
+declare -a metrics=("bytes_sent")
 regions="BFSRUN_region_vertexBroadcast,BFSRUN_region_localExpansion,BFSRUN_region_columnCommunication,BFSRUN_region_rowCommunication"
 
 print_stats $1 $regions
