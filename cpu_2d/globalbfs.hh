@@ -520,6 +520,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
     SCOREP_USER_REGION_DEFINE(localExpansion_handle)
     SCOREP_USER_REGION_DEFINE(columnCommunication_handle)
     SCOREP_USER_REGION_DEFINE(rowCommunication_handle)
+    SCOREP_USER_REGION_DEFINE(allReduceBC_handle)
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
@@ -620,12 +621,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
             lqueue += tend - tstart;
 #endif
 
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_BEGIN(allReduceBC_handle, "BFSRUN_region_allReduceBC", SCOREP_USER_REGION_TYPE_COMMON)
+#endif
+
             // MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
             static_cast<Derived *>(this)->generatOwenMask();
             allReduceBitCompressed(predecessor,
                                    fq_64, // have to be changed for bitmap queue
                                    owenmask, tmpmask);
 
+#ifdef _SCOREP_USER_INSTRUMENTATION
+        SCOREP_USER_REGION_END(allReduceBC_handle)
+#endif
 
 #ifdef INSTRUMENTED
             tend = MPI_Wtime();

@@ -6,5 +6,7 @@ SCOREP_REGION_NAMES_BEGIN
 	  BFSRUN_region_testSomethingHasBeenDone
 	  BFSRUN_region_columnCommunication
 	  BFSRUN_region_rowCommunication
+	  BFSRUN_region_rowCommunication
+	  BFSRUN_region_allReduceBC
 SCOREP_REGION_NAMES_END
 
