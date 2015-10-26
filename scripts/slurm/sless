@@ -1,0 +1,3 @@
+#!/bin/bash
+
+less ./slurm-$1.out

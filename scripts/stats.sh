@@ -58,6 +58,6 @@ fi
 
 # declare -a metrics=("time" "bytes_sent" "bytes_received")
 declare -a metrics=("time" "bytes_sent")
-regions="BFSRUN_region_vertexBroadcast,BFSRUN_region_localExpansion,BFSRUN_region_columnCommunication,BFSRUN_region_rowCommunication"
+regions="BFSRUN_region_vertexBroadcast,BFSRUN_region_allReduceBC,BFSRUN_region_localExpansion,BFSRUN_region_columnCommunication,BFSRUN_region_rowCommunication"
 
 print_stats $1 $regions
