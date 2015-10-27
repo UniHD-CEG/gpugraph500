@@ -275,6 +275,7 @@ $ ./external-apps-installer.sh
 | Difference: 4097651808 bytes             |                                        |
 | 84% gain                                 |                                        |
 
+
 # Changelog and Improvements
 
 ## Current Changelog
