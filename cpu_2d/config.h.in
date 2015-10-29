@@ -6,23 +6,17 @@
 /* Support AVX (Advanced Vector Extensions) instructions */
 #undef HAVE_AVX
 
+/* Define if CUDA is installed */
+#undef HAVE_CUDA
+
+/* define if the compiler supports basic C++11 syntax */
+#undef HAVE_CXX11
+
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
-
-/* Define to 1 if you have the `cuda' library (-lcuda). */
-#undef HAVE_LIBCUDA
-
-/* Define to 1 if you have the `cudart' library (-lcudart). */
-#undef HAVE_LIBCUDART
-
-/* Define to 1 if you have the `cudart_static' library (-lcudart_static). */
-#undef HAVE_LIBCUDART_STATIC
-
-/* Define to 1 if you have the `likwid' library (-llikwid). */
-#undef HAVE_LIBLIKWID
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
@@ -46,8 +40,17 @@
 /* Define to 1 if you have MPI libs and headers. */
 #undef HAVE_MPI
 
+/* Define if OpenMP is enabled */
+#undef HAVE_OPENMP
+
 /* Define to 1 if you have the `pow' function. */
 #undef HAVE_POW
+
+/* Define if you have POSIX threads libraries and header files. */
+#undef HAVE_PTHREAD
+
+/* Have PTHREAD_PRIO_INHERIT. */
+#undef HAVE_PTHREAD_PRIO_INHERIT
 
 /* Define to 1 if the system has the type `ptrdiff_t'. */
 #undef HAVE_PTRDIFF_T
@@ -136,6 +139,13 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Define to necessary symbol if this constant uses a non-standard name on
+   your system. */
+#undef PTHREAD_CREATE_JOINABLE
+
+/* The size of `long', as computed by sizeof. */
+#undef SIZEOF_LONG
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

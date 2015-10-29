@@ -57,3 +57,6 @@ autom4te.cache/*
 config.h
 stamp-h1
 configure.scan
+config.status
+
+Makefile

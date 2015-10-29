@@ -33,16 +33,6 @@
 #   Default value: no
 #   Description: "prints out results/ statistics at the end"
 #
-# custom_openmpi
-#   Values: yes | no
-#   Default value: no
-#   Description: "use user compiled openmpi instead of system's"
-#
-# custom_openmpi_basedir
-#   Values: path
-#   Default value: CHANGE_ME
-#   Description: "if previous option is set, absolute path to dir"
-#
 # scorep_profiler_enable
 #   Values: yes | no
 #   Default value: no
@@ -146,28 +136,38 @@
 
 
 AC_PREREQ([2.68])
-AC_INIT([graph500_bfs], [1.1])
+AC_INIT([graph500-bfs], [1.1])
+AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([globalbfs.hh])
 AC_CONFIG_HEADERS([config.h])
-AM_INIT_AUTOMAKE
 
 
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+LX_FIND_MPI
+AC_LANG_PUSH([C++])
+LX_FIND_MPI
+AC_LANG_POP([C++])
+AX_CHECK_CUDA
+AC_LANG_PUSH([C++])
+FF_CHECK_CUDA([6.0.0])
+AC_LANG_POP([C++])
+AX_PTHREAD
+AX_OPENMP
+AX_EXT
+AX_CXX_COMPILE_STDCXX_11(,[mandatory])
 
-#bin_PROGRAMS = g500
-#g500_SOURCES = main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c $(bfs_implementation) validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp
-#g500
 
 # LT_INIT([disable-shared], [disable-static], [no-pic], [C++])
 # AC_CONFIG_MACRO_DIR([m4])
-#[custom_openmpi=yes]
-#[custom_openmpi_basedir=/home/jromera/openmpi]
 #[scorep_custom_basedir=/home/jromera/scorep]
 #[scorep_profiler_manual_instrumentation=yes]
 #[scorep_custom=yes]
 # AM_CONDITIONAL([SCOREP_CUSTOM], [test x"$scorep_custom" = xyes])
 # AM_CONDITIONAL([SCOREP_PROFILER_MANUAL_INSTRUMENTATION], [test x"$scorep_profiler_manual_instrumentation" = xyes])
-# AM_CONDITIONAL([CUSTOM_OPENMPI], [test x"$custom_openmpi" = xyes])
-
 
 # [compression_enabled=yes]
 AC_ARG_ENABLE([compression],
@@ -276,10 +276,9 @@ esac],[enable_nvidia_architecture=fermi])
 AC_ARG_VAR(OPTIMIZATION_FLAGS,[AS_HELP_STRING([--optimization-flags], [aa])])
 AS_IF([test "x$OPTIMIZATION_FLAGS" = x], [OPTIMIZATION_FLAGS="-loops -flto"])
 
-#
-# declare "precious" environment variables
+
+### declare "precious" environment variables
 # (implicit AC_SUBST)
-#
 
 AC_ARG_VAR(MPI_INC,[MPI include flags])
 AC_ARG_VAR(MPI_LIB,[MPI lib flags])
@@ -314,26 +313,21 @@ AM_CONDITIONAL([VERIFY_COMPRESSION], [test x"$enable_verify_compression" = xyes]
 AM_CONDITIONAL([CUDA], [test x"$enable_cuda" = xyes])
 AM_CONDITIONAL([QUIET_OUTPUT], [test x"$enable_quiet" = xyes])
 
-# Checks for programs.
-AC_PROG_CXX
-AC_PROG_CC
-AC_PROG_CPP
-LX_FIND_MPI
-AX_CHECK_CUDA
-AX_EXT
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lcuda':
-AC_CHECK_LIB([cuda], [main])
+# AC_CHECK_LIB([cuda], [main])
 # FIXME: Replace `main' with a function in `-lcudart':
-AC_CHECK_LIB([cudart], [main])
+# AC_CHECK_LIB([cudart], [main])
 # FIXME: Replace `main' with a function in `-lcudart_static':
-AC_CHECK_LIB([cudart_static], [main])
+# AC_CHECK_LIB([cudart_static], [main])
 # FIXME: Replace `main' with a function in `-llikwid':
-AC_CHECK_LIB([likwid], [main])
+# AC_CHECK_LIB([likwid], [main])
+
 
 # Checks for header files.
-AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([fcntl.h limits.h stddef.h sys/time.h])
+# AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -352,11 +346,52 @@ AC_CHECK_TYPES([ptrdiff_t])
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
-AC_CHECK_FUNCS([memmove memset pow select sqrt])
+AC_CHECK_FUNCS([memmove memset select])
+AC_LANG_PUSH([C++])
+AC_CHECK_FUNCS([pow sqrt])
+AC_LANG_POP([C++])
 
-# AC_CONFIG_FILES([Makefile
-# 				   compression/cpusimd/makefile])
+
+SIMD_OBJECTS="bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o"
+AC_SUBST([SIMD_OBJECTS])
+g500_OBJECTS="main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o"
+AC_SUBST([g500_OBJECTS])
+
+SCOREP_CPPFLAG=
+for item in `scorep-config --cppflags`; do
+  SCOREP_CPPFLAG+=" $item"
+done
+
+AC_SUBST([SCOREP_CPPFLAG])
+SCOREP_LLIBS=
+for item in `scorep-config --libs`; do
+  SCOREP_LLIBS+=" $item"
+done
+AC_SUBST([SCOREP_LLIBS])
+
+SCOREP_LFLAG=
+for item in `scorep-config --ldflags`; do
+  SCOREP_LFLAG+=" $item"
+done
+AC_SUBST([SCOREP_LFLAG])
+
+simd_H_FILES=
+for item in `ls compression/cpusimd/include/*h`; do
+  simd_H_FILES+=" $item"
+done
+AC_SUBST([simd_H_FILES])
+
+# SCOREP_CPPFLAG=`scorep-config --cppflags`
+# AC_SUBST([SCOREP_CPPFLAG])
+#
+# SCOREP_LLIBS=`scorep-config --libs`
+# AC_SUBST([SCOREP_LLIBS])
+#
+# SCOREP_LFLAG=`scorep-config --ldflags`
+# AC_SUBST([SCOREP_LFLAG])
+#
+# simd_H_FILES=`ls compression/cpusimd/include/*h`
+# AC_SUBST([simd_H_FILES])
 
 AC_CONFIG_FILES([Makefile])
-
 AC_OUTPUT
