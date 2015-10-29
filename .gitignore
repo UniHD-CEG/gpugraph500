@@ -52,3 +52,8 @@ eval/tmp.tmp
 eval/scorep-*
 eval/scorep_*
 eval/log_*
+autom4te.cache/
+autom4te.cache/*
+config.h
+stamp-h1
+configure.scan
