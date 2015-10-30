@@ -2,91 +2,96 @@
 ### Local configuration changes
 #
 
-AUTOMAKE_OPTIONS = foreign subdir-objects
-ACLOCAL_AMFLAGS = -I m4
+AUTOMAKE_OPTIONS=foreign subdir-objects
+ACLOCAL_AMFLAGS=-I m4
 
-DEFINES =
+DEFINES=
+
+### Dynamic variables
+#
 
 if OPTIMIZATION_O4
-  o_level = -O3 -ffast-math
-  o_level_nvcc = -O3
+  o_level=-O3 -ffast-math
+  o_level_nvcc=-O3
 endif
 if OPTIMIZATION_O3
-  o_level = -O3
-  o_level_nvcc = -O3
+  o_level=-O3
+  o_level_nvcc=-O3
 endif
 if OPTIMIZATION_O2
-  o_level = -O2
-  o_level_nvcc = -O2
+  o_level=-O2
+  o_level_nvcc=-O2
 endif
 if OPTIMIZATION_O1
-  o_level = -O1
-  o_level_nvcc = -O1
+  o_level=-O1
+  o_level_nvcc=-O1
 endif
 if OPTIMIZATION_O0
-  o_level = -O0
-  o_level_nvcc = -O0
+  o_level=-O0
+  o_level_nvcc=-O0
 endif
 
 if AVX
-  arch = -mavx
+  arch=-mavx
 else
 if SIMD
-  arch = -msse4
+  arch=-msse4
 else
-  arch = -march=native
+  arch=-march=native
 endif
 endif
 
 if PTXAS_OTIMIZATION
-  PTXAS = --ptxas-options="-O3"
+  PTXAS=--ptxas-options="-O3"
 endif
 
 if NVIDIA_ARCHITECTURE_FERMI
-  NV_ARCHITECTURE = $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
+  NV_ARCHITECTURE=$(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
 else
 if NVIDIA_ARCHITECTURE_KEPLER
-  NV_ARCHITECTURE = $(PTXAS) -arch=sm_35
+  NV_ARCHITECTURE=$(PTXAS) -arch=sm_35
 else
-  NV_ARCHITECTURE = $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+  NV_ARCHITECTURE=$(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 endif
 endif
 
 
-### Instrumentation with Score-P
+### Instrumentation. Score-P
 #
 
 if SCOREP
 if OPENMP_ON_CUDA
-  THREADS = omp
+  THREADS=omp
 else
 if OPENMP_ON_OTHERS
-  THREADS = omp
+  THREADS=omp
 else
-  THREADS = none
+  THREADS=none
 endif
 endif
-  scorep_instrumentation_flag = --user --cuda --mpp=mpi --thread=$(THREADS) --nopdt --online-access --instrument-filter=\"filter.scorep\"
-  SCOREP_INSTRUMENTATION = -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
+  scorep_instrumentation_flag=--user --cuda --mpp=mpi --thread=$(THREADS) --nopdt --online-access --instrument-filter=\"filter.scorep\"
+  SCOREP_INSTRUMENTATION=-D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
+  LDFLAGS_SCOREP=@SCOREP_LFLAG@
+  LLIBS_SCOREP=@SCOREP_LLIBS@
 else
-  libcudart_static_path = @CUDA_LDFLAGS@
-  libcudart_static_flag = -lcudart
+  libcudart_static_path=@CUDA_LDFLAGS@
+  libcudart_static_flag=-lcudart
 endif
 
 if OPENMP_ON_CUDA
-  CUDA_OPENMP = -fopenmp
+  CUDA_OPENMP=-fopenmp
 endif
 
 if OPENMP_ON_OTHERS
-  OPENMP = -fopenmp
+  OPENMP=-fopenmp
 endif
 
 if BASIC_PROFING_CUDA
-  CUDA_INSTRUM = -DINSTRUMENTED
+  CUDA_INSTRUM=-DINSTRUMENTED
 endif
 
 if BASIC_PROFING_OTHERS
-  INSTRUMENTED = -DINSTRUMENTED
+  INSTRUMENTED=-DINSTRUMENTED
 endif
 
 if DEBUG
@@ -101,97 +106,90 @@ if !SIMT
  @exit
 endif
 endif
-  DEFINES += -D_COMPRESSION
+  DEFINES +=-D_COMPRESSION
 if DEBUG_COMPRESSION
-  DEFINES += -D_COMPRESSIONDEBUG
-  LLIBC = -static-libstdc++
+  DEFINES +=-D_COMPRESSIONDEBUG
+  LLIBC=-static-libstdc++
 endif
 if VERIFY_COMPRESSION
-  DEFINES += -D_COMPRESSIONVERIFY
+  DEFINES +=-D_COMPRESSIONVERIFY
 endif
 
 
-### Compression Block
+### Compression
 #
 
 # 1. CPU/SIMD Compression.
-#    CPU with SSE4 support is required. CPU with AVX support is recommended.
-#
+#  - SSE4 is required.
+#  - AVX is recommended.
 if SIMD
-  DEFINES += -D_SIMDCOMPRESS
-  INCPATH = -I. -Icompression/cpusimd/include
-  g500_HEADER_LIST = @simd_H_FILES@
+  DEFINES +=-D_SIMD
+  INCPATH=-I. -Icompression/cpusimd/include
+  g500_HEADER_LIST=@simd_H_FILES@
 else
-  INCPATH = -I.
-  g500_HEADER_LIST =
+  INCPATH=-I.
+  g500_HEADER_LIST=
 endif
-# 2. XXX/XXXX Compression.
+# 2. XXXX Compression.
 # ...
-#
 endif
 
 if CUDA
-  DEFINE_CUDA = -D_CUDA
-  bfs_object = cuda_bfs_cuda.o
+  DEFINE_CUDA=-D_CUDA
+  bfs_object=cuda_bfs_cuda.o
 else
-  bfs_object =  cpubfs_bin.o
-  bfs_implementation = cpubfs_bin.cpp
+  bfs_object=cpubfs_bin.o
+  bfs_implementation=cpubfs_bin.cpp
 endif
 
 if QUIET_OUTPUT
-  Q = @
+  Q=@
 endif
 
 if DEBUGGING
-  o_level = -O0
-  o_level_nvcc = -O0
+  o_level=-O0
+  o_level_nvcc=-O0
   DEBUG_FLAG=-g
   NVCC_DEBUG_FLAGS=-DTHRUST_DEBUG
 endif
 
 
-### Compiler/ Linker options: C, C++, MPI, CUDA Flags and Libs
+### Compiler options: C, C++, MPI, CUDA Flags and Libs
 #
 
-MPICFLAGS = ${arch} -std=c99 -pedantic -m64 -mfpmath=sse $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) -Wall -Wextra
-MPICXXFLAGS = ${arch} -std=c++11 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) -Wall -Wextra
-NVCXXFLAGS = $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
-LLIBS = @SCOREP_LLIBS@ $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
 
-AM_LDFLAGS = -m64 @SCOREP_LFLAG@ $(OPENMP) -Wl,$(o_level)
-AM_CXXFLAGS = ${arch} -std=c++11  -Weffc++ -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) -Wall -Wextra
-AM_CFLAGS = ${arch} -std=c99 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) -Wall -Wextra
-
-# FIXME: text NVCC
+MPICFLAGS=${arch} -std=c99 -pedantic -m64 -mfpmath=sse $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) -Wall -Wextra
+MPICXXFLAGS=${arch} -std=c++11 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) -Wall -Wextra
+NVCXXFLAGS=$(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
+LLIBS=$(LLIBS_SCOREP) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
+AM_LDFLAGS=-m64 $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
+AM_CXXFLAGS=${arch} -std=c++11  -Weffc++ -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) -Wall -Wextra
+AM_CFLAGS=${arch} -std=c99 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) -Wall -Wextra
+# FIXME: test NVCC
 NVCXX=$(NVCC)
+AM_LD=$(PROFILER) $(MPICXX)
 
-
-# AM_CC=$(MPICC)
-# AM_CXX=$(MPICXX)
-# AM_F77=$(MPIF77)
-# AM_LD=$(PROFILER) $(MPICXX)
 
 ### List of sources to compile
 #
 
-# SOURCES = main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c $(bfs_implementation) validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp
-
 if SIMD
-  COMPRESSION_OBJECTS = @SIMD_OBJECTS@
+  COMPRESSION_OBJECTS=@SIMD_OBJECTS@
 else
-  COMPRESSION_OBJECTS = "FIXME"
+  COMPRESSION_OBJECTS="ADD_MORE_TYPES_HERE"
 endif
 
 if COMPRESSION
-  g500_OBJECT_LIST = $(COMPRESSION_OBJECTS) $(bfs_object) @g500_OBJECTS@
+  g500_OBJECT_LIST=$(COMPRESSION_OBJECTS) $(bfs_object) @g500_OBJECTS@
 else
-  g500_OBJECT_LIST = $(bfs_object) @g500_OBJECTS@
+  g500_OBJECT_LIST=$(bfs_object) @g500_OBJECTS@
 endif
 
 
 
 ### Make/ Build rules
 #
+
 # Clean all files that were generated by bootstrap.sh or autoscan
 maintainer-clean-local:
 	@echo "--- Cleaning" ; \
@@ -328,7 +326,7 @@ if SIMD
 endif
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -m64 $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" -std=c++11 --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 
@@ -339,8 +337,7 @@ g500:  $(g500_OBJECT_LIST)
 	@echo "============================================================================"
 	@echo ""
 	@echo "--- Linking"
-	$(Q)$(LD) $(LFLAGS) -o $@ $(g500_OBJECT_LIST) $(OBJCOMP) $(LLIBS)
-	echo $(LD) $(LFLAGS) -o $@ $(g500_OBJECT_LIST) $(OBJCOMP) $(LLIBS)
+	$(Q)$(AM_LD) $(AM_LDFLAGS) -o $@ $(g500_OBJECT_LIST) $(LLIBS)
 	@echo "    MPICXX    $@"
 
 clean-local:
@@ -349,8 +346,8 @@ clean-local:
 	@echo "== Cleaning"
 	@echo "============================================================================"
 	@echo ""
+	@echo "--- Cleaning"
 	$(Q)rm -rf *.o $(g500_OBJECT_LIST) 2> /dev/null
 	$(Q)rm -rf *~ core *.core g500 2> /dev/null
-	@echo "--- Cleaning"
 
 .PHONY: g500 clean-local

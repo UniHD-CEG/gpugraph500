@@ -141,118 +141,104 @@ AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([globalbfs.hh])
 AC_CONFIG_HEADERS([config.h])
 
-
-# Checks for programs.
-AC_PROG_CXX
-AC_PROG_CC
-AC_PROG_CPP
-AC_PROG_INSTALL
-LX_FIND_MPI
-AC_LANG_PUSH([C++])
-LX_FIND_MPI
-AC_LANG_POP([C++])
-AX_CHECK_CUDA
-AC_LANG_PUSH([C++])
-FF_CHECK_CUDA([6.0.0])
-AC_LANG_POP([C++])
-AX_PTHREAD
-AX_OPENMP
-AX_EXT
-AX_CXX_COMPILE_STDCXX_11(,[mandatory])
-
-
-# LT_INIT([disable-shared], [disable-static], [no-pic], [C++])
-# AC_CONFIG_MACRO_DIR([m4])
 #[scorep_custom_basedir=/home/jromera/scorep]
 #[scorep_profiler_manual_instrumentation=yes]
 #[scorep_custom=yes]
 # AM_CONDITIONAL([SCOREP_CUSTOM], [test x"$scorep_custom" = xyes])
 # AM_CONDITIONAL([SCOREP_PROFILER_MANUAL_INSTRUMENTATION], [test x"$scorep_profiler_manual_instrumentation" = xyes])
 
+## Checks for programs.
+#
+AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+
+
 # [compression_enabled=yes]
 AC_ARG_ENABLE([compression],
-    [AS_HELP_STRING([--enable-compression], [aa])],
+    AS_HELP_STRING([--enable-compression], [aa]),
     [enable_compression=$enableval],
     [enable_compression=yes])
 
 # [nvidia_ptxas_otimize=no]
 AC_ARG_ENABLE([ptxas_otimization],
-    [AS_HELP_STRING([--enable-ptxas_otimization], [aa])],,
+    AS_HELP_STRING([--enable-ptxas_otimization], [aa]),,
     [enable_ptxas_otimization=no])
 
 # [manual_profiler_cuda=no]
 AC_ARG_ENABLE([cuda-basic-profiling],
-    [AS_HELP_STRING([--enable-cuda-basic-profiling], [aa])],,
+    AS_HELP_STRING([--enable-cuda-basic-profiling], [aa]),,
     [enable_cuda_basic_profiling=no])
 
 # [manual_profiler_other_compilers=yes]
 AC_ARG_ENABLE([others-basic-profiling],
-    [AS_HELP_STRING([--enable-others-basic-profiling], [aa])],,
+    AS_HELP_STRING([--enable-others-basic-profiling], [aa]),,
     [enable_others_basic_profiling=yes])
 
 # [openmp_on_cuda=no]
 AC_ARG_ENABLE([openmp-on-cudafiles],
-    [AS_HELP_STRING([--enable-openmp-on-cudafiles], [aa])],,
+    AS_HELP_STRING([--enable-openmp-on-cudafiles], [aa]),,
     [enable_openmp_on_cudafiles=no])
 
 # [openmp_on_other_compilers=no]
 AC_ARG_ENABLE([openmp-on-others],
-    [AS_HELP_STRING([--enable-openmp-on-others], [aa])],,
+    AS_HELP_STRING([--enable-openmp-on-others], [aa]),,
     [enable_openmp_on_others=no])
 
 # [scorep_profiler_enable=yes]
 AC_ARG_ENABLE([scorep],
-    [AS_HELP_STRING([--enable-scorep], [aa])],,
+    AS_HELP_STRING([--enable-scorep], [aa]),,
     [enable_scorep=no])
 
 # [use_avx_instructions=yes]
 AC_ARG_ENABLE([avx],
-    [AS_HELP_STRING([--enable-avx], [aa])],,
+    AS_HELP_STRING([--enable-avx], [aa]),,
     [enable_avx=yes])
 
 # [simd_compression_enabled=yes]
 AC_ARG_ENABLE([simd],
-    [AS_HELP_STRING([--enable-simd], [aa])],,
+    AS_HELP_STRING([--enable-simd], [aa]),,
     [enable_simd=yes])
 
 # [simt_compression_enabled=no]
 AC_ARG_ENABLE([simt],
-    [AS_HELP_STRING([--enable-simt], [aa])],,
+    AS_HELP_STRING([--enable-simt], [aa]),,
     [enable_simt=no])
 
 # [enable_compression_verify=no]
 AC_ARG_ENABLE([verify-compression],
-    [AS_HELP_STRING([--enable-verify-compression], [aa])],,
+    AS_HELP_STRING([--enable-verify-compression], [aa]),,
     [enable_verify_compression=no])
 
 # [enable_compression_debug=no]
 AC_ARG_ENABLE([debug-compression],
-    [AS_HELP_STRING([--enable-debug-compression], [aa])],,
+    AS_HELP_STRING([--enable-debug-compression], [aa]),,
     [enable_debug_compression=no])
 
 # [use_cuda=yes]
 AC_ARG_ENABLE([cuda],
-    [AS_HELP_STRING([--enable-cuda], [aa])],,
+    AS_HELP_STRING([--enable-cuda], [aa]),,
     [enable_cuda=yes])
 
 # [debug=no]
 AC_ARG_ENABLE([debug],
-    [AS_HELP_STRING([--enable-debug], [aa])],,
+    AS_HELP_STRING([--enable-debug], [aa]),,
     [enable_debug=no])
 
 # [debug_code=no]
 AC_ARG_ENABLE([debugging],
-    [AS_HELP_STRING([--enable-debugging], [aa])],,
+    AS_HELP_STRING([--enable-debugging], [aa]),,
     [enable_debugging=no])
 
 # [quiet_output=no]
 AC_ARG_ENABLE([quiet],
-    [AS_HELP_STRING([--enable-quiet], [aa])],,
+    AS_HELP_STRING([--enable-quiet], [aa]),,
     [enable_quiet=no])
 
 # [code_optimization_level=O4]
 AC_ARG_ENABLE(code-optimization,
-[AS_HELP_STRING([--enable-code-optimization], [aa])],
+AS_HELP_STRING([--enable-code-optimization], [aa]),
 [case "${enableval}" in
   O0) enable_code_optimization=O0 ;;
   O1) enable_code_optimization=O1 ;;
@@ -264,7 +250,7 @@ esac],[enable_code_optimization=O4])
 
 # [nvidia_architecture=fermi]
 AC_ARG_ENABLE(nvidia-architecture,
-[AS_HELP_STRING([--enable-nvidia-architecture], [aa])],
+AS_HELP_STRING([--enable-nvidia-architecture], [aa]),
 [case "${enableval}" in
   fermi) enable_nvidia_architecture=fermi ;;
   kepler) enable_nvidia_architecture=kepler ;;
@@ -273,7 +259,7 @@ AC_ARG_ENABLE(nvidia-architecture,
 esac],[enable_nvidia_architecture=fermi])
 
 # [code_optimization_flags=-funroll-loops -flto]
-AC_ARG_VAR(OPTIMIZATION_FLAGS,[AS_HELP_STRING([--optimization-flags], [aa])])
+AC_ARG_VAR(OPTIMIZATION_FLAGS,AS_HELP_STRING([--optimization-flags], [aa]))
 AS_IF([test "x$OPTIMIZATION_FLAGS" = x], [OPTIMIZATION_FLAGS="-loops -flto"])
 
 
@@ -314,22 +300,12 @@ AM_CONDITIONAL([CUDA], [test x"$enable_cuda" = xyes])
 AM_CONDITIONAL([QUIET_OUTPUT], [test x"$enable_quiet" = xyes])
 
 
-# Checks for libraries.
-# FIXME: Replace `main' with a function in `-lcuda':
-# AC_CHECK_LIB([cuda], [main])
-# FIXME: Replace `main' with a function in `-lcudart':
-# AC_CHECK_LIB([cudart], [main])
-# FIXME: Replace `main' with a function in `-lcudart_static':
-# AC_CHECK_LIB([cudart_static], [main])
-# FIXME: Replace `main' with a function in `-llikwid':
-# AC_CHECK_LIB([likwid], [main])
-
-
-# Checks for header files.
+### Checks for header files.
+#
 AC_CHECK_HEADERS([fcntl.h limits.h stddef.h sys/time.h])
-# AC_CHECK_HEADERS([fcntl.h inttypes.h limits.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h])
 
-# Checks for typedefs, structures, and compiler characteristics.
+### Checks for typedefs, structures, and compiler characteristics.
+#
 AC_HEADER_STDBOOL
 AC_C_INLINE
 AC_TYPE_INT32_T
@@ -343,7 +319,8 @@ AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_CHECK_TYPES([ptrdiff_t])
 
-# Checks for library functions.
+### Checks for library functions.
+#
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memmove memset select])
@@ -351,47 +328,57 @@ AC_LANG_PUSH([C++])
 AC_CHECK_FUNCS([pow sqrt])
 AC_LANG_POP([C++])
 
+### declare environment variables
+# (éxplicit AC_SUBST)
 
 SIMD_OBJECTS="bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o"
-AC_SUBST([SIMD_OBJECTS])
 g500_OBJECTS="main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o"
-AC_SUBST([g500_OBJECTS])
 
 SCOREP_CPPFLAG=
 for item in `scorep-config --cppflags`; do
   SCOREP_CPPFLAG+=" $item"
 done
 
-AC_SUBST([SCOREP_CPPFLAG])
 SCOREP_LLIBS=
 for item in `scorep-config --libs`; do
   SCOREP_LLIBS+=" $item"
 done
-AC_SUBST([SCOREP_LLIBS])
 
 SCOREP_LFLAG=
 for item in `scorep-config --ldflags`; do
   SCOREP_LFLAG+=" $item"
 done
-AC_SUBST([SCOREP_LFLAG])
 
 simd_H_FILES=
 for item in `ls compression/cpusimd/include/*h`; do
   simd_H_FILES+=" $item"
 done
+
+AC_SUBST([SIMD_OBJECTS])
+AC_SUBST([g500_OBJECTS])
+AC_SUBST([SCOREP_CPPFLAG])
+AC_SUBST([SCOREP_LLIBS])
+AC_SUBST([SCOREP_LFLAG])
 AC_SUBST([simd_H_FILES])
 
-# SCOREP_CPPFLAG=`scorep-config --cppflags`
-# AC_SUBST([SCOREP_CPPFLAG])
+### Check for required libraries.
 #
-# SCOREP_LLIBS=`scorep-config --libs`
-# AC_SUBST([SCOREP_LLIBS])
-#
-# SCOREP_LFLAG=`scorep-config --ldflags`
-# AC_SUBST([SCOREP_LFLAG])
-#
-# simd_H_FILES=`ls compression/cpusimd/include/*h`
-# AC_SUBST([simd_H_FILES])
+
+LX_FIND_MPI
+AC_LANG_PUSH([C++])
+LX_FIND_MPI
+AC_LANG_POP([C++])
+AX_CHECK_CUDA
+AX_PTHREAD
+AX_OPENMP
+AX_EXT
+AX_CHECK_SCOREP
+AX_CXX_COMPILE_STDCXX_11(,[mandatory])
+AX_CHECK_CL
+# if test "X$no_cl" = "Xyes"; then
+#     AC_MSG_FAILURE([You need OpenCL])
+# fi
+
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

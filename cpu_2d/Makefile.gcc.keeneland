@@ -306,7 +306,7 @@ endif
 #    CPU with SSE4 support is required. CPU with AVX support is recommended.
 #
 ifeq ($(enable_simd_compression), "yes")
-	DEFINES += -D_SIMDCOMPRESS
+	DEFINES += -D_SIMD
 	INCPATH := -I. -Icompression/cpusimd/include
 	HEADERS := $(shell ls compression/cpusimd/include/*h)
 else

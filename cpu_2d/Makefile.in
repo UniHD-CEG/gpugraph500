@@ -41,29 +41,30 @@ host_triplet = @host@
 @COMPRESSION_TRUE@@DEBUG_COMPRESSION_TRUE@am__append_3 = -D_COMPRESSIONDEBUG
 @COMPRESSION_TRUE@@VERIFY_COMPRESSION_TRUE@am__append_4 = -D_COMPRESSIONVERIFY
 
-### Compression Block
+### Compression
 #
 
 # 1. CPU/SIMD Compression.
-#    CPU with SSE4 support is required. CPU with AVX support is recommended.
-#
-@COMPRESSION_TRUE@@SIMD_TRUE@am__append_5 = -D_SIMDCOMPRESS
+#  - SSE4 is required.
+#  - AVX is recommended.
+@COMPRESSION_TRUE@@SIMD_TRUE@am__append_5 = -D_SIMD
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
 	config.guess config.sub install-sh ltmain.sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_compile_flag.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_cl.m4 \
+	$(top_srcdir)/m4/ax_check_compile_flag.m4 \
 	$(top_srcdir)/m4/ax_check_cuda.m4 \
+	$(top_srcdir)/m4/ax_check_scorep.m4 \
 	$(top_srcdir)/m4/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/ax_ext.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_avx_xgetbv.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_cpuid.m4 \
 	$(top_srcdir)/m4/ax_openmp.m4 $(top_srcdir)/m4/ax_pthread.m4 \
 	$(top_srcdir)/m4/ax_require_defined.m4 \
-	$(top_srcdir)/m4/cuda-check.m4 $(top_srcdir)/m4/lx_find_mpi.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/lx_find_mpi.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -100,12 +101,13 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CL_CFLAGS = @CL_CFLAGS@
+CL_LIBS = @CL_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CUDA_CFLAGS = @CUDA_CFLAGS@
 CUDA_LDFLAGS = @CUDA_LDFLAGS@
 CUDA_LIBDIR = @CUDA_LIBDIR@
-CUDA_LIBS = @CUDA_LIBS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
@@ -153,14 +155,17 @@ PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 SCOREP_CPPFLAG = @SCOREP_CPPFLAG@
+SCOREP_EXEC = @SCOREP_EXEC@
 SCOREP_LFLAG = @SCOREP_LFLAG@
 SCOREP_LLIBS = @SCOREP_LLIBS@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SIMD_FLAGS = @SIMD_FLAGS@
 SIMD_OBJECTS = @SIMD_OBJECTS@
 STRIP = @STRIP@
 VERSION = @VERSION@
+XMKMF = @XMKMF@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -224,6 +229,9 @@ DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @OPTIMIZATION_O1_TRUE@o_level = -O1
 @OPTIMIZATION_O2_TRUE@o_level = -O2
 @OPTIMIZATION_O3_TRUE@o_level = -O3
+
+### Dynamic variables
+#
 @OPTIMIZATION_O4_TRUE@o_level = -O3 -ffast-math
 @DEBUGGING_TRUE@o_level_nvcc = -O0
 @OPTIMIZATION_O0_TRUE@o_level_nvcc = -O0
@@ -241,11 +249,13 @@ DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @OPENMP_ON_CUDA_FALSE@@OPENMP_ON_OTHERS_FALSE@@SCOREP_TRUE@THREADS = none
 @OPENMP_ON_CUDA_FALSE@@OPENMP_ON_OTHERS_TRUE@@SCOREP_TRUE@THREADS = omp
 
-### Instrumentation with Score-P
+### Instrumentation. Score-P
 #
 @OPENMP_ON_CUDA_TRUE@@SCOREP_TRUE@THREADS = omp
 @SCOREP_TRUE@scorep_instrumentation_flag = --user --cuda --mpp=mpi --thread=$(THREADS) --nopdt --online-access --instrument-filter=\"filter.scorep\"
 @SCOREP_TRUE@SCOREP_INSTRUMENTATION = -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
+@SCOREP_TRUE@LDFLAGS_SCOREP = @SCOREP_LFLAG@
+@SCOREP_TRUE@LLIBS_SCOREP = @SCOREP_LLIBS@
 @SCOREP_FALSE@libcudart_static_path = @CUDA_LDFLAGS@
 @SCOREP_FALSE@libcudart_static_flag = -lcudart
 @OPENMP_ON_CUDA_TRUE@CUDA_OPENMP = -fopenmp
@@ -257,9 +267,8 @@ DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @COMPRESSION_TRUE@@SIMD_TRUE@INCPATH = -I. -Icompression/cpusimd/include
 @COMPRESSION_TRUE@@SIMD_FALSE@g500_HEADER_LIST = 
 @COMPRESSION_TRUE@@SIMD_TRUE@g500_HEADER_LIST = @simd_H_FILES@
-# 2. XXX/XXXX Compression.
+# 2. XXXX Compression.
 # ...
-#
 @CUDA_TRUE@DEFINE_CUDA = -D_CUDA
 @CUDA_FALSE@bfs_object = cpubfs_bin.o
 @CUDA_TRUE@bfs_object = cuda_bfs_cuda.o
@@ -268,29 +277,22 @@ DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @DEBUGGING_TRUE@DEBUG_FLAG = -g
 @DEBUGGING_TRUE@NVCC_DEBUG_FLAGS = -DTHRUST_DEBUG
 
-### Compiler/ Linker options: C, C++, MPI, CUDA Flags and Libs
+### Compiler options: C, C++, MPI, CUDA Flags and Libs
 #
 MPICFLAGS = ${arch} -std=c99 -pedantic -m64 -mfpmath=sse $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) -Wall -Wextra
 MPICXXFLAGS = ${arch} -std=c++11 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) -Wall -Wextra
 NVCXXFLAGS = $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
-LLIBS = @SCOREP_LLIBS@ $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
-AM_LDFLAGS = -m64 @SCOREP_LFLAG@ $(OPENMP) -Wl,$(o_level)
+LLIBS = $(LLIBS_SCOREP) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
+AM_LDFLAGS = -m64 $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
 AM_CXXFLAGS = ${arch} -std=c++11  -Weffc++ -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) -Wall -Wextra
 AM_CFLAGS = ${arch} -std=c99 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) -Wall -Wextra
-
-# FIXME: text NVCC
+# FIXME: test NVCC
 NVCXX = $(NVCC)
-@SIMD_FALSE@COMPRESSION_OBJECTS = "FIXME"
-
-# AM_CC=$(MPICC)
-# AM_CXX=$(MPICXX)
-# AM_F77=$(MPIF77)
-# AM_LD=$(PROFILER) $(MPICXX)
+AM_LD = $(PROFILER) $(MPICXX)
+@SIMD_FALSE@COMPRESSION_OBJECTS = "ADD_MORE_TYPES_HERE"
 
 ### List of sources to compile
 #
-
-# SOURCES = main.cpp generator/utils.c generator/splittable_mrg.c generator/make_graph.c generator/graph_generator.c $(bfs_implementation) validate/onesided.c validate/onesided_emul.c bitlevelfunctions.cpp
 @SIMD_TRUE@COMPRESSION_OBJECTS = @SIMD_OBJECTS@
 @COMPRESSION_FALSE@g500_OBJECT_LIST = $(bfs_object) @g500_OBJECTS@
 @COMPRESSION_TRUE@g500_OBJECT_LIST = $(COMPRESSION_OBJECTS) $(bfs_object) @g500_OBJECTS@
@@ -642,6 +644,7 @@ uninstall-am:
 
 ### Make/ Build rules
 #
+
 # Clean all files that were generated by bootstrap.sh or autoscan
 maintainer-clean-local:
 	@echo "--- Cleaning" ; \
@@ -774,7 +777,7 @@ cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 @SIMD_TRUE@	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"`$(MPICXX) -compile_info --showme:compile | sed -e 's,-compile_info,,' -e 's,--showme:compile,,' -e 's,g++,,' -e 's,icpc,,' -e 's,-pthread,,'`" -std=c++11 --compiler-options -fno-strict-aliasing -m64 $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" -std=c++11 --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 
@@ -785,8 +788,7 @@ g500:  $(g500_OBJECT_LIST)
 	@echo "============================================================================"
 	@echo ""
 	@echo "--- Linking"
-	$(Q)$(LD) $(LFLAGS) -o $@ $(g500_OBJECT_LIST) $(OBJCOMP) $(LLIBS)
-	echo $(LD) $(LFLAGS) -o $@ $(g500_OBJECT_LIST) $(OBJCOMP) $(LLIBS)
+	$(Q)$(AM_LD) $(AM_LDFLAGS) -o $@ $(g500_OBJECT_LIST) $(LLIBS)
 	@echo "    MPICXX    $@"
 
 clean-local:
@@ -795,9 +797,9 @@ clean-local:
 	@echo "== Cleaning"
 	@echo "============================================================================"
 	@echo ""
+	@echo "--- Cleaning"
 	$(Q)rm -rf *.o $(g500_OBJECT_LIST) 2> /dev/null
 	$(Q)rm -rf *~ core *.core g500 2> /dev/null
-	@echo "--- Cleaning"
 
 .PHONY: g500 clean-local
 

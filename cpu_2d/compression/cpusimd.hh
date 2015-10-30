@@ -1,7 +1,7 @@
 #ifndef BFS_MULTINODE_CPUSIMD_COMPRESSION_H
 #define BFS_MULTINODE_CPUSIMD_COMPRESSION_H
 
-#ifdef _SIMDCOMPRESS
+#ifdef _SIMD
 
 #include "compression.hh"
 #include "codecfactory.h"
@@ -221,5 +221,5 @@ inline string CpuSimd<T>::name() const
 }
 
 
-#endif // _SIMDCOMPRESS
+#endif // _SIMD
 #endif // BFS_MULTINODE_CPUSIMD_COMPRESSION_H

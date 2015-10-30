@@ -6,8 +6,8 @@
 /* Support AVX (Advanced Vector Extensions) instructions */
 #undef HAVE_AVX
 
-/* Define if CUDA is installed */
-#undef HAVE_CUDA
+/* Define to 1 if you have the <CL/cl.h> header file. */
+#undef HAVE_CL_CL_H
 
 /* define if the compiler supports basic C++11 syntax */
 #undef HAVE_CXX11
@@ -39,6 +39,9 @@
 
 /* Define to 1 if you have MPI libs and headers. */
 #undef HAVE_MPI
+
+/* Define to 1 if you have the <OpenCL/cl.h> header file. */
+#undef HAVE_OPENCL_CL_H
 
 /* Define if OpenMP is enabled */
 #undef HAVE_OPENMP
@@ -112,6 +115,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <windows.h> header file. */
+#undef HAVE_WINDOWS_H
 
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL

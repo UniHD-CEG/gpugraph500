@@ -241,7 +241,7 @@ int main(int argc, char **argv)
         printf("Global matrix redistribution done!\n");
     }
 
-#ifdef _SIMDCOMPRESS
+#ifdef _SIMD
     // Check Matrix. Values lower than 32 bits are needed for SIMDcompression
     if (rank == 0)
     {

@@ -32,15 +32,32 @@
 #
 #####
 
+dnl Modified 2015 by uni-heidelberg.de
+dnl Sets as default the detected PATH's version
+
 AC_DEFUN([AX_CHECK_CUDA], [
 
+
+[DEFAULT_CUDA_PATH=`which nvcc | sed -e 's,/bin/nvcc$,,' 2> /dev/null`]
+if test ! -d ${DEFAULT_CUDA_PATH}; then
+	DEFAULT_CUDA_PATH="/usr/local/cuda"
+fi
+
 # Provide your CUDA path with this
-AC_ARG_WITH(cuda, [  --with-cuda=PREFIX      Prefix of your CUDA installation], [cuda_prefix=$withval], [cuda_prefix="/usr/local/cuda"])
+AC_ARG_WITH(cuda, AS_HELP_STRING([--with-cuda=<path>|yes|no],[
+				Use CUDA library.
+				If argument is no, you do not have the library installed on your machine.
+				If argument is yes or <empty> that means the library is reachable with the standard
+				search path "/usr" or "/usr/local"  (set as default).
+				Otherwise you give the <path> to the directory which contain the library.
+				]),
+	[cuda_prefix=$withval],
+	[cuda_prefix="${DEFAULT_CUDA_PATH}"])
 
 # Setting the prefix to the default if only --with-cuda was given
 if test "$cuda_prefix" == "yes"; then
 	if test "$withval" == "yes"; then
-		cuda_prefix="/usr/local/cuda"
+		cuda_prefix="${DEFAULT_CUDA_PATH}"
 	fi
 fi
 
@@ -120,5 +137,5 @@ elif test "x$enable_cuda" = xyes && test x$VALID_CUDA = xno ; then
 	AC_MSG_ERROR([Cannot build CUDA bindings. Check errors])
 fi
 
-
+unset DEFAULT_CUDA_PATH
 ])

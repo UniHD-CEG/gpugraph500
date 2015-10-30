@@ -6,7 +6,7 @@
 #include <map>
 #include <string>
 #include "compression.hh"
-#ifdef _SIMDCOMPRESS
+#ifdef _SIMD
 #include "cpusimd.hh"
 #endif
 #include "nocompression.hh"
@@ -22,7 +22,7 @@ static map<string, shared_ptr<Compression<T>>> initializeCompressfactory()
 {
     map <string, shared_ptr<Compression<T>>> schemes;
 
-#ifdef _SIMDCOMPRESS // CPU-SIMD
+#ifdef _SIMD // CPU-SIMD
     schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
 #else
 #ifdef _SIMTCOMPRESS // GPU-SIMT

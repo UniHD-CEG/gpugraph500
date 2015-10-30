@@ -168,7 +168,7 @@ enable_compression_debug                  :="no"
 use_cuda                                  :="yes"
 debug                                     :="no"
 debug_code                                :="no"
-quiet_output                              :="yes"
+quiet_output                              :="no"
 code_optimization_level                   :="O4"
 code_optimization_flags                   :=-funroll-loops -flto
 
@@ -327,7 +327,7 @@ endif
 #    CPU with SSE4 support is required. CPU with AVX support is recommended.
 #
 ifeq ($(enable_simd_compression), "yes")
-	DEFINES += -D_SIMDCOMPRESS
+	DEFINES += -D_SIMD
 	INCPATH := -I. -Icompression/cpusimd/include
 	HEADERS := $(shell ls compression/cpusimd/include/*h)
 else
