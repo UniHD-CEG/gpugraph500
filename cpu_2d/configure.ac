@@ -3,7 +3,7 @@
 
 
 AC_PREREQ([2.68])
-AC_INIT([graph500-bfs], [1.1])
+AC_INIT([bfs-g500], [1.1])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([globalbfs.hh])
 AC_CONFIG_HEADERS([config.h])
@@ -31,7 +31,7 @@ AC_ARG_ENABLE([compression],
     AS_HELP_STRING([--enable-compression],
       [Enabled data compression through the network.
       This option is available only when --enable-cuda is active (default).
-      Enabled by default]),
+      Enabled by default.]),
     [enable_compression=$enableval],
     [enable_compression=yes])
 
@@ -43,7 +43,7 @@ AC_ARG_ENABLE([ptxas_otimization],
       [Selects whether PTXAS will be optimized or not.
       This option will only be used if --enable-cuda is present (default).
       The default PTXAS optimization is -O3.
-      Disabled by default]),,
+      Disabled by default.]),,
     [enable_ptxas_otimization=no])
 
 # bfs-basic-profiling
@@ -52,7 +52,7 @@ AC_ARG_ENABLE([ptxas_otimization],
 AC_ARG_ENABLE([bfs-basic-profiling],
     AS_HELP_STRING([--enable-bfs-basic-profiling],
       [Displays statistics for each BFS run.
-      Enabled by default]),,
+      Enabled by default.]),,
     [enable_bfs_basic_profiling=no])
 
 # other-basic-profiling
@@ -61,7 +61,7 @@ AC_ARG_ENABLE([bfs-basic-profiling],
 AC_ARG_ENABLE([other-basic-profiling],
     AS_HELP_STRING([--enable-other-basic-profiling],
       [Displays graph500 default statistics.
-      Enabled by default]),,
+      Enabled by default.]),,
     [enable_other_basic_profiling=yes])
 
 # openmp-on-cudafiles
@@ -71,7 +71,7 @@ AC_ARG_ENABLE([openmp-on-cudafiles],
     AS_HELP_STRING([--enable-openmp-on-cudafiles],
       [Selects whether or not OpenMP will be enabled.
       This option applies only to CUDA files.
-      Disabled by default]),,
+      Disabled by default.]),,
     [enable_openmp_on_cudafiles=no])
 
 # openmp-on-others
@@ -81,7 +81,7 @@ AC_ARG_ENABLE([openmp-on-others],
     AS_HELP_STRING([--enable-openmp-on-others],
       [Selects whether or not OpenMP will be enabled.
       This option applies to any non-CUDA file.
-      Disabled by default]),,
+      Disabled by default.]),,
     [enable_openmp_on_others=no])
 
 # scorep
@@ -90,7 +90,7 @@ AC_ARG_ENABLE([openmp-on-others],
 AC_ARG_ENABLE([scorep],
     AS_HELP_STRING([--enable-scorep],
       [Enable instrumentation with Scalasca/ScoreP.
-      Disabled by default]),,
+      Disabled by default.]),,
     [enable_scorep=no])
 
 # avx
@@ -102,7 +102,7 @@ AC_ARG_ENABLE([avx],
       SSE2 will be used instead if --enable-compression is enabled (default),
       and either this option is disabled (--disable-avx), or AVX instructions
       are not not supported by hardware.
-      Enabled by default]),,
+      Enabled by default.]),,
     [enable_avx=yes])
 
 # enable_simd
@@ -114,7 +114,7 @@ AC_ARG_ENABLE([simd],
     AS_HELP_STRING([--enable-simd],
       [MPI packets will be sent compressed using the SIMDCompression library
       This option is only active if --enable-compression is selected.
-      Enabled by default]),,
+      Enabled by default.]),,
     [enable_simd=yes])
 
 # enable_simt
@@ -124,7 +124,7 @@ AC_ARG_ENABLE([simt],
     AS_HELP_STRING([--enable-simt],
       [Use CUDA implementation of compression.
       Not implemented yet.
-      Disabled by default]),,
+      Disabled by default.]),,
     [enable_simt=no])
 
 # verify-compression
@@ -134,7 +134,7 @@ AC_ARG_ENABLE([verify-compression],
     AS_HELP_STRING([--enable-verify-compression],
       [Sends both compressed and decompressed data through
       the network. Checks decompression after transmission.
-      Disabled by default]),,
+      Disabled by default.]),,
     [enable_verify_compression=no])
 
 # debug-compression
@@ -143,7 +143,7 @@ AC_ARG_ENABLE([verify-compression],
 AC_ARG_ENABLE([debug-compression],
     AS_HELP_STRING([--enable-debug-compression],
       [Shows statistics of compression rate, time of compression, codec, ETC.
-      Disabled by default]),,
+      Disabled by default.]),,
     [enable_debug_compression=no])
 
 # cuda
@@ -153,7 +153,7 @@ AC_ARG_ENABLE([cuda],
     AS_HELP_STRING([--enable-cuda],
       [Use CUDA implementation of the BFS runs.
       Requires hardware support.
-      Enabled by default]),,
+      Enabled by default.]),,
     [enable_cuda=yes])
 
 # debug
@@ -162,7 +162,7 @@ AC_ARG_ENABLE([cuda],
 AC_ARG_ENABLE([debug],
     AS_HELP_STRING([--enable-debug],
       [Provides extra traces of runtime variables.
-      Disabled by default]),,
+      Disabled by default.]),,
     [enable_debug=no])
 
 # debugging
@@ -173,7 +173,7 @@ AC_ARG_ENABLE([debugging],
       [Enables -g option on compiler (debugging).
       when enabled, --enable-code-optimization will be set to O0 and
       --optimization-flags will be set to '' (empty).
-      Disabled by default]),,
+      Disabled by default.]),,
     [enable_debugging=no])
 
 # quiet_output
@@ -182,18 +182,18 @@ AC_ARG_ENABLE([debugging],
 #   Description: ""
 AC_ARG_ENABLE([quiet],
     AS_HELP_STRING([--enable-quiet],
-      [Disable compile mensages when running make]),,
+      [Disable compile mensages when running make.]),,
     [enable_quiet=no])
 
 # code-optimization
 #   Values: O4 | O3 | O2 | O1 | O0
 #   Default value:
 AC_ARG_ENABLE(code-optimization,
-AS_HELP_STRING([--enable-code-optimization=O0|O1|O2|O3|O4],
+AS_HELP_STRING([--enable-code-optimization=O0 | O1 | O2 | O3 | O4],
   [Compiler optimization level. O0=none, O4=maximum
   Optimization O0 disables code optimization.
   Optimization O4 equals -O3 -ffast-math. This may be safe on most compilers.
-  Default optimization is O4]),
+  Default optimization is O4.]),
 [case "${enableval}" in
   O0) enable_code_optimization=O0 ;;
   O1) enable_code_optimization=O1 ;;
@@ -225,11 +225,11 @@ esac],[enable_nvidia_architecture=fermi])
 #    Format: value value value (separated by spaces)
 #    External links:
 #         - GNU compiler: https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options
-AC_ARG_VAR(OPTIMIZATION_FLAGS,AS_HELP_STRING([--optimization-flags="-flag1 -flag2 ETC"],
+AC_ARG_VAR(OPTIMIZATION_FLAGS,AS_HELP_STRING([OPTIMIZATION_FLAGS="-flag1 -flag2 ETC" (separated by spaces).],
   [Optimization flags added to the compiler.
   Default values are safe on most compilers.
   When the option --enable-debugging is active, this flags are disabled.
-  Default is -loops -flto]))
+  Default is -loops -flto.]))
 AS_IF([test "x$OPTIMIZATION_FLAGS" = x], [OPTIMIZATION_FLAGS="-loops -flto"])
 AS_IF([test "x$enable_debugging" = xyes], [OPTIMIZATION_FLAGS=""])
 
@@ -343,11 +343,11 @@ AC_LANG_PUSH([C++])
 LX_FIND_MPI
 AC_LANG_POP([C++])
 AX_CHECK_CUDA
-AX_PTHREAD
-AX_OPENMP
 AX_EXT
 # FIXME: if compression  SSE2 req
 # FIXME: if --enable-avx select greatest extension
+AX_PTHREAD
+AX_OPENMP
 AX_CHECK_CL
 # if test "X$no_cl" = "Xyes"; then
 #     AC_MSG_FAILURE([You need OpenCL])

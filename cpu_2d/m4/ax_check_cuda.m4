@@ -44,10 +44,9 @@ if test ! -d ${DEFAULT_CUDA_PATH}; then
 fi
 
 # Provide your CUDA path with this
-AC_ARG_WITH(cuda, AS_HELP_STRING([--with-cuda=<path>|yes|no],[
+AC_ARG_WITH(cuda, AS_HELP_STRING([--with-cuda=<path>],[
 				Use CUDA library.
-				If argument is no, you do not have the library installed on your machine.
-				If argument is yes or <empty> that means the library is reachable with the standard
+				If argument is <empty> that means the library is reachable with the standard
 				search path "/usr" or "/usr/local"  (set as default).
 				Otherwise you give the <path> to the directory which contain the library.
 				]),
