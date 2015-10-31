@@ -1,139 +1,6 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-# nvidia_architecture
-#   Values: fermi | kepler | maxwell | auto
-#   Default value: auto
-#   Description: "use all for generic code: Fermi and Kepler.
-#
-# nvidia_ptxas_otimize
-#   Values: yes | no
-#   Default value: no
-#   Description: "enables -O3 optimization on ptax cuda regiters"
-#
-# openmp_on_cuda
-#   Values: yes | no
-#   Default value: no
-#   Description: "Hybrid execution mode. OpenMP threads are added to
-#  				  BFSruns processed with cuda"
-#
-# openmp_on_other_compilers
-#   Values: yes | no
-#   Default value: no
-#   Description: "Hybrid execution mode. OpenMP threads are added to
-#  				  other high O() code"
-#
-# manual_profiler_cuda
-#   Values: yes | no
-#   Default value: no
-#   Description: "prints out information on initialization"
-#
-# manual_profiler_other_compilers
-#   Values: yes | no
-#   Default value: no
-#   Description: "prints out results/ statistics at the end"
-#
-# scorep_profiler_enable
-#   Values: yes | no
-#   Default value: no
-#   Description: "is scorep has been installed, enable it on code"
-#
-# scorep_profiler_automatic_instrument
-#   Values: yes | no
-#   Default value: yes
-#   Description: "setting this option to no, manual instrumentation is enabled.
-#  				  Thus, the zones to be instrumented will be the currently
-#  				  added zones using code wrappers (i.e: globalbfs.hh file)"
-# 				  https://silc.zih.tu-dresden.de/scorep-current/html/instrumentation.html#manual_instrumentation
-#
-# scorep_custom
-#   Values: yes | no
-#   Default value: yes
-#   Description: "use custom compiled scorep instead of systems one"
-#
-# scorep_custom_basedir
-#   Values: path
-#   Default value: CHANGE_ME
-#   Description: "see custom_openmpi_basedir option above"
-#
-# use_avx_instructions
-#   Values: yes | no
-#   Default value: yes
-#   Description: "CPU SSExx and AMD compatible AVX will be used.
-#   				Required for SIMDcompression librasy"
-#
-# enable_compression
-#   Values: yes | no
-#   Default value: yes
-#   Description: "Enables any type of compression through the network. Switch this option
-#   				to "no" to disable completely compression. This option requires that
-#   				either enable_simd_compression (CPU) or enable_simd_compression (GPU)
-#   				are enabled.
-#
-# enable_compression_debug
-#   Values: yes | no
-#   Default value: no
-#   Description: "shows statistics of compression rate, time of compression
-#   			  decompression fot the compression schema used (cpusimd, gpusimt, etc),
-#   			  and for each codec (in the case id at Lemire's simdcompress) if available."
-#
-# enable_compression_verify
-#   Values: yes | no
-#   Default value: no
-#   Description: "sends both compressed, and decompressed data through
-#   			  the network. Checks decompression at peer node. This option
-#   			  impacts severely on performance since the original Frontier Queue
-#   			  has to be transmitted along with the compressed one."
-#
-# enable_simd_compression
-#   Values: yes | no
-#   Default value: yes
-#   Description: "MPI packets will be sent compressed by using
-#   			  D. Lemire SIMDCompression library"
-#   External links:
-#   			- https://github.com/lemire/SIMDCompressionAndIntersection
-#
-# debug
-#   Values: yes | no
-#   Default value:
-#   Description: "Provides extra data in runtime execution.
-#  				recorded in slurm-xx.out file"
-#
-# quiet_output
-#   Values: yes | no
-#   Default value: no
-#   Description: "Disable verbose on Make command execution"
-#
-# use_cuda
-#   Values: yes | no
-#   Default value: yes
-#   Description: "use CUDA implementation for the BFS algorithm instead of CPU"
-#
-# code_optimization_level
-#   Values: O4 | O3 | O2 | O1 | O0
-#   Default value:
-#   Description: "Compiler optimization level. O0=none, O4=maximum"
-#
-# code_optimization_flags
-#    Values: -funroll-loops -flto -finline-functions -funswitch-loops -fpredictive-commoning
-#            -fgcse-after-reload -ftree-vectorize -ftree-partial-pre -fipa-cp-clone ...
-#
-#    Default value: -funroll-loops -flto (For GNU's version of Makefile)
-#    Format: value value value (separated by spaces)
-#    Description: "Optimization flags added to compiler"
-#    External links:
-#    			- GNU compiler: https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options
-#
-# debug_code
-#   Values: yes | no
-#   Default value: no
-#   Description: "Enables symbol inclusion in the binary (compiler option -g).
-#   				Disables optimizations (compiler-O0) and removes code_optimization_flags.
-#   				It is useful to run this option with Valgrind in the runtime Test-file
-#   				for small SLURM grids scripts/debugger.sh (run from eval/) will wrap the
-#   				executable in MPI and SLURM"
-
-
 
 AC_PREREQ([2.68])
 AC_INIT([graph500-bfs], [1.1])
@@ -141,11 +8,6 @@ AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([globalbfs.hh])
 AC_CONFIG_HEADERS([config.h])
 
-#[scorep_custom_basedir=/home/jromera/scorep]
-#[scorep_profiler_manual_instrumentation=yes]
-#[scorep_custom=yes]
-# AM_CONDITIONAL([SCOREP_CUSTOM], [test x"$scorep_custom" = xyes])
-# AM_CONDITIONAL([SCOREP_PROFILER_MANUAL_INSTRUMENTATION], [test x"$scorep_profiler_manual_instrumentation" = xyes])
 
 ## Checks for programs.
 #
@@ -159,90 +21,178 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 
 
-# [compression_enabled=yes]
+### Commandline arguments
+# Use ./configure --help to view
+
+# compression
+#   Values: yes | no
+#   Default value: yes
 AC_ARG_ENABLE([compression],
-    AS_HELP_STRING([--enable-compression], [aa]),
+    AS_HELP_STRING([--enable-compression],
+      [Enabled data compression through the network.
+      This option is available only when --enable-cuda is active (default)
+      Enabled by default]),
     [enable_compression=$enableval],
     [enable_compression=yes])
 
-# [nvidia_ptxas_otimize=no]
+# ptxas_otimization
+#   Values: yes | no
+#   Default value: no
 AC_ARG_ENABLE([ptxas_otimization],
-    AS_HELP_STRING([--enable-ptxas_otimization], [aa]),,
+    AS_HELP_STRING([--enable-ptxas_otimization],
+      [Selects whether PTXAS will be optimizedo or not
+      This option will only be used if --enable-cuda is present (default)
+      Then default PTXAS optimization will be -O3
+      Disabled by default]),,
     [enable_ptxas_otimization=no])
 
-# [manual_profiler_cuda=no]
-AC_ARG_ENABLE([cuda-basic-profiling],
-    AS_HELP_STRING([--enable-cuda-basic-profiling], [aa]),,
-    [enable_cuda_basic_profiling=no])
+# bfs-basic-profiling
+#   Values: yes | no
+#   Default value: no
+AC_ARG_ENABLE([bfs-basic-profiling],
+    AS_HELP_STRING([--enable-bfs-basic-profiling],
+      [Displays statistics for each BFS run.
+      Enabled by default]),,
+    [enable_bfs_basic_profiling=no])
 
-# [manual_profiler_other_compilers=yes]
-AC_ARG_ENABLE([others-basic-profiling],
-    AS_HELP_STRING([--enable-others-basic-profiling], [aa]),,
-    [enable_others_basic_profiling=yes])
+# other-basic-profiling
+#   Values: yes | no
+#   Default value: no
+AC_ARG_ENABLE([other-basic-profiling],
+    AS_HELP_STRING([--enable-other-basic-profiling],
+      [Displays graph500 default statistics.
+      Enabled by default]),,
+    [enable_other_basic_profiling=yes])
 
-# [openmp_on_cuda=no]
+# openmp-on-cudafiles
+#   Values: yes | no
+#   Default value: no
 AC_ARG_ENABLE([openmp-on-cudafiles],
-    AS_HELP_STRING([--enable-openmp-on-cudafiles], [aa]),,
+    AS_HELP_STRING([--enable-openmp-on-cudafiles],
+      [Selects whether OpenMP will be enabled.
+      This option applies to CUDA files
+      Disabled by default]),,
     [enable_openmp_on_cudafiles=no])
 
-# [openmp_on_other_compilers=no]
+# openmp-on-others
+#   Values: yes | no
+#   Default value: no
 AC_ARG_ENABLE([openmp-on-others],
-    AS_HELP_STRING([--enable-openmp-on-others], [aa]),,
+    AS_HELP_STRING([--enable-openmp-on-others],
+      [Selects whether OpenMP will be enabled.
+      This option applies to other files (non-CUDA)
+      Disabled by default]),,
     [enable_openmp_on_others=no])
 
-# [scorep_profiler_enable=yes]
+# scorep
+#   Values: yes | no
+#   Default value: no
 AC_ARG_ENABLE([scorep],
-    AS_HELP_STRING([--enable-scorep], [aa]),,
+    AS_HELP_STRING([--enable-scorep],
+      [Enable instrumentation with Scalasca/ScoreP
+      Disabled by default]),,
     [enable_scorep=no])
 
-# [use_avx_instructions=yes]
+# avx
+#   Values: yes | no
+#   Default value: yes
 AC_ARG_ENABLE([avx],
-    AS_HELP_STRING([--enable-avx], [aa]),,
+    AS_HELP_STRING([--enable-avx],
+      [Whether or not use AVX instructions.
+      SSE2 will be used instead if --enable-compression is enabled (default)
+      and either this option is disabled (--disable-avx), or AVX instructions
+      is not not supported by hardware.
+      Enabled by default]),,
     [enable_avx=yes])
 
-# [simd_compression_enabled=yes]
+# enable_simd
+#   Values: yes | no
+#   Default value: yes
+#   External links:
+#         - https://github.com/lemire/SIMDCompressionAndIntersection
 AC_ARG_ENABLE([simd],
-    AS_HELP_STRING([--enable-simd], [aa]),,
+    AS_HELP_STRING([--enable-simd],
+      [MPI packets will be sent compressed by using SIMDCompression library
+      Ef --enable-compression is active (default) this option will be enabled
+      Enabled by default]),,
     [enable_simd=yes])
 
-# [simt_compression_enabled=no]
+# enable_simt
+#   Values: yes | no
+#   Default value: yes
 AC_ARG_ENABLE([simt],
-    AS_HELP_STRING([--enable-simt], [aa]),,
+    AS_HELP_STRING([--enable-simt],
+      [Compression implemented on CUDA
+      Not implemented yet.
+      Disabled by default]),,
     [enable_simt=no])
 
-# [enable_compression_verify=no]
+# verify-compression
+#   Values: yes | no
+#   Default value: no
 AC_ARG_ENABLE([verify-compression],
-    AS_HELP_STRING([--enable-verify-compression], [aa]),,
+    AS_HELP_STRING([--enable-verify-compression],
+      [Sends both compressed, and decompressed data through
+      the network. Checks decompression after transmission.
+      Disabled by default]),,
     [enable_verify_compression=no])
 
-# [enable_compression_debug=no]
+# debug-compression
+#   Values: yes | no
+#   Default value: no
 AC_ARG_ENABLE([debug-compression],
-    AS_HELP_STRING([--enable-debug-compression], [aa]),,
+    AS_HELP_STRING([--enable-debug-compression],
+      [Shows statistics of compression rate, time of compression, codec, ETC
+      Disabled by default]),,
     [enable_debug_compression=no])
 
-# [use_cuda=yes]
+# cuda
+#   Values: yes | no
+#   Default value: yes
 AC_ARG_ENABLE([cuda],
-    AS_HELP_STRING([--enable-cuda], [aa]),,
+    AS_HELP_STRING([--enable-cuda],
+      [Use CUDA implementation for the BFS runs.
+      Requires hardware support
+      Enabled by default]),,
     [enable_cuda=yes])
 
-# [debug=no]
+# debug
+#   Values: yes | no
+#   Default value:
 AC_ARG_ENABLE([debug],
-    AS_HELP_STRING([--enable-debug], [aa]),,
+    AS_HELP_STRING([--enable-debug],
+      [Provides extra messages about runtime variables.]),,
     [enable_debug=no])
 
-# [debug_code=no]
+# debugging
+#   Values: yes | no
+#   Default value: no
 AC_ARG_ENABLE([debugging],
-    AS_HELP_STRING([--enable-debugging], [aa]),,
+    AS_HELP_STRING([--enable-debugging],
+      [Enables -g option on compiler.
+      when enabled, --enable-code-optimization will be set to O0 and
+      --optimization-flags will be set to '' (empty)
+      Disabled by default]),,
     [enable_debugging=no])
 
-# [quiet_output=no]
+# quiet_output
+#   Values: yes | no
+#   Default value: no
+#   Description: ""
 AC_ARG_ENABLE([quiet],
-    AS_HELP_STRING([--enable-quiet], [aa]),,
+    AS_HELP_STRING([--enable-quiet],
+      [Disable compile mensages when running make]),,
     [enable_quiet=no])
 
-# [code_optimization_level=O4]
+# code-optimization
+#   Values: O4 | O3 | O2 | O1 | O0
+#   Default value:
 AC_ARG_ENABLE(code-optimization,
-AS_HELP_STRING([--enable-code-optimization], [aa]),
+AS_HELP_STRING([--enable-code-optimization=O0|O1|O2|O3|O4],
+  [Compiler optimization level. O0=none, O4=maximum
+  Optimization O0 disables code optimization.
+  Optimization O4 equals -O3 -ffast-math. This may be safe on most compilers.
+  Default optimization is O4]),
 [case "${enableval}" in
   O0) enable_code_optimization=O0 ;;
   O1) enable_code_optimization=O1 ;;
@@ -252,9 +202,14 @@ AS_HELP_STRING([--enable-code-optimization], [aa]),
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-code-optimization) ;;
 esac],[enable_code_optimization=O4])
 
-# [nvidia_architecture=fermi]
+# nvidia_architecture
+#   Values: fermi | kepler | auto
+#   Default value: fermi
+#   Description: "use all for generic code: Fermi and Kepler.
 AC_ARG_ENABLE(nvidia-architecture,
-AS_HELP_STRING([--enable-nvidia-architecture], [aa]),
+AS_HELP_STRING([--enable-nvidia-architecture=fermi|kepler|auto],
+  [Selects the NVIDIA architecture when --enable-cuda is selected (default)
+  If enabled without parameter, 'fermi' will be selected as default]),
 [case "${enableval}" in
   fermi) enable_nvidia_architecture=fermi ;;
   kepler) enable_nvidia_architecture=kepler ;;
@@ -262,9 +217,22 @@ AS_HELP_STRING([--enable-nvidia-architecture], [aa]),
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-nvidia-architecture) ;;
 esac],[enable_nvidia_architecture=fermi])
 
-# [code_optimization_flags=-funroll-loops -flto]
-AC_ARG_VAR(OPTIMIZATION_FLAGS,AS_HELP_STRING([--optimization-flags], [aa]))
+# code_optimization_flags
+#    Values: -funroll-loops -flto -finline-functions -funswitch-loops -fpredictive-commoning
+#            -fgcse-after-reload -ftree-vectorize -ftree-partial-pre -fipa-cp-clone ...
+#
+#    Default value: -funroll-loops -flto (For GNU's version of Makefile)
+#    Format: value value value (separated by spaces)
+#    External links:
+#         - GNU compiler: https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options
+AC_ARG_VAR(OPTIMIZATION_FLAGS,AS_HELP_STRING([--optimization-flags],
+  [Optimization flags added to compiler
+  Default values are safe on most compilers.
+  When the option --enable-debugging is active, this flags are disabled
+  Default is -loops -flto
+  (separated by spaces)]))
 AS_IF([test "x$OPTIMIZATION_FLAGS" = x], [OPTIMIZATION_FLAGS="-loops -flto"])
+AS_IF([test "x$enable_debugging" = xyes], [OPTIMIZATION_FLAGS=""])
 
 
 ### declare "precious" environment variables
@@ -293,8 +261,8 @@ AM_CONDITIONAL([NVIDIA_ARCHITECTURE_KEPLER], [test x"$enable_nvidia_architecture
 AM_CONDITIONAL([SCOREP], [test x"$enable_scorep" = xyes])
 AM_CONDITIONAL([OPENMP_ON_CUDA], [test x"$enable_openmp_on_cudafiles" = xyes])
 AM_CONDITIONAL([OPENMP_ON_OTHERS], [test x"$enable_openmp_on_others" = xyes])
-AM_CONDITIONAL([BASIC_PROFING_CUDA], [test x"$enable_cuda_basic_profiling" = xyes])
-AM_CONDITIONAL([BASIC_PROFING_OTHERS], [test x"$enable_thers_basic_profiling" = xyes])
+AM_CONDITIONAL([BASIC_PROFING_BFS], [test x"$enable_bfs_basic_profiling" = xyes])
+AM_CONDITIONAL([BASIC_PROFING_OTHER], [test x"$enable_other_basic_profiling" = xyes])
 AM_CONDITIONAL([DEBUG], [test x"$enable_debug" = xyes])
 AM_CONDITIONAL([DEBUGGING], [test x"$enable_debugging" = xyes])
 AM_CONDITIONAL([COMPRESSION], [test x"$enable_compression" = xyes])
@@ -306,10 +274,12 @@ AM_CONDITIONAL([QUIET_OUTPUT], [test x"$enable_quiet" = xyes])
 
 ### Checks for header files.
 #
+
 AC_CHECK_HEADERS([fcntl.h limits.h stddef.h sys/time.h])
 
 ### Checks for typedefs, structures, and compiler characteristics.
 #
+
 AC_HEADER_STDBOOL
 AC_C_INLINE
 AC_TYPE_INT32_T
@@ -325,6 +295,7 @@ AC_CHECK_TYPES([ptrdiff_t])
 
 ### Checks for library functions.
 #
+
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memmove memset select])
@@ -376,6 +347,8 @@ AX_CHECK_CUDA
 AX_PTHREAD
 AX_OPENMP
 AX_EXT
+# FIXME: if compression  SSE2 req
+# FIXME: if --enable-avx select greatest extension
 AX_CHECK_CL
 # if test "X$no_cl" = "Xyes"; then
 #     AC_MSG_FAILURE([You need OpenCL])
