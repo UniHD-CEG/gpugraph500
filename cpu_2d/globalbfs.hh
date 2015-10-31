@@ -27,10 +27,12 @@ using namespace std::chrono;
 #endif
 
 #ifdef _COMPRESSION
+#define NOMINMAX
 #include "compression/compressionfactory.hh"
 #endif
 
 using std::function;
+using std::min;
 using std::bind;
 using std::vector;
 using std::string;
