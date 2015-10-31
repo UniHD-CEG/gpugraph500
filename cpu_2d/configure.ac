@@ -346,12 +346,12 @@ AX_CHECK_CUDA
 AX_EXT
 # FIXME: if compression  SSE2 req
 # FIXME: if --enable-avx select greatest extension
-AX_PTHREAD
-AX_OPENMP
 AX_CHECK_CL
 # if test "X$no_cl" = "Xyes"; then
 #     AC_MSG_FAILURE([You need OpenCL])
 # fi
+AX_PTHREAD
+AX_OPENMP
 AX_CHECK_SCOREP
 
 
