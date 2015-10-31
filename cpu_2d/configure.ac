@@ -150,6 +150,10 @@ AC_CONFIG_HEADERS([config.h])
 ## Checks for programs.
 #
 AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX_11(,[mandatory])
+if test "X${HAVE_CXX11}" = "1"; then
+    AC_MSG_FAILURE([Your cxx compiler must comply with C++11 standard.])
+fi
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
@@ -373,7 +377,6 @@ AX_PTHREAD
 AX_OPENMP
 AX_EXT
 AX_CHECK_SCOREP
-AX_CXX_COMPILE_STDCXX_11(,[mandatory])
 AX_CHECK_CL
 # if test "X$no_cl" = "Xyes"; then
 #     AC_MSG_FAILURE([You need OpenCL])
