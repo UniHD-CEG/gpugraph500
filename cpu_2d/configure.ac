@@ -189,11 +189,11 @@ AC_ARG_ENABLE([quiet],
 #   Values: O4 | O3 | O2 | O1 | O0
 #   Default value:
 AC_ARG_ENABLE(code-optimization,
-AS_HELP_STRING([--enable-code-optimization=O0 | O1 | O2 | O3 | O4],
-  [Compiler optimization level. O0=none, O4=maximum
+AS_HELP_STRING([--enable-code-optimization=O0|O1|O2|O3|O4],
+  [Compiler optimization level. O0=none, O4=maximun
   Optimization O0 disables code optimization.
-  Optimization O4 equals -O3 -ffast-math. This may be safe on most compilers.
-  Default optimization is O4.]),
+  Optimization O4 equals to -O3 -ffast-math.
+  Default optimization is O4. Default optimization may be safe on most compilers.]),
 [case "${enableval}" in
   O0) enable_code_optimization=O0 ;;
   O1) enable_code_optimization=O1 ;;

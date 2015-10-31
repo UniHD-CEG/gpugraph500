@@ -14,6 +14,7 @@
 #include <string.h>
 #include <functional>
 #include <stdlib.h>
+#include <algorithm>
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
 #include "scorep/SCOREP_User.h"
@@ -175,7 +176,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 {
     MPI_Status status;
     int communicatorSize, communicatorRank, intLdSize, power2intLdSize, residuum;
-    int psize = mask_size;
+    const int psize = mask_size;
     int mtypesize = 8 * sizeof(MType);
     //step 1
     MPI_Comm_size(col_comm, &communicatorSize);
@@ -199,6 +200,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             }
 
             MPI_Recv(tmp, store.getLocColLength(), fq_tp_type, communicatorRank + 1, 1, col_comm, &status);
+            // set recived elements where the bit maps indicate it
             int p = 0;
             for (int i = 0; i < psize; ++i)
             {
@@ -371,24 +373,30 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             }
         }
     }
-    //Computation of displacements
+    // Computation of displacements
+    // It is based on the slice selection in the iterative part above.
+    // It tries to do it iterative insted of recursive.
     vector<int> sizes(communicatorSize);
     vector<int> disps(communicatorSize);
 
+    const unsigned int maskLengthRes = psize % (1<<intLdSize);
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
 
-    sizes[lastTargetNode] = ((psize) >> intLdSize) * mtypesize;
+    sizes[lastTargetNode] = (psize>>intLdSize) * mtypesize;
     disps[lastTargetNode] = 0;
 
     for (unsigned int slice = 1; slice < power2intLdSize; ++slice)
     {
-        unsigned int reversedSliceIDs = reverse(slice, intLdSize);
-        unsigned int targetNode = oldRank(reversedSliceIDs);
-        sizes[targetNode] = (psize >> intLdSize) * mtypesize;
-        disps[targetNode] = ((slice * psize) >> intLdSize) * mtypesize;
+        const unsigned int reversedSliceIDs = reverse(slice, intLdSize);
+        const unsigned int targetNode = oldRank(reversedSliceIDs);
+        sizes[targetNode] = ((psize>>intLdSize) + (((power2intLdSize-reversedSliceIDs-1) < maskLengthRes)? 1:0)) * mtypesize;
+        disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
         lastTargetNode = targetNode;
     }
+    sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
+                static_cast<int>(store.getLocColLength()-disps[lastTargetNode]));
+
     //nodes without a partial resulty
     int index;
     for (unsigned int node = 0; node < residuum; ++node)
@@ -430,10 +438,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
     {
         MType tmp = 0;
         int jindex, iindex = i * mtypesize;
-        for (long j = 0; j < mtypesize; ++j)
+        const long mask_word_end = std::min(mtypesize, store_col_length - iindex);
+        for (long j = 0; j < mask_word_end; ++j)
         {
             jindex = iindex + j;
-            if ((predecessor[jindex] != -1) && (jindex < store_col_length))
+            if ((predecessor[jindex] != -1)
             {
                 tmp |= 1 << j;
             }

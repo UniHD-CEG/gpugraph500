@@ -5,10 +5,11 @@
  */
 unsigned int reverse(unsigned int value, const int bitSize)
 {
-    unsigned int result = value; // r will be reversed bits of v; first get LSB of v
-    int bits = bitSize - 1;
+    unsigned int result = 0; // r will be reversed bits of v
+    int bits = bitSize;
 
-    for (value >>= 1; value; value >>= 1)
+    //first get LSB of v
+    for (; value; value >>= 1)
     {
         result <<= 1;
         result |= value & 1;

@@ -391,7 +391,7 @@ void CUDA_BFS::getBackOutqueue()
     numGpus = csr_problem->num_gpus;
 
 #ifdef _DEBUG
-    b40c::util::B40CPerror(bfsGPU->testOverflow(csr_problem));
+    b40c::util::B40CPerror(bfsGPU->testOverflow(*csr_problem));
 #endif
 
     //get length of next queues
