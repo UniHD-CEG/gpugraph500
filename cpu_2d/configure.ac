@@ -30,7 +30,7 @@ AC_PROG_INSTALL
 AC_ARG_ENABLE([compression],
     AS_HELP_STRING([--enable-compression],
       [Enabled data compression through the network.
-      This option is available only when --enable-cuda is active (default)
+      This option is available only when --enable-cuda is active (default).
       Enabled by default]),
     [enable_compression=$enableval],
     [enable_compression=yes])
@@ -40,9 +40,9 @@ AC_ARG_ENABLE([compression],
 #   Default value: no
 AC_ARG_ENABLE([ptxas_otimization],
     AS_HELP_STRING([--enable-ptxas_otimization],
-      [Selects whether PTXAS will be optimizedo or not
-      This option will only be used if --enable-cuda is present (default)
-      Then default PTXAS optimization will be -O3
+      [Selects whether PTXAS will be optimized or not.
+      This option will only be used if --enable-cuda is present (default).
+      The default PTXAS optimization is -O3.
       Disabled by default]),,
     [enable_ptxas_otimization=no])
 
@@ -69,8 +69,8 @@ AC_ARG_ENABLE([other-basic-profiling],
 #   Default value: no
 AC_ARG_ENABLE([openmp-on-cudafiles],
     AS_HELP_STRING([--enable-openmp-on-cudafiles],
-      [Selects whether OpenMP will be enabled.
-      This option applies to CUDA files
+      [Selects whether or not OpenMP will be enabled.
+      This option applies only to CUDA files.
       Disabled by default]),,
     [enable_openmp_on_cudafiles=no])
 
@@ -79,8 +79,8 @@ AC_ARG_ENABLE([openmp-on-cudafiles],
 #   Default value: no
 AC_ARG_ENABLE([openmp-on-others],
     AS_HELP_STRING([--enable-openmp-on-others],
-      [Selects whether OpenMP will be enabled.
-      This option applies to other files (non-CUDA)
+      [Selects whether or not OpenMP will be enabled.
+      This option applies to any non-CUDA file.
       Disabled by default]),,
     [enable_openmp_on_others=no])
 
@@ -89,7 +89,7 @@ AC_ARG_ENABLE([openmp-on-others],
 #   Default value: no
 AC_ARG_ENABLE([scorep],
     AS_HELP_STRING([--enable-scorep],
-      [Enable instrumentation with Scalasca/ScoreP
+      [Enable instrumentation with Scalasca/ScoreP.
       Disabled by default]),,
     [enable_scorep=no])
 
@@ -98,10 +98,10 @@ AC_ARG_ENABLE([scorep],
 #   Default value: yes
 AC_ARG_ENABLE([avx],
     AS_HELP_STRING([--enable-avx],
-      [Whether or not use AVX instructions.
-      SSE2 will be used instead if --enable-compression is enabled (default)
+      [Whether or not use AVX instruction set.
+      SSE2 will be used instead if --enable-compression is enabled (default),
       and either this option is disabled (--disable-avx), or AVX instructions
-      is not not supported by hardware.
+      are not not supported by hardware.
       Enabled by default]),,
     [enable_avx=yes])
 
@@ -112,8 +112,8 @@ AC_ARG_ENABLE([avx],
 #         - https://github.com/lemire/SIMDCompressionAndIntersection
 AC_ARG_ENABLE([simd],
     AS_HELP_STRING([--enable-simd],
-      [MPI packets will be sent compressed by using SIMDCompression library
-      Ef --enable-compression is active (default) this option will be enabled
+      [MPI packets will be sent compressed using the SIMDCompression library
+      This option is only active if --enable-compression is selected.
       Enabled by default]),,
     [enable_simd=yes])
 
@@ -122,7 +122,7 @@ AC_ARG_ENABLE([simd],
 #   Default value: yes
 AC_ARG_ENABLE([simt],
     AS_HELP_STRING([--enable-simt],
-      [Compression implemented on CUDA
+      [Use CUDA implementation of compression.
       Not implemented yet.
       Disabled by default]),,
     [enable_simt=no])
@@ -132,7 +132,7 @@ AC_ARG_ENABLE([simt],
 #   Default value: no
 AC_ARG_ENABLE([verify-compression],
     AS_HELP_STRING([--enable-verify-compression],
-      [Sends both compressed, and decompressed data through
+      [Sends both compressed and decompressed data through
       the network. Checks decompression after transmission.
       Disabled by default]),,
     [enable_verify_compression=no])
@@ -142,7 +142,7 @@ AC_ARG_ENABLE([verify-compression],
 #   Default value: no
 AC_ARG_ENABLE([debug-compression],
     AS_HELP_STRING([--enable-debug-compression],
-      [Shows statistics of compression rate, time of compression, codec, ETC
+      [Shows statistics of compression rate, time of compression, codec, ETC.
       Disabled by default]),,
     [enable_debug_compression=no])
 
@@ -151,8 +151,8 @@ AC_ARG_ENABLE([debug-compression],
 #   Default value: yes
 AC_ARG_ENABLE([cuda],
     AS_HELP_STRING([--enable-cuda],
-      [Use CUDA implementation for the BFS runs.
-      Requires hardware support
+      [Use CUDA implementation of the BFS runs.
+      Requires hardware support.
       Enabled by default]),,
     [enable_cuda=yes])
 
@@ -161,7 +161,8 @@ AC_ARG_ENABLE([cuda],
 #   Default value:
 AC_ARG_ENABLE([debug],
     AS_HELP_STRING([--enable-debug],
-      [Provides extra messages about runtime variables.]),,
+      [Provides extra traces of runtime variables.
+      Disabled by default]),,
     [enable_debug=no])
 
 # debugging
@@ -169,9 +170,9 @@ AC_ARG_ENABLE([debug],
 #   Default value: no
 AC_ARG_ENABLE([debugging],
     AS_HELP_STRING([--enable-debugging],
-      [Enables -g option on compiler.
+      [Enables -g option on compiler (debugging).
       when enabled, --enable-code-optimization will be set to O0 and
-      --optimization-flags will be set to '' (empty)
+      --optimization-flags will be set to '' (empty).
       Disabled by default]),,
     [enable_debugging=no])
 
@@ -205,11 +206,10 @@ esac],[enable_code_optimization=O4])
 # nvidia_architecture
 #   Values: fermi | kepler | auto
 #   Default value: fermi
-#   Description: "use all for generic code: Fermi and Kepler.
 AC_ARG_ENABLE(nvidia-architecture,
 AS_HELP_STRING([--enable-nvidia-architecture=fermi|kepler|auto],
-  [Selects the NVIDIA architecture when --enable-cuda is selected (default)
-  If enabled without parameter, 'fermi' will be selected as default]),
+  [Selects the NVIDIA target architecture. Requires --enable-cuda to be selected (default).
+  Default option is 'fermi']),
 [case "${enableval}" in
   fermi) enable_nvidia_architecture=fermi ;;
   kepler) enable_nvidia_architecture=kepler ;;
@@ -225,12 +225,11 @@ esac],[enable_nvidia_architecture=fermi])
 #    Format: value value value (separated by spaces)
 #    External links:
 #         - GNU compiler: https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options
-AC_ARG_VAR(OPTIMIZATION_FLAGS,AS_HELP_STRING([--optimization-flags],
-  [Optimization flags added to compiler
+AC_ARG_VAR(OPTIMIZATION_FLAGS,AS_HELP_STRING([--optimization-flags="-flag1 -flag2 ETC"],
+  [Optimization flags added to the compiler.
   Default values are safe on most compilers.
-  When the option --enable-debugging is active, this flags are disabled
-  Default is -loops -flto
-  (separated by spaces)]))
+  When the option --enable-debugging is active, this flags are disabled.
+  Default is -loops -flto]))
 AS_IF([test "x$OPTIMIZATION_FLAGS" = x], [OPTIMIZATION_FLAGS="-loops -flto"])
 AS_IF([test "x$enable_debugging" = xyes], [OPTIMIZATION_FLAGS=""])
 
