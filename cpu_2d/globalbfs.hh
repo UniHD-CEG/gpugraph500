@@ -442,7 +442,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
         for (long j = 0; j < mask_word_end; ++j)
         {
             jindex = iindex + j;
-            if ((predecessor[jindex] != -1)
+            if (predecessor[jindex] != -1)
             {
                 tmp |= 1 << j;
             }
