@@ -335,22 +335,22 @@ SIMD_OBJECTS="bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacki
 g500_OBJECTS="main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o"
 
 SCOREP_CPPFLAG=
-for item in `scorep-config --cppflags`; do
+for item in `scorep-config --cppflags 2> /dev/null`; do
   SCOREP_CPPFLAG+=" $item"
 done
 
 SCOREP_LLIBS=
-for item in `scorep-config --libs`; do
+for item in `scorep-config --libs 2> /dev/null`; do
   SCOREP_LLIBS+=" $item"
 done
 
 SCOREP_LFLAG=
-for item in `scorep-config --ldflags`; do
+for item in `scorep-config --ldflags 2> /dev/null`; do
   SCOREP_LFLAG+=" $item"
 done
 
 simd_H_FILES=
-for item in `ls compression/cpusimd/include/*h`; do
+for item in `ls compression/cpusimd/include/*h 2> /dev/null`; do
   simd_H_FILES+=" $item"
 done
 
