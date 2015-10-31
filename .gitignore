@@ -60,3 +60,4 @@ configure.scan
 config.status
 
 Makefile
+config.h.in~
