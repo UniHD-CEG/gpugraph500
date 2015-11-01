@@ -338,22 +338,129 @@ AC_SUBST([simd_H_FILES])
 ### Check for required libraries.
 #
 
+# ------------------------------------------------------------------------------
+# Setup MPI
+# ------------------------------------------------------------------------------
+
 LX_FIND_MPI
 AC_LANG_PUSH([C++])
 LX_FIND_MPI
 AC_LANG_POP([C++])
+
+# ------------------------------------------------------------------------------
+# Setup CUDA paths
+# ------------------------------------------------------------------------------
+
 AX_CHECK_CUDA
-AX_EXT
+if( test x$NVCC = xno ) then
+  AC_MSG_FAILURE([NVIDIA CUDA nvcc compiler not found or CUDA support disabled. Check the $PATH variable to CUDA or specify --with-cuda=/path/to/cuda])
+fi
+if test "x$VALID_CUDA" != xno ; then
+  AC_MSG_FAILURE([Couldn't find a valid cuda.])
+fi
+# ------------------------------------------------------------------------------
+# Setup AVX
+# ------------------------------------------------------------------------------
+
+AM_CONDITIONAL(HAVE_AVX,false)
+if test  "x$enable_avx" = xyes; then
+  AX_EXT
+  AC_CHECK_HEADERS([cpuid.h])
+  if test "x$ax_cv_have_avx_ext" = xyes; then
+    AM_CONDITIONAL(HAVE_AVX,true)
+  else
+    AC_MSG_ERROR(AVX instructions not supported on this system. AVX support will not be built)
+  fi
+fi
+
 # FIXME: if compression  SSE2 req
 # FIXME: if --enable-avx select greatest extension
+
+# ------------------------------------------------------------------------------
+# Setup OpenCL
+# ------------------------------------------------------------------------------
+
+AC_ARG_WITH(opencl,
+    AS_HELP_STRING([--with-opencl=path],[prefix to location of OpenCL include directory @<:@default=auto@:>@]),,
+    [with_opencl=auto])
+
+OPENCL_CFLAGS=
+OPENCL_LIBS=
+
+if test "x$with_opencl" != "xno"
+then
+   OPENCL_CFLAGS+=" -D FW_OPENCL"
+   OPENCL_LIBS+=" -lOpenCL"
+   if test "x$with_opencl" != "xauto"
+   then
+      OPENCL_CFLAGS+=" -I$with_opencl/include"
+   else
+      case $host_os in
+      *darwin*)
+        AC_CHECK_FILE(/System/Library/Frameworks/OpenCL.framework,,[with_opencl="no"])
+        ;;
+      *)
+        AC_CHECK_FILE(/usr/include/CL,[OPENCL_CFLAGS+=" -I/usr/include"],[with_opencl="no"])
+      esac
+   fi
+fi
+
+AM_CONDITIONAL(BUILDOPENCL, test ! x$with_opencl = xno)
 AX_CHECK_CL
-# if test "X$no_cl" = "Xyes"; then
-#     AC_MSG_FAILURE([You need OpenCL])
-# fi
+
+# ------------------------------------------------------------------------------
+# Setup PTHREADS
+# ------------------------------------------------------------------------------
+
 AX_PTHREAD
-AX_OPENMP
+
+# ------------------------------------------------------------------------------
+# Setup OPENMP
+# ------------------------------------------------------------------------------
+dnl Check for OpenMP
+if test x$GCC = xyes
+then
+  AX_GCC_VERSION()
+fi
+
+AS_IF([test "x$enable_openmp_on_cudafiles" = "xyes" -o "x$enable_openmp_on_others" = "xyes"], [
+  if test x$GCC = xyes
+  then
+    AX_COMPARE_VERSION([$GCC_VERSION], [ge], [4.2.0], [
+      AX_OPENMP([AM_CONDITIONAL(HAVE_OPENMP,true)],
+      [AM_CONDITIONAL(HAVE_OPENMP,false)])
+    ],[])
+  else
+    AX_OPENMP([AM_CONDITIONAL(HAVE_OPENMP,true)],
+    [AM_CONDITIONAL(HAVE_OPENMP,false)])
+  fi
+],[
+AM_CONDITIONAL(HAVE_OPENMP, test true = false)
+])
+AC_SUBST(OPENMP_CFLAGS)
+dnl OpenMP checker only defines for C when compiling both C and C++
+OPENMP_CXXFLAGS=$OPENMP_CFLAGS
+AC_SUBST(OPENMP_CXXFLAGS)
+
+# ------------------------------------------------------------------------------
+# Scalasca / ScoreP support
+# ------------------------------------------------------------------------------
+
 AX_CHECK_SCOREP
 
+# ------------------------------------------------------------------------------
+# Doxygen support
+# ------------------------------------------------------------------------------
+
+DX_HTML_FEATURE(ON)
+DX_CHM_FEATURE(OFF)
+DX_CHI_FEATURE(OFF)
+DX_MAN_FEATURE(ON)
+DX_RTF_FEATURE(OFF)
+DX_XML_FEATURE(OFF)
+DX_PDF_FEATURE(OFF)
+DX_PS_FEATURE(OFF)
+DX_INIT_DOXYGEN([$PACKAGE_NAME],[beagle.dox],[doc])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

@@ -40,7 +40,7 @@ AC_DEFUN([AX_CHECK_CUDA], [
 
 [DEFAULT_CUDA_PATH=`which nvcc | sed -e 's,/bin/nvcc$,,' 2> /dev/null`]
 if test ! -d ${DEFAULT_CUDA_PATH}; then
-	DEFAULT_CUDA_PATH="/usr/local/cuda"
+	[DEFAULT_CUDA_PATH="/usr/local/cuda"]
 fi
 
 # Provide your CUDA path with this
@@ -54,8 +54,8 @@ AC_ARG_WITH(cuda, AS_HELP_STRING([--with-cuda=<path>],[
 	[cuda_prefix="${DEFAULT_CUDA_PATH}"])
 
 # Setting the prefix to the default if only --with-cuda was given
-if test "$cuda_prefix" == "yes"; then
-	if test "$withval" == "yes"; then
+if test "x$cuda_prefix" == "xyes"; then
+	if test "x$withval" == "xyes"; then
 		cuda_prefix="${DEFAULT_CUDA_PATH}"
 	fi
 fi
