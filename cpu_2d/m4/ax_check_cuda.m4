@@ -117,7 +117,7 @@ if test -x "$cuda_prefix/bin/nvcc"; then
 			VALID_CUDA=no
 			,[#include <cuda.h>])
 		if test "x$VALID_CUDA" != "xno" ; then
-			AC_CHECK_LIB([cuda], [cuInit], [VALID_CUDA=yes], AC_MSG_WARN([Couldn't find libcuda]
+			AC_CHECK_LIB([cuda], [cuInit], [VALID_CUDA=yes], AC_MSG_FAILURE([Couldn't find libcuda]
 			VALID_CUDA=no))
 		fi
 	fi

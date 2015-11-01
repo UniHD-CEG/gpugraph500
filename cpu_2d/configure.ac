@@ -355,9 +355,7 @@ AX_CHECK_CUDA
 if( test x$NVCC = xno ) then
   AC_MSG_FAILURE([NVIDIA CUDA nvcc compiler not found or CUDA support disabled. Check the $PATH variable to CUDA or specify --with-cuda=/path/to/cuda])
 fi
-if test "x$VALID_CUDA" != xno ; then
-  AC_MSG_FAILURE([Couldn't find a valid cuda.])
-fi
+
 # ------------------------------------------------------------------------------
 # Setup AVX
 # ------------------------------------------------------------------------------
