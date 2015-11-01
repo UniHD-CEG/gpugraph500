@@ -60,7 +60,7 @@ CPPFLAGS="$CL_CFLAGS $CPPFLAGS"
 AC_CHECK_HEADERS([CL/cl.h OpenCL/cl.h])
 CPPFLAGS=$ax_save_CPPFLAGS
 
-AC_CHECK_HEADERS([windows.h])
+# AC_CHECK_HEADERS([windows.h])
 
 m4_define([AX_CHECK_CL_PROGRAM],
           [AC_LANG_PROGRAM([[
