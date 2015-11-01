@@ -59,6 +59,9 @@ if test "x$cuda_prefix" == "xyes"; then
 		cuda_prefix="${DEFAULT_CUDA_PATH}"
 	fi
 fi
+if test "x$cuda_prefix" == "x"; then
+	cuda_prefix="/usr/local/cuda"
+fi
 
 # Checking for nvcc
 AC_MSG_CHECKING([nvcc in $cuda_prefix/bin])
