@@ -62,7 +62,7 @@ fi
 
 # Checking for nvcc
 AC_MSG_CHECKING([nvcc in $cuda_prefix/bin])
-if test -x "$cuda_prefix/bin/nvcc"; then
+if test -f "${cuda_prefix}/bin/nvcc" -a -x "${cuda_prefix}/bin/nvcc"; then
 	AC_MSG_RESULT([found])
 	AC_DEFINE_UNQUOTED([NVCC_PATH], ["$cuda_prefix/bin/nvcc"], [Path to nvcc binary])
 	# We need to add the CUDA search directories for header and lib searches
