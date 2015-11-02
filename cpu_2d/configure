@@ -7273,11 +7273,14 @@ if test "x$cuda_prefix" == "xyes"; then
 		cuda_prefix="${DEFAULT_CUDA_PATH}"
 	fi
 fi
+if test "x$cuda_prefix" == "x"; then
+	cuda_prefix="/usr/local/cuda"
+fi
 
 # Checking for nvcc
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking nvcc in $cuda_prefix/bin" >&5
 $as_echo_n "checking nvcc in $cuda_prefix/bin... " >&6; }
-if test -x "$cuda_prefix/bin/nvcc"; then
+if test -f "${cuda_prefix}/bin/nvcc" -a -x "${cuda_prefix}/bin/nvcc"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: found" >&5
 $as_echo "found" >&6; }
 
