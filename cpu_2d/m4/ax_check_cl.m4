@@ -36,14 +36,14 @@
 #
 AC_DEFUN([AX_CHECK_CL],
 [AC_REQUIRE([AC_CANONICAL_HOST])dnl
-AC_REQUIRE([AC_PATH_X])dnl
+# AC_REQUIRE([AC_PATH_X])dnl
 AC_REQUIRE([AC_PROG_SED])dnl
 AC_REQUIRE([ACX_PTHREAD])dnl
 
 AC_LANG_PUSH([C])
-AX_LANG_COMPILER_MS
-AS_IF([test X$ax_compiler_ms = Xno],
-      [CL_CFLAGS="${PTHREAD_CFLAGS}"; CL_LIBS="${PTHREAD_LIBS} -lm"])
+# AX_LANG_COMPILER_MS
+# AS_IF([test X$ax_compiler_ms = Xno],
+#       [CL_CFLAGS="${PTHREAD_CFLAGS}"; CL_LIBS="${PTHREAD_LIBS} -lm"])
 
 #
 # Use x_includes and x_libraries if they have been set (presumably by
@@ -60,7 +60,7 @@ CPPFLAGS="$CL_CFLAGS $CPPFLAGS"
 AC_CHECK_HEADERS([CL/cl.h OpenCL/cl.h])
 CPPFLAGS=$ax_save_CPPFLAGS
 
-AC_CHECK_HEADERS([windows.h])
+# AC_CHECK_HEADERS([windows.h])
 
 m4_define([AX_CHECK_CL_PROGRAM],
           [AC_LANG_PROGRAM([[

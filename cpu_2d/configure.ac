@@ -3,7 +3,7 @@
 
 
 AC_PREREQ([2.68])
-AC_INIT([bfs-g500], [1.1])
+AC_INIT([g500], [1.1])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([globalbfs.hh])
 AC_CONFIG_HEADERS([config.h])
@@ -351,9 +351,13 @@ AC_LANG_POP([C++])
 # Setup CUDA paths
 # ------------------------------------------------------------------------------
 
-AX_CHECK_CUDA
-if( test x$NVCC = xno ) then
-  AC_MSG_FAILURE([NVIDIA CUDA nvcc compiler not found or CUDA support disabled. Check the $PATH variable to CUDA or specify --with-cuda=/path/to/cuda])
+if test "x$enable_cuda" = xyes; then
+  AX_CHECK_CUDA
+  if test "x$NVCC" = xno; then
+    AC_MSG_FAILURE([NVIDIA CUDA nvcc compiler not found or CUDA support disabled. Check the $PATH variable to CUDA or specify --with-cuda=/path/to/cuda])
+  fi
+  CIT_CUDA_CONFIG
+  # AX_CUDA
 fi
 
 # ------------------------------------------------------------------------------
@@ -361,18 +365,20 @@ fi
 # ------------------------------------------------------------------------------
 
 AM_CONDITIONAL(HAVE_AVX,false)
-if test  "x$enable_avx" = xyes; then
+if test  "x$enable_avx" = xyes -o "x$enable_compression" = xyes; then
   AX_EXT
   AC_CHECK_HEADERS([cpuid.h])
   if test "x$ax_cv_have_avx_ext" = xyes; then
     AM_CONDITIONAL(HAVE_AVX,true)
   else
-    AC_MSG_ERROR(AVX instructions not supported on this system. AVX support will not be built)
+    if test  "x$enable_compression" = xyes -a "x$enable_simd" = xyes ; then
+      AC_MSG_FAILURE(AVX support is needed for SIMD compression)
+    fi
   fi
 fi
 
-# FIXME: if compression  SSE2 req
-# FIXME: if --enable-avx select greatest extension
+# FIXME: if compression SSE4 req
+# FIXME: if not --enable-avx select best ssex extension
 
 # ------------------------------------------------------------------------------
 # Setup OpenCL
@@ -415,7 +421,7 @@ AX_PTHREAD
 # ------------------------------------------------------------------------------
 # Setup OPENMP
 # ------------------------------------------------------------------------------
-dnl Check for OpenMP
+
 if test x$GCC = xyes
 then
   AX_GCC_VERSION()
@@ -436,6 +442,7 @@ AS_IF([test "x$enable_openmp_on_cudafiles" = "xyes" -o "x$enable_openmp_on_other
 AM_CONDITIONAL(HAVE_OPENMP, test true = false)
 ])
 AC_SUBST(OPENMP_CFLAGS)
+
 dnl OpenMP checker only defines for C when compiling both C and C++
 OPENMP_CXXFLAGS=$OPENMP_CFLAGS
 AC_SUBST(OPENMP_CXXFLAGS)
@@ -458,7 +465,7 @@ DX_RTF_FEATURE(OFF)
 DX_XML_FEATURE(OFF)
 DX_PDF_FEATURE(OFF)
 DX_PS_FEATURE(OFF)
-DX_INIT_DOXYGEN([$PACKAGE_NAME],[beagle.dox],[doc])
+DX_INIT_DOXYGEN([$PACKAGE_NAME],[g500.dox],[doc])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
