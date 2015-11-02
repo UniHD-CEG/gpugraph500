@@ -22,14 +22,14 @@ function configuration {
     temporaldirectory_prefix="$HOME/tmp/"
     installdirectory_prefix="$HOME/"
 
-    let number_of_apps++
-    array_of_apps[$number_of_apps,1]="OpenMPI" # Name of application
-    array_of_apps[$number_of_apps,2]="http://www.open-mpi.de/software/ompi/v1.10/downloads/openmpi-1.10.0.tar.gz" # Download url
-    array_of_apps[$number_of_apps,3]="--enable-mpirun-prefix-by-default" # ./config script's parameters # CC=$cc CXX=$cxx
-    array_of_apps[$number_of_apps,4]="no dependencies." # notes about the app. For user information
-    get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
-    add_to_path ${installdirectory_prefix}$shortname
-    confirm_install $number_of_apps number_of_apps
+    # let number_of_apps++
+    # array_of_apps[$number_of_apps,1]="OpenMPI" # Name of application
+    # array_of_apps[$number_of_apps,2]="http://www.open-mpi.de/software/ompi/v1.10/downloads/openmpi-1.10.0.tar.gz" # Download url
+    # array_of_apps[$number_of_apps,3]="--enable-mpirun-prefix-by-default" # ./config script's parameters # CC=$cc CXX=$cxx
+    # array_of_apps[$number_of_apps,4]="no dependencies." # notes about the app. For user information
+    # get_shortfilename ${array_of_apps[$number_of_apps,2]} shortname
+    # add_to_path ${installdirectory_prefix}$shortname
+    # confirm_install $number_of_apps number_of_apps
 
     let number_of_apps++
     array_of_apps[$number_of_apps,1]="Opari2" # Name of application
