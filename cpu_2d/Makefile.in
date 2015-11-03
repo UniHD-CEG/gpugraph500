@@ -65,8 +65,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_cl.m4 \
 	$(top_srcdir)/m4/ax_ext.m4 $(top_srcdir)/m4/ax_gcc_version.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_avx_xgetbv.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_cpuid.m4 \
+	$(top_srcdir)/m4/ax_mpi_pre_post.m4 \
 	$(top_srcdir)/m4/ax_openmp.m4 \
-	$(top_srcdir)/m4/ax_prog_cxx_mpi.m4 \
 	$(top_srcdir)/m4/ax_prog_doxygen.m4 \
 	$(top_srcdir)/m4/ax_pthread.m4 $(top_srcdir)/m4/cit_cuda.m4 \
 	$(top_srcdir)/m4/lx_find_mpi.m4 $(top_srcdir)/configure.ac
@@ -190,6 +190,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
+REAL_TYPE = @REAL_TYPE@
 SCOREP_CPPFLAG = @SCOREP_CPPFLAG@
 SCOREP_EXEC = @SCOREP_EXEC@
 SCOREP_LFLAG = @SCOREP_LFLAG@
@@ -200,6 +201,7 @@ SHELL = @SHELL@
 SIMD_FLAGS = @SIMD_FLAGS@
 SIMD_OBJECTS = @SIMD_OBJECTS@
 STRIP = @STRIP@
+UINT_TYPE = @UINT_TYPE@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@

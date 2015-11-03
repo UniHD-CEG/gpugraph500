@@ -20,6 +20,7 @@ AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
 
+AX_MPI_PRE
 
 ### Commandline arguments
 # Use ./configure --help to view
@@ -242,9 +243,9 @@ AC_ARG_VAR(MPI_LIB,[MPI lib flags])
 AC_ARG_VAR(ALLCFLAGS,Customized C source compilation flags)
 AC_ARG_VAR(ALLCXXFLAGS,Customized C++ source compilation flags)
 AC_ARG_VAR(CC,The C compiler)
-AC_ARG_VAR(MPICC,The MPI C compiler)
+# AC_ARG_VAR(MPICC,The MPI C compiler)
 AC_ARG_VAR(CXX,The C++ compiler)
-AC_ARG_VAR(MPICXX,The MPI C++ compiler)
+# AC_ARG_VAR(MPICXX,The MPI C++ compiler)
 
 AM_CONDITIONAL([OPTIMIZATION_O0], [test x"$enable_code_optimization" = xO0])
 AM_CONDITIONAL([OPTIMIZATION_O1], [test x"$enable_code_optimization" = xO1])
@@ -347,15 +348,17 @@ AC_LANG_PUSH([C++])
 LX_FIND_MPI
 AC_LANG_POP([C++])
 
-AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=<path>],
-    [compile with MPI (parallelization) support.
-    Use <path> to specify the route to MPI.
-    By Default PATH is used]),,
-    [with_mpi=yes])
-AX_PROG_CXX_MPI([test x"$with_mpi" != xno],[use_mpi=yes],[
-    use_mpi=no
-    AC_MSG_FAILURE([MPI compiler required, but could not use MPI.])
-])
+AX_MPI_POST
+
+#AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=<path>],
+#    [compile with MPI (parallelization) support.
+#    Use <path> to specify the route to MPI.
+#    By Default PATH is used]),,
+#    [with_mpi=auto])
+#AX_PROG_CXX_MPI([test x"$with_mpi" != xno],[use_mpi=yes],[
+#    use_mpi=no
+#    AC_MSG_FAILURE([MPI compiler required, but could not use MPI.])
+#])
 
 # ------------------------------------------------------------------------------
 # Setup CUDA paths
