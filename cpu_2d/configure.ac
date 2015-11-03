@@ -346,9 +346,16 @@ LX_FIND_MPI
 AC_LANG_PUSH([C++])
 LX_FIND_MPI
 AC_LANG_POP([C++])
-AC_LANG_PUSH([C++])
-AX_PROG_CXX_MPI
-AC_LANG_POP([C++])
+
+AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=<path>],
+    [compile with MPI (parallelization) support.
+    Use <path> to specify the route to MPI.
+    By Default PATH is used]),,
+    [with_mpi=yes])
+AX_PROG_CXX_MPI([test x"$with_mpi" != xno],[use_mpi=yes],[
+    use_mpi=no
+    AC_MSG_FAILURE([MPI compiler required, but could not use MPI.])
+])
 
 # ------------------------------------------------------------------------------
 # Setup CUDA paths
