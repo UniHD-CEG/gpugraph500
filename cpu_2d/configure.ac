@@ -346,6 +346,7 @@ LX_FIND_MPI
 AC_LANG_PUSH([C++])
 LX_FIND_MPI
 AC_LANG_POP([C++])
+AX_PROG_CXX_MPI
 
 # ------------------------------------------------------------------------------
 # Setup CUDA paths
@@ -385,7 +386,7 @@ fi
 # ------------------------------------------------------------------------------
 
 AC_ARG_WITH(opencl,
-    AS_HELP_STRING([--with-opencl=path],[prefix to location of OpenCL include directory @<:@default=auto@:>@]),,
+    AS_HELP_STRING([--with-opencl=<path>],[prefix to location of OpenCL include directory @<:@default=auto@:>@]),,
     [with_opencl=auto])
 
 OPENCL_CFLAGS=
@@ -460,7 +461,7 @@ AX_CHECK_SCOREP
 DX_HTML_FEATURE(ON)
 DX_CHM_FEATURE(OFF)
 DX_CHI_FEATURE(OFF)
-DX_MAN_FEATURE(ON)
+DX_MAN_FEATURE(OFF)
 DX_RTF_FEATURE(OFF)
 DX_XML_FEATURE(OFF)
 DX_PDF_FEATURE(OFF)

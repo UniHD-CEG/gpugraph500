@@ -39,7 +39,7 @@ dnl @license GPLWithACException
 AC_DEFUN([ACX_MPI], [
 AC_PREREQ(2.50) dnl for AC_LANG_CASE
 
-AC_LANG_CASE([C], [
+AS_LANG_CASE([C], [
 	AC_REQUIRE([AC_PROG_CC])
 	AC_ARG_VAR(MPICC,[MPI C compiler command])
 	AC_CHECK_PROGS(MPICC, mpicc hcc mpxlc_r mpxlc mpcc cmpicc, $CC)
@@ -73,7 +73,7 @@ AC_LANG_CASE([C], [
 ])
 
 if test x = x"$MPILIBS"; then
-	AC_LANG_CASE([C], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])],
+	AS_LANG_CASE([C], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])],
 		[C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])],
 		[Fortran 77], [AC_MSG_CHECKING([for MPI_Init])
 			AC_LINK_IFELSE([AC_LANG_PROGRAM([],[      call MPI_Init])],[MPILIBS=" "
@@ -82,7 +82,7 @@ if test x = x"$MPILIBS"; then
 			AC_LINK_IFELSE([AC_LANG_PROGRAM([],[      call MPI_Init])],[MPILIBS=" "
 				AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no)])])
 fi
-AC_LANG_CASE([Fortran 77], [
+AS_LANG_CASE([Fortran 77], [
 	if test x = x"$MPILIBS"; then
 		AC_CHECK_LIB(fmpi, MPI_Init, [MPILIBS="-lfmpi"])
 	fi
@@ -107,7 +107,7 @@ fi
 
 dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
 dnl latter uses $CPP, not $CC (which may be mpicc).
-AC_LANG_CASE([C], [if test x != x"$MPILIBS"; then
+AS_LANG_CASE([C], [if test x != x"$MPILIBS"; then
 	AC_MSG_CHECKING([for mpi.h])
 	AC_TRY_COMPILE([#include <mpi.h>],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
 		AC_MSG_RESULT(no)])
@@ -128,7 +128,7 @@ fi],
 		AC_MSG_RESULT(no)])
 fi])
 
-AC_LANG_CASE([C], [CC="$acx_mpi_save_CC"],
+AS_LANG_CASE([C], [CC="$acx_mpi_save_CC"],
 	[C++], [CXX="$acx_mpi_save_CXX"],
 	[Fortran 77], [F77="$acx_mpi_save_F77"],
 	[Fortran], [FC="$acx_mpi_save_FC"])

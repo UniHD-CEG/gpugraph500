@@ -33,14 +33,14 @@ endif
 
 if AVX
   arch=-mavx
-  arch_nvcc=-mavx
+  # arch_nvcc=-mavx
 else
 if SIMD
   arch=-msse4
-  arch_nvcc=-msse4
+  # arch_nvcc=-msse4
 else
   arch=-march=native
-  arch_nvcc=-march=native
+  # arch_nvcc=-march=native
 endif
 endif
 
