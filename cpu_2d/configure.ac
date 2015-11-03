@@ -346,7 +346,9 @@ LX_FIND_MPI
 AC_LANG_PUSH([C++])
 LX_FIND_MPI
 AC_LANG_POP([C++])
+AC_LANG_PUSH([C++])
 AX_PROG_CXX_MPI
+AC_LANG_POP([C++])
 
 # ------------------------------------------------------------------------------
 # Setup CUDA paths

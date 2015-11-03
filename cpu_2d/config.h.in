@@ -92,7 +92,7 @@
 /* Define to 1 to support Multimedia Extensions */
 #undef HAVE_MMX
 
-/* Define to 1 if you have MPI libs and headers. */
+/* Define if you have the MPI library. */
 #undef HAVE_MPI
 
 /* Define to 1 to support Memory Protection Extensions */
