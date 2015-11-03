@@ -76,6 +76,7 @@ endif
   SCOREP_INSTRUMENTATION=-D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
   LDFLAGS_SCOREP=@SCOREP_LFLAG@
   LLIBS_SCOREP=@SCOREP_LLIBS@
+  SCOREP_CXXCPPFLAGS=@SCOREP_CPPFLAG@
 else
   libcudart_static_path=@CUDA_LDFLAGS@
   libcudart_static_flag=-lcudart
@@ -229,7 +230,7 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		compression/cpusimd.hh compression/nocompression.hh
 	@echo ""
 	@echo "--- Compiling g500"
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_INSTRUMENTATION) @SCOREP_CPPFLAG@ $(INCPATH) -o main.o main.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_INSTRUMENTATION) $(SCOREP_CXXCPPFLAGS) $(INCPATH) -o main.o main.cpp
 	@echo "    MPICC     $@"
 
 bitpacking.o: compression/cpusimd/include/bitpacking.h compression/cpusimd/src/bitpacking.cpp

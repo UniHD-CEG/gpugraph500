@@ -64,7 +64,7 @@
 #
 AC_DEFUN([LX_FIND_MPI],
 [
-     AC_LANG_CASE(
+     AS_LANG_CASE(
      [C], [
          AC_REQUIRE([AC_PROG_CC])
          if [[ ! -z "$MPICC" ]]; then
