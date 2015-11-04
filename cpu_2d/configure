@@ -682,10 +682,14 @@ CUDA_LIBDIR
 NVCC
 CUDA_LDFLAGS
 CUDA_CFLAGS
+REAL_TYPE
+UINT_TYPE
 MPI_CXXLDFLAGS
 MPI_CXXFLAGS
+MPICXX
 MPI_CLDFLAGS
 MPI_CFLAGS
+MPICC
 simd_H_FILES
 SCOREP_LFLAG
 SCOREP_LLIBS
@@ -741,8 +745,6 @@ OPTIMIZATION_O1_FALSE
 OPTIMIZATION_O1_TRUE
 OPTIMIZATION_O0_FALSE
 OPTIMIZATION_O0_TRUE
-MPICXX
-MPICC
 ALLCXXFLAGS
 ALLCFLAGS
 MPI_LIB
@@ -838,6 +840,9 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_dependency_tracking
+with_mpi_root
+with_mpicc
+with_mpicxx
 enable_compression
 enable_ptxas_otimization
 enable_bfs_basic_profiling
@@ -856,6 +861,8 @@ enable_debugging
 enable_quiet
 enable_code_optimization
 enable_nvidia_architecture
+enable_ulong
+enable_double
 with_cuda
 with_opencl
 with_scorep
@@ -887,8 +894,6 @@ MPI_INC
 MPI_LIB
 ALLCFLAGS
 ALLCXXFLAGS
-MPICC
-MPICXX
 DOXYGEN_PAPER_SIZE'
 
 
@@ -1573,9 +1578,13 @@ Optional Features:
                           Selects the NVIDIA target architecture. Requires
                           --enable-cuda to be selected (default). Default
                           option is 'fermi'
+  --enable-ulong          enable 64-bit locations, only available on 64-bit
+                          systems. Default is 32-bit
+  --disable-double        disable double precision arithmetic [untested,
+                          default=double is enabled]
   --disable-doxygen-doc   don't generate any doxygen documentation
   --disable-doxygen-dot   don't generate graphics for doxygen documentation
-  --disable-doxygen-man   don't generate doxygen manual pages
+  --enable-doxygen-man    generate doxygen manual pages
   --enable-doxygen-rtf    generate doxygen RTF documentation
   --enable-doxygen-xml    generate doxygen XML documentation
   --enable-doxygen-chm    generate doxygen compressed HTML help documentation
@@ -1588,12 +1597,15 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-mpi-root=MPIROOT absolute path to the MPI root directory
+  --with-mpicc=MPICC      name of the MPI C++ compiler to use (default mpicc)
+  --with-mpicxx=MPICXX    name of the MPI C++ compiler to use (default mpicxx)
   --with-cuda=<path>      Use CUDA library. If argument is <empty> that means
                           the library is reachable with the standard search
                           path "/usr" or "/usr/local" (set as default).
                           Otherwise you give the <path> to the directory which
                           contain the library.
-  --with-opencl=path      prefix to location of OpenCL include directory
+  --with-opencl=<path>    prefix to location of OpenCL include directory
                           [default=auto]
   --with-scorep=<path>    Use SCOREP profiler. If argument is <empty> that
                           means the library is reachable with the standard
@@ -1620,8 +1632,6 @@ Some influential environment variables:
   MPI_LIB     MPI lib flags
   ALLCFLAGS   Customized C source compilation flags
   ALLCXXFLAGS Customized C++ source compilation flags
-  MPICC       The MPI C compiler
-  MPICXX      The MPI C++ compiler
   DOXYGEN_PAPER_SIZE
               a4wide (default), a4, letter, legal or executive
 
@@ -5213,6 +5223,69 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+# MPI root directory
+
+# Check whether --with-mpi_root was given.
+if test "${with_mpi_root+set}" = set; then :
+  withval=$with_mpi_root;
+fi
+
+
+if test x"$with_mpi_root" != "x";
+then
+  MPIROOT="$with_mpi_root"
+fi
+
+
+# Check whether --with-mpicc was given.
+if test "${with_mpicc+set}" = set; then :
+  withval=$with_mpicc;
+fi
+
+
+if test x"$with_mpicc" != "x";
+then
+  MPICC="$with_mpicc"
+else
+  MPICC="mpicc"
+fi
+
+if test x"$with_mpi_root" != "x";
+then
+  MPICC="$with_mpi_root/bin/$MPICC"
+fi
+
+
+
+# Check whether --with-mpicxx was given.
+if test "${with_mpicxx+set}" = set; then :
+  withval=$with_mpicxx;
+fi
+
+
+if test x"$with_mpicxx" != "x";
+then
+  MPICXX="$with_mpicxx"
+else
+  MPICXX="mpicxx"
+fi
+
+if test x"$with_mpi_root" != "x";
+then
+  MPICXX="$with_mpi_root/bin/$MPICXX"
+fi
+
+# saveCC="$CC"
+# saveCXX="$CXX"
+# AC_SUBST(saveCC)
+# AC_SUBST(saveCXX)
+# CC="$MPICC"
+# CXX="$MPICXX"
+
+
+
 ### Commandline arguments
 # Use ./configure --help to view
 
@@ -5454,9 +5527,9 @@ fi
 
 
 
+# AC_ARG_VAR(MPICC,The MPI C compiler)
 
-
-
+# AC_ARG_VAR(MPICXX,The MPI C++ compiler)
 
  if test x"$enable_code_optimization" = xO0; then
   OPTIMIZATION_O0_TRUE=
@@ -7044,6 +7117,152 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+
+
+
+saveCC="$CC"
+saveCXX="$CXX"
+# AC_SUBST(saveCC)
+# AC_SUBST(saveCXX)
+
+CC="$MPICC"
+CXX="$MPICXX"
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use 32-bit or 64-bit locations" >&5
+$as_echo_n "checking whether to use 32-bit or 64-bit locations... " >&6; }
+# Check whether --enable-ulong was given.
+if test "${enable_ulong+set}" = set; then :
+  enableval=$enable_ulong; use_ulong=$enableval
+else
+  use_ulong=no
+fi
+
+
+if test x$use_ulong = xyes -a 0$ac_cv_sizeof_void_p -ge 8 ; then
+  UINT_TYPE=uint64_t
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: 64-bit" >&5
+$as_echo "64-bit" >&6; }
+else
+  UINT_TYPE=uint32_t
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: 32-bit" >&5
+$as_echo "32-bit" >&6; }
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use single or double precision" >&5
+$as_echo_n "checking whether to use single or double precision... " >&6; }
+# Check whether --enable-double was given.
+if test "${enable_double+set}" = set; then :
+  enableval=$enable_double; use_double=$enableval
+else
+  use_double=yes
+fi
+
+
+if test x$use_double = xno ; then
+  REAL_TYPE=float
+  echo
+  echo -n "using ${REAL_TYPE} is not well tested, please report bugs if you find any..."
+else
+  REAL_TYPE=double
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $REAL_TYPE" >&5
+$as_echo "$REAL_TYPE" >&6; }
+
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Linking of MPI C programs" >&5
+$as_echo_n "checking Linking of MPI C programs... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <mpi.h>
+int
+main ()
+{
+MPI_Init(0,0)
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+             { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "MPI C compiler is required by $PACKAGE
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking Linking of MPI C++ programs" >&5
+$as_echo_n "checking Linking of MPI C++ programs... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <mpi.h>
+int
+main ()
+{
+MPI_Init(0,0)
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+             { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "MPI C++ compiler is required by $PACKAGE
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+CC="$saveCC"
+CXX="$saveCXX"
+
+
+
+#AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=<path>],
+#    [compile with MPI (parallelization) support.
+#    Use <path> to specify the route to MPI.
+#    By Default PATH is used]),,
+#    [with_mpi=auto])
+#AX_PROG_CXX_MPI([test x"$with_mpi" != xno],[use_mpi=yes],[
+#    use_mpi=no
+#    AC_MSG_FAILURE([MPI compiler required, but could not use MPI.])
+#])
 
 # ------------------------------------------------------------------------------
 # Setup CUDA paths
@@ -11526,7 +11745,7 @@ esac
 
 else
 
-DX_FLAG_man=1
+DX_FLAG_man=0
 
 
 test "$DX_FLAG_doc" = "1" || DX_FLAG_man=0

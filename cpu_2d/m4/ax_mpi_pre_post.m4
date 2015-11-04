@@ -1,19 +1,20 @@
-AC_DEFUN([AX_FIND_MPI],
+AC_DEFUN([AX_MPI_PRE],
 [
 AC_PREREQ(2.59)
 
 # MPI root directory
-AC_ARG_WITH(mpi_root,
-[AS_HELP_STRING([--with-mpi-root=MPIROOT],
-        [absolute path to the MPI root directory])])
+AC_ARG_WITH(mpi,
+[AS_HELP_STRING([--with-mpi=<path>],
+        [absolute path to the MPI root directory.
+         It should contain bin/ and include/ subdirectories.])])
 
-if test x"$with_mpi_root" != "x";
+if test x"$with_mpi" != "x";
 then
-  MPIROOT="$with_mpi_root"
+  MPIROOT="$with_mpi"
 fi
 
 AC_ARG_WITH(mpicc,
-[AS_HELP_STRING([--with-mpicc=MPICC],
+[AS_HELP_STRING([--with-mpicc=mpicc],
         [name of the MPI C++ compiler to use (default mpicc)])])
 
 if test x"$with_mpicc" != "x";
@@ -23,14 +24,14 @@ else
   MPICC="mpicc"
 fi
 
-if test x"$with_mpi_root" != "x";
+if test x"$with_mpi" != "x";
 then
-  MPICC="$with_mpi_root/bin/$MPICC"
+  MPICC="$with_mpi/bin/$MPICC"
 fi
 
 
 AC_ARG_WITH(mpicxx,
-[AS_HELP_STRING([--with-mpicxx=MPICXX],
+[AS_HELP_STRING([--with-mpicxx=mpicxx],
         [name of the MPI C++ compiler to use (default mpicxx)])])
 
 if test x"$with_mpicxx" != "x";
@@ -40,30 +41,37 @@ else
   MPICXX="mpicxx"
 fi
 
-if test x"$with_mpi_root" != "x";
+if test x"$with_mpi" != "x";
 then
-  MPICXX="$with_mpi_root/bin/$MPICXX"
+  MPICXX="$with_mpi/bin/$MPICXX"
 fi
+
+# saveCC="$CC"
+# saveCXX="$CXX"
+# AC_SUBST(saveCC)
+# AC_SUBST(saveCXX)
+# CC="$MPICC"
+# CXX="$MPICXX"
+
+])
+
+
+
+AC_DEFUN([AX_MPI_POST],
+[
+AC_PREREQ(2.59)
 
 saveCC="$CC"
 saveCXX="$CXX"
 # AC_SUBST(saveCC)
 # AC_SUBST(saveCXX)
 
-
 CC="$MPICC"
 CXX="$MPICXX"
 
-# ])
-#
-# AC_DEFUN([MPI_CONF_POST],
-# [
-# AC_PREREQ(2.59)
-
-
 AC_MSG_CHECKING(whether to use 32-bit or 64-bit locations)
 AC_ARG_ENABLE(ulong,[AS_HELP_STRING([--enable-ulong],
-  [enable 64-bit locations (only available on 64-bit systems) [default=32-bit]])],
+  [enable 64-bit locations, only available on 64-bit systems. Default is 32-bit])],
   [use_ulong=$enableval],[use_ulong=no])
 
 if test x$use_ulong = xyes -a 0$ac_cv_sizeof_void_p -ge 8 ; then
@@ -90,12 +98,14 @@ fi
 AC_MSG_RESULT($REAL_TYPE)
 AC_SUBST(REAL_TYPE)
 
+AC_LANG_PUSH([C])
 AC_MSG_CHECKING([Linking of MPI C programs])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <mpi.h>],
              [MPI_Init(0,0)])],
              [AC_MSG_RESULT([ok])],
              [AC_MSG_RESULT([no])
              AC_MSG_FAILURE([MPI C compiler is required by $PACKAGE])])
+AC_LANG_POP([C])
 
 AC_LANG_PUSH([C++])
 AC_MSG_CHECKING([Linking of MPI C++ programs])
@@ -106,7 +116,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <mpi.h>],
              AC_MSG_FAILURE([MPI C++ compiler is required by $PACKAGE])])
 AC_LANG_POP([C++])
 
-
 CC="$saveCC"
 CXX="$saveCXX"
+
 ])

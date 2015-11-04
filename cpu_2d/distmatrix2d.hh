@@ -13,7 +13,7 @@
 #include <mpi.h>
 #include <vector>
 #include <algorithm>
-
+#include <cstddef> // needed by MPICH implem.
 #include <cstdlib> // only for values of packed_edge typ!!!
 
 #ifdef _OPENMP

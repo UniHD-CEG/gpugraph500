@@ -65,6 +65,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_cl.m4 \
 	$(top_srcdir)/m4/ax_ext.m4 $(top_srcdir)/m4/ax_gcc_version.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_avx_xgetbv.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_cpuid.m4 \
+	$(top_srcdir)/m4/ax_mpi_pre_post.m4 \
 	$(top_srcdir)/m4/ax_openmp.m4 \
 	$(top_srcdir)/m4/ax_prog_doxygen.m4 \
 	$(top_srcdir)/m4/ax_pthread.m4 $(top_srcdir)/m4/cit_cuda.m4 \
@@ -189,6 +190,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
+REAL_TYPE = @REAL_TYPE@
 SCOREP_CPPFLAG = @SCOREP_CPPFLAG@
 SCOREP_EXEC = @SCOREP_EXEC@
 SCOREP_LFLAG = @SCOREP_LFLAG@
@@ -199,6 +201,7 @@ SHELL = @SHELL@
 SIMD_FLAGS = @SIMD_FLAGS@
 SIMD_OBJECTS = @SIMD_OBJECTS@
 STRIP = @STRIP@
+UINT_TYPE = @UINT_TYPE@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -276,9 +279,6 @@ DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @AVX_FALSE@@SIMD_FALSE@arch = -march=native
 @AVX_FALSE@@SIMD_TRUE@arch = -msse4
 @AVX_TRUE@arch = -mavx
-@AVX_FALSE@@SIMD_FALSE@arch_nvcc = -march=native
-@AVX_FALSE@@SIMD_TRUE@arch_nvcc = -msse4
-@AVX_TRUE@arch_nvcc = -mavx
 @PTXAS_OTIMIZATION_TRUE@PTXAS = --ptxas-options="-O3"
 @NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_FALSE@NV_ARCHITECTURE = $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 @NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_TRUE@NV_ARCHITECTURE = $(PTXAS) -arch=sm_35
@@ -293,6 +293,7 @@ DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @SCOREP_TRUE@SCOREP_INSTRUMENTATION = -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
 @SCOREP_TRUE@LDFLAGS_SCOREP = @SCOREP_LFLAG@
 @SCOREP_TRUE@LLIBS_SCOREP = @SCOREP_LLIBS@
+@SCOREP_TRUE@SCOREP_CXXCPPFLAGS = @SCOREP_CPPFLAG@
 @SCOREP_FALSE@libcudart_static_path = @CUDA_LDFLAGS@
 @SCOREP_FALSE@libcudart_static_flag = -lcudart
 @OPENMP_ON_CUDA_TRUE@CUDA_OPENMP = -fopenmp
@@ -675,6 +676,9 @@ uninstall-am:
 	maintainer-clean-local mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am uninstall uninstall-am
 
+@AVX_TRUE@  # arch_nvcc=-mavx
+@AVX_FALSE@@SIMD_TRUE@  # arch_nvcc=-msse4
+@AVX_FALSE@@SIMD_FALSE@  # arch_nvcc=-march=native
 
 @BASIC_PROFING_BFS_TRUE@  # FIXME:not working. use -D_INSTRUMENT_BFS instead
 
@@ -719,7 +723,7 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		compression/cpusimd.hh compression/nocompression.hh
 	@echo ""
 	@echo "--- Compiling g500"
-	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_INSTRUMENTATION) @SCOREP_CPPFLAG@ $(INCPATH) -o main.o main.cpp
+	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_INSTRUMENTATION) $(SCOREP_CXXCPPFLAGS) $(INCPATH) -o main.o main.cpp
 	@echo "    MPICC     $@"
 
 bitpacking.o: compression/cpusimd/include/bitpacking.h compression/cpusimd/src/bitpacking.cpp
