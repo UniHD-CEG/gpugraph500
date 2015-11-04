@@ -840,7 +840,7 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_dependency_tracking
-with_mpi_root
+with_mpi
 with_mpicc
 with_mpicxx
 enable_compression
@@ -1597,9 +1597,10 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-mpi-root=MPIROOT absolute path to the MPI root directory
-  --with-mpicc=MPICC      name of the MPI C++ compiler to use (default mpicc)
-  --with-mpicxx=MPICXX    name of the MPI C++ compiler to use (default mpicxx)
+  --with-mpi=<path>       absolute path to the MPI root directory. It should
+                          contain bin/ and include/ subdirectories.
+  --with-mpicc=mpicc      name of the MPI C++ compiler to use (default mpicc)
+  --with-mpicxx=mpicxx    name of the MPI C++ compiler to use (default mpicxx)
   --with-cuda=<path>      Use CUDA library. If argument is <empty> that means
                           the library is reachable with the standard search
                           path "/usr" or "/usr/local" (set as default).
@@ -5227,15 +5228,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 # MPI root directory
 
-# Check whether --with-mpi_root was given.
-if test "${with_mpi_root+set}" = set; then :
-  withval=$with_mpi_root;
+# Check whether --with-mpi was given.
+if test "${with_mpi+set}" = set; then :
+  withval=$with_mpi;
 fi
 
 
-if test x"$with_mpi_root" != "x";
+if test x"$with_mpi" != "x";
 then
-  MPIROOT="$with_mpi_root"
+  MPIROOT="$with_mpi"
 fi
 
 
@@ -5252,9 +5253,9 @@ else
   MPICC="mpicc"
 fi
 
-if test x"$with_mpi_root" != "x";
+if test x"$with_mpi" != "x";
 then
-  MPICC="$with_mpi_root/bin/$MPICC"
+  MPICC="$with_mpi/bin/$MPICC"
 fi
 
 
@@ -5272,9 +5273,9 @@ else
   MPICXX="mpicxx"
 fi
 
-if test x"$with_mpi_root" != "x";
+if test x"$with_mpi" != "x";
 then
-  MPICXX="$with_mpi_root/bin/$MPICXX"
+  MPICXX="$with_mpi/bin/$MPICXX"
 fi
 
 # saveCC="$CC"
