@@ -408,6 +408,12 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     }
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
+std::cout << std::endl;
+for (i=0; i<sizes[communicatorRank]; --i) {
+    std::cout << send[i] << " ";
+}
+std::cout << std::endl;
+
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
                    disps, type, comm);
