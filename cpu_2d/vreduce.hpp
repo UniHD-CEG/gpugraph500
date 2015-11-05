@@ -450,6 +450,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
+/*
 std::cout << std::endl << "*** START original buffer. for rank: " << communicatorRank << std::endl;
 for (int i=0; i<sizes[communicatorRank]; ++i) {
     std::cout << send[i] << " ";
@@ -460,6 +461,7 @@ for (int i=0; i<compressed_sizes[communicatorRank]; ++i) {
     std::cout <<  compressed_fq[i] << " ";
 }
 std::cout << std::endl << "*** END compressed buffer. for rank: " << communicatorRank << std::endl;
+*/
 std::cout << std::endl << "*** START sizes. totalsize: "<< rsize << " rank: " << communicatorRank << std::endl;
 for (int i=0; i<communicatorSize; ++i) {
     std::cout << sizes[i] << " ";
@@ -475,11 +477,22 @@ for (int i=0; i<communicatorSize; ++i) {
     std::cout << compressed_sizes[i] << " ";
 }
 std::cout << std::endl << "*** END compressed_sizes. rank: " << communicatorRank << std::endl;
-std::cout << std::endl << "*** compressed_disps. rank: " << communicatorRank << std::endl;
+std::cout << std::endl << "*** START compressed_disps. rank: " << communicatorRank << std::endl;
 for (int i=0; i<communicatorSize; ++i) {
     std::cout << compressed_disps[i] << " ";
 }
 std::cout << std::endl << "*** END compressed_DIPS. rank: " << communicatorRank << std::endl;
+
+
+compressedsize = compressed_sizes[communicatorRank];
+uncompressedsize = sizes[communicatorRank];
+decompress(&compressed_fq, compressedsize, &uncompressed_fq , uncompressedsize);
+
+assert(uncompressedsize == sizes[communicatorRank]);
+assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
+assert(memcmp(send, uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
+std::cout << "****** PASSED ASSERTS" << std::endl;
+
 #endif
 
 #ifdef _COMPRESSION
