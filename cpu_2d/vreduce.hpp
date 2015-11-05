@@ -405,7 +405,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         disps[2 * node + 1] = 0;
     }
     rsize = disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-else
+#else
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
     unsigned int reversedSliceIDs, targetNode;
@@ -446,7 +446,7 @@ std::cout << "end of original. for rank " << communicatorRank << std::endl;
 
 #ifdef _COMPRESSION
                 uncompressedsize = sizes[communicatorRank];
-                decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                decompress(recv_buff[disps[communicatorRank]], compressed_sizes[communicatorRank], &uncompressed_fq, uncompressedsize);
 #endif
 
 std::cout << "decompressed. for rank " << communicatorRank << std::endl;
