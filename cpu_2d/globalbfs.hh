@@ -539,7 +539,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 // 0) Node 0 sends start vertex to all nodes
-    MPI_Bcast(&startVertex, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&startVertex, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_END(vertexBroadcast_handle)
