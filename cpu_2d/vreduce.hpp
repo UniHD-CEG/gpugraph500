@@ -486,10 +486,10 @@ std::cout << std::endl << "*** END compressed_DIPS. rank: " << communicatorRank 
 
 compressedsize = compressed_sizes[communicatorRank];
 uncompressedsize = sizes[communicatorRank];
-decompress(&compressed_fq, compressedsize, &uncompressed_fq , uncompressedsize);
+decompress(compressed_fq, compressedsize, &uncompressed_fq , uncompressedsize);
 
 assert(uncompressedsize == sizes[communicatorRank]);
-assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
+assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
 assert(memcmp(send, uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
 std::cout << "****** PASSED ASSERTS" << std::endl;
 
@@ -507,10 +507,9 @@ std::cout << std::endl << "*** compressed_size: " << compressed_sizes[communicat
                    type, recv_buff, sizes,
                    disps, type, comm);
 
-/*    MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
+    MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
                    type, compressed_recv_buff, compressed_sizes,
                    compressed_disps, type, comm);
-*/
 #else
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
