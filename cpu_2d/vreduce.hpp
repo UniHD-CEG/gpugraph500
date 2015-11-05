@@ -476,9 +476,8 @@ for (int i=0; i<communicatorSize; ++i) {
     std::cout << compressed_disps[i] << " ";
 }
 std::cout << "*** END compressed_DIPS. rank " << communicatorRank << std::endl;
-*/
 #endif
-
+*/
 #ifdef _COMPRESSION
 /*
 std::cout << std::endl << "*** Rsize: " <<rsize << std::endl;
@@ -514,8 +513,14 @@ for (int i=0; i<communicatorSize; ++i) {
 }
 std::cout << "*** 2END compressed_sizes. rank " << communicatorRank << std::endl;
 */
-
     compressedsize = compressed_sizes[communicatorRank];
+
+std::cout << "*** START compressed buffer. " << "compressed size: " << compressedsize << "rank: " << communicatorRank << std::endl;
+for (int i=0; i<compressedsize; ++i) {
+    std::cout << compressed_recv_buff[compressed_disps[i]] << " ";
+}
+std::cout << "*** END compressed buffer. rank: " << communicatorRank << std::endl;
+
     uncompressedsize = sizes[communicatorRank];
     decompress(&compressed_recv_buff[compressed_disps[communicatorRank]], compressedsize, &uncompressed_recv_buff, uncompressedsize);
 
