@@ -48,7 +48,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
-    T *compressed_fq, *uncompressed_fq;
+    T *compressed_fq, *uncompressed_fq, *compressed_recv_buff;
 #endif
 
     // auxiliar lambdas
@@ -434,10 +434,12 @@ for (int i=0; i<sizes[communicatorRank]; ++i) {
 std::cout << "end of original. for rank " << communicatorRank << std::endl;
 
 #ifdef _COMPRESSION
-    MPI_Allgatherv(send, compressed_sizes[communicatorRank],
-                   type, recv_buff, compressed_sizes,
+    MPI_Allgatherv(send, sizes[communicatorRank],
+                   type, recv_buff, sizes,
                    disps, type, comm);
-
+    MPI_Allgatherv(send, compressed_sizes[communicatorRank],
+                   type, compressed_recv_buff, compressed_sizes,
+                   disps, type, comm);
 #else
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
@@ -447,11 +449,11 @@ std::cout << "end of original. for rank " << communicatorRank << std::endl;
 #ifdef _COMPRESSION
     uncompressedsize = sizes[communicatorRank];
     originalsize = compressed_sizes[communicatorRank];
-    decompress(&recv_buff[disps[communicatorRank]], originalsize, &uncompressed_fq, uncompressedsize);
+    decompress(&compressed_recv_buff[disps[communicatorRank]], originalsize, &uncompressed_fq, uncompressedsize);
 #endif
 
 std::cout << "decompressed. for rank " << communicatorRank << std::endl;
-for (int i=recv_buff[disps[communicatorRank]]; i<sizes[communicatorRank]; ++i) {
+for (int i=compressed_recv_buff[disps[communicatorRank]]; i<sizes[communicatorRank]; ++i) {
     std::cout << send[i] << " ";
 }
 std::cout << "end of decompressed. for rank " << communicatorRank << std::endl;
