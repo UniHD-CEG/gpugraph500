@@ -484,14 +484,14 @@ for (int i=0; i<communicatorSize; ++i) {
 std::cout << std::endl << "*** END compressed_DIPS. rank: " << communicatorRank << std::endl;
 
 
-compressedsize = compressed_sizes[communicatorRank];
-uncompressedsize = sizes[communicatorRank];
-decompress(compressed_fq, compressedsize, &uncompressed_fq , uncompressedsize);
+// compressedsize = compressed_sizes[communicatorRank];
+// uncompressedsize = sizes[communicatorRank];
+// decompress(compressed_fq, compressedsize, &uncompressed_fq , uncompressedsize);
 
-assert(uncompressedsize == sizes[communicatorRank]);
-assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-assert(memcmp(send, uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
-std::cout << "****** PASSED ASSERTS" << std::endl;
+// assert(uncompressedsize == sizes[communicatorRank]);
+// assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
+// assert(memcmp(send, uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
+// std::cout << "****** PASSED ASSERTS" << std::endl;
 
 #endif
 
@@ -538,8 +538,13 @@ std::cout << "*** 2END compressed_sizes. rank " << communicatorRank << std::endl
 // }
 // std::cout << "*** END compressed buffer. rank: " << communicatorRank << std::endl;
 
-    // uncompressedsize = sizes[communicatorRank];
-    // decompress(&compressed_recv_buff[compressed_disps[communicatorRank]], compressedsize, &uncompressed_recv_buff, uncompressedsize);
+    uncompressedsize = sizes[communicatorRank];
+    decompress(&compressed_recv_buff[compressed_disps[communicatorRank]], compressedsize, &uncompressed_fq, uncompressedsize);
+
+    assert(uncompressedsize == sizes[communicatorRank]);
+    assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
+    assert(memcmp(send, uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
+    std::cout << "****** PASSED ASSERTS" << std::endl;
 
     // assert(uncompressedsize == sizes[communicatorRank]);
     // assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
