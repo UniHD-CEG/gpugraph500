@@ -460,22 +460,22 @@ for (int i=0; i<compressed_sizes[communicatorRank]; ++i) {
     std::cout <<  compressed_fq[i] << " ";
 }
 std::cout << std::endl << "*** END compressed buffer. for rank: " << communicatorRank << std::endl;
-std::cout << std::endl << "*** START sizes. rank: " << communicatorRank << std::endl;
+std::cout << std::endl << "*** START sizes. totalsize: "<< rsize << " rank: " << communicatorRank << std::endl;
 for (int i=0; i<communicatorSize; ++i) {
     std::cout << sizes[i] << " ";
 }
 std::cout << std::endl << "*** END sizes. rank: " << communicatorRank << std::endl;
-std::cout << std::endl << "*** START compressed_sizes. rank: " << communicatorRank << std::endl;
-for (int i=0; i<communicatorSize; ++i) {
-    std::cout << compressed_sizes[i] << " ";
-}
-std::cout << std::endl << "*** END compressed_sizes. rank: " << communicatorRank << std::endl;
 std::cout << std::endl << "*** START disps. rank: " << communicatorRank << std::endl;
 for (int i=0; i<communicatorSize; ++i) {
     std::cout << disps[i] << " ";
 }
 std::cout << std::endl << "*** END DIPS. rank: " << communicatorRank << std::endl;
-std::cout << std::endl << "*** compressed_DIPS. rank: " << communicatorRank << std::endl;
+std::cout << std::endl << "*** START compressed_sizes. totalsize: "<< csize << "  rank: " << communicatorRank << std::endl;
+for (int i=0; i<communicatorSize; ++i) {
+    std::cout << compressed_sizes[i] << " ";
+}
+std::cout << std::endl << "*** END compressed_sizes. rank: " << communicatorRank << std::endl;
+std::cout << std::endl << "*** compressed_disps. rank: " << communicatorRank << std::endl;
 for (int i=0; i<communicatorSize; ++i) {
     std::cout << compressed_disps[i] << " ";
 }
