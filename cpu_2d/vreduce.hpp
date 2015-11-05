@@ -448,7 +448,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     }
     rsize = disps_lastTargetNode + sizes[lastTargetNode];
 #endif
-/*
+
 std::cout << "original buffer. for rank " << communicatorRank << std::endl;
 for (int i=0; i<sizes[communicatorRank]; ++i) {
     std::cout << send[i] << " ";
@@ -477,7 +477,7 @@ for (int i=0; i<communicatorSize; ++i) {
 }
 std::cout << "*** END compressed_DIPS. rank " << communicatorRank << std::endl;
 #endif
-*/
+
 #ifdef _COMPRESSION
 /*
 std::cout << std::endl << "*** Rsize: " <<rsize << std::endl;
@@ -521,12 +521,12 @@ for (int i=0; i<compressedsize; ++i) {
 }
 std::cout << "*** END compressed buffer. rank: " << communicatorRank << std::endl;
 
-    uncompressedsize = sizes[communicatorRank];
-    decompress(&compressed_recv_buff[compressed_disps[communicatorRank]], compressedsize, &uncompressed_recv_buff, uncompressedsize);
+    // uncompressedsize = sizes[communicatorRank];
+    // decompress(&compressed_recv_buff[compressed_disps[communicatorRank]], compressedsize, &uncompressed_recv_buff, uncompressedsize);
 
-    assert(uncompressedsize == sizes[communicatorRank]);
-    assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
-    std::cout << "****** PASSED ASSERTS" << std::endl;
+    // assert(uncompressedsize == sizes[communicatorRank]);
+    // assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
+    // std::cout << "****** PASSED ASSERTS" << std::endl;
 #endif
 
 #ifdef _COMPRESSION
@@ -542,10 +542,10 @@ std::cout << "end of decompressed. for rank " << communicatorRank << std::endl;
     free(disps);
 
 #ifdef _COMPRESSION
-    if (isCompressed(uncompressedsize, compressedsize))
-    {
-        free(uncompressed_recv_buff);
-    }
+    // if (isCompressed(uncompressedsize, compressedsize))
+    // {
+    //     free(uncompressed_recv_buff);
+    // }
     free(compressed_sizes);
     free(compressed_disps);
     // free(compressed_recv_buff);
