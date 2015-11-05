@@ -395,16 +395,15 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     compress(send, psizeTo, &compressed_fq, compressedsize);
     MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, comm);
 
-    int disps_lastTargetNode = 0;
     disps[lastTargetNode] = 0;
+    compressed_disps[lastTargetNode] = 0;
     for (unsigned int slice = 1; slice < power2intLdSize; ++slice)
     {
         reversedSliceIDs = reverse(slice, intLdSize);
         targetNode = oldRank(reversedSliceIDs);
-        compressed_disps[targetNode] = disps_lastTargetNode + compressed_sizes[lastTargetNode];
-        disps[targetNode] = disps_lastTargetNode + sizes[lastTargetNode];
+        compressed_disps[targetNode] = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+        disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
         lastTargetNode = targetNode;
-        disps_lastTargetNode = disps[lastTargetNode];
     }
     int index;
     for (unsigned int node = 0; node < residuum; ++node)
@@ -413,8 +412,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         disps[index] = 0;
         compressed_disps[index] = 0;
     }
-    csize = disps_lastTargetNode + compressed_sizes[lastTargetNode];
-    rsize = disps_lastTargetNode + sizes[lastTargetNode];
+    csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+    rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
     compressed_recv_buff = (T *)malloc(csize*sizeof(T));
 /*
