@@ -412,7 +412,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     csize = disps_lastTargetNode + compressed_sizes[lastTargetNode];
     rsize = disps_lastTargetNode + sizes[lastTargetNode];
 
-    compressed_recv_buff = (T *)malloc(csize*sizeof(T));
+    //compressed_recv_buff = (T *)malloc(csize*sizeof(T));
 #else
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -463,10 +463,11 @@ std::cout << "*** END compressed_sizes. rank " << communicatorRank << std::endl;
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
                    disps, type, comm);
-
+/*
     MPI_Allgatherv(send, compressed_sizes[communicatorRank],
                    type, compressed_recv_buff, compressed_sizes,
                    compressed_disps, type, comm);
+*/
 #else
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
@@ -487,31 +488,36 @@ for (int i=0; i<communicatorSize; ++i) {
 }
 std::cout << "*** 2END compressed_sizes. rank " << communicatorRank << std::endl;
 */
+/*
     compressedsize = compressed_sizes[communicatorRank];
     uncompressedsize = sizes[communicatorRank];
     decompress(&compressed_recv_buff[compressed_disps[communicatorRank]], compressedsize, &uncompressed_recv_buff, uncompressedsize);
 
     assert(uncompressedsize == sizes[communicatorRank]);
     assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
+    std::cout << "****** PASSED ASSERTS" << std::endl;	
+*/
 #endif
 
 #ifdef _COMPRESSION
-std::cout << "decompressed. for rank " << communicatorRank << std::endl;
+/*std::cout << "decompressed. for rank " << communicatorRank << std::endl;
 for (int i=0; i<uncompressedsize; ++i) {
     std::cout << uncompressed_recv_buff[i] << " ";
 }
 std::cout << "end of decompressed. for rank " << communicatorRank << std::endl;
+*/
 #endif
 
     free(sizes);
     free(disps);
 
 #ifdef _COMPRESSION
-    if (isCompressed(uncompressedsize, compressedsize))
+/*    if (isCompressed(uncompressedsize, compressedsize))
     {
         free(uncompressed_recv_buff);
     }
-    free(compressed_sizes);
+*/
+//    free(compressed_sizes);
 #endif
 
 }
