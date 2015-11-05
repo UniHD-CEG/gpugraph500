@@ -454,7 +454,7 @@ for (int i=0; i<sizes[communicatorRank]; ++i) {
     std::cout << send[i] << " ";
 }
 std::cout << "END original buffer. for rank " << communicatorRank << std::endl;
-*/
+
 #ifdef _COMPRESSION
 std::cout << "*** sizes. rank " << communicatorRank << std::endl;
 for (int i=0; i<communicatorSize; ++i) {
@@ -476,15 +476,17 @@ for (int i=0; i<communicatorSize; ++i) {
     std::cout << compressed_disps[i] << " ";
 }
 std::cout << "*** END compressed_DIPS. rank " << communicatorRank << std::endl;
+*/
 #endif
 
 #ifdef _COMPRESSION
+/*
 std::cout << std::endl << "*** Rsize: " <<rsize << std::endl;
 std::cout << std::endl << "*** Csize: " <<csize << std::endl;
 
 std::cout << std::endl << "*** size: " << sizes[communicatorRank] << std::endl;
 std::cout << std::endl << "*** compressed_size: " << compressed_sizes[communicatorRank] << std::endl;
-
+*/
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
                    disps, type, comm);
@@ -512,7 +514,7 @@ for (int i=0; i<communicatorSize; ++i) {
 }
 std::cout << "*** 2END compressed_sizes. rank " << communicatorRank << std::endl;
 */
-/*
+
     compressedsize = compressed_sizes[communicatorRank];
     uncompressedsize = sizes[communicatorRank];
     decompress(&compressed_recv_buff[compressed_disps[communicatorRank]], compressedsize, &uncompressed_recv_buff, uncompressedsize);
@@ -520,7 +522,6 @@ std::cout << "*** 2END compressed_sizes. rank " << communicatorRank << std::endl
     assert(uncompressedsize == sizes[communicatorRank]);
     assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
     std::cout << "****** PASSED ASSERTS" << std::endl;
-*/
 #endif
 
 #ifdef _COMPRESSION
@@ -536,14 +537,13 @@ std::cout << "end of decompressed. for rank " << communicatorRank << std::endl;
     free(disps);
 
 #ifdef _COMPRESSION
-/*
     if (isCompressed(uncompressedsize, compressedsize))
     {
         free(uncompressed_recv_buff);
     }
-*/
     free(compressed_sizes);
     free(compressed_disps);
+    // free(compressed_recv_buff);
 #endif
 
 }
