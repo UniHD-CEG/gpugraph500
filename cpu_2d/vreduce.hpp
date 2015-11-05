@@ -374,25 +374,43 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     }
 
 
-    /*
-    //std::cout << std::endl;
-    for (int i= 0; i< psizeTo; ++i){
-        //std::cout << send[i] << " ";
-    }
-    //std::cout << std::endl;
-    */
+
     // Transmission of the final results
     int *sizes = (int *)malloc(communicatorSize * sizeof(int));
     int *disps = (int *)malloc(communicatorSize * sizeof(int));
 
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
-    //Computation of displacements
+
+
+#ifdef _COMPRESSION
+    int *compressed_sizes = (int *)malloc(communicatorSize * sizeof(int));
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
-    disps[lastTargetNode] = 0;
-
     unsigned int reversedSliceIDs, targetNode;
+
+    compress(send, psizeTo, &compressed_fq, compressedsize);
+    MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, comm);
+
+    disps[lastTargetNode] = 0;
+    for (unsigned int slice = 1; slice < power2intLdSize; ++slice)
+    {
+        reversedSliceIDs = reverse(slice, intLdSize);
+        targetNode = oldRank(reversedSliceIDs);
+        disps[targetNode] = disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+        lastTargetNode = targetNode;
+    }
+    for (unsigned int node = 0; node < residuum; ++node)
+    {
+        disps[2 * node + 1] = 0;
+    }
+    rsize = disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+else
+    unsigned int lastReversedSliceIDs = 0;
+    unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
+    unsigned int reversedSliceIDs, targetNode;
+
+    disps[lastTargetNode] = 0;
     for (unsigned int slice = 1; slice < power2intLdSize; ++slice)
     {
         reversedSliceIDs = reverse(slice, intLdSize);
@@ -407,6 +425,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         disps[2 * node + 1] = 0;
     }
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
+#endif
 
 std::cout << "original. for rank " << communicatorRank << std::endl;
 for (int i=0; i<sizes[communicatorRank]; ++i) {
@@ -414,18 +433,34 @@ for (int i=0; i<sizes[communicatorRank]; ++i) {
 }
 std::cout << "end of original. for rank " << communicatorRank << std::endl;
 
+#ifdef _COMPRESSION
+    MPI_Allgatherv(send, compressed_sizes[communicatorRank],
+                   type, recv_buff, compressed_sizes,
+                   disps, type, comm);
+
+#else
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
                    disps, type, comm);
+#endif
 
-std::cout << "after. for rank " << communicatorRank << std::endl;
+#ifdef _COMPRESSION
+                uncompressedsize = sizes[communicatorRank];
+                decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+#endif
+
+std::cout << "decompressed. for rank " << communicatorRank << std::endl;
 for (int i=recv_buff[disps[communicatorRank]]; i<sizes[communicatorRank]; ++i) {
     std::cout << send[i] << " ";
 }
-std::cout << "end of after. for rank " << communicatorRank << std::endl;
+std::cout << "end of decompressed. for rank " << communicatorRank << std::endl;
 
     free(sizes);
     free(disps);
+
+#ifdef _COMPRESSION
+    free(compressed_sizes);
+#endif
 
 }
 
