@@ -48,7 +48,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
-    T *compressed_fq, *uncompressed_fq, *compressed_recv_buff;
+    T *compressed_fq, *uncompressed_fq, *compressed_recv_buff, *compressed_recv_buff;
 #endif
 
     // auxiliar lambdas
@@ -447,14 +447,14 @@ std::cout << "end of original. for rank " << communicatorRank << std::endl;
 #endif
 
 #ifdef _COMPRESSION
+    compressedsize = compressed_sizes[communicatorRank];
     uncompressedsize = sizes[communicatorRank];
-    originalsize = compressed_sizes[communicatorRank];
-    decompress(&compressed_recv_buff[disps[communicatorRank]], originalsize, &uncompressed_fq, uncompressedsize);
+    decompress(&compressed_recv_buff[disps[communicatorRank]], compressedsize, &uncompressed_recv_buff, uncompressedsize);
 #endif
 
 std::cout << "decompressed. for rank " << communicatorRank << std::endl;
-for (int i=compressed_recv_buff[disps[communicatorRank]]; i<sizes[communicatorRank]; ++i) {
-    std::cout << send[i] << " ";
+for (int i=0; i<uncompressedsize; ++i) {
+    std::cout << uncompressed_recv_buff[i] << " ";
 }
 std::cout << "end of decompressed. for rank " << communicatorRank << std::endl;
 
@@ -462,10 +462,10 @@ std::cout << "end of decompressed. for rank " << communicatorRank << std::endl;
     free(disps);
 
 #ifdef _COMPRESSION
-    if (isCompressed(uncompressedsize, originalsize))
-    {
-        free(uncompressed_fq);
-    }
+    // if (isCompressed(uncompressedsize, compressedsize))
+    // {
+    //     free(uncompressed_recv_buff);
+    // }
     free(compressed_sizes);
 #endif
 
