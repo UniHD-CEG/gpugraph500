@@ -445,8 +445,9 @@ std::cout << "end of original. for rank " << communicatorRank << std::endl;
 #endif
 
 #ifdef _COMPRESSION
-                uncompressedsize = sizes[communicatorRank];
-                decompress(recv_buff[disps[communicatorRank]], compressed_sizes[communicatorRank], &uncompressed_fq, uncompressedsize);
+    uncompressedsize = sizes[communicatorRank];
+    originalsize = compressed_sizes[communicatorRank];
+    decompress(&recv_buff[disps[communicatorRank]], originalsize, &uncompressed_fq, uncompressedsize);
 #endif
 
 std::cout << "decompressed. for rank " << communicatorRank << std::endl;
@@ -459,6 +460,10 @@ std::cout << "end of decompressed. for rank " << communicatorRank << std::endl;
     free(disps);
 
 #ifdef _COMPRESSION
+    if (isCompressed(uncompressedsize, originalsize))
+    {
+        free(uncompressed_fq);
+    }
     free(compressed_sizes);
 #endif
 
