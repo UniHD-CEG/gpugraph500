@@ -416,6 +416,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
     compressed_recv_buff = (T *)malloc(csize*sizeof(T));
+    uncompressed_recv_buff = (T *)malloc(rsize*sizeof(T));
+
 /*
     std::cout << "csize1: " << csize << std::endl;
 
@@ -530,22 +532,29 @@ for (int i=0; i<communicatorSize; ++i) {
 }
 std::cout << "*** 2END compressed_sizes. rank " << communicatorRank << std::endl;
 */
-    compressedsize = compressed_sizes[communicatorRank];
-
 // std::cout << "*** START compressed buffer. " << "compressed size: " << compressedsize << "rank: " << communicatorRank << std::endl;
 // for (int i=0; i<compressedsize; ++i) {
 //     std::cout << compressed_recv_buff[compressed_disps[i]] << " ";
 // }
 // std::cout << "*** END compressed buffer. rank: " << communicatorRank << std::endl;
 
-    uncompressedsize = sizes[communicatorRank];
-    decompress(&compressed_recv_buff[compressed_disps[communicatorRank]], compressedsize, &uncompressed_fq, uncompressedsize);
 
-    assert(uncompressedsize == sizes[communicatorRank]);
-    assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-    assert(memcmp(send, uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
-    std::cout << "****** PASSED ASSERTS" << std::endl;
 
+
+    for (int i=0; i<communicatorSize; ++i) {
+        compressedsize = compressed_sizes[i];
+        if (compressedsize != 0) {
+                uncompressedsize = sizes[i];
+                decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+                assert(uncompressedsize == sizes[communicatorRank]);
+                assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
+                assert(memcmp(send, uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
+                std::cout << "****** PASSED ASSERTS" << std::endl;
+                memcpy(&uncompressed_recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
+        }
+    }
+    assert(memcmp(uncompressed_recv_buff, recv_buff, uncompressedsize * sizeof(T)) == 0);
+    assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
     // assert(uncompressedsize == sizes[communicatorRank]);
     // assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
     // std::cout << "****** PASSED ASSERTS" << std::endl;
