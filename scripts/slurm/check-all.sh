@@ -312,5 +312,11 @@ if [ $1 -eq 0 ]; then
   exit 1
 fi
 
+srun=`which srun`
+if [ ! -x $srun ];then
+  echo "error: this script requires SLURM."
+  exit 1
+fi
+
 set_colors "yes"
 main $1 $2

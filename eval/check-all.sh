@@ -1,1 +1,1 @@
-../scripts/check-all.sh
+../scripts/slurm/check-all.sh

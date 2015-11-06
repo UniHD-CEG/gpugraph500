@@ -29,13 +29,17 @@ fi
 
 PROCESSES=$(expr $N \* $N)
 
-mpirun=`which mpirun`
-mpirun=/home/jromera/openmpi/bin/mpirun
+srun=`which srun`
+if [ ! -x $srun ];then
+  echo "error: this script requires SLURM."
+  exit 1
+fi
 
+mpirun=`which mpirun`
 iseval=`pwd | grep "/eval"`
 
 if [ ! -d $iseval ];then
-  echo "error: run this script from eval directory."
+  echo "error: run this script from eval/ directory."
   exit 1
 fi
 

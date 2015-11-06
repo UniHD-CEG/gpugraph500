@@ -66,6 +66,7 @@ function generate_r_variables {
     done
     for line in $transformed_block; do
         transformed_line=`echo "$line" | sed 's/:/=/' | sed 's/^\(.*\)/id__'$id'__\1/'`
+        transformed_line=`echo "$transformed_line" | grep -v "=-nan" | grep -v "=nan"`
         result_code="$result_code"`echo ""; echo "$transformed_line"`
     done
 

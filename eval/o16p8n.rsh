@@ -6,7 +6,8 @@
 #SBATCH --gres=gpu:1
 
 MAX_SF=22
-CODEC=s4-bp128-d4
+# CODEC=s4-bp128-d4
+CODEC=frameofreference
 ROWTHRESHOLD=64
 COLUMNTHRESHOLD=64
 

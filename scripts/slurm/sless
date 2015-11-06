@@ -1,3 +1,10 @@
 #!/bin/bash
 
+srun=`which srun`
+if [ ! -x $srun ];then
+  echo "error: this script requires SLURM."
+  exit 1
+fi
+
+
 less ./slurm-$1.out

@@ -52,7 +52,7 @@ fi
 cube_stat=`which cube_stat`
 
 if [ ! -x $cube_stat ];then
-	error "scalasca, scorep and CUBE (non Qt version), must be installed"
+	error "scalasca, scorep and CUBE (non Qt version) must be installed."
 fi
 
 

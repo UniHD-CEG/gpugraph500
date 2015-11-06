@@ -48,8 +48,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
-    //T *compressed_fq=NULL, *uncompressed_fq=NULL, *compressed_recv_buff=NULL, *uncompressed_recv_buff=NULL;
-    T *compressed_fq, *uncompressed_fq, *compressed_recv_buff, *uncompressed_recv_buff;
+    T *compressed_fq=NULL, *uncompressed_fq=NULL, *compressed_recv_buff=NULL;
+    // T *compressed_fq, *uncompressed_fq, *compressed_recv_buff;
 #endif
 
     // auxiliar lambdas
@@ -443,10 +443,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-//    MPI_Allgatherv(send, sizes[communicatorRank],
-//                   type, recv_buff, sizes,
-//                   disps, type, comm);
-
     MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
                    type, compressed_recv_buff, compressed_sizes,
                    compressed_disps, type, comm);
@@ -457,36 +453,37 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
+
     // reensamble uncompressed chunks
+#ifdef _COMPRESSIONVERIFY
     int total_uncompressedsize=0;
+#endif
+
     for (int i=0; i<communicatorSize; ++i) {
         compressedsize = compressed_sizes[i];
         if (compressedsize != 0) {
                 uncompressedsize = sizes[i];
                 decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+
+#ifdef _COMPRESSIONVERIFY
                 assert(uncompressedsize == sizes[i]);
                 assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-                // assert(memcmp(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
-                // memcpy(&uncompressed_recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
-                memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
                 total_uncompressedsize += uncompressedsize;
-        }
-    }
-    // assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + total_uncompressedsize));
-    assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
 #endif
 
-#ifdef _COMPRESSION
+                memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
+        }
+    }
+
+#ifdef _COMPRESSIONVERIFY
+    assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
+#endif
 #endif
 
     free(sizes);
     free(disps);
 
 #ifdef _COMPRESSION
-    // if (isCompressed(uncompressedsize, compressedsize))
-    // {
-    //     free(uncompressed_recv_buff);
-    // }
     free(compressed_sizes);
     free(compressed_disps);
     free(compressed_recv_buff);
