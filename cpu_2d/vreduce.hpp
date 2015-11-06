@@ -416,17 +416,8 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
     compressed_recv_buff = (T *)malloc(csize*sizeof(T));
-    uncompressed_recv_buff = (T *)malloc(rsize*sizeof(T));
+    // uncompressed_recv_buff = (T *)malloc(rsize*sizeof(T));
 
-/*
-    std::cout << "csize1: " << csize << std::endl;
-
-    int totlen = 0;
-    for (int i=0; i<communicatorSize; ++i) {
-        totlen += compressed_sizes[i];
-    }
-    std::cout << "csize2: " << totlen << std::endl;
-*/
 #else
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -452,62 +443,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-/*
-std::cout << std::endl << "*** START original buffer. for rank: " << communicatorRank << std::endl;
-for (int i=0; i<sizes[communicatorRank]; ++i) {
-    std::cout << send[i] << " ";
-}
-std::cout << std::endl << "*** END original buffer. for rank: " << communicatorRank << std::endl;
-std::cout << std::endl << "*** START compressed buffer. for rank: " << communicatorRank << std::endl;
-for (int i=0; i<compressed_sizes[communicatorRank]; ++i) {
-    std::cout <<  compressed_fq[i] << " ";
-}
-std::cout << std::endl << "*** END compressed buffer. for rank: " << communicatorRank << std::endl;
-*/
-std::cout << std::endl << "*** START sizes. totalsize: "<< rsize << " rank: " << communicatorRank << std::endl;
-for (int i=0; i<communicatorSize; ++i) {
-    std::cout << sizes[i] << " ";
-}
-std::cout << std::endl << "*** END sizes. rank: " << communicatorRank << std::endl;
-std::cout << std::endl << "*** START disps. rank: " << communicatorRank << std::endl;
-for (int i=0; i<communicatorSize; ++i) {
-    std::cout << disps[i] << " ";
-}
-std::cout << std::endl << "*** END DIPS. rank: " << communicatorRank << std::endl;
-std::cout << std::endl << "*** START compressed_sizes. totalsize: "<< csize << "  rank: " << communicatorRank << std::endl;
-for (int i=0; i<communicatorSize; ++i) {
-    std::cout << compressed_sizes[i] << " ";
-}
-std::cout << std::endl << "*** END compressed_sizes. rank: " << communicatorRank << std::endl;
-std::cout << std::endl << "*** START compressed_disps. rank: " << communicatorRank << std::endl;
-for (int i=0; i<communicatorSize; ++i) {
-    std::cout << compressed_disps[i] << " ";
-}
-std::cout << std::endl << "*** END compressed_DIPS. rank: " << communicatorRank << std::endl;
-
-
-// compressedsize = compressed_sizes[communicatorRank];
-// uncompressedsize = sizes[communicatorRank];
-// decompress(compressed_fq, compressedsize, &uncompressed_fq , uncompressedsize);
-
-// assert(uncompressedsize == sizes[communicatorRank]);
-// assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-// assert(memcmp(send, uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
-// std::cout << "****** PASSED ASSERTS" << std::endl;
-
-#endif
-
-#ifdef _COMPRESSION
-/*
-std::cout << std::endl << "*** Rsize: " <<rsize << std::endl;
-std::cout << std::endl << "*** Csize: " <<csize << std::endl;
-
-std::cout << std::endl << "*** size: " << sizes[communicatorRank] << std::endl;
-std::cout << std::endl << "*** compressed_size: " << compressed_sizes[communicatorRank] << std::endl;
-*/
-    MPI_Allgatherv(send, sizes[communicatorRank],
-                   type, recv_buff, sizes,
-                   disps, type, comm);
+//    MPI_Allgatherv(send, sizes[communicatorRank],
+//                   type, recv_buff, sizes,
+//                   disps, type, comm);
 
     MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
                    type, compressed_recv_buff, compressed_sizes,
@@ -519,28 +457,8 @@ std::cout << std::endl << "*** compressed_size: " << compressed_sizes[communicat
 #endif
 
 #ifdef _COMPRESSION
-/*
-std::cout << "*** 2sizes. rank " << communicatorRank << std::endl;
-for (int i=0; i<communicatorSize; ++i) {
-    std::cout << sizes[i] << " ";
-}
-std::cout << "*** 2END sizes. rank " << communicatorRank << std::endl;
-
-std::cout << "*** 2compressed_sizes. rank " << communicatorRank << std::endl;
-for (int i=0; i<communicatorSize; ++i) {
-    std::cout << compressed_sizes[i] << " ";
-}
-std::cout << "*** 2END compressed_sizes. rank " << communicatorRank << std::endl;
-*/
-// std::cout << "*** START compressed buffer. " << "compressed size: " << compressedsize << "rank: " << communicatorRank << std::endl;
-// for (int i=0; i<compressedsize; ++i) {
-//     std::cout << compressed_recv_buff[compressed_disps[i]] << " ";
-// }
-// std::cout << "*** END compressed buffer. rank: " << communicatorRank << std::endl;
-
-
-
-
+    // reensamble uncompressed chunks
+    int total_uncompressedsize=0;
     for (int i=0; i<communicatorSize; ++i) {
         compressedsize = compressed_sizes[i];
         if (compressedsize != 0) {
@@ -548,25 +466,17 @@ std::cout << "*** 2END compressed_sizes. rank " << communicatorRank << std::endl
                 decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
                 assert(uncompressedsize == sizes[i]);
                 assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-                assert(memcmp(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
-                std::cout << "****** PASSED ASSERTS" << std::endl;
-                memcpy(&uncompressed_recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
+                // assert(memcmp(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
+                // memcpy(&uncompressed_recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
+                memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
+                total_uncompressedsize += uncompressedsize;
         }
     }
-    assert(memcmp(uncompressed_recv_buff, recv_buff, uncompressedsize * sizeof(T)) == 0);
-    assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
-    // assert(uncompressedsize == sizes[communicatorRank]);
-    // assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + uncompressedsize));
-    // std::cout << "****** PASSED ASSERTS" << std::endl;
+    // assert(std::is_sorted(uncompressed_recv_buff, uncompressed_recv_buff + total_uncompressedsize));
+    assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
 #endif
 
 #ifdef _COMPRESSION
-/*std::cout << "decompressed. for rank " << communicatorRank << std::endl;
-for (int i=0; i<uncompressedsize; ++i) {
-    std::cout << uncompressed_recv_buff[i] << " ";
-}
-std::cout << "end of decompressed. for rank " << communicatorRank << std::endl;
-*/
 #endif
 
     free(sizes);
@@ -579,7 +489,7 @@ std::cout << "end of decompressed. for rank " << communicatorRank << std::endl;
     // }
     free(compressed_sizes);
     free(compressed_disps);
-    //free(compressed_recv_buff);
+    free(compressed_recv_buff);
 #endif
 
 }
