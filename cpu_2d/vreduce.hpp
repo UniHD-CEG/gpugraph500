@@ -546,9 +546,9 @@ std::cout << "*** 2END compressed_sizes. rank " << communicatorRank << std::endl
         if (compressedsize != 0) {
                 uncompressedsize = sizes[i];
                 decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
-                assert(uncompressedsize == sizes[communicatorRank]);
+                assert(uncompressedsize == sizes[i]);
                 assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-                assert(memcmp(send, uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
+                assert(memcmp(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T)) == 0);
                 std::cout << "****** PASSED ASSERTS" << std::endl;
                 memcpy(&uncompressed_recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
         }
