@@ -153,20 +153,24 @@ if DEBUGGING
 endif
 
 
-### Compiler options: C, C++, MPI, CUDA Flags and Libs
-#
 
+### Flags
+#
 
 MPICFLAGS=${arch} -std=c99 -pedantic -m64 -mfpmath=sse $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) -Wall -Wextra
 MPICXXFLAGS=${arch} -std=c++11 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) -Wall -Wextra
 NVCXXFLAGS=$(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
 LLIBS=$(LLIBS_SCOREP) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
-AM_LDFLAGS=-m64 $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
-AM_CXXFLAGS=${arch} -std=c++11 -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) @WARN_CXXFLAGS@
-AM_CFLAGS=${arch} -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) @WARN_CFLAGS@
-# FIXME: test NVCC
-NVCXX=$(NVCC)
-AM_LD=$(PROFILER) $(MPICXX)
+
+AM_LDFLAGS=${arch} $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
+AM_CXXFLAGS=${arch} @CXXFLAGS@ $(DEBUG_FLAG) @WARN_CXXFLAGS@
+AM_CFLAGS=${arch} @CFLAGS@ $(DEBUG_FLAG) @WARN_CFLAGS@
+
+### Compilers
+#
+
+NVCXX=@NVCC@
+AM_LD=$(PROFILER) @MPICXX@
 
 
 ### List of sources to compile
@@ -325,7 +329,7 @@ if SIMD
 endif
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" -std=c++11 --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 

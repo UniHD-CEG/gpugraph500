@@ -121,6 +121,8 @@ do
 	echo "Running libtoolize..."
 	libtoolize --force --copy
       fi
+      echo "Running cache-clean $dr/autom4te.cache ..."
+      test -d $dr/autom4te.cache && rm -rf $dr/autom4te.cache 2> /dev/null
       echo "Running aclocal $aclocalinclude ..."
       aclocal $aclocalinclude
       if grep "^AM_CONFIG_HEADER" configure.ac >/dev/null; then

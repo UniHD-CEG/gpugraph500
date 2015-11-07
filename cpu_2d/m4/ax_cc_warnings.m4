@@ -1,29 +1,29 @@
-# gnome-compiler-flags.m4
+# ax-ccc-warnings.m4
 #
-# serial 2
+# serial 3
 #
 
-dnl GNOME_COMPILE_WARNINGS
+dnl AX_CC_WARNINGS
 dnl Turn on many useful compiler warnings and substitute the result into
 dnl WARN_CFLAGS
 dnl For now, only works on GCC
-dnl Pass the default value of the --enable-compile-warnings configure option as
+dnl Pass the default value of the --enable-cc-warnings configure option as
 dnl the first argument to the macro, defaulting to 'yes'.
 dnl Additional warning/error flags can be passed as an optional second argument.
 dnl
-dnl For example: GNOME_COMPILE_WARNINGS([maximum],[-Werror=some-flag -Wfoobar])
-AC_DEFUN([GNOME_COMPILE_WARNINGS],[
+dnl For example: AX_CC_WARNINGS([maximum],[-Werror=some-flag -Wfoobar])
+AC_DEFUN([AX_CC_WARNINGS],[
     dnl ******************************
     dnl More compiler warnings
     dnl ******************************
 
-    AC_ARG_ENABLE(compile-warnings, 
-                  AC_HELP_STRING([--enable-compile-warnings=@<:@no/minimum/yes/maximum/error@:>@],
-                                 [Turn on compiler warnings]),,
-                  [enable_compile_warnings="m4_default([$1],[yes])"])
+    AC_ARG_ENABLE(cc-warnings, 
+                  AC_HELP_STRING([--enable-cc-warnings=@<:@no/minimum/yes/maximum/error@:>@],
+                                 [Turn on C compiler warnings]),,
+                  [enable_cc_warnings="m4_default([$1],[yes])"])
 
     if test "x$GCC" != xyes; then
-	enable_compile_warnings=no
+	enable_cc_warnings=no
     fi
 
     warning_flags=
@@ -56,7 +56,7 @@ AC_DEFUN([GNOME_COMPILE_WARNINGS],[
     dnl The author can pass -W or -Werror flags here as they see fit.
     additional_flags="m4_default([$2],[])"
 
-    case "$enable_compile_warnings" in
+    case "$enable_cc_warnings" in
     no)
         warning_flags=
         ;;
@@ -70,11 +70,11 @@ AC_DEFUN([GNOME_COMPILE_WARNINGS],[
         warning_flags="$base_warn_flags $base_error_flags $additional_flags"
         ;;
     *)
-        AC_MSG_ERROR(Unknown argument '$enable_compile_warnings' to --enable-compile-warnings)
+        AC_MSG_ERROR(Unknown argument '$enable_cc_warnings' to --enable-cc-warnings)
         ;;
     esac
 
-    if test "$enable_compile_warnings" = "error" ; then
+    if test "$enable_cc_warnings" = "error" ; then
         warning_flags="$warning_flags -Werror"
     fi
 
@@ -82,7 +82,7 @@ AC_DEFUN([GNOME_COMPILE_WARNINGS],[
     for option in $warning_flags; do
 	save_CFLAGS="$CFLAGS"
 	CFLAGS="$CFLAGS $option"
-	AC_MSG_CHECKING([whether gcc understands $option])
+	AC_MSG_CHECKING([whether C understands $option])
 	AC_TRY_COMPILE([], [],
 	    has_option=yes,
 	    has_option=no,)
@@ -122,59 +122,5 @@ AC_DEFUN([GNOME_COMPILE_WARNINGS],[
 
     WARN_CFLAGS="$tested_warning_flags $complCFLAGS"
     AC_SUBST(WARN_CFLAGS)
-])
-
-dnl For C++, do basically the same thing.
-
-AC_DEFUN([GNOME_CXX_WARNINGS],[
-  AC_ARG_ENABLE(cxx-warnings,
-                AC_HELP_STRING([--enable-cxx-warnings=@<:@no/minimum/yes@:>@]
-                               [Turn on compiler warnings.]),,
-                [enable_cxx_warnings="m4_default([$1],[minimum])"])
-
-  AC_MSG_CHECKING(what warning flags to pass to the C++ compiler)
-  warnCXXFLAGS=
-  if test "x$GXX" != xyes; then
-    enable_cxx_warnings=no
-  fi
-  if test "x$enable_cxx_warnings" != "xno"; then
-    if test "x$GXX" = "xyes"; then
-      case " $CXXFLAGS " in
-      *[\ \	]-Wall[\ \	]*) ;;
-      *) warnCXXFLAGS="-Wall -Wno-unused" ;;
-      esac
-
-      ## -W is not all that useful.  And it cannot be controlled
-      ## with individual -Wno-xxx flags, unlike -Wall
-      if test "x$enable_cxx_warnings" = "xyes"; then
-	warnCXXFLAGS="$warnCXXFLAGS -Wshadow -Woverloaded-virtual"
-      fi
-    fi
-  fi
-  AC_MSG_RESULT($warnCXXFLAGS)
-
-   AC_ARG_ENABLE(iso-cxx,
-                 AC_HELP_STRING([--enable-iso-cxx],
-                                [Try to warn if code is not ISO C++ ]),,
-                 [enable_iso_cxx=no])
-
-   AC_MSG_CHECKING(what language compliance flags to pass to the C++ compiler)
-   complCXXFLAGS=
-   if test "x$enable_iso_cxx" != "xno"; then
-     if test "x$GXX" = "xyes"; then
-      case " $CXXFLAGS " in
-      *[\ \	]-ansi[\ \	]*) ;;
-      *) complCXXFLAGS="$complCXXFLAGS -ansi" ;;
-      esac
-
-      case " $CXXFLAGS " in
-      *[\ \	]-pedantic[\ \	]*) ;;
-      *) complCXXFLAGS="$complCXXFLAGS -pedantic" ;;
-      esac
-     fi
-   fi
-  AC_MSG_RESULT($complCXXFLAGS)
-
-  WARN_CXXFLAGS="$CXXFLAGS $warnCXXFLAGS $complCXXFLAGS"
-  AC_SUBST(WARN_CXXFLAGS)
+    unset tested_warning_flags
 ])

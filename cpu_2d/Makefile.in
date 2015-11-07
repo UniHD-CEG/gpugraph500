@@ -49,16 +49,18 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/aclocal-include.m4 \
 	$(top_srcdir)/m4/ax_cc_maxopt.m4 \
+	$(top_srcdir)/m4/ax_cc_warnings.m4 \
 	$(top_srcdir)/m4/ax_check_cl.m4 \
 	$(top_srcdir)/m4/ax_check_compile_flag.m4 \
 	$(top_srcdir)/m4/ax_check_cuda.m4 \
 	$(top_srcdir)/m4/ax_check_scorep.m4 \
 	$(top_srcdir)/m4/ax_compare_version.m4 \
-	$(top_srcdir)/m4/ax_compile_warnings.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/ax_compiler_version.m4 \
 	$(top_srcdir)/m4/ax_cxx_compile_stdcxx_11.m4 \
-	$(top_srcdir)/m4/ax_ext.m4 $(top_srcdir)/m4/ax_gcc_archflag.m4 \
+	$(top_srcdir)/m4/ax_cxx_maxopt.m4 \
+	$(top_srcdir)/m4/ax_cxx_warnings.m4 $(top_srcdir)/m4/ax_ext.m4 \
+	$(top_srcdir)/m4/ax_gcc_archflag.m4 \
 	$(top_srcdir)/m4/ax_gcc_version.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_avx_xgetbv.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_cpuid.m4 \
@@ -101,6 +103,8 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+C11 = @C11@
+C99 = @C99@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -314,18 +318,20 @@ DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @DEBUGGING_TRUE@DEBUG_FLAG = -g
 @DEBUGGING_TRUE@NVCC_DEBUG_FLAGS = -DTHRUST_DEBUG
 
-### Compiler options: C, C++, MPI, CUDA Flags and Libs
+### Flags
 #
 MPICFLAGS = ${arch} -std=c99 -pedantic -m64 -mfpmath=sse $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) -Wall -Wextra
 MPICXXFLAGS = ${arch} -std=c++11 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) -Wall -Wextra
 NVCXXFLAGS = $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
 LLIBS = $(LLIBS_SCOREP) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
-AM_LDFLAGS = -m64 $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
-AM_CXXFLAGS = ${arch} -std=c++11 -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) @WARN_CXXFLAGS@
-AM_CFLAGS = ${arch} -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) @WARN_CFLAGS@
-# FIXME: test NVCC
-NVCXX = $(NVCC)
-AM_LD = $(PROFILER) $(MPICXX)
+AM_LDFLAGS = ${arch} $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
+AM_CXXFLAGS = ${arch} @CXXFLAGS@ $(DEBUG_FLAG) @WARN_CXXFLAGS@
+AM_CFLAGS = ${arch} @CFLAGS@ $(DEBUG_FLAG) @WARN_CFLAGS@
+
+### Compilers
+#
+NVCXX = @NVCC@
+AM_LD = $(PROFILER) @MPICXX@
 @SIMD_FALSE@COMPRESSION_OBJECTS = "ADD_MORE_TYPES_HERE"
 
 ### List of sources to compile
@@ -821,7 +827,7 @@ cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 @SIMD_TRUE@	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" -std=c++11 --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 

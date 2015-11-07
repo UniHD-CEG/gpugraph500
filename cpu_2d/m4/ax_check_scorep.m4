@@ -14,6 +14,7 @@ dnl Test for SCOREP
 
 dnl Sets SCOREP_EXEC
 
+ac_scorep_found=no
 AC_DEFUN([AX_CHECK_SCOREP], [
 		[DEFAULT_EXECUTABLE_PATH=`which scorep 2> /dev/null`]
 		AC_MSG_CHECKING(for SCOREP )
@@ -36,6 +37,7 @@ AC_DEFUN([AX_CHECK_SCOREP], [
 if test -f ${EXECUTABLE_PATH} -a -x ${EXECUTABLE_PATH}; then
 	SCOREP_EXEC="${EXECUTABLE_PATH}"
 	AC_MSG_RESULT(yes)
+	ac_found_scorep=yes
 else
 	SCOREP_EXEC=
 	AC_MSG_RESULT(no)

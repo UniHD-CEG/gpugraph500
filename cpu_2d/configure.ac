@@ -13,12 +13,31 @@ AM_ACLOCAL_INCLUDE(m4)
 #
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX_11(,[mandatory])
+AC_MSG_CHECKING([whether mandatory -std=c++ is supported])
+C11=
 if test "x${ac_success}" = "xno"; then
+    AC_MSG_RESULT([no])
     AC_MSG_FAILURE([No compiler with C++11 support was found.])
+else
+    C11="-std=c++11"
+    CXX="$CXX $C11"
+    AC_MSG_RESULT([yes]) 
 fi
+AC_SUBST(C11)
+
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
+AC_PROG_CC_STDC
+c99=`echo $CC | grep "99"`
+C99=
+if test "x${c99}" = x; then
+    c99=no
+else
+    c99=yes
+    C99="-std=C99"
+fi
+AC_SUBST(C99)
 
 AX_MPI_PRE
 
@@ -381,32 +400,30 @@ fi
 if test "x$enable_compression" = xyes; then
   AX_EXT
   AC_CHECK_HEADERS([cpuid.h])
+  AC_MSG_CHECKING([whether mandatory -msse4.1 flag is supported])
   if test x"$enable_simd" = xyes; then
-    ax_have_minimun_sse4_ext=`echo $SIMD_FLAGS | grep -i "sse4"`
-    if test "x$ax_have_minimun_sse4_ext" = x; then
-      AC_MSG_FAILURE(SSE4.1 support or greater is required for SIMD compression)
-    fi
+      ax_have_minimun_sse4_ext=`echo $SIMD_FLAGS | grep -i "sse4"`
+      if test "x$ax_have_minimun_sse4_ext" = x; then
+          AC_MSG_RESULT([no])
+          AC_MSG_FAILURE(SSE4.1 support or greater is required for SIMD compression)
+      else
+          AC_MSG_RESULT([yes]) 
+      fi
   fi
 fi
 
-# FIXME: if compression SSE4 req
 # FIXME: if not --enable-avx select best ssex extension
 
 # ------------------------------------------------------------------------------
-# Setup COMPILER FLAGS
+# Setup FLAGS SUPPORT
 # ------------------------------------------------------------------------------
 
-AX_CC_MAXOPT
-# AC_LANG_PUSH([C++])
-# AX_CC_MAXOPT
-# AC_LANG_POP([C++])
 AC_C_FIND_ENDIAN
-AC_PROG_CC_STDC
-GNOME_COMPILE_WARNINGS([maximum], [-pedantic -Wextra -Weffc++])
-WARN_CXXFLAGS=`echo $WARN_CFLAGS | sed -e 's/-Wstrict-prototypes//g' -e 's/-Wnested-externs//g'`
-WARN_CFLAGS=`echo $WARN_CFLAGS | sed -e 's/-Weffc++//g'`
-AC_SUBST([WARN_CXXFLAGS])
-# AX_GCC_ARCHFLAG
+dnl AC_PROG_CC_STDC
+AX_CC_MAXOPT
+AX_CXX_MAXOPT
+AX_CC_WARNINGS([maximum], [-pedantic -Wextra])
+AX_CXX_WARNINGS([maximum], [-pedantic -Wextra -Weffc++])
 
 # ------------------------------------------------------------------------------
 # Setup OpenCL
@@ -456,6 +473,10 @@ then
 fi
 
 AS_IF([test "x$enable_openmp_on_cudafiles" = "xyes" -o "x$enable_openmp_on_others" = "xyes"], [
+  if test x$c99 = xno; then
+	AC_MSG_WARN([C99 compliant compiler is recommended with openMP])
+  fi
+
   if test x$GCC = xyes
   then
     AX_COMPARE_VERSION([$GCC_VERSION], [ge], [4.2.0], [
@@ -480,6 +501,10 @@ AC_SUBST(OPENMP_CXXFLAGS)
 # ------------------------------------------------------------------------------
 
 AX_CHECK_SCOREP
+if test x"$enable_scorep" = xyes -a x"$ac_found_scorep" = xno; then
+	AC_MSG_FAILURE([Scalasca/scorep requered but not found])	
+fi 
+
 
 # ------------------------------------------------------------------------------
 # Doxygen support
