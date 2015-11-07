@@ -292,6 +292,7 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_CHECK_TYPES([ptrdiff_t])
+AC_CHECK_SIZEOF([size_t])
 
 ### Checks for library functions.
 #
@@ -377,21 +378,32 @@ fi
 # Setup AVX
 # ------------------------------------------------------------------------------
 
-AM_CONDITIONAL(HAVE_AVX,false)
-if test  "x$enable_avx" = xyes -o "x$enable_compression" = xyes; then
+if test "x$enable_compression" = xyes; then
   AX_EXT
   AC_CHECK_HEADERS([cpuid.h])
-  if test "x$ax_cv_have_avx_ext" = xyes; then
-    AM_CONDITIONAL(HAVE_AVX,true)
-  else
-    if test  "x$enable_compression" = xyes -a "x$enable_simd" = xyes ; then
-      AC_MSG_FAILURE(AVX support is needed for SIMD compression)
+  if test x"$enable_simd" = xyes; then
+    ax_have_minimun_sse4_ext=`echo $SIMD_FLAGS | grep -i "sse4"`
+    if test "x$ax_have_minimun_sse4_ext" = x; then
+      AC_MSG_FAILURE(SSE4.1 support or greater is required for SIMD compression)
     fi
   fi
 fi
 
 # FIXME: if compression SSE4 req
 # FIXME: if not --enable-avx select best ssex extension
+
+# ------------------------------------------------------------------------------
+# Setup COMPILER FLAGS
+# ------------------------------------------------------------------------------
+
+AX_CC_MAXOPT
+AC_LANG_PUSH([C++])
+AX_CC_MAXOPT
+AC_LANG_POP([C++])
+AC_C_FIND_ENDIAN
+AC_PROG_CC_STDC
+GNOME_COMPILE_WARNINGS
+# AX_GCC_ARCHFLAG
 
 # ------------------------------------------------------------------------------
 # Setup OpenCL
