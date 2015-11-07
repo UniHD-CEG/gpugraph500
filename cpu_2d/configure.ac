@@ -7,7 +7,7 @@ AC_INIT([g500], [1.1])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([globalbfs.hh])
 AC_CONFIG_HEADERS([config.h])
-
+AM_ACLOCAL_INCLUDE(m4)
 
 ## Checks for programs.
 #

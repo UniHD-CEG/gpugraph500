@@ -774,6 +774,8 @@ CPPFLAGS
 LDFLAGS
 CXXFLAGS
 CXX
+INSIDE_GNOME_COMMON_FALSE
+INSIDE_GNOME_COMMON_TRUE
 am__untar
 am__tar
 AMTAR
@@ -3440,6 +3442,19 @@ am__tar='$${TAR-tar} chof - "$$tardir"' am__untar='$${TAR-tar} xf -'
 
 ac_config_headers="$ac_config_headers config.h"
 
+
+	 if test x = y; then
+  INSIDE_GNOME_COMMON_TRUE=
+  INSIDE_GNOME_COMMON_FALSE='#'
+else
+  INSIDE_GNOME_COMMON_TRUE='#'
+  INSIDE_GNOME_COMMON_FALSE=
+fi
+
+
+	test -n "$ACLOCAL_FLAGS" && ACLOCAL="$ACLOCAL $ACLOCAL_FLAGS"
+
+	for k in m4 ; do ACLOCAL="$ACLOCAL -I $k" ; done
 
 
 ## Checks for programs.
@@ -14769,6 +14784,10 @@ else
   am__EXEEXT_FALSE=
 fi
 
+if test -z "${INSIDE_GNOME_COMMON_TRUE}" && test -z "${INSIDE_GNOME_COMMON_FALSE}"; then
+  as_fn_error $? "conditional \"INSIDE_GNOME_COMMON\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${AMDEP_TRUE}" && test -z "${AMDEP_FALSE}"; then
   as_fn_error $? "conditional \"AMDEP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
