@@ -397,12 +397,15 @@ fi
 # ------------------------------------------------------------------------------
 
 AX_CC_MAXOPT
-AC_LANG_PUSH([C++])
-AX_CC_MAXOPT
-AC_LANG_POP([C++])
+# AC_LANG_PUSH([C++])
+# AX_CC_MAXOPT
+# AC_LANG_POP([C++])
 AC_C_FIND_ENDIAN
 AC_PROG_CC_STDC
-GNOME_COMPILE_WARNINGS
+GNOME_COMPILE_WARNINGS([maximum], [-pedantic -Wextra -Weffc++])
+WARN_CXXFLAGS=`echo $WARN_CFLAGS | sed -e 's/-Wstrict-prototypes//g' -e 's/-Wnested-externs//g'`
+WARN_CFLAGS=`echo $WARN_CFLAGS | sed -e 's/-Weffc++//g'`
+AC_SUBST([WARN_CXXFLAGS])
 # AX_GCC_ARCHFLAG
 
 # ------------------------------------------------------------------------------

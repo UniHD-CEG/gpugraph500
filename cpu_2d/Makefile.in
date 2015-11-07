@@ -40,13 +40,6 @@ host_triplet = @host@
 @COMPRESSION_TRUE@am__append_2 = -D_COMPRESSION
 @COMPRESSION_TRUE@@DEBUG_COMPRESSION_TRUE@am__append_3 = -D_COMPRESSIONDEBUG
 @COMPRESSION_TRUE@@VERIFY_COMPRESSION_TRUE@am__append_4 = -D_COMPRESSIONVERIFY
-
-### Compression
-#
-
-# 1. CPU/SIMD Compression.
-#  - SSE4 is required.
-#  - AVX is recommended.
 @COMPRESSION_TRUE@@SIMD_TRUE@am__append_5 = -D_SIMD
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
@@ -54,22 +47,26 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
 	compile config.guess config.sub install-sh ltmain.sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_cl.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_cc_maxopt.m4 \
+	$(top_srcdir)/m4/ax_check_cl.m4 \
 	$(top_srcdir)/m4/ax_check_compile_flag.m4 \
 	$(top_srcdir)/m4/ax_check_cuda.m4 \
 	$(top_srcdir)/m4/ax_check_scorep.m4 \
 	$(top_srcdir)/m4/ax_compare_version.m4 \
+	$(top_srcdir)/m4/ax_compile_warnings.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/ax_compiler_version.m4 \
 	$(top_srcdir)/m4/ax_cxx_compile_stdcxx_11.m4 \
-	$(top_srcdir)/m4/ax_ext.m4 $(top_srcdir)/m4/ax_gcc_version.m4 \
+	$(top_srcdir)/m4/ax_ext.m4 $(top_srcdir)/m4/ax_gcc_archflag.m4 \
+	$(top_srcdir)/m4/ax_gcc_version.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_avx_xgetbv.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_cpuid.m4 \
 	$(top_srcdir)/m4/ax_mpi_pre_post.m4 \
 	$(top_srcdir)/m4/ax_openmp.m4 \
 	$(top_srcdir)/m4/ax_prog_doxygen.m4 \
 	$(top_srcdir)/m4/ax_pthread.m4 $(top_srcdir)/m4/cit_cuda.m4 \
-	$(top_srcdir)/m4/lx_find_mpi.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/endian.m4 $(top_srcdir)/m4/lx_find_mpi.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -187,10 +184,10 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PRTDIAG = @PRTDIAG@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
-REAL_TYPE = @REAL_TYPE@
 SCOREP_CPPFLAG = @SCOREP_CPPFLAG@
 SCOREP_EXEC = @SCOREP_EXEC@
 SCOREP_LFLAG = @SCOREP_LFLAG@
@@ -201,8 +198,9 @@ SHELL = @SHELL@
 SIMD_FLAGS = @SIMD_FLAGS@
 SIMD_OBJECTS = @SIMD_OBJECTS@
 STRIP = @STRIP@
-UINT_TYPE = @UINT_TYPE@
 VERSION = @VERSION@
+WARN_CFLAGS = @WARN_CFLAGS@
+WARN_CXXFLAGS = @WARN_CXXFLAGS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -305,8 +303,8 @@ DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @COMPRESSION_TRUE@@SIMD_TRUE@INCPATH = -I. -Icompression/cpusimd/include
 @COMPRESSION_TRUE@@SIMD_FALSE@g500_HEADER_LIST = 
 @COMPRESSION_TRUE@@SIMD_TRUE@g500_HEADER_LIST = @simd_H_FILES@
-# 2. XXXX Compression.
-# ...
+
+# Other. e.g SIMT
 @CUDA_TRUE@DEFINE_CUDA = -D_CUDA
 @CUDA_FALSE@bfs_object = cpubfs_bin.o
 @CUDA_TRUE@bfs_object = cuda_bfs_cuda.o
@@ -322,8 +320,8 @@ MPICXXFLAGS = ${arch} -std=c++11 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS)
 NVCXXFLAGS = $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
 LLIBS = $(LLIBS_SCOREP) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
 AM_LDFLAGS = -m64 $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
-AM_CXXFLAGS = ${arch} -std=c++11  -Weffc++ -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) -Wall -Wextra
-AM_CFLAGS = ${arch} -std=c99 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) -Wall -Wextra
+AM_CXXFLAGS = ${arch} -std=c++11 -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) @WARN_CXXFLAGS@
+AM_CFLAGS = ${arch} -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) @WARN_CFLAGS@
 # FIXME: test NVCC
 NVCXX = $(NVCC)
 AM_LD = $(PROFILER) $(MPICXX)
@@ -682,6 +680,8 @@ uninstall-am:
 
 @BASIC_PROFING_BFS_TRUE@  # FIXME:not working. use -D_INSTRUMENT_BFS instead
 
+### Compression
+#
 @COMPRESSION_TRUE@@SIMD_FALSE@@SIMT_FALSE@ @echo "Compression is enabled, but neither CPU nor GPU compression is set"
 @COMPRESSION_TRUE@@SIMD_FALSE@@SIMT_FALSE@ @exit
 

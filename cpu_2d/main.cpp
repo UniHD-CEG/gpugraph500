@@ -6,6 +6,7 @@
  *
  *
  */
+#include "config.h" // Autotools
 #include "mpi.h"
 #include <cstring>
 #include <assert.h>

@@ -69,35 +69,6 @@ saveCXX="$CXX"
 CC="$MPICC"
 CXX="$MPICXX"
 
-AC_MSG_CHECKING(whether to use 32-bit or 64-bit locations)
-AC_ARG_ENABLE(ulong,[AS_HELP_STRING([--enable-ulong],
-  [enable 64-bit locations, only available on 64-bit systems. Default is 32-bit])],
-  [use_ulong=$enableval],[use_ulong=no])
-
-if test x$use_ulong = xyes -a 0$ac_cv_sizeof_void_p -ge 8 ; then
-  UINT_TYPE=uint64_t
-  AC_MSG_RESULT(64-bit)
-else
-  UINT_TYPE=uint32_t
-  AC_MSG_RESULT(32-bit)
-fi
-AC_SUBST(UINT_TYPE)
-
-AC_MSG_CHECKING(whether to use single or double precision)
-AC_ARG_ENABLE(double,[AS_HELP_STRING([--disable-double],
-  [disable double precision arithmetic [untested, default=double is enabled]])],
-  [use_double=$enableval],[use_double=yes])
-
-if test x$use_double = xno ; then
-  REAL_TYPE=float
-  echo
-  echo -n "using ${REAL_TYPE} is not well tested, please report bugs if you find any..."
-else
-  REAL_TYPE=double
-fi
-AC_MSG_RESULT($REAL_TYPE)
-AC_SUBST(REAL_TYPE)
-
 AC_LANG_PUSH([C])
 AC_MSG_CHECKING([Linking of MPI C programs])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <mpi.h>],

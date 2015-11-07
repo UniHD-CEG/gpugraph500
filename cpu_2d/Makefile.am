@@ -103,7 +103,8 @@ if DEBUG
   DEFINES +=-D_DEBUG
 endif
 
-
+### Compression
+#
 if COMPRESSION
 if !SIMD
 if !SIMT
@@ -120,13 +121,6 @@ if VERIFY_COMPRESSION
   DEFINES +=-D_COMPRESSIONVERIFY
 endif
 
-
-### Compression
-#
-
-# 1. CPU/SIMD Compression.
-#  - SSE4 is required.
-#  - AVX is recommended.
 if SIMD
   DEFINES +=-D_SIMD
   INCPATH=-I. -Icompression/cpusimd/include
@@ -135,8 +129,8 @@ else
   INCPATH=-I.
   g500_HEADER_LIST=
 endif
-# 2. XXXX Compression.
-# ...
+
+# Other. e.g SIMT
 endif
 
 if CUDA
@@ -168,8 +162,8 @@ MPICXXFLAGS=${arch} -std=c++11 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) -
 NVCXXFLAGS=$(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
 LLIBS=$(LLIBS_SCOREP) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
 AM_LDFLAGS=-m64 $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
-AM_CXXFLAGS=${arch} -std=c++11  -Weffc++ -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) -Wall -Wextra
-AM_CFLAGS=${arch} -std=c99 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) -Wall -Wextra
+AM_CXXFLAGS=${arch} -std=c++11 -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) @WARN_CXXFLAGS@
+AM_CFLAGS=${arch} -m64 $(o_level) $(OPTIMIZATION_FLAGS) $(DEBUG_FLAG) @WARN_CFLAGS@
 # FIXME: test NVCC
 NVCXX=$(NVCC)
 AM_LD=$(PROFILER) $(MPICXX)
