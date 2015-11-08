@@ -9,12 +9,22 @@ AC_CONFIG_SRCDIR([globalbfs.hh])
 AC_CONFIG_HEADERS([config.h])
 AM_ACLOCAL_INCLUDE(m4)
 
+## User Redefine compilers.
+#
+
+AC_ARG_VAR(CC, [The C compiler])
+AC_ARG_VAR(CXX, [The C++ compiler])
+AC_ARG_VAR(MPI_INC,[MPI include flags])
+AC_ARG_VAR(MPI_LIB,[MPI lib flags])
+AC_ARG_VAR(ALLCFLAGS, [Customized C source compilation flags])
+AC_ARG_VAR(ALLCXXFLAGS, [Customized C++ source compilation flags])
+
 ## Checks for programs.
 #
 
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX_11(,[mandatory])
-AC_MSG_CHECKING([whether mandatory -std=c++ is supported])
+AC_MSG_CHECKING([required -std=c++11 support])
 C11=
 if test "x${ac_success}" = "xno"; then
     AC_MSG_RESULT([no])
@@ -40,7 +50,9 @@ fi
 AC_SUBST(C99)
 AX_MPI_PRE
 
-# compression
+### declare "precious" environment variables
+#
+
 #   Values: yes | no
 #   Default value: yes
 AC_ARG_ENABLE([compression],
@@ -51,7 +63,6 @@ AC_ARG_ENABLE([compression],
     [enable_compression=$enableval],
     [enable_compression=yes])
 
-# ptxas_otimization
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([ptxas_otimization],
@@ -62,7 +73,6 @@ AC_ARG_ENABLE([ptxas_otimization],
       Disabled by default.]),,
     [enable_ptxas_otimization=no])
 
-# bfs-basic-profiling
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([bfs-basic-profiling],
@@ -71,7 +81,6 @@ AC_ARG_ENABLE([bfs-basic-profiling],
       Enabled by default.]),,
     [enable_bfs_basic_profiling=no])
 
-# other-basic-profiling
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([other-basic-profiling],
@@ -80,7 +89,6 @@ AC_ARG_ENABLE([other-basic-profiling],
       Enabled by default.]),,
     [enable_other_basic_profiling=yes])
 
-# openmp-on-cudafiles
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([openmp-on-cudafiles],
@@ -90,7 +98,6 @@ AC_ARG_ENABLE([openmp-on-cudafiles],
       Disabled by default.]),,
     [enable_openmp_on_cudafiles=no])
 
-# openmp-on-others
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([openmp-on-others],
@@ -100,7 +107,6 @@ AC_ARG_ENABLE([openmp-on-others],
       Disabled by default.]),,
     [enable_openmp_on_others=no])
 
-# scorep
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([scorep],
@@ -109,7 +115,6 @@ AC_ARG_ENABLE([scorep],
       Disabled by default.]),,
     [enable_scorep=no])
 
-# enable_simd
 #   Values: yes | no
 #   Default value: yes
 #   External links:
@@ -121,7 +126,6 @@ AC_ARG_ENABLE([simd],
       Enabled by default.]),,
     [enable_simd=yes])
 
-# enable_simt
 #   Values: yes | no
 #   Default value: yes
 AC_ARG_ENABLE([simt],
@@ -131,7 +135,6 @@ AC_ARG_ENABLE([simt],
       Disabled by default.]),,
     [enable_simt=no])
 
-# verify-compression
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([verify-compression],
@@ -141,7 +144,6 @@ AC_ARG_ENABLE([verify-compression],
       Disabled by default.]),,
     [enable_verify_compression=no])
 
-# debug-compression
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([debug-compression],
@@ -150,7 +152,6 @@ AC_ARG_ENABLE([debug-compression],
       Disabled by default.]),,
     [enable_debug_compression=no])
 
-# cuda
 #   Values: yes | no
 #   Default value: yes
 AC_ARG_ENABLE([cuda],
@@ -160,7 +161,6 @@ AC_ARG_ENABLE([cuda],
       Enabled by default.]),,
     [enable_cuda=yes])
 
-# debug
 #   Values: yes | no
 #   Default value:
 AC_ARG_ENABLE([debug],
@@ -169,7 +169,6 @@ AC_ARG_ENABLE([debug],
       Disabled by default.]),,
     [enable_debug=no])
 
-# debugging
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([debugging],
@@ -180,16 +179,13 @@ AC_ARG_ENABLE([debugging],
       Disabled by default.]),,
     [enable_debugging=no])
 
-# quiet_output
 #   Values: yes | no
 #   Default value: no
-#   Description: ""
 AC_ARG_ENABLE([quiet],
     AS_HELP_STRING([--enable-quiet],
       [Disable compile mensages when running make.]),,
     [enable_quiet=no])
 
-# nvidia_architecture
 #   Values: fermi | kepler | auto
 #   Default value: fermi
 AC_ARG_ENABLE(nvidia-architecture,
@@ -203,31 +199,9 @@ AS_HELP_STRING([--enable-nvidia-architecture=fermi|kepler|auto],
   *) AC_MSG_ERROR(bad value ${enableval} for --enable-nvidia-architecture) ;;
 esac],[enable_nvidia_architecture=fermi])
 
-# code_optimization_flags
-#    Values: -funroll-loops -flto -finline-functions -funswitch-loops -fpredictive-commoning
-#            -fgcse-after-reload -ftree-vectorize -ftree-partial-pre -fipa-cp-clone ...
-#
-#    Default value: -funroll-loops -flto (For GNU's version of Makefile)
-#    Format: value value value (separated by spaces)
-#    External links:
-#         - GNU compiler: https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options
-AC_ARG_VAR(OPTIMIZATION_FLAGS,AS_HELP_STRING([OPTIMIZATION_FLAGS="-flag1 -flag2 ETC" (separated by spaces).],
-  [Optimization flags added to the compiler.
-  Default values are safe on most compilers.
-  When the option --enable-debugging is active, this flags are disabled.
-  Default is -loops -flto.]))
-AS_IF([test "x$OPTIMIZATION_FLAGS" = x], [OPTIMIZATION_FLAGS="-loops -flto"])
-AS_IF([test "x$enable_debugging" = xyes], [OPTIMIZATION_FLAGS=""])
 
-### declare "precious" environment variables
+### declare conditionals
 #
-
-AC_ARG_VAR(MPI_INC,[MPI include flags])
-AC_ARG_VAR(MPI_LIB,[MPI lib flags])
-AC_ARG_VAR(ALLCFLAGS,Customized C source compilation flags)
-AC_ARG_VAR(ALLCXXFLAGS,Customized C++ source compilation flags)
-AC_ARG_VAR(CC,The C compiler)
-AC_ARG_VAR(CXX,The C++ compiler)
 
 AM_CONDITIONAL([SIMD], [test x"$enable_simd" = xyes])
 AM_CONDITIONAL([SIMT], [test x"$enable_simt" = xyes])

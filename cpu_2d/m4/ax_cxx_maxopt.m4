@@ -166,9 +166,12 @@ if test "$ac_test_CXXFLAGS" != "set"; then
      # note that we enable "unsafe" fp optimization with other compilers, too
      AX_CHECK_COMPILE_FLAG(-ffast-math, CXXFLAGS="$CXXFLAGS -ffast-math")
 
+     AX_CHECK_COMPILE_FLAG(-funroll-loops, CXXFLAGS="$CXXFLAGS -funroll-loops")
+     # AX_CHECK_COMPILE_FLAG(-flto, CXXFLAGS="$CXXFLAGS -flto")
+
      AX_GCC_ARCHFLAG($acx_maxopt_portable,
      [CXXFLAGS="$CXXFLAGS $ax_cv_gcc_archflag"])
-     CXX_OO="-O3"	
+     CXX_OO="-O3"
      ;;
 
     microsoft)

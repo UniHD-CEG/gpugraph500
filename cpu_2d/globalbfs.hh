@@ -614,8 +614,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
         lqueue += tend - tstart;
 #endif
 
-        MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_LONG, MPI_LOR, MPI_COMM_WORLD);
-
+        MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
 
         if (!anynewnodes_global)
         {

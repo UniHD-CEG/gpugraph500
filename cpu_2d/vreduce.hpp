@@ -374,15 +374,12 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         send = 0;
     }
 
-
-
     // Transmission of the final results
     int *sizes = (int *)malloc(communicatorSize * sizeof(int));
     int *disps = (int *)malloc(communicatorSize * sizeof(int));
 
     // Transmission of the subslice sizes
-    MPI_Allgather(&psizeTo, 1, MPI_LONG, sizes, 1, MPI_LONG, comm);
-
+    MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
 
 #ifdef _COMPRESSION
     int *compressed_sizes = (int *)malloc(communicatorSize * sizeof(int));
@@ -393,7 +390,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     size_t csize=0;
 
     compress(send, psizeTo, &compressed_fq, compressedsize);
-    MPI_Allgather(&compressedsize, 1, MPI_LONG, compressed_sizes, 1, MPI_LONG, comm);
+    MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, comm);
 
     disps[lastTargetNode] = 0;
     compressed_disps[lastTargetNode] = 0;
@@ -416,8 +413,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
     compressed_recv_buff = (T *)malloc(csize*sizeof(T));
-    // uncompressed_recv_buff = (T *)malloc(rsize*sizeof(T));
-
 #else
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -472,6 +467,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
                 memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
+                if (isCompressed(uncompressedsize, compressedsize)) {
+                    free(uncompressed_fq);
+                }
         }
     }
 
