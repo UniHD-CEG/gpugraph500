@@ -309,17 +309,6 @@ AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_CHECK_TYPES([ptrdiff_t])
 
-### Checks for machine architecture
-#
-
-MBITS=
-AC_CHECK_SIZEOF([size_t])
-mbits=`expr $ac_cv_sizeof_size_t * 8`
-mbits_flag="-m${mbits}"
-AX_CHECK_COMPILE_FLAG($mbits_flag,
-  [MBITS=$mbits_flag], [])
-AC_SUBST([MBITS])
-
 ### Checks for library functions.
 #
 
@@ -377,16 +366,6 @@ AC_LANG_POP([C++])
 
 AX_MPI_POST
 
-#AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=<path>],
-#    [compile with MPI (parallelization) support.
-#    Use <path> to specify the route to MPI.
-#    By Default PATH is used]),,
-#    [with_mpi=auto])
-#AX_PROG_CXX_MPI([test x"$with_mpi" != xno],[use_mpi=yes],[
-#    use_mpi=no
-#    AC_MSG_FAILURE([MPI compiler required, but could not use MPI.])
-#])
-
 # ------------------------------------------------------------------------------
 # Setup CUDA paths
 # ------------------------------------------------------------------------------
@@ -419,21 +398,56 @@ if test "x$enable_compression" = xyes; then
   fi
 fi
 
-MFLAG=
-AC_MSG_CHECKING([for the latest architecture supported])
-latest=${#MYARRAY[@]}-1
-MFLAG="${MYARRAY[latest]}"
-AC_MSG_RESULT([$MFLAG])
-AC_SUBST([MFLAG])
-
-
 # ------------------------------------------------------------------------------
 # Setup FLAGS SUPPORT
 # ------------------------------------------------------------------------------
 
+### Checks for latest architecture flag
+#
+
+mflag=
+AC_MSG_CHECKING([for the latest architecture flag supported])
+mflag=`echo $SIMD_FLAGS | awk '{ printf $NF; }'`
+AC_MSG_RESULT([$mflag])
+
+CC_MFLAG=
+AX_CHECK_COMPILE_FLAG($mflag,
+  [CC_MFLAG=$mflag], [])
+AC_SUBST([CC_MFLAG])
+
+CXX_MFLAG=
+AC_LANG_PUSH([C++])
+AX_CHECK_COMPILE_FLAG($mflag,
+  [CXX_MFLAG=$mflag], [])
+AC_LANG_POP([C++])
+AC_SUBST([CXX_MFLAG])
+
+### Checks for machine architecture
+#
+
+CC_MBITS=
+AC_CHECK_SIZEOF([size_t])
+mbits=$((ac_cv_sizeof_size_t * 8))
+mbits_flag="-m${mbits}"
+AX_CHECK_COMPILE_FLAG($mbits_flag,
+  [CC_MBITS=$mbits_flag], [])
+AC_SUBST([CC_MBITS])
+
+CXX_MBITS=
+AC_LANG_PUSH([C++])
+AX_CHECK_COMPILE_FLAG($mbits_flag,
+  [CXX_MBITS=$mbits_flag], [])
+AC_LANG_POP([C++])
+AC_SUBST([CXX_MBITS])
+
+### Checks endianness
+#
+
 AC_C_FIND_ENDIAN
+
 AX_CC_MAXOPT
 AX_CXX_MAXOPT
+AX_MPICXX_MAXOPT
 AX_CC_WARNINGS([maximum], [-pedantic -Wextra])
 AX_CXX_WARNINGS([maximum], [-pedantic -Wextra -Weffc++])
 
@@ -509,7 +523,7 @@ OPENMP_CXXFLAGS=$OPENMP_CFLAGS
 AC_SUBST(OPENMP_CXXFLAGS)
 
 # ------------------------------------------------------------------------------
-# Scalasca / ScoreP support
+# Checks Scalasca / ScoreP support
 # ------------------------------------------------------------------------------
 
 AX_CHECK_SCOREP

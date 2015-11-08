@@ -10,40 +10,10 @@ DEFINES=
 ### Dynamic variables
 #
 
-# if OPTIMIZATION_O4
-#   o_level=-O3 -ffast-math
-#   o_level_nvcc=-O3
-# endif
-# if OPTIMIZATION_O3
-#   o_level=-O3
-#   o_level_nvcc=-O3
-# endif
-# if OPTIMIZATION_O2
-#   o_level=-O2
-#   o_level_nvcc=-O2
-# endif
-# if OPTIMIZATION_O1
-#   o_level=-O1
-#   o_level_nvcc=-O1
-# endif
-# if OPTIMIZATION_O0
-#   o_level=-O0
-#   o_level_nvcc=-O0
-# endif
-
 o_level=-O3
 o_level_nvcc=-O3
 arch=-mavx
 arch_nvcc=-mavx
-
-# if AVX
-#   arch=-mavx
-#   # arch_nvcc=-mavx
-# else
-# if SIMD
-#   arch=-msse4
-# endif
-# endif
 
 if PTXAS_OTIMIZATION
   PTXAS=--ptxas-options="-O3"
@@ -146,21 +116,21 @@ if QUIET_OUTPUT
   Q=@
 endif
 
-if DEBUGGING
-  o_level=-O0
-  o_level_nvcc=-O0
-  DEBUG_FLAG=-g
-  NVCC_DEBUG_FLAGS=-DTHRUST_DEBUG
-endif
+#if DEBUGGING
+#  o_level=-O0
+#  o_level_nvcc=-O0
+#  DEBUG_FLAG=-g
+#  NVCC_DEBUG_FLAGS=-DTHRUST_DEBUG
+#endif
 
 
 
 ### Flags
 #
 
-MPICFLAGS=${arch} -std=c99 -pedantic -m64 -mfpmath=sse $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) -Wall -Wextra
-MPICXXFLAGS=${arch} -std=c++11 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) -Wall -Wextra
-NVCXXFLAGS=$(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
+MPICFLAGS=@CC_MFLAG@ @C99@ @CC_MBITS@ -mfpmath=sse -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) @CFLAGS@ @WARN_CFLAGS@
+MPICXXFLAGS=@CXX_MFLAG@ @C11@ @CXX_MBITS@ -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) @CXXFLAGS@ @WARN_CXXFLAGS@
+NVCXXFLAGS=,@CXX_MBITS@,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
 LLIBS=$(LLIBS_SCOREP) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
 
 AM_LDFLAGS=${arch} $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
@@ -330,7 +300,7 @@ if SIMD
 endif
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 

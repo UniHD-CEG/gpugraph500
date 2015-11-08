@@ -107,6 +107,8 @@ C11 = @C11@
 C99 = @C99@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
+CC_MBITS = @CC_MBITS@
+CC_MFLAG = @CC_MFLAG@
 CFLAGS = @CFLAGS@
 CL_CFLAGS = @CL_CFLAGS@
 CL_LIBS = @CL_LIBS@
@@ -121,6 +123,8 @@ CUDA_LIBS = @CUDA_LIBS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
+CXX_MBITS = @CXX_MBITS@
+CXX_MFLAG = @CXX_MFLAG@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -264,24 +268,13 @@ AUTOMAKE_OPTIONS = foreign subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5)
-@DEBUGGING_TRUE@o_level = -O0
-@OPTIMIZATION_O0_TRUE@o_level = -O0
-@OPTIMIZATION_O1_TRUE@o_level = -O1
-@OPTIMIZATION_O2_TRUE@o_level = -O2
-@OPTIMIZATION_O3_TRUE@o_level = -O3
 
 ### Dynamic variables
 #
-@OPTIMIZATION_O4_TRUE@o_level = -O3 -ffast-math
-@DEBUGGING_TRUE@o_level_nvcc = -O0
-@OPTIMIZATION_O0_TRUE@o_level_nvcc = -O0
-@OPTIMIZATION_O1_TRUE@o_level_nvcc = -O1
-@OPTIMIZATION_O2_TRUE@o_level_nvcc = -O2
-@OPTIMIZATION_O3_TRUE@o_level_nvcc = -O3
-@OPTIMIZATION_O4_TRUE@o_level_nvcc = -O3
-@AVX_FALSE@@SIMD_FALSE@arch = -march=native
-@AVX_FALSE@@SIMD_TRUE@arch = -msse4
-@AVX_TRUE@arch = -mavx
+o_level = -O3
+o_level_nvcc = -O3
+arch = -mavx
+arch_nvcc = -mavx
 @PTXAS_OTIMIZATION_TRUE@PTXAS = --ptxas-options="-O3"
 @NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_FALSE@NV_ARCHITECTURE = $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 @NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_TRUE@NV_ARCHITECTURE = $(PTXAS) -arch=sm_35
@@ -315,14 +308,19 @@ DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @CUDA_TRUE@bfs_object = cuda_bfs_cuda.o
 @CUDA_FALSE@bfs_implementation = cpubfs_bin.cpp
 @QUIET_OUTPUT_TRUE@Q = @
-@DEBUGGING_TRUE@DEBUG_FLAG = -g
-@DEBUGGING_TRUE@NVCC_DEBUG_FLAGS = -DTHRUST_DEBUG
+
+#if DEBUGGING
+#  o_level=-O0
+#  o_level_nvcc=-O0
+#  DEBUG_FLAG=-g
+#  NVCC_DEBUG_FLAGS=-DTHRUST_DEBUG
+#endif
 
 ### Flags
 #
-MPICFLAGS = ${arch} -std=c99 -pedantic -m64 -mfpmath=sse $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) -Wall -Wextra
-MPICXXFLAGS = ${arch} -std=c++11 -pedantic -m64 $(o_level) $(OPTIMIZATION_FLAGS) -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) -Wall -Wextra
-NVCXXFLAGS = $(arch_nvcc),-m64,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
+MPICFLAGS = @CC_MFLAG@ @C99@ @CC_MBITS@ -mfpmath=sse -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) @CFLAGS@ @WARN_CFLAGS@
+MPICXXFLAGS = @CXX_MFLAG@ @C11@ @CXX_MBITS@ -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) @CXXFLAGS@ @WARN_CXXFLAGS@
+NVCXXFLAGS = ,@CXX_MBITS@,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
 LLIBS = $(LLIBS_SCOREP) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
 AM_LDFLAGS = ${arch} $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
 AM_CXXFLAGS = ${arch} @CXXFLAGS@ $(DEBUG_FLAG) @WARN_CXXFLAGS@
@@ -681,9 +679,6 @@ uninstall-am:
 	maintainer-clean-local mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am uninstall uninstall-am
 
-@AVX_TRUE@  # arch_nvcc=-mavx
-@AVX_FALSE@@SIMD_TRUE@  # arch_nvcc=-msse4
-@AVX_FALSE@@SIMD_FALSE@  # arch_nvcc=-march=native
 
 @BASIC_PROFING_BFS_TRUE@  # FIXME:not working. use -D_INSTRUMENT_BFS instead
 
@@ -827,7 +822,7 @@ cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 @SIMD_TRUE@	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin $(CXX) -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 

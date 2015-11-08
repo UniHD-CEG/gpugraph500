@@ -666,6 +666,10 @@ WARN_CXXFLAGS
 WARN_CFLAGS
 PRTDIAG
 SED
+CXX_MBITS
+CC_MBITS
+CXX_MFLAG
+CC_MFLAG
 CPUEXT_FLAGS
 SIMD_FLAGS
 host_os
@@ -732,18 +736,6 @@ SIMT_FALSE
 SIMT_TRUE
 SIMD_FALSE
 SIMD_TRUE
-AVX_FALSE
-AVX_TRUE
-OPTIMIZATION_O4_FALSE
-OPTIMIZATION_O4_TRUE
-OPTIMIZATION_O3_FALSE
-OPTIMIZATION_O3_TRUE
-OPTIMIZATION_O2_FALSE
-OPTIMIZATION_O2_TRUE
-OPTIMIZATION_O1_FALSE
-OPTIMIZATION_O1_TRUE
-OPTIMIZATION_O0_FALSE
-OPTIMIZATION_O0_TRUE
 ALLCXXFLAGS
 ALLCFLAGS
 MPI_LIB
@@ -853,7 +845,6 @@ enable_other_basic_profiling
 enable_openmp_on_cudafiles
 enable_openmp_on_others
 enable_scorep
-enable_avx
 enable_simd
 enable_simt
 enable_verify_compression
@@ -862,7 +853,6 @@ enable_cuda
 enable_debug
 enable_debugging
 enable_quiet
-enable_code_optimization
 enable_nvidia_architecture
 with_cuda
 enable_portable_binary
@@ -1548,11 +1538,6 @@ Optional Features:
                           default.
   --enable-scorep         Enable instrumentation with Scalasca/ScoreP.
                           Disabled by default.
-  --enable-avx            Whether or not use AVX instruction set. SSE2 will be
-                          used instead if --enable-compression is enabled
-                          (default), and either this option is disabled
-                          (--disable-avx), or AVX instructions are not not
-                          supported by hardware. Enabled by default.
   --enable-simd           MPI packets will be sent compressed using the
                           SIMDCompression library This option is only active
                           if --enable-compression is selected. Enabled by
@@ -1575,12 +1560,6 @@ Optional Features:
                           O0 and --optimization-flags will be set to ''
                           (empty). Disabled by default.
   --enable-quiet          Disable compile mensages when running make.
-  --enable-code-optimization=O0|O1|O2|O3|O4
-                          Compiler optimization level. O0=none, O4=maximun
-                          Optimization O0 disables code optimization.
-                          Optimization O4 equals to -O3 -ffast-math. Default
-                          optimization is O4. Default optimization may be safe
-                          on most compilers.
   --enable-nvidia-architecture=fermi|kepler|auto
                           Selects the NVIDIA target architecture. Requires
                           --enable-cuda to be selected (default). Default
@@ -2184,184 +2163,6 @@ $as_echo "$ac_res" >&6; }
 
 } # ac_fn_c_find_uintX_t
 
-# ac_fn_c_compute_int LINENO EXPR VAR INCLUDES
-# --------------------------------------------
-# Tries to find the compile-time value of EXPR in a program that includes
-# INCLUDES, setting VAR accordingly. Returns whether the value could be
-# computed
-ac_fn_c_compute_int ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  if test "$cross_compiling" = yes; then
-    # Depending upon the size, compute the lo and hi bounds.
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-static int test_array [1 - 2 * !(($2) >= 0)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_lo=0 ac_mid=0
-  while :; do
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-static int test_array [1 - 2 * !(($2) <= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_hi=$ac_mid; break
-else
-  as_fn_arith $ac_mid + 1 && ac_lo=$as_val
-			if test $ac_lo -le $ac_mid; then
-			  ac_lo= ac_hi=
-			  break
-			fi
-			as_fn_arith 2 '*' $ac_mid + 1 && ac_mid=$as_val
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  done
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-static int test_array [1 - 2 * !(($2) < 0)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_hi=-1 ac_mid=-1
-  while :; do
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-static int test_array [1 - 2 * !(($2) >= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_lo=$ac_mid; break
-else
-  as_fn_arith '(' $ac_mid ')' - 1 && ac_hi=$as_val
-			if test $ac_mid -le $ac_hi; then
-			  ac_lo= ac_hi=
-			  break
-			fi
-			as_fn_arith 2 '*' $ac_mid && ac_mid=$as_val
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  done
-else
-  ac_lo= ac_hi=
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-# Binary search between lo and hi bounds.
-while test "x$ac_lo" != "x$ac_hi"; do
-  as_fn_arith '(' $ac_hi - $ac_lo ')' / 2 + $ac_lo && ac_mid=$as_val
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main ()
-{
-static int test_array [1 - 2 * !(($2) <= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_hi=$ac_mid
-else
-  as_fn_arith '(' $ac_mid ')' + 1 && ac_lo=$as_val
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-done
-case $ac_lo in #((
-?*) eval "$3=\$ac_lo"; ac_retval=0 ;;
-'') ac_retval=1 ;;
-esac
-  else
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-static long int longval () { return $2; }
-static unsigned long int ulongval () { return $2; }
-#include <stdio.h>
-#include <stdlib.h>
-int
-main ()
-{
-
-  FILE *f = fopen ("conftest.val", "w");
-  if (! f)
-    return 1;
-  if (($2) < 0)
-    {
-      long int i = longval ();
-      if (i != ($2))
-	return 1;
-      fprintf (f, "%ld", i);
-    }
-  else
-    {
-      unsigned long int i = ulongval ();
-      if (i != ($2))
-	return 1;
-      fprintf (f, "%lu", i);
-    }
-  /* Do not output a trailing newline, as this causes \r\n confusion
-     on some platforms.  */
-  return ferror (f) || fclose (f) != 0;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-  echo >>conftest.val; read $3 <conftest.val; ac_retval=0
-else
-  ac_retval=1
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-rm -f conftest.val
-
-  fi
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-  as_fn_set_status $ac_retval
-
-} # ac_fn_c_compute_int
-
 # ac_fn_c_try_link LINENO
 # -----------------------
 # Try to link conftest.$ac_ext, and return whether this succeeded.
@@ -2587,6 +2388,184 @@ $as_echo "$ac_res" >&6; }
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
 } # ac_fn_cxx_check_func
+
+# ac_fn_c_compute_int LINENO EXPR VAR INCLUDES
+# --------------------------------------------
+# Tries to find the compile-time value of EXPR in a program that includes
+# INCLUDES, setting VAR accordingly. Returns whether the value could be
+# computed
+ac_fn_c_compute_int ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  if test "$cross_compiling" = yes; then
+    # Depending upon the size, compute the lo and hi bounds.
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+static int test_array [1 - 2 * !(($2) >= 0)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_lo=0 ac_mid=0
+  while :; do
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+static int test_array [1 - 2 * !(($2) <= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_hi=$ac_mid; break
+else
+  as_fn_arith $ac_mid + 1 && ac_lo=$as_val
+			if test $ac_lo -le $ac_mid; then
+			  ac_lo= ac_hi=
+			  break
+			fi
+			as_fn_arith 2 '*' $ac_mid + 1 && ac_mid=$as_val
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  done
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+static int test_array [1 - 2 * !(($2) < 0)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_hi=-1 ac_mid=-1
+  while :; do
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+static int test_array [1 - 2 * !(($2) >= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_lo=$ac_mid; break
+else
+  as_fn_arith '(' $ac_mid ')' - 1 && ac_hi=$as_val
+			if test $ac_mid -le $ac_hi; then
+			  ac_lo= ac_hi=
+			  break
+			fi
+			as_fn_arith 2 '*' $ac_mid && ac_mid=$as_val
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  done
+else
+  ac_lo= ac_hi=
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+# Binary search between lo and hi bounds.
+while test "x$ac_lo" != "x$ac_hi"; do
+  as_fn_arith '(' $ac_hi - $ac_lo ')' / 2 + $ac_lo && ac_mid=$as_val
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main ()
+{
+static int test_array [1 - 2 * !(($2) <= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_hi=$ac_mid
+else
+  as_fn_arith '(' $ac_mid ')' + 1 && ac_lo=$as_val
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+done
+case $ac_lo in #((
+?*) eval "$3=\$ac_lo"; ac_retval=0 ;;
+'') ac_retval=1 ;;
+esac
+  else
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+static long int longval () { return $2; }
+static unsigned long int ulongval () { return $2; }
+#include <stdio.h>
+#include <stdlib.h>
+int
+main ()
+{
+
+  FILE *f = fopen ("conftest.val", "w");
+  if (! f)
+    return 1;
+  if (($2) < 0)
+    {
+      long int i = longval ();
+      if (i != ($2))
+	return 1;
+      fprintf (f, "%ld", i);
+    }
+  else
+    {
+      unsigned long int i = ulongval ();
+      if (i != ($2))
+	return 1;
+      fprintf (f, "%lu", i);
+    }
+  /* Do not output a trailing newline, as this causes \r\n confusion
+     on some platforms.  */
+  return ferror (f) || fclose (f) != 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  echo >>conftest.val; read $3 <conftest.val; ac_retval=0
+else
+  ac_retval=1
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f conftest.val
+
+  fi
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+  as_fn_set_status $ac_retval
+
+} # ac_fn_c_compute_int
 cat >config.log <<_ACEOF
 This file contains any messages produced by compilers while
 running configure, to aid debugging if configure makes a mistake.
@@ -3466,6 +3445,7 @@ fi
 
 ## Checks for programs.
 #
+
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -5628,8 +5608,6 @@ fi
 
 
 
-### Commandline arguments
-# Use ./configure --help to view
 
 # compression
 #   Values: yes | no
@@ -5711,13 +5689,14 @@ fi
 # avx
 #   Values: yes | no
 #   Default value: yes
-# Check whether --enable-avx was given.
-if test "${enable_avx+set}" = set; then :
-  enableval=$enable_avx;
-else
-  enable_avx=yes
-fi
-
+# AC_ARG_ENABLE([avx],
+#     AS_HELP_STRING([--enable-avx],
+#       [Whether or not use AVX instruction set.
+#       SSE2 will be used instead if --enable-compression is enabled (default),
+#       and either this option is disabled (--disable-avx), or AVX instructions
+#       are not not supported by hardware.
+#       Enabled by default.]),,
+#     [enable_avx=yes])
 
 # enable_simd
 #   Values: yes | no
@@ -5813,20 +5792,20 @@ fi
 # code-optimization
 #   Values: O4 | O3 | O2 | O1 | O0
 #   Default value:
-# Check whether --enable-code-optimization was given.
-if test "${enable_code_optimization+set}" = set; then :
-  enableval=$enable_code_optimization; case "${enableval}" in
-  O0) enable_code_optimization=O0 ;;
-  O1) enable_code_optimization=O1 ;;
-  O2) enable_code_optimization=O2 ;;
-  O3) enable_code_optimization=O3 ;;
-  O4) enable_code_optimization=O4 ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-code-optimization" "$LINENO" 5 ;;
-esac
-else
-  enable_code_optimization=O4
-fi
-
+# AC_ARG_ENABLE(code-optimization,
+# AS_HELP_STRING([--enable-code-optimization=O0|O1|O2|O3|O4],
+#   [Compiler optimization level. O0=none, O4=maximun
+#   Optimization O0 disables code optimization.
+#   Optimization O4 equals to -O3 -ffast-math.
+#   Default optimization is O4. Default optimization may be safe on most compilers.]),
+# [case "${enableval}" in
+#   O0) enable_code_optimization=O0 ;;
+#   O1) enable_code_optimization=O1 ;;
+#   O2) enable_code_optimization=O2 ;;
+#   O3) enable_code_optimization=O3 ;;
+#   O4) enable_code_optimization=O4 ;;
+#   *) AC_MSG_ERROR(bad value ${enableval} for --enable-code-optimization) ;;
+# esac],[enable_code_optimization=O4])
 
 # nvidia_architecture
 #   Values: fermi | kepler | auto
@@ -5862,65 +5841,21 @@ fi
 
 
 ### declare "precious" environment variables
-# (implicit AC_SUBST)
+#
 
 
 
 
 
 
-# AC_ARG_VAR(MPICC,The MPI C compiler)
 
-# AC_ARG_VAR(MPICXX,The MPI C++ compiler)
 
- if test x"$enable_code_optimization" = xO0; then
-  OPTIMIZATION_O0_TRUE=
-  OPTIMIZATION_O0_FALSE='#'
-else
-  OPTIMIZATION_O0_TRUE='#'
-  OPTIMIZATION_O0_FALSE=
-fi
-
- if test x"$enable_code_optimization" = xO1; then
-  OPTIMIZATION_O1_TRUE=
-  OPTIMIZATION_O1_FALSE='#'
-else
-  OPTIMIZATION_O1_TRUE='#'
-  OPTIMIZATION_O1_FALSE=
-fi
-
- if test x"$enable_code_optimization" = xO2; then
-  OPTIMIZATION_O2_TRUE=
-  OPTIMIZATION_O2_FALSE='#'
-else
-  OPTIMIZATION_O2_TRUE='#'
-  OPTIMIZATION_O2_FALSE=
-fi
-
- if test x"$enable_code_optimization" = xO3; then
-  OPTIMIZATION_O3_TRUE=
-  OPTIMIZATION_O3_FALSE='#'
-else
-  OPTIMIZATION_O3_TRUE='#'
-  OPTIMIZATION_O3_FALSE=
-fi
-
- if test x"$enable_code_optimization" = xO4; then
-  OPTIMIZATION_O4_TRUE=
-  OPTIMIZATION_O4_FALSE='#'
-else
-  OPTIMIZATION_O4_TRUE='#'
-  OPTIMIZATION_O4_FALSE=
-fi
-
- if test x"$enable_avx" = xyes; then
-  AVX_TRUE=
-  AVX_FALSE='#'
-else
-  AVX_TRUE='#'
-  AVX_FALSE=
-fi
-
+# AM_CONDITIONAL([OPTIMIZATION_O0], [test x"$enable_code_optimization" = xO0])
+# AM_CONDITIONAL([OPTIMIZATION_O1], [test x"$enable_code_optimization" = xO1])
+# AM_CONDITIONAL([OPTIMIZATION_O2], [test x"$enable_code_optimization" = xO2])
+# AM_CONDITIONAL([OPTIMIZATION_O3], [test x"$enable_code_optimization" = xO3])
+# AM_CONDITIONAL([OPTIMIZATION_O4], [test x"$enable_code_optimization" = xO4])
+# AM_CONDITIONAL([AVX], [test x"$enable_avx" = xyes])
  if test x"$enable_simd" = xyes; then
   SIMD_TRUE=
   SIMD_FALSE='#'
@@ -6628,39 +6563,6 @@ _ACEOF
 
 fi
 
-# The cast to long int works around a bug in the HP C Compiler
-# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
-# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
-# This bug is HP SR number 8606223364.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of size_t" >&5
-$as_echo_n "checking size of size_t... " >&6; }
-if ${ac_cv_sizeof_size_t+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (size_t))" "ac_cv_sizeof_size_t"        "$ac_includes_default"; then :
-
-else
-  if test "$ac_cv_type_size_t" = yes; then
-     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error 77 "cannot compute sizeof (size_t)
-See \`config.log' for more details" "$LINENO" 5; }
-   else
-     ac_cv_sizeof_size_t=0
-   fi
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_size_t" >&5
-$as_echo "$ac_cv_sizeof_size_t" >&6; }
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define SIZEOF_SIZE_T $ac_cv_sizeof_size_t
-_ACEOF
-
-
 
 ### Checks for library functions.
 #
@@ -6837,7 +6739,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 ### declare environment variables
-# (éxplicit AC_SUBST)
+#
 
 SIMD_OBJECTS="bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o"
 g500_OBJECTS="main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o"
@@ -9059,11 +8961,244 @@ $as_echo "yes" >&6; }
   fi
 fi
 
-# FIXME: if not --enable-avx select best ssex extension
-
 # ------------------------------------------------------------------------------
 # Setup FLAGS SUPPORT
 # ------------------------------------------------------------------------------
+
+### Checks for latest architecture flag
+#
+
+mflag=
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for the latest architecture flag supported" >&5
+$as_echo_n "checking for the latest architecture flag supported... " >&6; }
+mflag=`echo $SIMD_FLAGS | awk '{ printf $NF; }'`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $mflag" >&5
+$as_echo "$mflag" >&6; }
+
+CC_MFLAG=
+as_CACHEVAR=`$as_echo "ax_cv_check_cflags__$mflag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $mflag" >&5
+$as_echo_n "checking whether C compiler accepts $mflag... " >&6; }
+if eval \${$as_CACHEVAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  $mflag"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  eval "$as_CACHEVAR=yes"
+else
+  eval "$as_CACHEVAR=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
+  CC_MFLAG=$mflag
+else
+  :
+fi
+
+
+
+CXX_MFLAG=
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+as_CACHEVAR=`$as_echo "ax_cv_check_cxxflags__$mflag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts $mflag" >&5
+$as_echo_n "checking whether C++ compiler accepts $mflag... " >&6; }
+if eval \${$as_CACHEVAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS  $mflag"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  eval "$as_CACHEVAR=yes"
+else
+  eval "$as_CACHEVAR=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CXXFLAGS=$ax_check_save_flags
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
+  CXX_MFLAG=$mflag
+else
+  :
+fi
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+### Checks for machine architecture
+#
+
+CC_MBITS=
+# The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of size_t" >&5
+$as_echo_n "checking size of size_t... " >&6; }
+if ${ac_cv_sizeof_size_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (size_t))" "ac_cv_sizeof_size_t"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type_size_t" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (size_t)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_size_t=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_size_t" >&5
+$as_echo "$ac_cv_sizeof_size_t" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_SIZE_T $ac_cv_sizeof_size_t
+_ACEOF
+
+
+mbits=$((ac_cv_sizeof_size_t * 8))
+mbits_flag="-m${mbits}"
+as_CACHEVAR=`$as_echo "ax_cv_check_cflags__$mbits_flag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $mbits_flag" >&5
+$as_echo_n "checking whether C compiler accepts $mbits_flag... " >&6; }
+if eval \${$as_CACHEVAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  $mbits_flag"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  eval "$as_CACHEVAR=yes"
+else
+  eval "$as_CACHEVAR=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
+  CC_MBITS=$mbits_flag
+else
+  :
+fi
+
+
+
+CXX_MBITS=
+ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+as_CACHEVAR=`$as_echo "ax_cv_check_cxxflags__$mbits_flag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts $mbits_flag" >&5
+$as_echo_n "checking whether C++ compiler accepts $mbits_flag... " >&6; }
+if eval \${$as_CACHEVAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS  $mbits_flag"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  eval "$as_CACHEVAR=yes"
+else
+  eval "$as_CACHEVAR=no"
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CXXFLAGS=$ax_check_save_flags
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
+  CXX_MBITS=$mbits_flag
+else
+  :
+fi
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+### Checks endianness
+#
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking processor byte ordering" >&5
 $as_echo_n "checking processor byte ordering... " >&6; }
@@ -9303,6 +9438,7 @@ $as_echo "$as_me: WARNING: *** src/config.h may need to be hand editied.        
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *****************************************************************" >&5
 $as_echo "$as_me: WARNING: *****************************************************************" >&2;}
 	fi
+
 
 
 
@@ -13701,7 +13837,7 @@ OPENMP_CXXFLAGS=$OPENMP_CFLAGS
 
 
 # ------------------------------------------------------------------------------
-# Scalasca / ScoreP support
+# Checks Scalasca / ScoreP support
 # ------------------------------------------------------------------------------
 
 
@@ -15810,30 +15946,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCC\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${OPTIMIZATION_O0_TRUE}" && test -z "${OPTIMIZATION_O0_FALSE}"; then
-  as_fn_error $? "conditional \"OPTIMIZATION_O0\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${OPTIMIZATION_O1_TRUE}" && test -z "${OPTIMIZATION_O1_FALSE}"; then
-  as_fn_error $? "conditional \"OPTIMIZATION_O1\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${OPTIMIZATION_O2_TRUE}" && test -z "${OPTIMIZATION_O2_FALSE}"; then
-  as_fn_error $? "conditional \"OPTIMIZATION_O2\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${OPTIMIZATION_O3_TRUE}" && test -z "${OPTIMIZATION_O3_FALSE}"; then
-  as_fn_error $? "conditional \"OPTIMIZATION_O3\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${OPTIMIZATION_O4_TRUE}" && test -z "${OPTIMIZATION_O4_FALSE}"; then
-  as_fn_error $? "conditional \"OPTIMIZATION_O4\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${AVX_TRUE}" && test -z "${AVX_FALSE}"; then
-  as_fn_error $? "conditional \"AVX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${SIMD_TRUE}" && test -z "${SIMD_FALSE}"; then
