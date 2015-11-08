@@ -25,7 +25,6 @@ else
     AC_MSG_RESULT([yes])
 fi
 AC_SUBST(C11)
-
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
@@ -39,9 +38,7 @@ else
     C99="-std=C99"
 fi
 AC_SUBST(C99)
-
 AX_MPI_PRE
-
 
 # compression
 #   Values: yes | no
@@ -111,18 +108,6 @@ AC_ARG_ENABLE([scorep],
       [Enable instrumentation with Scalasca/ScoreP.
       Disabled by default.]),,
     [enable_scorep=no])
-
-# avx
-#   Values: yes | no
-#   Default value: yes
-# AC_ARG_ENABLE([avx],
-#     AS_HELP_STRING([--enable-avx],
-#       [Whether or not use AVX instruction set.
-#       SSE2 will be used instead if --enable-compression is enabled (default),
-#       and either this option is disabled (--disable-avx), or AVX instructions
-#       are not not supported by hardware.
-#       Enabled by default.]),,
-#     [enable_avx=yes])
 
 # enable_simd
 #   Values: yes | no
@@ -204,24 +189,6 @@ AC_ARG_ENABLE([quiet],
       [Disable compile mensages when running make.]),,
     [enable_quiet=no])
 
-# code-optimization
-#   Values: O4 | O3 | O2 | O1 | O0
-#   Default value:
-# AC_ARG_ENABLE(code-optimization,
-# AS_HELP_STRING([--enable-code-optimization=O0|O1|O2|O3|O4],
-#   [Compiler optimization level. O0=none, O4=maximun
-#   Optimization O0 disables code optimization.
-#   Optimization O4 equals to -O3 -ffast-math.
-#   Default optimization is O4. Default optimization may be safe on most compilers.]),
-# [case "${enableval}" in
-#   O0) enable_code_optimization=O0 ;;
-#   O1) enable_code_optimization=O1 ;;
-#   O2) enable_code_optimization=O2 ;;
-#   O3) enable_code_optimization=O3 ;;
-#   O4) enable_code_optimization=O4 ;;
-#   *) AC_MSG_ERROR(bad value ${enableval} for --enable-code-optimization) ;;
-# esac],[enable_code_optimization=O4])
-
 # nvidia_architecture
 #   Values: fermi | kepler | auto
 #   Default value: fermi
@@ -252,7 +219,6 @@ AC_ARG_VAR(OPTIMIZATION_FLAGS,AS_HELP_STRING([OPTIMIZATION_FLAGS="-flag1 -flag2 
 AS_IF([test "x$OPTIMIZATION_FLAGS" = x], [OPTIMIZATION_FLAGS="-loops -flto"])
 AS_IF([test "x$enable_debugging" = xyes], [OPTIMIZATION_FLAGS=""])
 
-
 ### declare "precious" environment variables
 #
 
@@ -263,12 +229,6 @@ AC_ARG_VAR(ALLCXXFLAGS,Customized C++ source compilation flags)
 AC_ARG_VAR(CC,The C compiler)
 AC_ARG_VAR(CXX,The C++ compiler)
 
-# AM_CONDITIONAL([OPTIMIZATION_O0], [test x"$enable_code_optimization" = xO0])
-# AM_CONDITIONAL([OPTIMIZATION_O1], [test x"$enable_code_optimization" = xO1])
-# AM_CONDITIONAL([OPTIMIZATION_O2], [test x"$enable_code_optimization" = xO2])
-# AM_CONDITIONAL([OPTIMIZATION_O3], [test x"$enable_code_optimization" = xO3])
-# AM_CONDITIONAL([OPTIMIZATION_O4], [test x"$enable_code_optimization" = xO4])
-# AM_CONDITIONAL([AVX], [test x"$enable_avx" = xyes])
 AM_CONDITIONAL([SIMD], [test x"$enable_simd" = xyes])
 AM_CONDITIONAL([SIMT], [test x"$enable_simt" = xyes])
 AM_CONDITIONAL([PTXAS_OTIMIZATION], [test x"$enable_ptxas_otimization" = xyes])
@@ -286,7 +246,6 @@ AM_CONDITIONAL([DEBUG_COMPRESSION], [test x"$enable_debug_compression" = xyes])
 AM_CONDITIONAL([VERIFY_COMPRESSION], [test x"$enable_verify_compression" = xyes])
 AM_CONDITIONAL([CUDA], [test x"$enable_cuda" = xyes])
 AM_CONDITIONAL([QUIET_OUTPUT], [test x"$enable_quiet" = xyes])
-
 
 ### Checks for header files.
 #
@@ -363,8 +322,22 @@ LX_FIND_MPI
 AC_LANG_PUSH([C++])
 LX_FIND_MPI
 AC_LANG_POP([C++])
-
 AX_MPI_POST
+
+# ------------------------------------------------------------------------------
+# Checks Extoll
+# ------------------------------------------------------------------------------
+
+EXTOLL=no
+AC_MSG_CHECKING([whether mpi has Extoll support])
+omp_extoll=`ompi_info |grep -i mca | grep extoll 2> /dev/null`
+if test x"$omp_extoll" = x; then
+    AC_MSG_RESULT([no])
+else
+    AC_MSG_RESULT([yes])
+    EXTOLL=yes
+fi
+AC_SUBST([EXTOLL])
 
 # ------------------------------------------------------------------------------
 # Setup CUDA paths
@@ -380,7 +353,7 @@ if test "x$enable_cuda" = xyes; then
 fi
 
 # ------------------------------------------------------------------------------
-# Setup AVX
+# Checks SSE4.1
 # ------------------------------------------------------------------------------
 
 if test "x$enable_compression" = xyes; then
@@ -402,19 +375,17 @@ fi
 # Setup FLAGS SUPPORT
 # ------------------------------------------------------------------------------
 
-### Checks for latest architecture flag
+### Checks latest architecture flag
 #
 
 mflag=
 AC_MSG_CHECKING([for the latest architecture flag supported])
 mflag=`echo $SIMD_FLAGS | awk '{ printf $NF; }'`
 AC_MSG_RESULT([$mflag])
-
 CC_MFLAG=
 AX_CHECK_COMPILE_FLAG($mflag,
   [CC_MFLAG=$mflag], [])
 AC_SUBST([CC_MFLAG])
-
 CXX_MFLAG=
 AC_LANG_PUSH([C++])
 AX_CHECK_COMPILE_FLAG($mflag,
@@ -422,7 +393,7 @@ AX_CHECK_COMPILE_FLAG($mflag,
 AC_LANG_POP([C++])
 AC_SUBST([CXX_MFLAG])
 
-### Checks for machine architecture
+### Checks machine architecture
 #
 
 CC_MBITS=
@@ -432,7 +403,6 @@ mbits_flag="-m${mbits}"
 AX_CHECK_COMPILE_FLAG($mbits_flag,
   [CC_MBITS=$mbits_flag], [])
 AC_SUBST([CC_MBITS])
-
 CXX_MBITS=
 AC_LANG_PUSH([C++])
 AX_CHECK_COMPILE_FLAG($mbits_flag,
@@ -440,11 +410,7 @@ AX_CHECK_COMPILE_FLAG($mbits_flag,
 AC_LANG_POP([C++])
 AC_SUBST([CXX_MBITS])
 
-### Checks endianness
-#
-
 AC_C_FIND_ENDIAN
-
 AX_CC_MAXOPT
 AX_CXX_MAXOPT
 AX_MPICXX_MAXOPT
@@ -458,10 +424,8 @@ AX_CXX_WARNINGS([maximum], [-pedantic -Wextra -Weffc++])
 AC_ARG_WITH(opencl,
     AS_HELP_STRING([--with-opencl=<path>],[prefix to location of OpenCL include directory @<:@default=auto@:>@]),,
     [with_opencl=auto])
-
 OPENCL_CFLAGS=
 OPENCL_LIBS=
-
 if test "x$with_opencl" != "xno"
 then
    OPENCL_CFLAGS+=" -D FW_OPENCL"
@@ -479,7 +443,6 @@ then
       esac
    fi
 fi
-
 AM_CONDITIONAL(BUILDOPENCL, test ! x$with_opencl = xno)
 AX_CHECK_CL
 
@@ -497,12 +460,10 @@ if test x$GCC = xyes
 then
   AX_GCC_VERSION()
 fi
-
 AS_IF([test "x$enable_openmp_on_cudafiles" = "xyes" -o "x$enable_openmp_on_others" = "xyes"], [
   if test x$c99 = xno; then
-	AC_MSG_WARN([C99 compliant compiler is recommended with openMP])
+	    AC_MSG_WARN([C99 compliant compiler is recommended with openMP])
   fi
-
   if test x$GCC = xyes
   then
     AX_COMPARE_VERSION([$GCC_VERSION], [ge], [4.2.0], [
@@ -517,8 +478,6 @@ AS_IF([test "x$enable_openmp_on_cudafiles" = "xyes" -o "x$enable_openmp_on_other
 AM_CONDITIONAL(HAVE_OPENMP, test true = false)
 ])
 AC_SUBST(OPENMP_CFLAGS)
-
-dnl OpenMP checker only defines for C when compiling both C and C++
 OPENMP_CXXFLAGS=$OPENMP_CFLAGS
 AC_SUBST(OPENMP_CXXFLAGS)
 
@@ -530,7 +489,6 @@ AX_CHECK_SCOREP
 if test x"$enable_scorep" = xyes -a x"$ac_found_scorep" = xno; then
 	AC_MSG_FAILURE([Scalasca/scorep requered but not found])
 fi
-
 
 # ------------------------------------------------------------------------------
 # Doxygen support

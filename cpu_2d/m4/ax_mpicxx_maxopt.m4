@@ -4,7 +4,7 @@
 #
 # SYNOPSIS
 #
-#   AX_CXX_MAXOPT
+#   AX_MPICXX_MAXOPT
 #
 # DESCRIPTION
 #
@@ -12,7 +12,7 @@
 #   architectures, for some definition of "good". (In our case, good for
 #   FFTW and hopefully for other scientific codes. Modify as needed.)
 #
-#   The user can override the flags by setting the CXXFLAGS environment
+#   The user can override the flags by setting the MPICXXFLAGS environment
 #   variable. The user can also specify --enable-portable-binary in order to
 #   disable any optimization flags that might result in a binary that only
 #   runs on the host architecture.
@@ -57,18 +57,21 @@
 
 #serial 16
 
-AC_DEFUN([AX_CXX_MAXOPT],
+MPICXXFLAGS=
+AC_DEFUN([AX_MPICXX_MAXOPT],
 [
+save_CXXFLAGS=$CXXFLAGS
+save_CXX=$CXX
 AC_LANG_PUSH([C++])
-dnl AC_REQUIRE([AC_PROG_CC])
 AC_REQUIRE([AX_COMPILER_VENDOR])
 AC_REQUIRE([AC_CANONICAL_HOST])
 
-dnl AC_ARG_ENABLE(portable-binary, [AS_HELP_STRING([--enable-portable-binary], [disable compiler optimizations that would produce unportable binaries])],
-dnl 	acx_maxopt_portable=$enableval, acx_maxopt_portable=no)
+if test x"$MPICXX" != x; then
+  CXX=$MPICXX
+fi
 
 # Try to determine "good" native compiler flags if none specified via CXXFLAGS
-if test "$ac_test_CXXFLAGS" != "set"; then
+if test "$ac_test_MPICXXFLAGS" != "set"; then
   CXXFLAGS=""
   case $ax_cv_c_compiler_vendor in
     dec) CXXFLAGS="-newc -w0 -O5 -ansi_alias -ansi_args -fp_reorder -tune host"
@@ -171,27 +174,30 @@ if test "$ac_test_CXXFLAGS" != "set"; then
 
   if test -z "$CXXFLAGS"; then
 	echo ""
-	echo "********************************************************"
-        echo "* WARNING: Don't know the best CXXFLAGS for this system*"
-        echo "* Use ./configure CXXFLAGS=...to specify your own flags*"
-	echo "* (otherwise, a default of CXXFLAGS=-O3 will be used)  *"
-	echo "********************************************************"
+	echo "***********************************************************"
+  echo "* WARNING: Don't know the best MPICXXFLAGS for this system*"
+  echo "* Use ./configure MPICXXFLAGS=...to specify your own flags*"
+	echo "* (otherwise, a default of MPICXXFLAGS=-O3 will be used)  *"
+	echo "***********************************************************"
 	echo ""
         CXXFLAGS="-O3"
   fi
 
   AX_CHECK_COMPILE_FLAG($CXXFLAGS, [], [
 	echo ""
-        echo "********************************************************"
-        echo "* WARNING: The guessed CXXFLAGS don't seem to work with*"
-        echo "* your compiler.                                       *"
-        echo "* Use ./configure CXXFLAGS=...to specify your own flags *"
-        echo "********************************************************"
+        echo "************************************************************"
+        echo "* WARNING: The guessed MPICXXFLAGS don't seem to work with *"
+        echo "* your compiler.                                           *"
+        echo "* Use ./configure MPICXXFLAGS=...to specify your own flags *"
+        echo "************************************************************"
         echo ""
         CXXFLAGS=""
 
   AC_LANG_POP([C++])
+  MPICXXFLAGS=CXXFLAGS;
+  CXXFLAGS=$save_CXXFLAGS
+  CXX=$save_CXX
   ])
-
+  AC_SUBST([MPICXXFLAGS])
 fi
 ])
