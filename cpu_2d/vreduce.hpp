@@ -186,9 +186,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 previousRank = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
 
 #ifdef _COMPRESSION
-                MPI_Sendrecv(&psizeTo, 1, MPI_INT,
+                MPI_Sendrecv(&psizeTo, 1, MPI_LONG,
                              previousRank, it + 2,
-                             &originalsize, 1, MPI_INT,
+                             &originalsize, 1, MPI_LONG,
                              previousRank, it + 2,
                              comm, MPI_STATUS_IGNORE);
                 MPI_Sendrecv(compressed_fq, compressedsize, type,
@@ -284,9 +284,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 previousRank = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
 
 #ifdef _COMPRESSION
-                MPI_Sendrecv(&psizeTo, 1, MPI_INT,
+                MPI_Sendrecv(&psizeTo, 1, MPI_LONG,
                              previousRank, it + 2,
-                             &originalsize, 1, MPI_INT,
+                             &originalsize, 1, MPI_LONG,
                              previousRank, it + 2,
                              comm, MPI_STATUS_IGNORE);
                 MPI_Sendrecv(compressed_fq, compressedsize, type,
@@ -381,7 +381,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     int *disps = (int *)malloc(communicatorSize * sizeof(int));
 
     // Transmission of the subslice sizes
-    MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
+    MPI_Allgather(&psizeTo, 1, MPI_LONG, sizes, 1, MPI_LONG, comm);
 
 
 #ifdef _COMPRESSION
@@ -393,7 +393,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     size_t csize=0;
 
     compress(send, psizeTo, &compressed_fq, compressedsize);
-    MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, comm);
+    MPI_Allgather(&compressedsize, 1, MPI_LONG, compressed_sizes, 1, MPI_LONG, comm);
 
     disps[lastTargetNode] = 0;
     compressed_disps[lastTargetNode] = 0;

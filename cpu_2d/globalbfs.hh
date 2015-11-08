@@ -614,7 +614,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
         lqueue += tend - tstart;
 #endif
 
-        MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+        MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_LONG, MPI_LOR, MPI_COMM_WORLD);
 
 
         if (!anynewnodes_global)
@@ -636,7 +636,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
     SCOREP_USER_REGION_BEGIN(allReduceBC_handle, "BFSRUN_region_allReduceBC", SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
-            // MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_INT,MPI_MAX,col_comm);
+            // MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
             static_cast<Derived *>(this)->generatOwenMask();
             allReduceBitCompressed(predecessor,
                                    fq_64, // have to be changed for bitmap queue
@@ -762,8 +762,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 #ifdef _COMPRESSION
 
-                MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
-                MPI_Bcast(&compressedsize, 1, MPI_INT, root_rank, row_comm);
+                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+                MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
 
 #ifdef _COMPRESSIONVERIFY
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
@@ -771,7 +771,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
                 MPI_Bcast(compressed_fq, compressedsize, fq_tp_type, root_rank, row_comm);
 #else
-                MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
+                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
@@ -838,8 +838,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
                 FQ_T *compressed_fq = NULL, *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
-                MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
-                MPI_Bcast(&compressedsize, 1, MPI_INT, root_rank, row_comm);
+                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+                MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
                 compressed_fq = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
 
 #ifdef _COMPRESSIONVERIFY
@@ -871,7 +871,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 #else
                 int originalsize;
-                MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
+                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
 #ifdef _COMPRESSIONVERIFY
                 assert(originalsize <= fq_64_length);
 #endif

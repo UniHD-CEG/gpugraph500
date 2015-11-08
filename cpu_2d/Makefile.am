@@ -7,6 +7,8 @@ ACLOCAL_AMFLAGS=-I m4
 
 DEFINES=
 
+DEFINES+=-D_VECTORIZE_MPI
+
 ### Dynamic variables
 #
 
@@ -66,7 +68,7 @@ if BASIC_PROFING_OTHER
 endif
 
 if DEBUG
-  DEFINES +=-D_DEBUG
+  DEFINES+=-D_DEBUG
 endif
 
 ### Compression
@@ -78,17 +80,17 @@ if !SIMT
  @exit
 endif
 endif
-  DEFINES +=-D_COMPRESSION
+  DEFINES+=-D_COMPRESSION
 if DEBUG_COMPRESSION
-  DEFINES +=-D_COMPRESSIONDEBUG
+  DEFINES+=-D_COMPRESSIONDEBUG
   LLIBC=-static-libstdc++
 endif
 if VERIFY_COMPRESSION
-  DEFINES +=-D_COMPRESSIONVERIFY
+  DEFINES+=-D_COMPRESSIONVERIFY
 endif
 
 if SIMD
-  DEFINES +=-D_SIMD
+  DEFINES+=-D_SIMD
   INCPATH=-I. -Icompression/cpusimd/include
   g500_HEADER_LIST=@simd_H_FILES@
 else
