@@ -11,6 +11,7 @@ AM_ACLOCAL_INCLUDE(m4)
 
 ## Checks for programs.
 #
+
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX_11(,[mandatory])
 AC_MSG_CHECKING([whether mandatory -std=c++ is supported])
@@ -21,7 +22,7 @@ if test "x${ac_success}" = "xno"; then
 else
     C11="-std=c++11"
     CXX="$CXX $C11"
-    AC_MSG_RESULT([yes]) 
+    AC_MSG_RESULT([yes])
 fi
 AC_SUBST(C11)
 
@@ -41,8 +42,6 @@ AC_SUBST(C99)
 
 AX_MPI_PRE
 
-### Commandline arguments
-# Use ./configure --help to view
 
 # compression
 #   Values: yes | no
@@ -116,14 +115,14 @@ AC_ARG_ENABLE([scorep],
 # avx
 #   Values: yes | no
 #   Default value: yes
-AC_ARG_ENABLE([avx],
-    AS_HELP_STRING([--enable-avx],
-      [Whether or not use AVX instruction set.
-      SSE2 will be used instead if --enable-compression is enabled (default),
-      and either this option is disabled (--disable-avx), or AVX instructions
-      are not not supported by hardware.
-      Enabled by default.]),,
-    [enable_avx=yes])
+# AC_ARG_ENABLE([avx],
+#     AS_HELP_STRING([--enable-avx],
+#       [Whether or not use AVX instruction set.
+#       SSE2 will be used instead if --enable-compression is enabled (default),
+#       and either this option is disabled (--disable-avx), or AVX instructions
+#       are not not supported by hardware.
+#       Enabled by default.]),,
+#     [enable_avx=yes])
 
 # enable_simd
 #   Values: yes | no
@@ -208,20 +207,20 @@ AC_ARG_ENABLE([quiet],
 # code-optimization
 #   Values: O4 | O3 | O2 | O1 | O0
 #   Default value:
-AC_ARG_ENABLE(code-optimization,
-AS_HELP_STRING([--enable-code-optimization=O0|O1|O2|O3|O4],
-  [Compiler optimization level. O0=none, O4=maximun
-  Optimization O0 disables code optimization.
-  Optimization O4 equals to -O3 -ffast-math.
-  Default optimization is O4. Default optimization may be safe on most compilers.]),
-[case "${enableval}" in
-  O0) enable_code_optimization=O0 ;;
-  O1) enable_code_optimization=O1 ;;
-  O2) enable_code_optimization=O2 ;;
-  O3) enable_code_optimization=O3 ;;
-  O4) enable_code_optimization=O4 ;;
-  *) AC_MSG_ERROR(bad value ${enableval} for --enable-code-optimization) ;;
-esac],[enable_code_optimization=O4])
+# AC_ARG_ENABLE(code-optimization,
+# AS_HELP_STRING([--enable-code-optimization=O0|O1|O2|O3|O4],
+#   [Compiler optimization level. O0=none, O4=maximun
+#   Optimization O0 disables code optimization.
+#   Optimization O4 equals to -O3 -ffast-math.
+#   Default optimization is O4. Default optimization may be safe on most compilers.]),
+# [case "${enableval}" in
+#   O0) enable_code_optimization=O0 ;;
+#   O1) enable_code_optimization=O1 ;;
+#   O2) enable_code_optimization=O2 ;;
+#   O3) enable_code_optimization=O3 ;;
+#   O4) enable_code_optimization=O4 ;;
+#   *) AC_MSG_ERROR(bad value ${enableval} for --enable-code-optimization) ;;
+# esac],[enable_code_optimization=O4])
 
 # nvidia_architecture
 #   Values: fermi | kepler | auto
@@ -255,23 +254,21 @@ AS_IF([test "x$enable_debugging" = xyes], [OPTIMIZATION_FLAGS=""])
 
 
 ### declare "precious" environment variables
-# (implicit AC_SUBST)
+#
 
 AC_ARG_VAR(MPI_INC,[MPI include flags])
 AC_ARG_VAR(MPI_LIB,[MPI lib flags])
 AC_ARG_VAR(ALLCFLAGS,Customized C source compilation flags)
 AC_ARG_VAR(ALLCXXFLAGS,Customized C++ source compilation flags)
 AC_ARG_VAR(CC,The C compiler)
-# AC_ARG_VAR(MPICC,The MPI C compiler)
 AC_ARG_VAR(CXX,The C++ compiler)
-# AC_ARG_VAR(MPICXX,The MPI C++ compiler)
 
-AM_CONDITIONAL([OPTIMIZATION_O0], [test x"$enable_code_optimization" = xO0])
-AM_CONDITIONAL([OPTIMIZATION_O1], [test x"$enable_code_optimization" = xO1])
-AM_CONDITIONAL([OPTIMIZATION_O2], [test x"$enable_code_optimization" = xO2])
-AM_CONDITIONAL([OPTIMIZATION_O3], [test x"$enable_code_optimization" = xO3])
-AM_CONDITIONAL([OPTIMIZATION_O4], [test x"$enable_code_optimization" = xO4])
-AM_CONDITIONAL([AVX], [test x"$enable_avx" = xyes])
+# AM_CONDITIONAL([OPTIMIZATION_O0], [test x"$enable_code_optimization" = xO0])
+# AM_CONDITIONAL([OPTIMIZATION_O1], [test x"$enable_code_optimization" = xO1])
+# AM_CONDITIONAL([OPTIMIZATION_O2], [test x"$enable_code_optimization" = xO2])
+# AM_CONDITIONAL([OPTIMIZATION_O3], [test x"$enable_code_optimization" = xO3])
+# AM_CONDITIONAL([OPTIMIZATION_O4], [test x"$enable_code_optimization" = xO4])
+# AM_CONDITIONAL([AVX], [test x"$enable_avx" = xyes])
 AM_CONDITIONAL([SIMD], [test x"$enable_simd" = xyes])
 AM_CONDITIONAL([SIMT], [test x"$enable_simt" = xyes])
 AM_CONDITIONAL([PTXAS_OTIMIZATION], [test x"$enable_ptxas_otimization" = xyes])
@@ -311,7 +308,17 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_CHECK_TYPES([ptrdiff_t])
+
+### Checks for machine architecture
+#
+
+MBITS=
 AC_CHECK_SIZEOF([size_t])
+mbits=`expr $ac_cv_sizeof_size_t * 8`
+mbits_flag="-m${mbits}"
+AX_CHECK_COMPILE_FLAG($mbits_flag,
+  [MBITS=$mbits_flag], [])
+AC_SUBST([MBITS])
 
 ### Checks for library functions.
 #
@@ -324,7 +331,7 @@ AC_CHECK_FUNCS([pow sqrt])
 AC_LANG_POP([C++])
 
 ### declare environment variables
-# (éxplicit AC_SUBST)
+#
 
 SIMD_OBJECTS="bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o"
 g500_OBJECTS="main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o"
@@ -407,19 +414,24 @@ if test "x$enable_compression" = xyes; then
           AC_MSG_RESULT([no])
           AC_MSG_FAILURE(SSE4.1 support or greater is required for SIMD compression)
       else
-          AC_MSG_RESULT([yes]) 
+          AC_MSG_RESULT([yes])
       fi
   fi
 fi
 
-# FIXME: if not --enable-avx select best ssex extension
+MFLAG=
+AC_MSG_CHECKING([for the latest architecture supported])
+latest=${#MYARRAY[@]}-1
+MFLAG="${MYARRAY[latest]}"
+AC_MSG_RESULT([$MFLAG])
+AC_SUBST([MFLAG])
+
 
 # ------------------------------------------------------------------------------
 # Setup FLAGS SUPPORT
 # ------------------------------------------------------------------------------
 
 AC_C_FIND_ENDIAN
-dnl AC_PROG_CC_STDC
 AX_CC_MAXOPT
 AX_CXX_MAXOPT
 AX_CC_WARNINGS([maximum], [-pedantic -Wextra])
@@ -502,8 +514,8 @@ AC_SUBST(OPENMP_CXXFLAGS)
 
 AX_CHECK_SCOREP
 if test x"$enable_scorep" = xyes -a x"$ac_found_scorep" = xno; then
-	AC_MSG_FAILURE([Scalasca/scorep requered but not found])	
-fi 
+	AC_MSG_FAILURE([Scalasca/scorep requered but not found])
+fi
 
 
 # ------------------------------------------------------------------------------

@@ -10,39 +10,40 @@ DEFINES=
 ### Dynamic variables
 #
 
-if OPTIMIZATION_O4
-  o_level=-O3 -ffast-math
-  o_level_nvcc=-O3
-endif
-if OPTIMIZATION_O3
-  o_level=-O3
-  o_level_nvcc=-O3
-endif
-if OPTIMIZATION_O2
-  o_level=-O2
-  o_level_nvcc=-O2
-endif
-if OPTIMIZATION_O1
-  o_level=-O1
-  o_level_nvcc=-O1
-endif
-if OPTIMIZATION_O0
-  o_level=-O0
-  o_level_nvcc=-O0
-endif
+# if OPTIMIZATION_O4
+#   o_level=-O3 -ffast-math
+#   o_level_nvcc=-O3
+# endif
+# if OPTIMIZATION_O3
+#   o_level=-O3
+#   o_level_nvcc=-O3
+# endif
+# if OPTIMIZATION_O2
+#   o_level=-O2
+#   o_level_nvcc=-O2
+# endif
+# if OPTIMIZATION_O1
+#   o_level=-O1
+#   o_level_nvcc=-O1
+# endif
+# if OPTIMIZATION_O0
+#   o_level=-O0
+#   o_level_nvcc=-O0
+# endif
 
-if AVX
-  arch=-mavx
-  # arch_nvcc=-mavx
-else
-if SIMD
-  arch=-msse4
-  # arch_nvcc=-msse4
-else
-  arch=-march=native
-  # arch_nvcc=-march=native
-endif
-endif
+o_level=-O3
+o_level_nvcc=-O3
+arch=-mavx
+arch_nvcc=-mavx
+
+# if AVX
+#   arch=-mavx
+#   # arch_nvcc=-mavx
+# else
+# if SIMD
+#   arch=-msse4
+# endif
+# endif
 
 if PTXAS_OTIMIZATION
   PTXAS=--ptxas-options="-O3"
