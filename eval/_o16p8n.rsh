@@ -1,12 +1,13 @@
 #!/bin/bash
 #SBATCH -J test_reduce
 #SBATCH --get-user-env
-#SBATCH --tasks=9
+#SBATCH --tasks=16
 #SBATCH --ntasks-per-node=2
 #SBATCH --gres=gpu:1
 
-MAX_SF=21
+MAX_SF=22
 CODEC=s4-bp128-d4
+# CODEC=frameofreference
 ROWTHRESHOLD=64
 COLUMNTHRESHOLD=64
 
@@ -45,11 +46,13 @@ else
   scale_factor=$MAX_SF
 fi
 
+
 date
 if [ "x$G500_ENABLE_RUNTIME_SCALASCA" = "xyes" ]; then
-  scalasca="scalasca -analyze -f filter.scorep -e scorep_g500_testreduce`date +"%F-%s"`"
-  $scalasca mpirun -np 9 --display-map ./../cpu_2d/g500 -s $scale_factor -C 3 -gpus 1 -qs 2.1 -be $codec -btr $rowthreshold -btc $columnthreshold
+  scalasca="scalasca -analyze -e scorep_g500_testreduce`date +"%F-%s"`"
+  $scalasca mpirun --display-map -np 16 ../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 2 -be $codec -btr $rowthreshold -btc $columnthreshold
 else
-  mpirun -np 9 --display-map ../cpu_2d/g500 -s $scale_factor -C 3 -gpus 1 -qs 2 -be $codec -btr $rowthreshold -btc $columnthreshold
+  mpirun --display-map -np 16 ../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 2 -be $codec -btr $rowthreshold -btc $columnthreshold
 fi
+
 

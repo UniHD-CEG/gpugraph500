@@ -65,6 +65,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/aclocal-include.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_avx_xgetbv.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_cpuid.m4 \
 	$(top_srcdir)/m4/ax_mpi_pre_post.m4 \
+	$(top_srcdir)/m4/ax_mpicxx_maxopt.m4 \
 	$(top_srcdir)/m4/ax_openmp.m4 \
 	$(top_srcdir)/m4/ax_prog_doxygen.m4 \
 	$(top_srcdir)/m4/ax_pthread.m4 $(top_srcdir)/m4/cit_cuda.m4 \
@@ -109,6 +110,7 @@ CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CC_MBITS = @CC_MBITS@
 CC_MFLAG = @CC_MFLAG@
+CC_OO = @CC_OO@
 CFLAGS = @CFLAGS@
 CL_CFLAGS = @CL_CFLAGS@
 CL_LIBS = @CL_LIBS@
@@ -123,8 +125,10 @@ CUDA_LIBS = @CUDA_LIBS@
 CXX = @CXX@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
+CXXMPIFLAGS = @CXXMPIFLAGS@
 CXX_MBITS = @CXX_MBITS@
 CXX_MFLAG = @CXX_MFLAG@
+CXX_OO = @CXX_OO@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -157,6 +161,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTOLL = @EXTOLL@
 GCC_VERSION = @GCC_VERSION@
 GREP = @GREP@
 HAVE_CXX11 = @HAVE_CXX11@
@@ -210,6 +215,8 @@ STRIP = @STRIP@
 VERSION = @VERSION@
 WARN_CFLAGS = @WARN_CFLAGS@
 WARN_CXXFLAGS = @WARN_CXXFLAGS@
+WARN_MPICC = @WARN_MPICC@
+WARN_MPICXX = @WARN_MPICXX@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -233,6 +240,7 @@ datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
+endian = @endian@
 exec_prefix = @exec_prefix@
 g500_OBJECTS = @g500_OBJECTS@
 host = @host@
@@ -271,10 +279,6 @@ DEFINES = $(am__append_1) $(am__append_2) $(am__append_3) \
 
 ### Dynamic variables
 #
-o_level = -O3
-o_level_nvcc = -O3
-arch = -mavx
-arch_nvcc = -mavx
 @PTXAS_OTIMIZATION_TRUE@PTXAS = --ptxas-options="-O3"
 @NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_FALSE@NV_ARCHITECTURE = $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 @NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_TRUE@NV_ARCHITECTURE = $(PTXAS) -arch=sm_35
@@ -291,7 +295,7 @@ arch_nvcc = -mavx
 @SCOREP_TRUE@LLIBS_SCOREP = @SCOREP_LLIBS@
 @SCOREP_TRUE@SCOREP_CXXCPPFLAGS = @SCOREP_CPPFLAG@
 @SCOREP_FALSE@libcudart_static_path = @CUDA_LDFLAGS@
-@SCOREP_FALSE@libcudart_static_flag = -lcudart
+@SCOREP_FALSE@libcudart_static_flag = @CUDA_LIBS@
 @OPENMP_ON_CUDA_TRUE@CUDA_OPENMP = -fopenmp
 @OPENMP_ON_OTHERS_TRUE@OPENMP = -fopenmp
 @BASIC_PROFING_BFS_TRUE@CUDA_INSTRUM = -DINSTRUMENTED
@@ -308,23 +312,18 @@ arch_nvcc = -mavx
 @CUDA_TRUE@bfs_object = cuda_bfs_cuda.o
 @CUDA_FALSE@bfs_implementation = cpubfs_bin.cpp
 @QUIET_OUTPUT_TRUE@Q = @
-
-#if DEBUGGING
-#  o_level=-O0
-#  o_level_nvcc=-O0
-#  DEBUG_FLAG=-g
-#  NVCC_DEBUG_FLAGS=-DTHRUST_DEBUG
-#endif
+@DEBUGGING_TRUE@DEBUG_FLAG = -g
+@DEBUGGING_TRUE@NVCC_DEBUG_FLAGS = -DTHRUST_DEBUG
 
 ### Flags
 #
-MPICFLAGS = @CC_MFLAG@ @C99@ @CC_MBITS@ -mfpmath=sse -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) @CFLAGS@ @WARN_CFLAGS@
-MPICXXFLAGS = @CXX_MFLAG@ @C11@ @CXX_MBITS@ -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) @CXXFLAGS@ @WARN_CXXFLAGS@
-NVCXXFLAGS = ,@CXX_MBITS@,$(o_level_nvcc),-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
-LLIBS = $(LLIBS_SCOREP) $(libcudart_static_path) -L$(NVDIR)/lib $(libcudart_static_flag) -lcuda $(LLIBC)
-AM_LDFLAGS = ${arch} $(LDFLAGS_SCOREP) $(OPENMP) -Wl,$(o_level)
-AM_CXXFLAGS = ${arch} @CXXFLAGS@ $(DEBUG_FLAG) @WARN_CXXFLAGS@
-AM_CFLAGS = ${arch} @CFLAGS@ $(DEBUG_FLAG) @WARN_CFLAGS@
+MPICFLAGS = @CC_MFLAG@ @C99@ @CC_MBITS@ -mfpmath=sse -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) @MPI_CFLAGS@ @CFLAGS@ @WARN_MPICC@
+MPICXXFLAGS = @CXX_MFLAG@ @C11@ @CXX_MBITS@ -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) @MPI_CXXFLAGS@ @CXXFLAGS@ @WARN_MPICXX@
+NVCXXFLAGS = ,@CXX_MBITS@,@CXX_OO@,-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
+AM_LDLIBS = $(LLIBS_SCOREP) $(libcudart_static_path) -L@CUDA_LIBDIR@ @MPI_CXXLDFLAGS@ $(libcudart_static_flag) -lcuda $(LLIBC)
+AM_LDFLAGS = @CXX_MFLAG@ $(LDFLAGS_SCOREP) $(OPENMP) -Wl,@CXX_OO@
+AM_CXXFLAGS = @CXX_MFLAG@ @CXXFLAGS@ $(DEBUG_FLAG) @WARN_CXXFLAGS@
+AM_CFLAGS = @CC_MFLAG@ @CFLAGS@ $(DEBUG_FLAG) @WARN_CFLAGS@
 
 ### Compilers
 #
@@ -684,7 +683,7 @@ uninstall-am:
 
 ### Compression
 #
-@COMPRESSION_TRUE@@SIMD_FALSE@@SIMT_FALSE@ @echo "Compression is enabled, but neither CPU nor GPU compression is set"
+@COMPRESSION_TRUE@@SIMD_FALSE@@SIMT_FALSE@ @echo "Compression is enabled, but not specified."
 @COMPRESSION_TRUE@@SIMD_FALSE@@SIMT_FALSE@ @exit
 
 ### Make/ Build rules
@@ -822,7 +821,7 @@ cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 @SIMD_TRUE@	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS),"$(MPI_CXXFLAGS)" --compiler-options -fno-strict-aliasing $(o_level_nvcc) -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS),"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 
@@ -833,7 +832,7 @@ g500:  $(g500_OBJECT_LIST)
 	@echo "============================================================================"
 	@echo ""
 	@echo "--- Linking"
-	$(Q)$(AM_LD) $(AM_LDFLAGS) -o $@ $(g500_OBJECT_LIST) $(LLIBS)
+	$(Q)$(AM_LD) $(AM_LDFLAGS) -o $@ $(g500_OBJECT_LIST) $(AM_LDLIBS)
 	@echo "    MPICXX    $@"
 
 clean-local:

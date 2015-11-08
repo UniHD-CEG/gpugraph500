@@ -55,8 +55,9 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 16
+#serial 17
 
+CC_OO=
 AC_DEFUN([AX_CC_MAXOPT],
 [
 AC_REQUIRE([AC_PROG_CC])
@@ -73,17 +74,23 @@ if test "$ac_test_CFLAGS" != "set"; then
     dec) CFLAGS="-newc -w0 -O5 -ansi_alias -ansi_args -fp_reorder -tune host"
 	 if test "x$acx_maxopt_portable" = xno; then
            CFLAGS="$CFLAGS -arch host"
-         fi;;
+         fi
+	CC_OO="-O5"
+	;;
 
     sun) CFLAGS="-native -fast -xO5 -dalign"
 	 if test "x$acx_maxopt_portable" = xyes; then
 	   CFLAGS="$CFLAGS -xarch=generic"
-         fi;;
+         fi
+	CC_OO="-xO5"
+	;;
 
     hp)  CFLAGS="+Oall +Optrs_ansi +DSnative"
 	 if test "x$acx_maxopt_portable" = xyes; then
 	   CFLAGS="$CFLAGS +DAportable"
-	 fi;;
+	 fi
+	CC_OO="+Oall"
+	;;
 
     ibm) if test "x$acx_maxopt_portable" = xno; then
            xlc_opt="-qarch=auto -qtune=auto"
@@ -103,6 +110,7 @@ if test "$ac_test_CFLAGS" != "set"; then
                 echo "*  CPU you have.  (Set the CFLAGS environment var.   *"
                 echo "*  and re-run configure.)  For more info, man cc.    *"
                 echo "******************************************************"])
+	 CC_OO="-O3"
          ;;
 
     intel) CFLAGS="-O3 -ansi_alias"
@@ -142,6 +150,7 @@ if test "$ac_test_CFLAGS" != "set"; then
             CFLAGS="$CFLAGS $icc_archflag"
           fi
         fi
+	CC_OO="-O3"
 	;;
 
     gnu)
@@ -159,11 +168,13 @@ if test "$ac_test_CFLAGS" != "set"; then
      AX_CHECK_COMPILE_FLAG(-ffast-math, CFLAGS="$CFLAGS -ffast-math")
 
      AX_GCC_ARCHFLAG($acx_maxopt_portable)
+     CC_OO="-O3"	
      ;;
 
     microsoft)
      # default optimization flags for MSVC opt builds
      CFLAGS="-O2"
+     CC_OO="-O2"
      ;;
   esac
 
@@ -176,6 +187,7 @@ if test "$ac_test_CFLAGS" != "set"; then
 	echo "********************************************************"
 	echo ""
         CFLAGS="-O3"
+	CC_OO="-O3"
   fi
 
   AX_CHECK_COMPILE_FLAG($CFLAGS, [], [
@@ -188,6 +200,6 @@ if test "$ac_test_CFLAGS" != "set"; then
         echo ""
         CFLAGS=""
   ])
-
 fi
+AC_SUBST([CC_OO])
 ])

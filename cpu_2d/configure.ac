@@ -35,7 +35,7 @@ if test "x${c99}" = x; then
     c99=no
 else
     c99=yes
-    C99="-std=C99"
+    C99="-std=c99"
 fi
 AC_SUBST(C99)
 AX_MPI_PRE
@@ -416,6 +416,10 @@ AX_CXX_MAXOPT
 AX_MPICXX_MAXOPT
 AX_CC_WARNINGS([maximum], [-pedantic -Wextra])
 AX_CXX_WARNINGS([maximum], [-pedantic -Wextra -Weffc++])
+WARN_MPICXX="-pedantic -Wall -Wextra"
+WARN_MPICC="-pedantic -Wall -Wextra"
+AC_SUBST([WARN_MPICXX])
+AC_SUBST([WARN_MPICC])
 
 # ------------------------------------------------------------------------------
 # Setup OpenCL

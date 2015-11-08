@@ -57,17 +57,17 @@
 
 #serial 16
 
-MPICXXFLAGS=
+CXXMPIFLAGS=
 AC_DEFUN([AX_MPICXX_MAXOPT],
 [
-save_CXXFLAGS=$CXXFLAGS
-save_CXX=$CXX
 AC_LANG_PUSH([C++])
+save_CXXFLAGS=$CXXFLAGS
+save_CXX="$CXX"
 AC_REQUIRE([AX_COMPILER_VENDOR])
 AC_REQUIRE([AC_CANONICAL_HOST])
 
 if test x"$MPICXX" != x; then
-  CXX=$MPICXX
+  CXX="$MPICXX"
 fi
 
 # Try to determine "good" native compiler flags if none specified via CXXFLAGS
@@ -192,12 +192,12 @@ if test "$ac_test_MPICXXFLAGS" != "set"; then
         echo "************************************************************"
         echo ""
         CXXFLAGS=""
+  ])
 
-  AC_LANG_POP([C++])
-  MPICXXFLAGS=CXXFLAGS;
+  CXXMPIFLAGS=$CXXFLAGS;
   CXXFLAGS=$save_CXXFLAGS
   CXX=$save_CXX
-  ])
-  AC_SUBST([MPICXXFLAGS])
+  AC_LANG_POP([C++])
+  AC_SUBST([CXXMPIFLAGS])
 fi
 ])

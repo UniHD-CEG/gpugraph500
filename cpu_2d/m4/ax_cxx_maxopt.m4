@@ -55,8 +55,9 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 16
+#serial 17
 
+CXX_OO=
 AC_DEFUN([AX_CXX_MAXOPT],
 [
 AC_LANG_PUSH([C++])
@@ -74,18 +75,22 @@ if test "$ac_test_CXXFLAGS" != "set"; then
     dec) CXXFLAGS="-newc -w0 -O5 -ansi_alias -ansi_args -fp_reorder -tune host"
 	 if test "x$acx_maxopt_portable" = xno; then
            CXXFLAGS="$CXXFLAGS -arch host"
-         fi;;
-
+         fi
+	CXX_OO="-O5"
+	;;
     sun) CXXFLAGS="-native -fast -xO5 -dalign"
 	 if test "x$acx_maxopt_portable" = xyes; then
 	   CXXFLAGS="$CXXFLAGS -xarch=generic"
-         fi;;
+	fi
+	CXX_OO="-xO5"
+	;;
 
     hp)  CXXFLAGS="+Oall +Optrs_ansi +DSnative"
 	 if test "x$acx_maxopt_portable" = xyes; then
 	   CXXFLAGS="$CXXFLAGS +DAportable"
-	 fi;;
-
+	 fi
+	CXX_OO="+Oall"
+	;;
     ibm) if test "x$acx_maxopt_portable" = xno; then
            xlc_opt="-qarch=auto -qtune=auto"
 	 else
@@ -104,6 +109,7 @@ if test "$ac_test_CXXFLAGS" != "set"; then
                 echo "*  CPU you have.  (Set the CXXFLAGS environment var. *"
                 echo "*  and re-run configure.)  For more info, man cc.    *"
                 echo "******************************************************"])
+		CXX_OO="-O3"
          ;;
 
     intel) CXXFLAGS="-O3 -ansi_alias"
@@ -143,6 +149,7 @@ if test "$ac_test_CXXFLAGS" != "set"; then
             CXXFLAGS="$CXXFLAGS $icc_archflag"
           fi
         fi
+	CXX_OO="-O3"
 	;;
 
     gnu)
@@ -161,11 +168,13 @@ if test "$ac_test_CXXFLAGS" != "set"; then
 
      AX_GCC_ARCHFLAG($acx_maxopt_portable,
      [CXXFLAGS="$CXXFLAGS $ax_cv_gcc_archflag"])
+     CXX_OO="-O3"	
      ;;
 
     microsoft)
      # default optimization flags for MSVC opt builds
      CXXFLAGS="-O2"
+     CXX_OO="-O2"
      ;;
   esac
 
@@ -178,6 +187,7 @@ if test "$ac_test_CXXFLAGS" != "set"; then
 	echo "********************************************************"
 	echo ""
         CXXFLAGS="-O3"
+	CXX_OO="-O3"
   fi
 
   AX_CHECK_COMPILE_FLAG($CXXFLAGS, [], [
@@ -192,6 +202,6 @@ if test "$ac_test_CXXFLAGS" != "set"; then
 
   AC_LANG_POP([C++])
   ])
-
 fi
+AC_SUBST([CXX_OO])
 ])
