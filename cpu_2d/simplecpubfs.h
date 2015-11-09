@@ -4,16 +4,16 @@
 #include <vector>
 #include "globalbfs.hh"
 
-typedef long long vtxtyp;
+typedef long long vertexType;
 typedef int       rowtyp;
 
-class SimpleCPUBFS : public GlobalBFS<SimpleCPUBFS, void, unsigned char, DistMatrix2d<vtxtyp, rowtyp, false, 1>>
+class SimpleCPUBFS : public GlobalBFS<SimpleCPUBFS, void, unsigned char, DistMatrix2d<vertexType, rowtyp, false, 1>>
 {
     std::vector<bool> visited;
-    std::vector<vtxtyp> fq_out;
-    std::vector<vtxtyp> fq_in;
+    std::vector<vertexType> fq_out;
+    std::vector<vertexType> fq_in;
 public:
-    typedef DistMatrix2d<vtxtyp, rowtyp, false, 1> MatrixT;
+    typedef DistMatrix2d<vertexType, rowtyp, false, 1> MatrixT;
     SimpleCPUBFS(MatrixT &_store/*, int64_t verbosity*/);
     ~SimpleCPUBFS();
 
@@ -21,10 +21,10 @@ public:
                        insize);    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
     void getOutgoingFQ(void *&startaddr, long &outsize);
     void setModOutgoingFQ(void *startaddr, long insize); //startaddr: 0, self modification
-    void getOutgoingFQ(vtxtyp globalstart, long size, void *&startaddr, long &outsize);
-    void setIncommingFQ(vtxtyp globalstart, long size, void *startaddr, long &insize_max);
+    void getOutgoingFQ(vertexType globalstart, long size, void *&startaddr, long &outsize);
+    void setIncommingFQ(vertexType globalstart, long size, void *startaddr, long &insize_max);
     bool istheresomethingnew();           //to detect if finished
-    void setStartVertex(const vtxtyp start);
+    void setStartVertex(const vertexType start);
     void runLocalBFS();
 };
 

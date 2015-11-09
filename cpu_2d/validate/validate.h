@@ -69,7 +69,7 @@ void write_pred_entry_depth(T *loc, uint16_t depth)
 /* Returns true if all values are in range. */
 template<class MatrixT>
 static int check_value_ranges(const MatrixT &store, const int64_t nglobalverts,
-                              const typename MatrixT::vtxtyp *const pred)
+                              const typename MatrixT::vertexType *const pred)
 {
     int any_range_errors = 0;
     {
@@ -105,8 +105,8 @@ static int check_value_ranges(const MatrixT &store, const int64_t nglobalverts,
  * itself.  Returns true if the predecessor map is valid. */
 template<class MatrixT>
 static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
-                               const typename MatrixT::vtxtyp nlocalverts, const size_t maxlocalverts, const typename MatrixT::vtxtyp root,
-                               typename MatrixT::vtxtyp *const pred, int *level)
+                               const typename MatrixT::vertexType nlocalverts, const size_t maxlocalverts, const typename MatrixT::vertexType root,
+                               typename MatrixT::vertexType *const pred, int *level)
 {
     (void)nglobalverts;
     int validation_passed = 1;
@@ -135,7 +135,7 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
                          nlocalverts) * sizeof(int64_t)); /* Predecessor info of predecessor vertex for each local vertex */
     gather *pred_win = init_gather((void *)pred, nlocalverts, sizeof(int64_t), pred_pred, size_min(CHUNKSIZE, nlocalverts),
                                    size_min(CHUNKSIZE, nlocalverts), MPI_INT64_T, row_comm);
-    typename MatrixT::vtxtyp *pred_vtx = (typename MatrixT::vtxtyp *)xmalloc(size_min(CHUNKSIZE,
+    typename MatrixT::vertexType *pred_vtx = (typename MatrixT::vertexType *)xmalloc(size_min(CHUNKSIZE,
                                          nlocalverts) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
     int *pred_owner = (int *)xmalloc(size_min(CHUNKSIZE, nlocalverts) * sizeof(int));
     size_t *pred_local = (size_t *)xmalloc(size_min(CHUNKSIZE, nlocalverts) * sizeof(size_t));
@@ -226,8 +226,8 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
  * */
 template<class MatrixT>
 int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t number_of_edges,
-                        const int64_t nglobalverts, const typename MatrixT::vtxtyp root, typename MatrixT::vtxtyp *const pred,
-                        typename MatrixT::vtxtyp *const edge_visit_count_ptr, int *level)
+                        const int64_t nglobalverts, const typename MatrixT::vertexType root, typename MatrixT::vertexType *const pred,
+                        typename MatrixT::vertexType *const edge_visit_count_ptr, int *level)
 {
 
     assert(pred);
@@ -278,7 +278,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
     {
         int *pred_owner = (int *)xmalloc(size_min(CHUNKSIZE, store.getLocColLength()) * sizeof(int));
         size_t *pred_local = (size_t *)xmalloc(size_min(CHUNKSIZE, store.getLocColLength()) * sizeof(size_t));
-        typename MatrixT::vtxtyp *pred_vtx = (typename MatrixT::vtxtyp *)xmalloc(size_min(CHUNKSIZE,
+        typename MatrixT::vertexType *pred_vtx = (typename MatrixT::vertexType *)xmalloc(size_min(CHUNKSIZE,
                                              store.getLocColLength()) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
         for (ptrdiff_t ii = 0; ii < (ptrdiff_t)store.getLocColLength(); ii += CHUNKSIZE)
         {

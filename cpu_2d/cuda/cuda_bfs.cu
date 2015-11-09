@@ -12,11 +12,9 @@
 #endif
 
 
-CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank,
-                   int _rowCompressionThreshold, int _columnCompressionThreshold,
-                   string _compressionCodec) :
+CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, C_T &_schema) :
     GlobalBFS
-    <CUDA_BFS, vtxtyp, unsigned char, MatrixT >(_store, _rank, _rowCompressionThreshold, _columnCompressionThreshold, _compressionCodec),
+    <CUDA_BFS, vertexType, unsigned char, MatrixT >(_store, &_schema),
     verbosity(_verbosity),
     queue_sizing(_queue_sizing),
     vmask(0)
@@ -27,7 +25,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
 
     int cpro_verbosity;
     b40c::util::B40CPerror(cudaSetDeviceFlags(cudaDeviceMapHost),
-                           "Enabling of the allocation of pinned host memory faild", __FILE__, __LINE__);
+                           "Enabling of the allocation of pinned host memory failed", __FILE__, __LINE__);
 
     if (num_gpus == 0)
     {
@@ -38,21 +36,21 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t
     //expect symmetries
     if (store.getNumRowSl() != store.getNumColumnSl())
     {
-        fprintf(stderr, "Currently the partitioning has to be symetric.");
+        fprintf(stderr, "Partitioning has to be symmetric.");
         exit(1);
     }
-    predecessor = new vtxtyp[store.getLocColLength()];
+    predecessor = new vertexType[store.getLocColLength()];
 
     fq_tp_type = MPI_INT64_T;
     bm_type = MPI_UNSIGNED_CHAR;
-    fq_64_length = static_cast<vtxtyp>(std::max(store.getLocRowLength(), store.getLocColLength()) * queue_sizing);
-    //fq_64 = new vtxtyp[fq_64_length];
-    cudaHostAlloc(&fq_64, fq_64_length * sizeof(vtxtyp), cudaHostAllocDefault);
+    fq_64_length = static_cast<vertexType>(std::max(store.getLocRowLength(), store.getLocColLength()) * queue_sizing);
+    //fq_64 = new vertexType[fq_64_length];
+    cudaHostAlloc(&fq_64, fq_64_length * sizeof(vertexType), cudaHostAllocDefault);
     //multipurpose buffer
     qb_length = 0;
-    cudaHostAlloc(&queuebuff, fq_64_length * sizeof(vtxtyp), cudaHostAllocDefault);
+    cudaHostAlloc(&queuebuff, fq_64_length * sizeof(vertexType), cudaHostAllocDefault);
     rb_length = 0;
-    cudaHostAlloc(&redbuff, fq_64_length * sizeof(vtxtyp), cudaHostAllocDefault);
+    cudaHostAlloc(&redbuff, fq_64_length * sizeof(vertexType), cudaHostAllocDefault);
 
     csr_problem = new Csr;
 
@@ -159,32 +157,32 @@ CUDA_BFS::~CUDA_BFS()
  * Performs a memcpy to the FQ variable.
  * FQ variables may require specific device calls.
  */
-void CUDA_BFS::bfsMemCpy(vtxtyp *&dst, vtxtyp *src, size_t size)
+void CUDA_BFS::bfsMemCpy(vertexType *&dst, vertexType *src, size_t size)
 {
-    cudaMemcpy(dst, src, size * sizeof(vtxtyp), cudaMemcpyHostToHost);
+    cudaMemcpy(dst, src, size * sizeof(vertexType), cudaMemcpyHostToHost);
 }
 
 /*
  * Function for reduction of the current and incoming frontier queue
  * Supports now only one gpu, because the vertexranges are not continuous
  */
-void CUDA_BFS::reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr, int insize)
+void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *startaddr, int insize)
 {
 
 #ifdef _DEBUG
-    CheckQueue<vtxtyp>::ErrorCode errorCode;
-    if ((errorCode = checkQueue.checkCol(startaddr, insize)) != CheckQueue<vtxtyp>::ErrorCode::Valid)
+    CheckQueue<vertexType>::ErrorCode errorCode;
+    if ((errorCode = checkQueue.checkCol(startaddr, insize)) != CheckQueue<vertexType>::ErrorCode::Valid)
     {
         std::cerr << "(" << store.getLocalRowID() << ":" << store.getLocalColumnID() << ") ";
         switch (errorCode)
         {
-        case CheckQueue<vtxtyp>::ErrorCode::InvalidLength: std::cerr << "Recieved queue with invalid length";
+        case CheckQueue<vertexType>::ErrorCode::InvalidLength: std::cerr << "Recieved queue with invalid length";
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange: std::cerr << "Recieved queue with ids out of range";
+        case CheckQueue<vertexType>::ErrorCode::IdsOutOfRange: std::cerr << "Recieved queue with ids out of range";
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::NotSorted: std::cerr << "Recieved not sorted queue";
+        case CheckQueue<vertexType>::ErrorCode::NotSorted: std::cerr << "Recieved not sorted queue";
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds: std::cerr << "Recieved queue with duplicate ids";
+        case CheckQueue<vertexType>::ErrorCode::DuplicteIds: std::cerr << "Recieved queue with duplicate ids";
             break;
         default: std::cerr << "Recieved invalid queue";
         }
@@ -192,35 +190,35 @@ void CUDA_BFS::reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr, i
     }
 #endif
 
-    typename MatrixT::vtxtyp *start_local;
-    typename MatrixT::vtxtyp *end_local;
-    typename MatrixT::vtxtyp *endofresult;
+    typename MatrixT::vertexType *start_local;
+    typename MatrixT::vertexType *end_local;
+    typename MatrixT::vertexType *endofresult;
 
     // determine the local range for the reduction
     start_local = std::lower_bound(queuebuff, queuebuff + qb_length, globalstart,
-    [](vtxtyp a, vtxtyp b) { return a < (b & Csr::ProblemType::VERTEX_ID_MASK); });
+    [](vertexType a, vertexType b) { return a < (b & Csr::ProblemType::VERTEX_ID_MASK); });
     end_local = std::upper_bound(start_local, queuebuff + qb_length, globalstart + size - 1,
-    [](vtxtyp a, vtxtyp b) { return b > (a & Csr::ProblemType::VERTEX_ID_MASK); });
+    [](vertexType a, vertexType b) { return b > (a & Csr::ProblemType::VERTEX_ID_MASK); });
     //reduction
     endofresult = std::set_union(start_local, end_local, startaddr, startaddr + insize, redbuff);
 
 #ifdef _DEBUG
-    //CheckQueue<vtxtyp>::ErrorCode errorCode;
-    if ((errorCode = checkQueue.checkCol(redbuff, endofresult - redbuff)) != CheckQueue<vtxtyp>::ErrorCode::Valid)
+    //CheckQueue<vertexType>::ErrorCode errorCode;
+    if ((errorCode = checkQueue.checkCol(redbuff, endofresult - redbuff)) != CheckQueue<vertexType>::ErrorCode::Valid)
     {
         std::cerr << "(" << store.getLocalRowID() << ":" << store.getLocalColumnID() << ") ";
         switch (errorCode)
         {
-        case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
+        case CheckQueue<vertexType>::ErrorCode::InvalidLength:
             std::cerr << "Try to send queue with invalid length to the device." << std::endl;
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
+        case CheckQueue<vertexType>::ErrorCode::IdsOutOfRange:
             std::cerr << "Try to send queue with ids out of range to the device." << std::endl;
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
+        case CheckQueue<vertexType>::ErrorCode::NotSorted:
             std::cerr << "Try to send not sorted queue to the device." << std::endl;
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
+        case CheckQueue<vertexType>::ErrorCode::DuplicteIds:
             std::cerr << "Try to send queue with duplicate ids to the device." << std::endl;
             break;
         default:
@@ -233,7 +231,7 @@ void CUDA_BFS::reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr, i
     std::swap(queuebuff, redbuff);
 }
 
-void CUDA_BFS::getOutgoingFQ(vtxtyp *&startaddr, int &outsize)
+void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, int &outsize)
 {
     startaddr = queuebuff;
     outsize = qb_length;
@@ -243,13 +241,13 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp *&startaddr, int &outsize)
  * -set the Outgoing queue after the column reduction
  * -recompute the visited mask
  */
-void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize)
+void CUDA_BFS::setModOutgoingFQ(vertexType *startaddr, int insize)
 {
     int numGpus;
 
     numGpus = csr_problem->num_gpus;
 
-#ifdef _OPENMP
+#ifdef _CUDA_OPENMP
     #pragma omp parallel for
 #endif
 
@@ -289,31 +287,31 @@ void CUDA_BFS::setModOutgoingFQ(vtxtyp *startaddr, int insize)
 /*
  *  Expect symmetric partitioning
  */
-void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, int &outsize)
+void CUDA_BFS::getOutgoingFQ(vertexType globalstart, long size, vertexType *&startaddr, int &outsize)
 {
-    typename MatrixT::vtxtyp *start_local;
-    typename MatrixT::vtxtyp *end_local;
+    typename MatrixT::vertexType *start_local;
+    typename MatrixT::vertexType *end_local;
 
     // determine the local range for the reduction
     start_local = std::lower_bound(queuebuff, queuebuff + qb_length, globalstart,
-    [](vtxtyp a, vtxtyp b) { return a < (b & Csr::ProblemType::VERTEX_ID_MASK); });
+    [](vertexType a, vertexType b) { return a < (b & Csr::ProblemType::VERTEX_ID_MASK); });
     end_local = std::upper_bound(start_local, queuebuff + qb_length, globalstart + size - 1,
-    [](vtxtyp a, vtxtyp b) { return b > (a & Csr::ProblemType::VERTEX_ID_MASK); });
+    [](vertexType a, vertexType b) { return b > (a & Csr::ProblemType::VERTEX_ID_MASK); });
 
 #ifdef _DEBUG
-    CheckQueue<vtxtyp>::ErrorCode errorCode;
-    if ((errorCode = checkQueue.checkCol(start_local, end_local - start_local)) != CheckQueue<vtxtyp>::ErrorCode::Valid)
+    CheckQueue<vertexType>::ErrorCode errorCode;
+    if ((errorCode = checkQueue.checkCol(start_local, end_local - start_local)) != CheckQueue<vertexType>::ErrorCode::Valid)
     {
         std::cerr << "(" << store.getLocalRowID() << ":" << store.getLocalColumnID() << ") ";
         switch (errorCode)
         {
-        case CheckQueue<vtxtyp>::ErrorCode::InvalidLength: std::cerr << "Select queue with invalid length";
+        case CheckQueue<vertexType>::ErrorCode::InvalidLength: std::cerr << "Select queue with invalid length";
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange: std::cerr << "Select queue with ids out of range";
+        case CheckQueue<vertexType>::ErrorCode::IdsOutOfRange: std::cerr << "Select queue with ids out of range";
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::NotSorted: std::cerr << "Select not sorted queue";
+        case CheckQueue<vertexType>::ErrorCode::NotSorted: std::cerr << "Select not sorted queue";
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds: std::cerr << "Select queue with duplicate ids";
+        case CheckQueue<vertexType>::ErrorCode::DuplicteIds: std::cerr << "Select queue with duplicate ids";
             break;
         default: std::cerr << "Select invalid queue";
         }
@@ -328,7 +326,7 @@ void CUDA_BFS::getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, 
 /*  Sets the incoming FQ.
  *  Expect symmetric partitioning, so all parameters are ignored.
  */
-void CUDA_BFS::setIncommingFQ(vtxtyp globalstart, long size, vtxtyp *startaddr, int &insize_max)
+void CUDA_BFS::setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, int &insize_max)
 {
     if (startaddr == fq_64)
     {
@@ -354,7 +352,7 @@ void CUDA_BFS::getBackPredecessor()
     sizeOfMType = 8 * sizeof(MType);
     storeColLength = store.getLocColLength();
 
-#ifdef _OPENMP
+#ifdef _CUDA_OPENMP
     #pragma omp parallel for
 #endif
 
@@ -365,7 +363,7 @@ void CUDA_BFS::getBackPredecessor()
         for (long j = 0; j < sizeOfMType; ++j)
         {
             int jsize = isize + j;
-            const vtxtyp pred = predecessor[jsize];
+            const vertexType pred = predecessor[jsize];
             if ((pred != -1) && ((jsize) < storeColLength))
             {
                 tmp |= 1 << j;
@@ -395,7 +393,7 @@ void CUDA_BFS::getBackOutqueue()
 #endif
 
     //get length of next queues
-#ifdef _OPENMP
+#ifdef _CUDA_OPENMP
     #pragma omp parallel for
 #endif
 
@@ -411,7 +409,7 @@ void CUDA_BFS::getBackOutqueue()
     {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
         b40c::util::B40CPerror(cudaSetDevice(gs->gpu));
-        thrust::device_ptr <typename MatrixT::vtxtyp> multigpu(gs->frontier_queues.d_keys[0]);
+        thrust::device_ptr <typename MatrixT::vertexType> multigpu(gs->frontier_queues.d_keys[0]);
         /*
         std::cout << std::endl;
         for (int x = 0; x < queue_sizes[i]; ++x) {
@@ -432,7 +430,7 @@ void CUDA_BFS::getBackOutqueue()
 
 
     qb_length = 0;//csr_problem->num_gpus;
-    typename MatrixT::vtxtyp *qb_nxt = queuebuff;
+    typename MatrixT::vertexType *qb_nxt = queuebuff;
     // copy next queue to host
     for (int i = 0; i < numGpus; ++i)
     {
@@ -459,34 +457,34 @@ void CUDA_BFS::getBackOutqueue()
 
     // Queue preprocessing
     //Uniqueness
-    typename MatrixT::vtxtyp *qb_nxt_in = queuebuff;
-    typename MatrixT::vtxtyp *qb_nxt_out = redbuff;
+    typename MatrixT::vertexType *qb_nxt_in = queuebuff;
+    typename MatrixT::vertexType *qb_nxt_out = redbuff;
     for (int i = 0; i < numGpus; ++i)
     {
-        typename MatrixT::vtxtyp *start_in = std::upper_bound(qb_nxt_in, qb_nxt_in + queue_sizes[i], -1);
-        typename MatrixT::vtxtyp *end_out = std::unique_copy(start_in, qb_nxt_in + queue_sizes[i], qb_nxt_out);
+        typename MatrixT::vertexType *start_in = std::upper_bound(qb_nxt_in, qb_nxt_in + queue_sizes[i], -1);
+        typename MatrixT::vertexType *end_out = std::unique_copy(start_in, qb_nxt_in + queue_sizes[i], qb_nxt_out);
         qb_nxt_in += queue_sizes[i];
         qb_nxt_out = end_out;
     }
     qb_length = qb_nxt_out - redbuff;
     std::swap(queuebuff, redbuff);
 #ifdef _DEBUG
-    CheckQueue<vtxtyp>::ErrorCode errorCode;
-    if ((errorCode = checkQueue.checkCol(queuebuff, qb_length)) != CheckQueue<vtxtyp>::ErrorCode::Valid)
+    CheckQueue<vertexType>::ErrorCode errorCode;
+    if ((errorCode = checkQueue.checkCol(queuebuff, qb_length)) != CheckQueue<vertexType>::ErrorCode::Valid)
     {
         std::cerr << "(" << store.getLocalRowID() << ":" << store.getLocalColumnID() << ") ";
         switch (errorCode)
         {
-        case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
+        case CheckQueue<vertexType>::ErrorCode::InvalidLength:
             std::cerr << "Got queue with invalid length from the device." << std::endl;
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
+        case CheckQueue<vertexType>::ErrorCode::IdsOutOfRange:
             std::cerr << "Got queue with ids out of range from the device." << std::endl;
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
+        case CheckQueue<vertexType>::ErrorCode::NotSorted:
             std::cerr << "Got not sorted queue from the device." << std::endl;
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
+        case CheckQueue<vertexType>::ErrorCode::DuplicteIds:
             std::cerr << "Got queue with duplicate ids from the device." << std::endl;
             break;
         default:
@@ -499,28 +497,28 @@ void CUDA_BFS::getBackOutqueue()
 void CUDA_BFS::setBackInqueue()
 {
     long queue_sizes[csr_problem->num_gpus];
-    typename MatrixT::vtxtyp *qb_nxt = queuebuff;
-    typename MatrixT::vtxtyp *end_local;
+    typename MatrixT::vertexType *qb_nxt = queuebuff;
+    typename MatrixT::vertexType *end_local;
     typename Csr::GraphSlice *gs;
     int numGpus = csr_problem->num_gpus;
 
 #ifdef _DEBUG
-    CheckQueue<vtxtyp>::ErrorCode errorCode;
-    if ((errorCode = checkQueue.checkRow(queuebuff, qb_length)) != CheckQueue<vtxtyp>::ErrorCode::Valid)
+    CheckQueue<vertexType>::ErrorCode errorCode;
+    if ((errorCode = checkQueue.checkRow(queuebuff, qb_length)) != CheckQueue<vertexType>::ErrorCode::Valid)
     {
         std::cerr << "(" << store.getLocalRowID() << ":" << store.getLocalColumnID() << ") ";
         switch (errorCode)
         {
-        case CheckQueue<vtxtyp>::ErrorCode::InvalidLength:
+        case CheckQueue<vertexType>::ErrorCode::InvalidLength:
             std::cerr << "Try to copy queue with invalid length to the device." << std::endl;
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::IdsOutOfRange:
+        case CheckQueue<vertexType>::ErrorCode::IdsOutOfRange:
             std::cerr << "Try to copy queue with ids out of range to the device." << std::endl;
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::NotSorted:
+        case CheckQueue<vertexType>::ErrorCode::NotSorted:
             std::cerr << "Try to copy not sorted queue to the device." << std::endl;
             break;
-        case CheckQueue<vtxtyp>::ErrorCode::DuplicteIds:
+        case CheckQueue<vertexType>::ErrorCode::DuplicteIds:
             std::cerr << "Try to copy queue with duplicate ids to the device." << std::endl;
             break;
         default:
@@ -536,7 +534,7 @@ void CUDA_BFS::setBackInqueue()
 
         //determine end of own slice
         end_local = std::upper_bound(qb_nxt, queuebuff + qb_length, gs->gpu,
-                                     [](vtxtyp a, vtxtyp b)
+                                     [](vertexType a, vertexType b)
         {
             return b < ((a & Csr::ProblemType::GPU_MASK) >>
                         Csr::ProblemType::GPU_MASK_SHIFT);
@@ -553,7 +551,7 @@ void CUDA_BFS::setBackInqueue()
     }
 
     //set length of current queue
-#ifdef _OPENMP
+#ifdef _CUDA_OPENMP
     #pragma omp parallel for
 #endif
 
@@ -566,10 +564,10 @@ void CUDA_BFS::setBackInqueue()
     }
 }
 
-void CUDA_BFS::setStartVertex(vtxtyp start)
+void CUDA_BFS::setStartVertex(vertexType start)
 {
     done = false;
-    vtxtyp src_owner, rstart, lstart = -1;
+    vertexType src_owner, rstart, lstart = -1;
     typename Csr::GraphSlice *gs;
     int cpro_verbosity = 0, numGpus, visited_mask_bytes;
 

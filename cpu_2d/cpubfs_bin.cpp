@@ -8,8 +8,8 @@ CPUBFS_bin::CPUBFS_bin(MatrixT &_store, int64_t verbosity): GlobalBFS<CPUBFS_bin
     col64(_store.getLocColLength() / 64), row64(_store.getLocRowLength() / 64)
 {
     fq_tp_type = MPI_UINT64_T; //Frontier Queue Transport Type
-    //if(posix_memalign((void**)&predecessor,64,sizeof(vtxtyp)*store.getLocColLength()))predecessor=0;// new vtxtyp[store.getLocColLength()];;
-    MPI_Alloc_mem(sizeof(vtxtyp)*store.getLocColLength(), MPI_INFO_NULL, (void *)&predecessor);
+    //if(posix_memalign((void**)&predecessor,64,sizeof(vertexType)*store.getLocColLength()))predecessor=0;// new vertexType[store.getLocColLength()];;
+    MPI_Alloc_mem(sizeof(vertexType)*store.getLocColLength(), MPI_INFO_NULL, (void *)&predecessor);
     //allocate recive buffer
     long fq_64_length_tmp = std::max(store.getLocRowLength(), store.getLocColLength());
     fq_64_length = fq_64_length_tmp / 64 + ((fq_64_length_tmp % 64 > 0) ? 1 : 0);
@@ -86,13 +86,13 @@ void CPUBFS_bin::setModOutgoingFQ(uint64_t *__restrict__ startaddr, long insize)
     }
 }
 
-void CPUBFS_bin::getOutgoingFQ(vtxtyp globalstart, long size, uint64_t *&startaddr, long &outsize)
+void CPUBFS_bin::getOutgoingFQ(vertexType globalstart, long size, uint64_t *&startaddr, long &outsize)
 {
     startaddr = &fq_out[store.globaltolocalCol(globalstart) / 64];
     outsize = size / 64;
 }
 
-void CPUBFS_bin::setIncommingFQ(vtxtyp globalstart, long size, uint64_t *__restrict__ startaddr, long &insize_max)
+void CPUBFS_bin::setIncommingFQ(vertexType globalstart, long size, uint64_t *__restrict__ startaddr, long &insize_max)
 {
     //assume_aligned(uint64_t*,startaddr,64);
     assert(insize_max >= size / 64);
@@ -113,7 +113,7 @@ bool CPUBFS_bin::istheresomethingnew()
     return false;
 }
 
-void CPUBFS_bin::setStartVertex(const vtxtyp start)
+void CPUBFS_bin::setStartVertex(const vertexType start)
 {
     assume_aligned(uint64_t *, fq_in, 64);
     assume_aligned(uint64_t *, visited, 64);
@@ -122,16 +122,16 @@ void CPUBFS_bin::setStartVertex(const vtxtyp start)
 
     if (store.isLocalRow(start))
     {
-        vtxtyp lstart = store.globaltolocalRow(start);
+        vertexType lstart = store.globaltolocalRow(start);
         fq_in[lstart / 64] = 1ul << (lstart & 0x3F);
     }
     if (store.isLocalColumn(start))
     {
-        vtxtyp lstart = store.globaltolocalCol(start);
+        vertexType lstart = store.globaltolocalCol(start);
         visited[lstart / 64] = 1ul << (lstart & 0x3F);
     }
     //reset predecessor list
-    //assume_aligned(vtxtyp*,predecessor, 64);
+    //assume_aligned(vertexType*,predecessor, 64);
     std::fill_n(predecessor,   store.getLocColLength(), -1);
 
     if (store.isLocalColumn(start))
@@ -155,10 +155,10 @@ void CPUBFS_bin::runLocalBFS()
             {
                 if ((fq_in[i] & 1ul << ii) > 0)
                 {
-                    const vtxtyp endrp = store.getRowPointer()[i * 64 + ii + 1];
-                    for (vtxtyp j = store.getRowPointer()[i * 64 + ii]; j < endrp; j++)
+                    const vertexType endrp = store.getRowPointer()[i * 64 + ii + 1];
+                    for (vertexType j = store.getRowPointer()[i * 64 + ii]; j < endrp; j++)
                     {
-                        vtxtyp visit_vtx_loc = store.getColumnIndex()[j];
+                        vertexType visit_vtx_loc = store.getColumnIndex()[j];
                         if ((visited[visit_vtx_loc >> 6] & (1ul << (visit_vtx_loc & 0x3F))) == 0)
                         {
                             if ((fq_out[visit_vtx_loc >> 6] & (1ul << (visit_vtx_loc & 0x3F))) == 0)

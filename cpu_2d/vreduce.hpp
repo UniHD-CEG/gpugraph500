@@ -186,9 +186,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 previousRank = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
 
 #ifdef _COMPRESSION
-                MPI_Sendrecv(&psizeTo, 1, MPI_LONG,
+                MPI_Sendrecv(&psizeTo, 1, MPI_INT,
                              previousRank, it + 2,
-                             &originalsize, 1, MPI_LONG,
+                             &originalsize, 1, MPI_INT,
                              previousRank, it + 2,
                              comm, MPI_STATUS_IGNORE);
                 MPI_Sendrecv(compressed_fq, compressedsize, type,

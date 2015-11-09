@@ -52,14 +52,15 @@ endif
 
 if OPENMP_ON_CUDA
   CUDA_OPENMP=-fopenmp
+  DEFINES+=-D_CUDA_OPENMP
 endif
 
 if OPENMP_ON_OTHERS
   OPENMP=-fopenmp
+  DEFINES+=-D_OPENMP
 endif
 
 if BASIC_PROFING_BFS
-  # FIXME:not working. use -D_INSTRUMENT_BFS instead
   CUDA_INSTRUM=-DINSTRUMENTED
 endif
 

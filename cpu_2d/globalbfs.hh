@@ -2,7 +2,6 @@
 #define GLOBALBFS_HH
 
 
-
 #include "distmatrix2d.hh"
 #include "comp_opt.h"
 #include "bitlevelfunctions.h"
@@ -26,10 +25,7 @@
 using namespace std::chrono;
 #endif
 
-#ifdef _COMPRESSION
-#define NOMINMAX
-#include "compression/compressionfactory.hh"
-#endif
+#include "compression/compression.hh"
 
 using std::function;
 using std::min;
@@ -53,12 +49,12 @@ private:
     MPI_Comm row_comm, col_comm;
     // sending node column slice, startvtx, size
     vector <typename STORE::fold_prop> fold_fq_props;
-    void allReduceBitCompressed(typename STORE::vtxtyp *&owen, typename STORE::vtxtyp *&tmp,
+    void allReduceBitCompressed(typename STORE::vertexType *&owen, typename STORE::vertexType *&tmp,
                                 MType *&owenmap, MType *&tmpmap);
 
 protected:
     const STORE &store;
-    typename STORE::vtxtyp *predecessor;
+    typename STORE::vertexType *predecessor;
     MPI_Datatype fq_tp_type; //Frontier Queue Type
     MPI_Datatype bm_type;    // Bitmap Type
     // FQ_T*  __restrict__ fq_64; - conflicts with void* ref
@@ -74,19 +70,14 @@ protected:
     int columnCompressionThreshold;
     string compressionCodec;
 
-    /**
-     * Inherited methods in children classes: cuda_bfs.cu (CUDA), cpubfs_bin.cpp (CPU improved) and simplecpubfs.cpp (CPU basic)
-     *
-     *
-     */
     // Functions that have to be implemented by the children
     // void reduce_fq_out(FQ_T* startaddr, long insize)=0;  //Global Reducer of the local outgoing frontier queues. Have to be implemented by the children.
-    // void getOutgoingFQ(FQ_T* &startaddr, vtxtype& outsize)=0;
+    // void getOutgoingFQ(FQ_T* &startaddr, vertexTypee& outsize)=0;
     // void setModOutgoingFQ(FQ_T* startaddr, long insize)=0; //startaddr: 0, self modification
-    // void getOutgoingFQ(vtxtype globalstart, vtxtype size, FQ_T* &startaddr, vtxtype& outsize)=0;
-    // void setIncommingFQ(vtxtype globalstart, vtxtype size, FQ_T* startaddr, vtxtype& insize_max)=0;
+    // void getOutgoingFQ(vertexTypee globalstart, vertexTypee size, FQ_T* &startaddr, vertexTypee& outsize)=0;
+    // void setIncommingFQ(vertexTypee globalstart, vertexTypee size, FQ_T* startaddr, vertexTypee& insize_max)=0;
     // bool istheresomethingnew()=0;           //to detect if finished
-    // void setStartVertex(const vtxtype start)=0;
+    // void setStartVertex(const vertexTypee start)=0;
     // void runLocalBFS()=0;
     // For accelerators with own memory
 
@@ -104,17 +95,16 @@ public:
     /**
      * Constructor & destructor declaration
      */
-    GlobalBFS(STORE &_store, int _rank, int _rowCompressionThreshold, int _columnCompressionThreshold,
-              string _compressionCodec);
+    GlobalBFS(STORE &_store, C_T &_schema);
     ~GlobalBFS();
 
-    typename STORE::vtxtyp *getPredecessor();
+    typename STORE::vertexType *getPredecessor();
 
 #ifdef INSTRUMENTED
-    void runBFS(typename STORE::vtxtyp startVertex, double &lexp, double &lqueue, double &rowcom, double &colcom,
+    void runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue, double &rowcom, double &colcom,
                 double &predlistred);
 #else
-    void runBFS(typename STORE::vtxtyp startVertex);
+    void runBFS(typename STORE::vertexType startVertex);
 #endif
 
 };
@@ -161,7 +151,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS()
  *
  */
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
-typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
+typename STORE::vertexType *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
 {
     return predecessor;
 }
@@ -172,8 +162,8 @@ typename STORE::vtxtyp *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
  *
  */
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vtxtyp *&owen,
-        typename STORE::vtxtyp *&tmp, MType *&owenmap,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vertexType *&owen,
+        typename STORE::vertexType *&tmp, MType *&owenmap,
         MType *&tmpmap)
 {
     MPI_Status status;
@@ -186,7 +176,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
     intLdSize = ilogb(static_cast<double>(communicatorSize)); //integer log_2 of size
     power2intLdSize = 1 << intLdSize; // 2^n
-    residuum = communicatorSize - (1 << intLdSize);
+    residuum = communicatorSize - power2intLdSize;
+
 
     //step 2
     if (communicatorRank < 2 * residuum)
@@ -216,7 +207,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     tmpm ^= (1 << last);
                 }
             }
-
         }
         else     // odd
         {
@@ -261,15 +251,21 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
         for (int it = 0; it < intLdSize; ++it)
         {
+            int orankEven, orankOdd, iterator2, iterator3;
             lowers = ssize / 2; //lower slice size
             uppers = ssize - lowers; //upper slice size
             size = lowers * mtypesize;
+            orankEven = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
+            orankOdd = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
+            iterator2 = (it << 1) + 2;
+            iterator3 = (it << 1) + 3;
 
             if (((vrank >> it) & 1) == 0)  // even
             {
+
                 //Transmission of the the bitmap
-                MPI_Sendrecv(owenmap + offset, ssize, bm_type, oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), (it << 1) + 2,
-                             tmpmap + offset, ssize, bm_type, oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), (it << 1) + 2,
+                MPI_Sendrecv(owenmap + offset, ssize, bm_type, orankEven, iterator2,
+                             tmpmap + offset, ssize, bm_type, orankEven, iterator2,
                              col_comm, &status);
 
                 for (int i = 0; i < lowers; ++i)
@@ -299,9 +295,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 }
                 //Transmission of updates
                 MPI_Sendrecv(tmp + size, p, fq_tp_type,
-                             oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
+                             orankEven, iterator3,
                              tmp, size, fq_tp_type,
-                             oldRank((vrank + (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
+                             orankEven, iterator3,
                              col_comm, &status);
                 //Updates for own data
                 p = 0;
@@ -323,9 +319,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             {
                 //Transmission of the the bitmap
                 MPI_Sendrecv(owenmap + offset, ssize, bm_type,
-                             oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 2,
+                             orankOdd, iterator2,
                              tmpmap + offset, ssize, bm_type,
-                             oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 2,
+                             orankOdd, iterator2,
                              col_comm, &status);
                 for (int i = 0; i < lowers; ++i)
                 {
@@ -351,9 +347,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 }
                 //Transmission of updates
                 MPI_Sendrecv(tmp, p, fq_tp_type,
-                             oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
+                             orankOdd, iterator3,
                              tmp + size, uppers * mtypesize, fq_tp_type,
-                             oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1)), (it << 1) + 3,
+                             orankOdd, iterator3,
                              col_comm, &status);
 
                 //Updates for own data
@@ -409,7 +405,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     }
     // Transmission of the final results
     MPI_Allgatherv(MPI_IN_PLACE, sizes[communicatorRank], fq_tp_type,
-                   owen, &sizes[0], &disps[0], fq_tp_type, col_comm);
+                   owen, sizes, disps, fq_tp_type, col_comm);
 }
 
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
@@ -435,7 +431,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
-
     for (long i = 0; i < mask_size; ++i)
     {
         MType tmp = 0;
@@ -472,11 +467,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
  */
 #ifdef INSTRUMENTED
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex, double &lexp, double &lqueue,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue,
         double &rowcom, double &colcom, double &predlistred)
 #else
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp startVertex)
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex)
 #endif
 {
 #ifdef INSTRUMENTED
@@ -489,40 +484,28 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _COMPRESSION
-
-    // "nocompression", "cpusimd", "gpusimt"
-    Compression<FQ_T> &rowSchema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
-    rowSchema.reconfigure(rowCompressionThreshold, compressionCodec);
-
-    Compression<FQ_T> &columnSchema = rowSchema;
-
-    // Compression<FQ_T> &columnSchema = *CompressionFactory<FQ_T>::getFromName("cpusimd");
-    // columnSchema.reconfigure(columnCompressionThreshold, compressionCodec);
-#endif
-
-#ifdef _COMPRESSION
     function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress_lambda =
-        [&columnSchema](FQ_T * a, const size_t & b, FQ_T **c, size_t & d)
+        [&schema](FQ_T * a, const size_t & b, FQ_T **c, size_t & d)
     {
-        return columnSchema.compress(a, b, c, d);
+        return schema.compress(a, b, c, d);
     };
 
     function < void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &) > decompress_lambda =
-        [&columnSchema](FQ_T * a, const int b, FQ_T **c, size_t & d)
+        [&schema](FQ_T * a, const int b, FQ_T **c, size_t & d)
     {
-        return columnSchema.decompress(a, b, c, d);
+        return schema.decompress(a, b, c, d);
     };
 
     function <void (FQ_T *, const int)> debugCompression_lambda =
-        [&columnSchema](FQ_T * a, const int b)
+        [&schema](FQ_T * a, const int b)
     {
-        return columnSchema.debugCompression(a, b);
+        return schema.debugCompression(a, b);
     };
 
     const function <bool (const size_t, const size_t)> isCompressed_lambda =
-        [&columnSchema](const size_t a, const size_t b)
+        [&schema](const size_t a, const size_t b)
     {
-        return columnSchema.isCompressed(a, b);
+        return schema.isCompressed(a, b);
     };
 #endif
 
@@ -745,7 +728,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
 
 #ifdef _COMPRESSIONDEBUG
-                rowSchema.debugCompression(startaddr, originalsize);
+                schema.debugCompression(startaddr, originalsize);
 #endif
 
                 uncompressedsize = static_cast<size_t>(originalsize);
@@ -753,8 +736,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
 
 #ifdef _COMPRESSIONVERIFY
-                rowSchema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
-                rowSchema.verifyCompression(startaddr, uncompressed_fq, originalsize);
+                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
 #endif
 
 #endif
@@ -777,10 +760,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #ifdef _COMPRESSION
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                rowSchema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
 
 #ifdef _COMPRESSIONVERIFY
-                if (rowSchema.isCompressed(originalsize, compressedsize))
+                if (schema.isCompressed(originalsize, compressedsize))
                 {
                     assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                 }
@@ -789,13 +772,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
                     assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                 }
                 assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-                rowSchema.verifyCompression(startaddr, uncompressed_fq, originalsize);
+                schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
 #endif
 
                 // Todo: Save (G/C)PU cycles. decompression not needed for MPI rank Root. The original array is available.
                 /*
                 if (rank != root_rank){
-                    rowSchema.decompress(compressed_fq, compressedsize, startaddr, uncompressedsize);
+                    schema.decompress(compressed_fq, compressedsize, startaddr, uncompressedsize);
                     delete[] compressed_fq;
                 }
                 */
@@ -814,7 +797,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _COMPRESSION
-                if (rowSchema.isCompressed(originalsize, compressedsize))
+                if (schema.isCompressed(originalsize, compressedsize))
                 {
                     free(uncompressed_fq);
                     free(compressed_fq);
@@ -857,15 +840,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 
                 memcpy(compressed_fq, fq_64, compressedsize * sizeof(FQ_T));
                 uncompressedsize = static_cast<size_t>(originalsize);
-                rowSchema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
-                if (rowSchema.isCompressed(originalsize, compressedsize))
+                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                if (schema.isCompressed(originalsize, compressedsize))
                 {
                     static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq, originalsize);
                 }
 
 #ifdef _COMPRESSIONVERIFY
                 assert(is_sorted(fq_64, fq_64 + originalsize));
-                rowSchema.verifyCompression(startaddr, fq_64, originalsize);
+                schema.verifyCompression(startaddr, fq_64, originalsize);
 #endif
 
 #else
@@ -890,7 +873,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vtxtyp start
 #endif
 
 #ifdef _COMPRESSION
-                if (rowSchema.isCompressed(originalsize, compressedsize))
+                if (schema.isCompressed(originalsize, compressedsize))
                 {
                     free(uncompressed_fq);
                     free(compressed_fq);

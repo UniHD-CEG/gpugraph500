@@ -32,21 +32,21 @@ using std::string;
 using namespace b40c::graph::bfs;
 
 //cuda types have to be chosen, what might be a problem
-typedef long long vtxtyp;
+typedef long long vertexType;
 typedef unsigned int rowtyp;
 
-class CUDA_BFS : public GlobalBFS < CUDA_BFS, vtxtyp, unsigned char,
-    DistMatrix2d<vtxtyp, rowtyp, true, 1, true>  // use local ids
+class CUDA_BFS : public GlobalBFS < CUDA_BFS, vertexType, unsigned char,
+    DistMatrix2d<vertexType, rowtyp, true, 1, true>  // use local ids
     >
 {
 private:
     typedef unsigned char MType;
-    typedef CsrProblem <vtxtyp, rowtyp, true> Csr;
+    typedef CsrProblem <vertexType, rowtyp, true> Csr;
     int64_t verbosity;
     double queue_sizing;
     uint64_t qb_length, rb_length;
-    vtxtyp *__restrict__ queuebuff;
-    vtxtyp *__restrict__ redbuff;
+    vertexType *__restrict__ queuebuff;
+    vertexType *__restrict__ redbuff;
     //Csr::VisitedMask** __restrict__ vmask;
     MType *__restrict__ vmask;
     bool done;
@@ -59,29 +59,29 @@ private:
 #endif
 
 #ifdef _DEBUG
-    CheckQueue<vtxtyp> checkQueue;
+    CheckQueue<vertexType> checkQueue;
 #endif
 
+protected:
+    typedef DistMatrix2d<vertexType, rowtyp, true, 1, true> MatrixT;
+    typedef Compression<vertexType> C_T;
 public:
-    typedef DistMatrix2d<vtxtyp, rowtyp, true, 1, true> MatrixT;
-    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, int _rank,
-             int _rowCompressionThreshold,
-             int _columnCompressionThreshold, string _benchmarkExtraArgument);
+    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, C_T &_schema);
     ~CUDA_BFS();
     void getBackPredecessor();
     void getBackOutqueue();
     void setBackInqueue();
     void generatOwenMask() { }
-    void reduce_fq_out(vtxtyp globalstart, long size, vtxtyp *startaddr,
+    void reduce_fq_out(vertexType globalstart, long size, vertexType *startaddr,
                        int insize);    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
-    void getOutgoingFQ(vtxtyp *&startaddr, int &outsize);
-    void setModOutgoingFQ(vtxtyp *startaddr, int insize); //startaddr: 0, self modification
-    void getOutgoingFQ(vtxtyp globalstart, long size, vtxtyp *&startaddr, int &outsize);
-    void setIncommingFQ(vtxtyp globalstart, long size, vtxtyp *startaddr, int &insize_max);
+    void getOutgoingFQ(vertexType *&startaddr, int &outsize);
+    void setModOutgoingFQ(vertexType *startaddr, int insize); //startaddr: 0, self modification
+    void getOutgoingFQ(vertexType globalstart, long size, vertexType *&startaddr, int &outsize);
+    void setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, int &insize_max);
     bool istheresomethingnew();           //to detect if finished
-    void setStartVertex(vtxtyp start);
+    void setStartVertex(vertexType start);
     void runLocalBFS();
-    void bfsMemCpy(vtxtyp *&dst, vtxtyp *src, size_t size);
+    void bfsMemCpy(vertexType *&dst, vertexType *src, size_t size);
 };
 
 #endif // CUDA_BFS_H

@@ -17,12 +17,15 @@
 #include "distmatrix2d.hh"
 
 
-
 #if __cplusplus > 199711L  //std c++11 is a requirement
 #include <random>
 #else
 #error This library needs at least a C++11 compliant compiler
 #endif
+
+
+#define NOMINMAX
+#include "compression/compressionfactory.hh"
 
 /**
  * Children of GlobalBFS
@@ -77,15 +80,14 @@ enum GGen
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
-                              int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &rowCompressionThreshold,
-                              int &columnCompressionThreshold);
+                              int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &compressionThreshold);
 void outputIterationStatistics(statistic &bfs_time_s, statistic &nedge_s, statistic &teps_s);
 void outputIterationInstrumentedStatistics(statistic &valid_time_s, statistic &lbfs_time_s, statistic &lbfs_share_s,
         statistic &lqueue_time_s, statistic &lqueue_share_s, statistic &rest_time_s,
         statistic &rest_share_s, statistic &lrowcom_s, statistic &lrowcom_share_s,
         statistic &lcolcom_s, statistic &lcolcom_share_s, statistic &lpredlistred_s,
         statistic &lpredlistred_share_s);
-vtxtyp generateStartNode(const int64_t &vertices, knuth_b &generator);
+vertexType generateStartNode(const int64_t &vertices, knuth_b &generator);
 template <class T> statistic getStatistics(vector <T> &input);
 void outputMatrixGenerationResults(int size, const int64_t &global_edges, double constr_time, long global_edges_wd);
 void printStat(statistic &input, const char *name, bool harmonic);
@@ -113,7 +115,6 @@ int main(int argc, char **argv)
     int64_t number_of_edges;
     int64_t vertices;
     int64_t global_edges;
-    vtxtyp start, locstart, num_edges;
     double tstart, tstop;
     double rtstart, rtstop;
     double make_graph_time, constr_time;
@@ -123,16 +124,16 @@ int main(int argc, char **argv)
     int next, maxiterations;
     long local_edges, elem, global_edges_wd;
     string compressionCodec = "";
-    int rowCompressionThreshold = 0;
-    int columnCompressionThreshold = 0;
+    int compressionThreshold = 0;
     int iterations = 0, maxgenvtx =
                          32; // relative number of maximum attempts to find a valid start vertix per possible attempt
-    vector <vtxtyp> tries;
+    vector <vertexType> tries;
     vector <double> bfs_time;
     vector <long> nedge; //number of edges
     vector <double> teps;
     int compressionCodecLength;
     char *compressionCodecBuffer = NULL;
+    vertexType start, locstart, num_edges;
 
 #ifdef INSTRUMENTED
     double lexp, lqueue, rowcom, colcom, predlistred;
@@ -165,8 +166,7 @@ int main(int argc, char **argv)
     {
         externalArgumentsIterate(argc, argv, scale, edgefactor, num_of_iterations, verbosity,
                                  R, C, R_set, C_set, graph_gen,
-                                 gpus, queue_sizing, compressionCodec, rowCompressionThreshold,
-                                 columnCompressionThreshold);
+                                 gpus, queue_sizing, compressionCodec, compressionThreshold);
         externalArgumentsVerify(R_set, C_set, size, R, C);
         printf("row slices: %d, column slices: %d\n", R, C);
         compressionCodecLength = compressionCodec.size() + 1;
@@ -179,8 +179,7 @@ int main(int argc, char **argv)
     MPI_Bcast(&num_of_iterations, 1, MPI_INT64_T, 0, MPI_COMM_WORLD);
     MPI_Bcast(&R, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&C, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&rowCompressionThreshold, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&columnCompressionThreshold, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&compressionThreshold, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&compressionCodecLength, 1, MPI_INT, 0, MPI_COMM_WORLD);
     if (rank != 0)
     {
@@ -259,12 +258,20 @@ int main(int argc, char **argv)
     }
 #endif
 
+#ifdef _COMPRESSION
+    /**
+     * @values "nocompression", "cpusimd", "gpusimt"
+     */
+    Compression<vertexType> &schema = *CompressionFactory<vertexType>::getFromName("cpusimd");
+    schema.reconfigure(compressionThreshold, compressionCodec);
+#endif
+
 #ifdef _OPENCL
     OCLRunner oclrun;
     OpenCL_BFS runBfs(store, *oclrun);
 #elif defined _CUDA
-    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, rank, rowCompressionThreshold, columnCompressionThreshold,
-                    compressionCodec);
+    // compression only available on CUDABFS
+    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, schema);
 #else
     CPUBFS_bin runBfs(store, verbosity, rank);
 #endif
@@ -283,7 +290,7 @@ int main(int argc, char **argv)
     {
         // print matrix
         const rowtyp *rowp = store.getRowPointer();
-        const vtxtyp *columnp = store.getColumnIndex();
+        const vertexType *columnp = store.getColumnIndex();
         for (int i = 0; i < store.getLocRowLength(); ++i)
         {
             printf("%lX: ", static_cast<int64_t>(store.localtoglobalRow(i)));
@@ -298,7 +305,7 @@ int main(int argc, char **argv)
 
     // random number generator
     knuth_b generator;
-    uniform_int_distribution<vtxtyp> distribution(0, vertices - 1);
+    uniform_int_distribution<vertexType> distribution(0, vertices - 1);
 
     maxiterations = num_of_iterations * maxgenvtx;
 
@@ -324,7 +331,7 @@ int main(int argc, char **argv)
             MPI_Bcast(&start, 1, MPI_LONG, 0, MPI_COMM_WORLD);
             if (store.isLocalRow(start))
             {
-                vtxtyp locstart = store.globaltolocalRow(start);
+                vertexType locstart = store.globaltolocalRow(start);
                 elem = store.getRowPointer()[locstart + 1] - store.getRowPointer()[locstart];
             }
             MPI_Reduce(MPI_IN_PLACE, &elem, 1, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -387,6 +394,7 @@ int main(int argc, char **argv)
         }
 #endif
         rtstop = MPI_Wtime();
+
 #ifdef INSTRUMENTED
         MPI_Reduce(&lexp, &gmax_lexp, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
         MPI_Reduce(&lqueue, &gmax_lqueue, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -606,8 +614,7 @@ void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C)
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
-                              int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &rowCompressionThreshold,
-                              int &columnCompressionThreshold)
+                              int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &compressionThreshold)
 {
     int i = 0;
     while (i < argc)
@@ -788,26 +795,7 @@ void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64
                 }
                 else
                 {
-                    rowCompressionThreshold = compressionThreshold_tmp;
-                    ++i;
-                }
-            }
-        }
-        else if (!strcmp(argv[i], "-btc"))
-        {
-            /**
-             * compression-threshold value for columns
-             */
-            if (i + 1 < argc)
-            {
-                int compressionThreshold_tmp = atoi(argv[i + 1]);
-                if (compressionThreshold_tmp < 1 || compressionThreshold_tmp > 0xffffff)
-                {
-                    printf("Invalid column compression-threshold value: %s\n", argv[i + 1]);
-                }
-                else
-                {
-                    columnCompressionThreshold = compressionThreshold_tmp;
+                    compressionThreshold = compressionThreshold_tmp;
                     ++i;
                 }
             }

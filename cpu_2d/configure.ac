@@ -14,8 +14,6 @@ AM_ACLOCAL_INCLUDE(m4)
 
 AC_ARG_VAR(CC, [The C compiler])
 AC_ARG_VAR(CXX, [The C++ compiler])
-AC_ARG_VAR(MPI_INC,[MPI include flags])
-AC_ARG_VAR(MPI_LIB,[MPI lib flags])
 AC_ARG_VAR(ALLCFLAGS, [Customized C source compilation flags])
 AC_ARG_VAR(ALLCXXFLAGS, [Customized C++ source compilation flags])
 
@@ -91,21 +89,21 @@ AC_ARG_ENABLE([other-basic-profiling],
 
 #   Values: yes | no
 #   Default value: no
-AC_ARG_ENABLE([openmp-on-cudafiles],
-    AS_HELP_STRING([--enable-openmp-on-cudafiles],
+AC_ARG_ENABLE([openmp-on-cuda],
+    AS_HELP_STRING([--enable-openmp-on-cuda],
       [Selects whether or not OpenMP will be enabled.
       This option applies only to CUDA files.
       Disabled by default.]),,
-    [enable_openmp_on_cudafiles=no])
+    [enable_openmp_on_cuda=no])
 
 #   Values: yes | no
 #   Default value: no
-AC_ARG_ENABLE([openmp-on-others],
-    AS_HELP_STRING([--enable-openmp-on-others],
+AC_ARG_ENABLE([openmp-on-noncuda],
+    AS_HELP_STRING([--enable-openmp-on-noncuda],
       [Selects whether or not OpenMP will be enabled.
       This option applies to any non-CUDA file.
       Disabled by default.]),,
-    [enable_openmp_on_others=no])
+    [enable_openmp_on_noncuda=yes])
 
 #   Values: yes | no
 #   Default value: no
@@ -118,7 +116,7 @@ AC_ARG_ENABLE([scorep],
 #   Values: yes | no
 #   Default value: yes
 #   External links:
-#         - https://github.com/lemire/SIMDCompressionAndIntersection
+#     https://github.com/lemire/SIMDCompressionAndIntersection
 AC_ARG_ENABLE([simd],
     AS_HELP_STRING([--enable-simd],
       [MPI packets will be sent compressed using the SIMDCompression library
@@ -202,15 +200,14 @@ esac],[enable_nvidia_architecture=fermi])
 
 ### declare conditionals
 #
-
 AM_CONDITIONAL([SIMD], [test x"$enable_simd" = xyes])
 AM_CONDITIONAL([SIMT], [test x"$enable_simt" = xyes])
 AM_CONDITIONAL([PTXAS_OTIMIZATION], [test x"$enable_ptxas_otimization" = xyes])
 AM_CONDITIONAL([NVIDIA_ARCHITECTURE_FERMI], [test x"$enable_nvidia_architecture" = xfermi])
 AM_CONDITIONAL([NVIDIA_ARCHITECTURE_KEPLER], [test x"$enable_nvidia_architecture" = xkepler])
 AM_CONDITIONAL([SCOREP], [test x"$enable_scorep" = xyes])
-AM_CONDITIONAL([OPENMP_ON_CUDA], [test x"$enable_openmp_on_cudafiles" = xyes])
-AM_CONDITIONAL([OPENMP_ON_OTHERS], [test x"$enable_openmp_on_others" = xyes])
+AM_CONDITIONAL([OPENMP_ON_CUDA], [test x"$enable_openmp_on_cuda" = xyes])
+AM_CONDITIONAL([OPENMP_ON_OTHERS], [test x"$enable_openmp_on_noncuda" = xyes])
 AM_CONDITIONAL([BASIC_PROFING_BFS], [test x"$enable_bfs_basic_profiling" = xyes])
 AM_CONDITIONAL([BASIC_PROFING_OTHER], [test x"$enable_other_basic_profiling" = xyes])
 AM_CONDITIONAL([DEBUG], [test x"$enable_debug" = xyes])
@@ -314,7 +311,7 @@ fi
 AC_SUBST([EXTOLL])
 
 # ------------------------------------------------------------------------------
-# Setup CUDA paths
+# Checks CUDA
 # ------------------------------------------------------------------------------
 
 if test "x$enable_cuda" = xyes; then
@@ -346,7 +343,7 @@ if test "x$enable_compression" = xyes; then
 fi
 
 # ------------------------------------------------------------------------------
-# Setup FLAGS SUPPORT
+# Checks FLAGS SUPPORT
 # ------------------------------------------------------------------------------
 
 ### Checks latest architecture flag
@@ -396,7 +393,7 @@ AC_SUBST([WARN_MPICXX])
 AC_SUBST([WARN_MPICC])
 
 # ------------------------------------------------------------------------------
-# Setup OpenCL
+# Checks OpenCL
 # ------------------------------------------------------------------------------
 
 AC_ARG_WITH(opencl,
@@ -425,22 +422,23 @@ AM_CONDITIONAL(BUILDOPENCL, test ! x$with_opencl = xno)
 AX_CHECK_CL
 
 # ------------------------------------------------------------------------------
-# Setup PTHREADS
+# Checks PTHREADS
 # ------------------------------------------------------------------------------
 
 AX_PTHREAD
 
 # ------------------------------------------------------------------------------
-# Setup OPENMP
+# Checks OPENMP
 # ------------------------------------------------------------------------------
 
+AX_OPENMP
 if test x$GCC = xyes
 then
   AX_GCC_VERSION()
 fi
-AS_IF([test "x$enable_openmp_on_cudafiles" = "xyes" -o "x$enable_openmp_on_others" = "xyes"], [
+AS_IF([test "x$enable_openmp_on_cuda" = "xyes" -o "x$enable_openmp_on_noncuda" = "xyes"], [
   if test x$c99 = xno; then
-	    AC_MSG_WARN([C99 compliant compiler is recommended with openMP])
+	    AC_MSG_WARN([-stc=c99 is recommended with openMP])
   fi
   if test x$GCC = xyes
   then
