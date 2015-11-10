@@ -89,21 +89,21 @@ AC_ARG_ENABLE([other-basic-profiling],
 
 #   Values: yes | no
 #   Default value: no
-AC_ARG_ENABLE([openmp-on-cuda],
-    AS_HELP_STRING([--enable-openmp-on-cuda],
+AC_ARG_ENABLE([cuda-openmp],
+    AS_HELP_STRING([--enable-cuda-openmp],
       [Selects whether or not OpenMP will be enabled.
       This option applies only to CUDA files.
       Disabled by default.]),,
-    [enable_openmp_on_cuda=no])
+    [enable_cuda_openmp=no])
 
 #   Values: yes | no
 #   Default value: no
-AC_ARG_ENABLE([openmp-on-noncuda],
-    AS_HELP_STRING([--enable-openmp-on-noncuda],
+AC_ARG_ENABLE([general-openmp],
+    AS_HELP_STRING([--enable-general-openmp],
       [Selects whether or not OpenMP will be enabled.
       This option applies to any non-CUDA file.
       Disabled by default.]),,
-    [enable_openmp_on_noncuda=yes])
+    [enable_general_openmp=no])
 
 #   Values: yes | no
 #   Default value: no
@@ -206,8 +206,8 @@ AM_CONDITIONAL([PTXAS_OTIMIZATION], [test x"$enable_ptxas_otimization" = xyes])
 AM_CONDITIONAL([NVIDIA_ARCHITECTURE_FERMI], [test x"$enable_nvidia_architecture" = xfermi])
 AM_CONDITIONAL([NVIDIA_ARCHITECTURE_KEPLER], [test x"$enable_nvidia_architecture" = xkepler])
 AM_CONDITIONAL([SCOREP], [test x"$enable_scorep" = xyes])
-AM_CONDITIONAL([OPENMP_ON_CUDA], [test x"$enable_openmp_on_cuda" = xyes])
-AM_CONDITIONAL([OPENMP_ON_OTHERS], [test x"$enable_openmp_on_noncuda" = xyes])
+AM_CONDITIONAL([OPENMP_ON_CUDA], [test x"$enable_cuda_openmp" = xyes])
+AM_CONDITIONAL([OPENMP_ON_OTHERS], [test x"$enable_general_openmp" = xyes])
 AM_CONDITIONAL([BASIC_PROFING_BFS], [test x"$enable_bfs_basic_profiling" = xyes])
 AM_CONDITIONAL([BASIC_PROFING_OTHER], [test x"$enable_other_basic_profiling" = xyes])
 AM_CONDITIONAL([DEBUG], [test x"$enable_debug" = xyes])
@@ -436,7 +436,7 @@ if test x$GCC = xyes
 then
   AX_GCC_VERSION()
 fi
-AS_IF([test "x$enable_openmp_on_cuda" = "xyes" -o "x$enable_openmp_on_noncuda" = "xyes"], [
+AS_IF([test "x$enable_cuda_openmp" = "xyes" -o "x$enable_general_openmp" = "xyes"], [
   if test x$c99 = xno; then
 	    AC_MSG_WARN([-stc=c99 is recommended with openMP])
   fi

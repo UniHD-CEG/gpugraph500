@@ -12,9 +12,19 @@
 #endif
 
 
-CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, C_T &_schema) :
+CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing,
+#ifdef _COMPRESSION
+ int64_t _verbosity, C_T &_schema
+#else
+ int64_t _verbosity
+#endif
+ ) :
     GlobalBFS
-    <CUDA_BFS, vertexType, unsigned char, MatrixT >(_store, &_schema),
+#ifdef _COMPRESSION
+    < CUDA_BFS, vertexType, unsigned char, MatrixT, C_T >(_store, _schema),
+#else
+    < CUDA_BFS, vertexType, unsigned char, MatrixT >(_store),
+#endif
     verbosity(_verbosity),
     queue_sizing(_queue_sizing),
     vmask(0)

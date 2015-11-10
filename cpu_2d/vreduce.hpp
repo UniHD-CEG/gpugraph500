@@ -28,7 +28,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
              function<void(T *, const size_t &, T **, size_t &)> &compress,
              function < void(T *, const int, T ** /*Out*/, size_t & /*In-Out*/) > &decompress,
-#ifdef _COMPRESSIONDEBUG
+#if defined(_COMPRESSION) && defined(_COMPRESSIONDEBUG)
              function <void (T *, const int)> &debugCompression,
 #endif
              const function <bool (const size_t, const size_t)> &isCompressed,
@@ -166,7 +166,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
                 get(offset + lowerId, upperId, send/*Out*/, psizeTo/*Out*/);
 
-#ifdef _COMPRESSIONVERIFY
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 assert(is_sorted(send, send + psizeTo));
 #endif
 
@@ -174,7 +174,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
-#ifdef _COMPRESSIONDEBUG
+#if defined(_COMPRESSION) && defined(_COMPRESSIONDEBUG)
                 debugCompression(send, psizeTo);
 #endif
 
@@ -214,7 +214,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-#ifdef _COMPRESSIONVERIFY
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 assert(psizeFrom <= lowerId);
                 assert(psizeFrom <= originalsize);
 #endif
@@ -224,7 +224,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 #endif
 
-#ifdef _COMPRESSIONVERIFY
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 assert(uncompressedsize == originalsize);
                 assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
 #endif
@@ -264,7 +264,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
                 get(offset, lowerId, send/*Out*/, psizeTo/*Out*/);
 
-#ifdef _COMPRESSIONVERIFY
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 assert(is_sorted(send, send + psizeTo));
 #endif
 
@@ -272,7 +272,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
-#ifdef _COMPRESSIONDEBUG
+#if defined(_COMPRESSION) && defined(_COMPRESSIONDEBUG)
                 debugCompression(send, psizeTo);
 #endif
 
@@ -310,7 +310,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
-#ifdef _COMPRESSIONVERIFY
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 assert(psizeFrom <= lowerId);
                 assert(psizeFrom <= originalsize);
 #endif
@@ -320,7 +320,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 #endif
 
-#ifdef _COMPRESSIONVERIFY
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 assert(uncompressedsize == originalsize);
                 assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
 #endif
@@ -357,7 +357,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
         get(offset, currentSliceSize, send/*Out*/, psizeTo/*Out*/);
 
-#ifdef _COMPRESSIONVERIFY
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
         assert(is_sorted(send, send + psizeTo));
 #endif
 
@@ -450,7 +450,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
 
     // reensamble uncompressed chunks
-#ifdef _COMPRESSIONVERIFY
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
     int total_uncompressedsize=0;
 #endif
 
@@ -460,7 +460,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 uncompressedsize = sizes[i];
                 decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
 
-#ifdef _COMPRESSIONVERIFY
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 assert(uncompressedsize == sizes[i]);
                 assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
                 total_uncompressedsize += uncompressedsize;
@@ -473,7 +473,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         }
     }
 
-#ifdef _COMPRESSIONVERIFY
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
     assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
 #endif
 #endif

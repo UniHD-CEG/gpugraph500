@@ -23,9 +23,10 @@
 #error This library needs at least a C++11 compliant compiler
 #endif
 
-
+#ifdef _COMPRESSION
 #define NOMINMAX
 #include "compression/compressionfactory.hh"
+#endif
 
 /**
  * Children of GlobalBFS
@@ -135,6 +136,11 @@ int main(int argc, char **argv)
     char *compressionCodecBuffer = NULL;
     vertexType start, locstart, num_edges;
 
+#ifdef _CUDA
+    int gpus = 0;
+    double queue_sizing = 1.20;
+#endif
+
 #ifdef INSTRUMENTED
     double lexp, lqueue, rowcom, colcom, predlistred;
     double gmax_lexp, gmax_lqueue, gmax_rowcom, gmax_colcom, gmax_predlistred;
@@ -151,11 +157,6 @@ int main(int argc, char **argv)
     vector<double> lcolcom_share;
     vector<double> lpredlistred;
     vector<double> lpredlistred_share;
-#endif
-
-#ifdef _CUDA
-    int gpus = 0;
-    double queue_sizing = 1.20;
 #endif
 
     MPI_Init(&argc, &argv);
@@ -241,7 +242,7 @@ int main(int argc, char **argv)
         printf("Global matrix redistribution done!\n");
     }
 
-#ifdef _SIMD
+#if defined(_COMPRESSION) && defined(_SIMD)
     // Check Matrix. Values lower than 32 bits are needed for SIMDcompression
     if (rank == 0)
     {
@@ -249,7 +250,8 @@ int main(int argc, char **argv)
     }
     if (!store.allValuesSmallerThan32Bits())
     {
-        printf("error::cpusimd-compression: Not all values in the graph are lower than 2^32\n");
+        printf("error::simd-compression: Not all values in the graph are lower than 2^32\n");
+        MPI_Finalize();
         exit(1);
     }
     if (rank == 0)
@@ -271,7 +273,11 @@ int main(int argc, char **argv)
     OpenCL_BFS runBfs(store, *oclrun);
 #elif defined _CUDA
     // compression only available on CUDABFS
+#ifdef _COMPRESSION
     CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, schema);
+#else
+    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity);
+#endif
 #else
     CPUBFS_bin runBfs(store, verbosity, rank);
 #endif
@@ -285,7 +291,7 @@ int main(int argc, char **argv)
         outputMatrixGenerationResults(size, global_edges, constr_time, global_edges_wd);
     }
 
-#if INSTRUMENTED
+#ifdef INSTRUMENTED
     if (verbosity >= 16)
     {
         // print matrix

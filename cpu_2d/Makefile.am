@@ -6,8 +6,9 @@ AUTOMAKE_OPTIONS=foreign subdir-objects
 ACLOCAL_AMFLAGS=-I m4
 
 DEFINES=
+DEFINES_CUDA=
 
-DEFINES+=-D_VECTORIZE_MPI
+# DEFINES+=-D_VECTORIZE_MPI
 
 ### Dynamic variables
 #
@@ -51,21 +52,22 @@ else
 endif
 
 if OPENMP_ON_CUDA
-  CUDA_OPENMP=-fopenmp
+  OPENMP_FLAG=@OPENMP_CXXFLAGS@
+  DEFINES_CUDA+=$(OPENMP_FLAG),-D_CUDA_OPENMP,
   DEFINES+=-D_CUDA_OPENMP
 endif
 
 if OPENMP_ON_OTHERS
-  OPENMP=-fopenmp
-  DEFINES+=-D_OPENMP
+  OPENMP_FLAG=@OPENMP_CXXFLAGS@
+  DEFINES+=$(OPENMP_FLAG)
 endif
 
 if BASIC_PROFING_BFS
-  CUDA_INSTRUM=-DINSTRUMENTED
+  DEFINES_CUDA+=-DINSTRUMENTED,
 endif
 
 if BASIC_PROFING_OTHER
-  INSTRUMENTED=-DINSTRUMENTED
+  DEFINES+=-DINSTRUMENTED
 endif
 
 if DEBUG
@@ -82,6 +84,7 @@ if !SIMT
 endif
 endif
   DEFINES+=-D_COMPRESSION
+  DEFINES_CUDA+=-D_COMPRESSION,
 if DEBUG_COMPRESSION
   DEFINES+=-D_COMPRESSIONDEBUG
   LLIBC=-static-libstdc++
@@ -92,6 +95,7 @@ endif
 
 if SIMD
   DEFINES+=-D_SIMD
+  DEFINES_CUDA+=-D_SIMD,
   INCPATH=-I. -Icompression/cpusimd/include
   g500_HEADER_LIST=@simd_H_FILES@
 else
@@ -103,7 +107,8 @@ endif
 endif
 
 if CUDA
-  DEFINE_CUDA=-D_CUDA
+  DEFINES_CUDA+=-D_CUDA,
+  DEFINES+=-D_CUDA
   bfs_object=cuda_bfs_cuda.o
 else
   bfs_object=cpubfs_bin.o
@@ -115,8 +120,9 @@ if QUIET_OUTPUT
 endif
 
 if DEBUGGING
-  DEBUG_FLAG=-g
-  NVCC_DEBUG_FLAGS=-DTHRUST_DEBUG
+  D_FLAG=-g
+  DEFINES+=$(D_FLAG)
+  DEFINES_CUDA+=$(D_FLAG),
 endif
 
 
@@ -124,14 +130,14 @@ endif
 ### Flags
 #
 
-MPICFLAGS=@CC_MFLAG@ @C99@ @CC_MBITS@ -mfpmath=sse -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(DEBUG_FLAG) @MPI_CFLAGS@ @CFLAGS@ @WARN_MPICC@
-MPICXXFLAGS=@CXX_MFLAG@ @C11@ @CXX_MBITS@ -pipe $(DEFINE_CUDA) $(DEFINES) $(OPENMP) $(INSTRUMENTED) $(DEBUG_FLAG) @MPI_CXXFLAGS@ @CXXFLAGS@ @WARN_MPICXX@
-NVCXXFLAGS=,@CXX_MBITS@,@CXX_OO@,-pipe,$(DEFINE_CUDA),$(CUDA_INSTRUM),$(CUDA_OPENMP),$(DEBUG_FLAG)
+MPICFLAGS=@CC_MFLAG@ @C99@ @CC_MBITS@ -pipe $(DEFINES) @MPI_CFLAGS@ @CFLAGS@ @WARN_MPICC@
+MPICXXFLAGS=@CXX_MFLAG@ @C11@ @CXX_MBITS@ -pipe $(DEFINES) @MPI_CXXFLAGS@ @CXXFLAGS@ @WARN_MPICXX@
+NVCXXFLAGS=,@CXX_MBITS@,@CXX_OO@,-pipe,$(DEFINES_CUDA)
 AM_LDLIBS=$(LLIBS_SCOREP) $(libcudart_static_path) -L@CUDA_LIBDIR@ @MPI_CXXLDFLAGS@ $(libcudart_static_flag) -lcuda $(LLIBC)
 
-AM_LDFLAGS=@CXX_MFLAG@ $(LDFLAGS_SCOREP) $(OPENMP) -Wl,@CXX_OO@
-AM_CXXFLAGS=@CXX_MFLAG@ @CXXFLAGS@ $(DEBUG_FLAG) @WARN_CXXFLAGS@
-AM_CFLAGS=@CC_MFLAG@ @CFLAGS@ $(DEBUG_FLAG) @WARN_CFLAGS@
+AM_LDFLAGS=@CXX_MFLAG@ $(LDFLAGS_SCOREP) $(OPENMP_FLAG) -Wl,@CXX_OO@
+AM_CXXFLAGS=@CXX_MFLAG@ @CXXFLAGS@ @WARN_CXXFLAGS@
+AM_CFLAGS=@CC_MFLAG@ @CFLAGS@ $(D_FLAG) @WARN_CFLAGS@
 
 ### Compilers
 #
@@ -296,7 +302,7 @@ if SIMD
 endif
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) $(NVCC_DEBUG_FLAGS) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS),"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 

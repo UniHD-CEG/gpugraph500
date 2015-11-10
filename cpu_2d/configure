@@ -743,11 +743,6 @@ SIMT_FALSE
 SIMT_TRUE
 SIMD_FALSE
 SIMD_TRUE
-ALLCXXFLAGS
-ALLCFLAGS
-MPI_LIB
-MPI_INC
-OPTIMIZATION_FLAGS
 C99
 CPP
 am__fastdepCC_FALSE
@@ -755,7 +750,6 @@ am__fastdepCC_TRUE
 CCDEPMODE
 ac_ct_CC
 CFLAGS
-CC
 C11
 HAVE_CXX11
 am__fastdepCXX_FALSE
@@ -774,7 +768,10 @@ ac_ct_CXX
 CPPFLAGS
 LDFLAGS
 CXXFLAGS
+ALLCXXFLAGS
+ALLCFLAGS
 CXX
+CC
 INSIDE_GNOME_COMMON_FALSE
 INSIDE_GNOME_COMMON_TRUE
 am__untar
@@ -849,8 +846,8 @@ enable_compression
 enable_ptxas_otimization
 enable_bfs_basic_profiling
 enable_other_basic_profiling
-enable_openmp_on_cudafiles
-enable_openmp_on_others
+enable_cuda_openmp
+enable_general_openmp
 enable_scorep
 enable_simd
 enable_simt
@@ -884,20 +881,17 @@ enable_doxygen_pdf
       ac_precious_vars='build_alias
 host_alias
 target_alias
+CC
 CXX
+ALLCFLAGS
+ALLCXXFLAGS
 CXXFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS
 CCC
-CC
 CFLAGS
 CPP
-OPTIMIZATION_FLAGS
-MPI_INC
-MPI_LIB
-ALLCFLAGS
-ALLCXXFLAGS
 DOXYGEN_PAPER_SIZE'
 
 
@@ -1535,12 +1529,10 @@ Optional Features:
   --enable-other-basic-profiling
                           Displays graph500 default statistics. Enabled by
                           default.
-  --enable-openmp-on-cudafiles
-                          Selects whether or not OpenMP will be enabled. This
+  --enable-cuda-openmp    Selects whether or not OpenMP will be enabled. This
                           option applies only to CUDA files. Disabled by
                           default.
-  --enable-openmp-on-others
-                          Selects whether or not OpenMP will be enabled. This
+  --enable-general-openmp Selects whether or not OpenMP will be enabled. This
                           option applies to any non-CUDA file. Disabled by
                           default.
   --enable-scorep         Enable instrumentation with Scalasca/ScoreP.
@@ -1614,25 +1606,18 @@ Optional Packages:
                           <path> to the directory which contain the library.
 
 Some influential environment variables:
-  CXX         C++ compiler command
+  CC          The C compiler
+  CXX         The C++ compiler
+  ALLCFLAGS   Customized C source compilation flags
+  ALLCXXFLAGS Customized C++ source compilation flags
   CXXFLAGS    C++ compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
   LIBS        libraries to pass to the linker, e.g. -l<library>
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
-  CC          C compiler command
   CFLAGS      C compiler flags
   CPP         C preprocessor
-  OPTIMIZATION_FLAGS
-              OPTIMIZATION_FLAGS="-flag1 -flag2 ETC" (separated by spaces).
-              Optimization flags added to the compiler. Default values are
-              safe on most compilers. When the option --enable-debugging is
-              active, this flags are disabled. Default is -loops -flto.
-  MPI_INC     MPI include flags
-  MPI_LIB     MPI lib flags
-  ALLCFLAGS   Customized C source compilation flags
-  ALLCXXFLAGS Customized C++ source compilation flags
   DOXYGEN_PAPER_SIZE
               a4wide (default), a4, letter, legal or executive
 
@@ -3450,6 +3435,14 @@ fi
 	for k in m4 ; do ACLOCAL="$ACLOCAL -I $k" ; done
 
 
+## User Redefine compilers.
+#
+
+
+
+
+
+
 ## Checks for programs.
 #
 
@@ -4424,8 +4417,8 @@ $as_echo "#define HAVE_CXX11 1" >>confdefs.h
 
   fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether mandatory -std=c++ is supported" >&5
-$as_echo_n "checking whether mandatory -std=c++ is supported... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking required -std=c++11 support" >&5
+$as_echo_n "checking required -std=c++11 support... " >&6; }
 C11=
 if test "x${ac_success}" = "xno"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -5613,7 +5606,9 @@ fi
 
 
 
-# compression
+### declare "precious" environment variables
+#
+
 #   Values: yes | no
 #   Default value: yes
 # Check whether --enable-compression was given.
@@ -5624,7 +5619,6 @@ else
 fi
 
 
-# ptxas_otimization
 #   Values: yes | no
 #   Default value: no
 # Check whether --enable-ptxas_otimization was given.
@@ -5635,7 +5629,6 @@ else
 fi
 
 
-# bfs-basic-profiling
 #   Values: yes | no
 #   Default value: no
 # Check whether --enable-bfs-basic-profiling was given.
@@ -5646,7 +5639,6 @@ else
 fi
 
 
-# other-basic-profiling
 #   Values: yes | no
 #   Default value: no
 # Check whether --enable-other-basic-profiling was given.
@@ -5657,29 +5649,26 @@ else
 fi
 
 
-# openmp-on-cudafiles
 #   Values: yes | no
 #   Default value: no
-# Check whether --enable-openmp-on-cudafiles was given.
-if test "${enable_openmp_on_cudafiles+set}" = set; then :
-  enableval=$enable_openmp_on_cudafiles;
+# Check whether --enable-cuda-openmp was given.
+if test "${enable_cuda_openmp+set}" = set; then :
+  enableval=$enable_cuda_openmp;
 else
-  enable_openmp_on_cudafiles=no
+  enable_cuda_openmp=no
 fi
 
 
-# openmp-on-others
 #   Values: yes | no
 #   Default value: no
-# Check whether --enable-openmp-on-others was given.
-if test "${enable_openmp_on_others+set}" = set; then :
-  enableval=$enable_openmp_on_others;
+# Check whether --enable-general-openmp was given.
+if test "${enable_general_openmp+set}" = set; then :
+  enableval=$enable_general_openmp;
 else
-  enable_openmp_on_others=no
+  enable_general_openmp=no
 fi
 
 
-# scorep
 #   Values: yes | no
 #   Default value: no
 # Check whether --enable-scorep was given.
@@ -5690,11 +5679,10 @@ else
 fi
 
 
-# enable_simd
 #   Values: yes | no
 #   Default value: yes
 #   External links:
-#         - https://github.com/lemire/SIMDCompressionAndIntersection
+#     https://github.com/lemire/SIMDCompressionAndIntersection
 # Check whether --enable-simd was given.
 if test "${enable_simd+set}" = set; then :
   enableval=$enable_simd;
@@ -5703,7 +5691,6 @@ else
 fi
 
 
-# enable_simt
 #   Values: yes | no
 #   Default value: yes
 # Check whether --enable-simt was given.
@@ -5714,7 +5701,6 @@ else
 fi
 
 
-# verify-compression
 #   Values: yes | no
 #   Default value: no
 # Check whether --enable-verify-compression was given.
@@ -5725,7 +5711,6 @@ else
 fi
 
 
-# debug-compression
 #   Values: yes | no
 #   Default value: no
 # Check whether --enable-debug-compression was given.
@@ -5736,7 +5721,6 @@ else
 fi
 
 
-# cuda
 #   Values: yes | no
 #   Default value: yes
 # Check whether --enable-cuda was given.
@@ -5747,7 +5731,6 @@ else
 fi
 
 
-# debug
 #   Values: yes | no
 #   Default value:
 # Check whether --enable-debug was given.
@@ -5758,7 +5741,6 @@ else
 fi
 
 
-# debugging
 #   Values: yes | no
 #   Default value: no
 # Check whether --enable-debugging was given.
@@ -5769,10 +5751,8 @@ else
 fi
 
 
-# quiet_output
 #   Values: yes | no
 #   Default value: no
-#   Description: ""
 # Check whether --enable-quiet was given.
 if test "${enable_quiet+set}" = set; then :
   enableval=$enable_quiet;
@@ -5781,7 +5761,6 @@ else
 fi
 
 
-# nvidia_architecture
 #   Values: fermi | kepler | auto
 #   Default value: fermi
 # Check whether --enable-nvidia-architecture was given.
@@ -5797,32 +5776,9 @@ else
 fi
 
 
-# code_optimization_flags
-#    Values: -funroll-loops -flto -finline-functions -funswitch-loops -fpredictive-commoning
-#            -fgcse-after-reload -ftree-vectorize -ftree-partial-pre -fipa-cp-clone ...
+
+### declare conditionals
 #
-#    Default value: -funroll-loops -flto (For GNU's version of Makefile)
-#    Format: value value value (separated by spaces)
-#    External links:
-#         - GNU compiler: https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html#Optimize-Options
-
-if test "x$OPTIMIZATION_FLAGS" = x; then :
-  OPTIMIZATION_FLAGS="-loops -flto"
-fi
-if test "x$enable_debugging" = xyes; then :
-  OPTIMIZATION_FLAGS=""
-fi
-
-### declare "precious" environment variables
-#
-
-
-
-
-
-
-
-
  if test x"$enable_simd" = xyes; then
   SIMD_TRUE=
   SIMD_FALSE='#'
@@ -5871,7 +5827,7 @@ else
   SCOREP_FALSE=
 fi
 
- if test x"$enable_openmp_on_cudafiles" = xyes; then
+ if test x"$enable_cuda_openmp" = xyes; then
   OPENMP_ON_CUDA_TRUE=
   OPENMP_ON_CUDA_FALSE='#'
 else
@@ -5879,7 +5835,7 @@ else
   OPENMP_ON_CUDA_FALSE=
 fi
 
- if test x"$enable_openmp_on_others" = xyes; then
+ if test x"$enable_general_openmp" = xyes; then
   OPENMP_ON_OTHERS_TRUE=
   OPENMP_ON_OTHERS_FALSE='#'
 else
@@ -7473,7 +7429,7 @@ fi
 
 
 # ------------------------------------------------------------------------------
-# Setup CUDA paths
+# Checks CUDA
 # ------------------------------------------------------------------------------
 
 if test "x$enable_cuda" = xyes; then
@@ -8935,7 +8891,7 @@ $as_echo "yes" >&6; }
 fi
 
 # ------------------------------------------------------------------------------
-# Setup FLAGS SUPPORT
+# Checks FLAGS SUPPORT
 # ------------------------------------------------------------------------------
 
 ### Checks latest architecture flag
@@ -9934,6 +9890,43 @@ else
 fi
 
 
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -funroll-loops" >&5
+$as_echo_n "checking whether C compiler accepts -funroll-loops... " >&6; }
+if ${ax_cv_check_cflags___funroll_loops+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -funroll-loops"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___funroll_loops=yes
+else
+  ax_cv_check_cflags___funroll_loops=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___funroll_loops" >&5
+$as_echo "$ax_cv_check_cflags___funroll_loops" >&6; }
+if test "x$ax_cv_check_cflags___funroll_loops" = xyes; then :
+  CFLAGS="$CFLAGS -funroll-loops"
+else
+  :
+fi
+
+     # AX_CHECK_COMPILE_FLAG(-flto, CFLAGS="$CFLAGS -flto")
+
 
 
 
@@ -10772,6 +10765,43 @@ else
   :
 fi
 
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts -funroll-loops" >&5
+$as_echo_n "checking whether C++ compiler accepts -funroll-loops... " >&6; }
+if ${ax_cv_check_cxxflags___funroll_loops+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS  -funroll-loops"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ax_cv_check_cxxflags___funroll_loops=yes
+else
+  ax_cv_check_cxxflags___funroll_loops=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CXXFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cxxflags___funroll_loops" >&5
+$as_echo "$ax_cv_check_cxxflags___funroll_loops" >&6; }
+if test "x$ax_cv_check_cxxflags___funroll_loops" = xyes; then :
+  CXXFLAGS="$CXXFLAGS -funroll-loops"
+else
+  :
+fi
+
+     # AX_CHECK_COMPILE_FLAG(-flto, CXXFLAGS="$CXXFLAGS -flto")
 
 
 
@@ -12334,7 +12364,7 @@ WARN_MPICC="-pedantic -Wall -Wextra"
 
 
 # ------------------------------------------------------------------------------
-# Setup OpenCL
+# Checks OpenCL
 # ------------------------------------------------------------------------------
 
 
@@ -13059,7 +13089,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # ------------------------------------------------------------------------------
-# Setup PTHREADS
+# Checks PTHREADS
 # ------------------------------------------------------------------------------
 
 
@@ -13506,8 +13536,74 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # ------------------------------------------------------------------------------
-# Setup OPENMP
+# Checks OPENMP
 # ------------------------------------------------------------------------------
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for OpenMP flag of C compiler" >&5
+$as_echo_n "checking for OpenMP flag of C compiler... " >&6; }
+if ${ax_cv_c_openmp+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  saveCFLAGS=$CFLAGS
+ax_cv_c_openmp=unknown
+# Flags to try:  -fopenmp (gcc), -openmp (icc), -mp (SGI & PGI),
+#                -xopenmp (Sun), -omp (Tru64), -qsmp=omp (AIX), none
+ax_openmp_flags="-fopenmp -openmp -mp -xopenmp -omp -qsmp=omp none"
+if test "x$OPENMP_CFLAGS" != x; then
+  ax_openmp_flags="$OPENMP_CFLAGS $ax_openmp_flags"
+fi
+for ax_openmp_flag in $ax_openmp_flags; do
+  case $ax_openmp_flag in
+    none) CFLAGS=$saveC ;;
+    *) CFLAGS="$saveCFLAGS $ax_openmp_flag" ;;
+  esac
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <omp.h>
+
+static void
+parallel_fill(int * data, int n)
+{
+  int i;
+#pragma omp parallel for
+  for (i = 0; i < n; ++i)
+    data[i] = i;
+}
+
+int
+main()
+{
+  int arr[100000];
+  omp_set_num_threads(2);
+  parallel_fill(arr, 100000);
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_c_openmp=$ax_openmp_flag; break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+done
+CFLAGS=$saveCFLAGS
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_c_openmp" >&5
+$as_echo "$ax_cv_c_openmp" >&6; }
+if test "x$ax_cv_c_openmp" = "xunknown"; then
+  :
+else
+  if test "x$ax_cv_c_openmp" != "xnone"; then
+    OPENMP_CFLAGS=$ax_cv_c_openmp
+  fi
+
+$as_echo "#define HAVE_OPENMP 1" >>confdefs.h
+
+fi
 
 if test x$GCC = xyes
 then
@@ -14447,11 +14543,11 @@ fi
 
 
 fi
-if test "x$enable_openmp_on_cudafiles" = "xyes" -o "x$enable_openmp_on_others" = "xyes"; then :
+if test "x$enable_cuda_openmp" = "xyes" -o "x$enable_general_openmp" = "xyes"; then :
 
   if test x$c99 = xno; then
-	    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: C99 compliant compiler is recommended with openMP" >&5
-$as_echo "$as_me: WARNING: C99 compliant compiler is recommended with openMP" >&2;}
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: -stc=c99 is recommended with openMP" >&5
+$as_echo "$as_me: WARNING: -stc=c99 is recommended with openMP" >&2;}
   fi
   if test x$GCC = xyes
   then
