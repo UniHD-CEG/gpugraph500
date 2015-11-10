@@ -379,7 +379,7 @@ int main(int argc, char **argv)
         // BFS
         MPI_Barrier(MPI_COMM_WORLD);
         rtstart = MPI_Wtime();
-
+#ifdef _COMPRESSION
 #ifdef INSTRUMENTED
         if (rank == 0)
         {
@@ -398,6 +398,27 @@ int main(int argc, char **argv)
         {
             bfs.runBFS(-1, schema);
         }
+#endif
+#else
+#ifdef INSTRUMENTED
+        if (rank == 0)
+        {
+            bfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred);
+        }
+        else
+        {
+            bfs.runBFS(-1, lexp, lqueue, rowcom, colcom, predlistred);
+        }
+#else
+        if (rank == 0)
+        {
+            bfs.runBFS(tries[i]);
+        }
+        else
+        {
+            bfs.runBFS(-1);
+        }
+#endif
 #endif
         rtstop = MPI_Wtime();
 

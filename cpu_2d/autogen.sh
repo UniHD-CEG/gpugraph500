@@ -130,7 +130,7 @@ do
 	autoheader --include=$macrodirs
       fi
       echo "Running automake --gnu $am_opt ..."
-      automake --add-missing --gnu $am_opt
+      automake --force-missing --add-missing -Woverride --gnu $am_opt 2> /dev/null
       echo "Running autoconf ..."
       autoconf --include=$macrodirs
     )

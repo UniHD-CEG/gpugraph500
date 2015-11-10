@@ -550,15 +550,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::runBFS(typename STORE::vertexT
 */
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 #ifdef INSTRUMENTED
+#ifdef _COMPRESSION
 void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue,
         double &rowcom, double &colcom, double &predlistred, const C_T &schema)
-//void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue,
-//        double &rowcom, double &colcom, double &predlistred)
 #else
-void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, const C_T &schema)
-//void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex)
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue,
+        double &rowcom, double &colcom, double &predlistred)
 #endif
-// #endif
+#else
+#ifdef _COMPRESSION
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, const C_T &schema)
+#else
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex)
+#endif
+#endif
 {
 #ifdef INSTRUMENTED
     double tstart, tend;
