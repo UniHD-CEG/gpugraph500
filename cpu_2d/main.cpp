@@ -383,20 +383,20 @@ int main(int argc, char **argv)
 #ifdef INSTRUMENTED
         if (rank == 0)
         {
-            runBfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred);
+            runBfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred, schema);
         }
         else
         {
-            runBfs.runBFS(-1, lexp, lqueue, rowcom, colcom, predlistred);
+            runBfs.runBFS(-1, lexp, lqueue, rowcom, colcom, predlistred, schema);
         }
 #else
         if (rank == 0)
         {
-            runBfs.runBFS(tries[i]);
+            runBfs.runBFS(tries[i], schema);
         }
         else
         {
-            runBfs.runBFS(-1);
+            runBfs.runBFS(-1, schema);
         }
 #endif
         rtstop = MPI_Wtime();
