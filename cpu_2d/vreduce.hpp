@@ -48,7 +48,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
     T *compressed_fq=NULL, *uncompressed_fq=NULL, *compressed_recv_buff=NULL;
-    // T *compressed_fq, *uncompressed_fq, *compressed_recv_buff;
 #endif
 
     // auxiliar lambdas

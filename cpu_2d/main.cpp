@@ -272,12 +272,7 @@ int main(int argc, char **argv)
     OCLRunner oclrun;
     OpenCL_BFS bfs(store, *oclrun);
 #elif defined _CUDA
-    // compression only available on CUDABFS
-/*#ifdef _COMPRESSION
-    CUDA_BFS bfs(store, gpus, queue_sizing, verbosity, schema);
-#else*/
     CUDA_BFS bfs(store, gpus, queue_sizing, verbosity);
-//#endif
 #else
     CPUBFS_bin bfs(store, verbosity, rank);
 #endif

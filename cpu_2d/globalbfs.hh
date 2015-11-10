@@ -42,24 +42,11 @@ using namespace std::placeholders;
 template < typename Derived,
          typename FQ_T,  // Queue Type
          typename MType, // Bitmap mask
-/*
-#ifdef _COMPRESSION
-         typename STORE, // Storage of Matrix
-         typename C_T > // Compression
-#else
-*/
          typename STORE > // Storage of Matrix
-//#endif
 class GlobalBFS
 {
 private:
     MPI_Comm row_comm, col_comm;
-/*
-#ifdef _COMPRESSION
-    //typedef Compression<FQ_T> C_T;
-    C_T &schema;
-#endif
-*/
     // sending node column slice, startvtx, size
     vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vertexType *&owen, typename STORE::vertexType *&tmp,
@@ -104,20 +91,13 @@ public:
     /**
      * Constructor & destructor declaration
      */
-/*
-#ifdef _COMPRESSION
-    GlobalBFS(STORE &_store, C_T &_schema);
-#else
-*/
     GlobalBFS(STORE &_store);
-//#endif
     ~GlobalBFS();
 
     typename STORE::vertexType *getPredecessor();
 
 #ifdef _COMPRESSION
     typedef Compression<FQ_T> C_T;
-    // C_T &schema;
 #endif
 
 #ifdef INSTRUMENTED
@@ -144,15 +124,8 @@ public:
  * Constructor
  *
  */
-/*
-#ifdef _COMPRESSION
-template<typename Derived, typename FQ_T, typename MType, typename STORE, typename C_T>
-GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::GlobalBFS(STORE &_store, C_T &_schema) : store(_store), schema(_schema)
-#else
-*/
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
-// #endif
 {
     int mtypesize = 8 * sizeof(MType);
     int local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
@@ -171,15 +144,8 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
  * Destructor
  *
  */
-/*
-#ifdef _COMPRESSION
-template<typename Derived, typename FQ_T, typename MType, typename STORE, typename C_T>
-GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::~GlobalBFS()
-#else
-*/
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS()
-//#endif
 {
     delete[] owenmask;
     delete[] tmpmask;
@@ -189,15 +155,8 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS()
  * getPredecessor()
  *
  */
-/*
-#ifdef _COMPRESSION
-template<typename Derived, typename FQ_T, typename MType, typename STORE, typename C_T>
-typename STORE::vertexType *GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::getPredecessor()
-#else
-*/
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 typename STORE::vertexType *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecessor()
-//#endif
 {
     return predecessor;
 }
@@ -207,18 +166,10 @@ typename STORE::vertexType *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecess
  * Bitmap compression on predecessor reduction
  *
  */
-/*#ifdef _COMPRESSION
-template<typename Derived, typename FQ_T, typename MType, typename STORE, typename C_T>
-void GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::allReduceBitCompressed(typename STORE::vertexType *&owen,
-        typename STORE::vertexType *&tmp, MType *&owenmap,
-        MType *&tmpmap)
-#else
-*/
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vertexType *&owen,
         typename STORE::vertexType *&tmp, MType *&owenmap,
         MType *&tmpmap)
-//#endif
 {
     MPI_Status status;
     int communicatorSize, communicatorRank, intLdSize, power2intLdSize, residuum;
@@ -465,40 +416,21 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     free(sizes);
     free(disps);
 }
-/*#ifdef _COMPRESSION
-template<typename Derived, typename FQ_T, typename MType, typename STORE, typename C_T>
-void GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::getBackPredecessor() { }
-#else*/
+
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::getBackPredecessor() { }
-//#endif
 
-/*#ifdef _COMPRESSION
-template<typename Derived, typename FQ_T, typename MType, typename STORE, typename C_T>
-void GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::getBackOutqueue() { }
-#else*/
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::getBackOutqueue() { }
-//#endif
 
-/*#ifdef _COMPRESSION
-template<typename Derived, typename FQ_T, typename MType, typename STORE, typename C_T>
-void GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::setBackInqueue() { }
-#else*/
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::setBackInqueue() { }
-//#endif
 
 /*
  * Generates a map of the vertex with predecessor
  */
-/*#ifdef _COMPRESSION
-template<typename Derived, typename FQ_T, typename MType, typename STORE, typename C_T>
-void GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::generatOwenMask()
-#else*/
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
-//#endif
 {
     int mtypesize, store_col_length;
 
@@ -537,17 +469,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
  * 4) global expansion: Column Communication
  * 5) global fold: Row Communication
  */
-/*
-#ifdef _COMPRESSION
-template<typename Derived, typename FQ_T, typename MType, typename STORE, typename C_T>
-#ifdef INSTRUMENTED
-void GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue,
-        double &rowcom, double &colcom, double &predlistred, C_T &schema)
-#else
-void GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::runBFS(typename STORE::vertexType startVertex, C_T &schema)
-#endif
-#else
-*/
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 #ifdef INSTRUMENTED
 #ifdef _COMPRESSION
@@ -787,8 +708,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 uncompressedsize = static_cast<size_t>(originalsize);
                 schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
-                //compress_lambda(startaddr, uncompressedsize, &compressed_fq, compressedsize);
-
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);

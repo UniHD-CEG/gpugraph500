@@ -36,12 +36,7 @@ typedef long long vertexType;
 typedef unsigned int rowtyp;
 
 class CUDA_BFS : public GlobalBFS < CUDA_BFS, vertexType, unsigned char,
-/*#ifdef _COMPRESSION
-    DistMatrix2d<vertexType, rowtyp, true, 1, true>,  // use local ids
-    Compression<vertexType>
-#else*/
     DistMatrix2d<vertexType, rowtyp, true, 1, true>  // use local ids
-//#endif
     >
 {
 private:
@@ -70,14 +65,7 @@ private:
 protected:
 public:
     typedef DistMatrix2d<vertexType, rowtyp, true, 1, true> MatrixT;
-/*#ifdef _COMPRESSION
-    typedef Compression<vertexType> C_T;
-#endif*/
-/*#ifdef _COMPRESSION
-    CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity, C_T &_schema);
-#else*/
     CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing, int64_t _verbosity);
-//#endif
     ~CUDA_BFS();
     void getBackPredecessor();
     void getBackOutqueue();
