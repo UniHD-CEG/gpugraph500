@@ -10,10 +10,10 @@ template <typename T>
 class NoCompression: public Compression<T>
 {
 public:
-    void debugCompression(T *fq, const int size);
-    void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
+    void debugCompression(T *fq, const int size) const;
+    void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize) const;
     void decompress(T *compressed_fq_64, const int size,
-                    /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize);
+                    /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
     inline string name() const;
@@ -29,7 +29,7 @@ void NoCompression<T>::reconfigure(int compressionThreshold, string compressionE
 
 
 template <typename T>
-void NoCompression<T>::debugCompression(T *fq, const int size)
+void NoCompression<T>::debugCompression(T *fq, const int size) const
 {
 
     size_t compressedsize, uncompressedsize = static_cast<size_t>(size);
@@ -38,11 +38,11 @@ void NoCompression<T>::debugCompression(T *fq, const int size)
     time_0 = high_resolution_clock::now();
     compress(fq, uncompressedsize, &compressed_fq_64, compressedsize);
     time_1 = high_resolution_clock::now();
-    auto encode_time = duration_cast<nanoseconds>(time_1 - time_0).count();
+    long encode_time = duration_cast<nanoseconds>(time_1 - time_0).count();
     time_0 = high_resolution_clock::now();
     decompress(compressed_fq_64, compressedsize, &uncompressed_fq_64, uncompressedsize);
     time_1 = high_resolution_clock::now();
-    auto decode_time = duration_cast<nanoseconds>(time_1 - time_0).count();
+    long decode_time = duration_cast<nanoseconds>(time_1 - time_0).count();
 
     /**
      * Check validity of results
@@ -56,7 +56,7 @@ void NoCompression<T>::debugCompression(T *fq, const int size)
 
 template <typename T>
 void NoCompression<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
-                                size_t &compressedsize)
+                                size_t &compressedsize) const
 {
     compressedsize = size;
     *compressed_fq_64 = fq_64;
@@ -64,7 +64,7 @@ void NoCompression<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_
 
 template <typename T>
 void NoCompression<T>::decompress(T *compressed_fq_64, const int size,
-                                  /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize)
+                                  /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
     uncompressedsize = size;
     *uncompressed_fq_64 = compressed_fq_64;

@@ -24,10 +24,10 @@ private:
     inline bool isCompressible(int size) const { return (size > SIMDCOMPRESSION_THRESHOLD); };
 public:
     CpuSimd();
-    void debugCompression(T *fq, const int size);
-    void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize);
+    void debugCompression(T *fq, const int size) const;
+    void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize) const ;
     void decompress(T *compressed_fq_64, const int size,
-                    /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize);
+                    /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
     inline string name() const;
@@ -53,7 +53,7 @@ void CpuSimd<T>::reconfigure(int compressionThreshold, string compressionCodec)
 }
 
 template <typename T>
-void CpuSimd<T>::debugCompression(T *fq, const int size)
+void CpuSimd<T>::debugCompression(T *fq, const int size) const
 {
     if (size > 0)
     {
@@ -63,11 +63,11 @@ void CpuSimd<T>::debugCompression(T *fq, const int size)
         time_0 = high_resolution_clock::now();
         compress(fq, uncompressedsize, &compressed_fq, compressedsize);
         time_1 = high_resolution_clock::now();
-        auto encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
+        long encode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
         time_0 = high_resolution_clock::now();
         decompress(compressed_fq, compressedsize, &uncompressed_fq, uncompressedsize);
         time_1 = high_resolution_clock::now();
-        auto decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
+        long decode_time = chrono::duration_cast<chrono::nanoseconds>(time_1 - time_0).count();
         verifyCompression(fq, uncompressed_fq, uncompressedsize);
         if (isCompressed(uncompressedsize, compressedsize))
         {
@@ -108,7 +108,7 @@ void CpuSimd<T>::debugCompression(T *fq, const int size)
 
 template <typename T>
 void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
-                          size_t &compressedsize)
+                          size_t &compressedsize) const
 {
     if (isCompressible(size))
     {
@@ -136,7 +136,7 @@ void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
             printf("\nERROR: Memory allocation error!");
             abort();
         }
-        for (auto i = 0; i < compressedsize; ++i)
+        for (size_t i = 0; i < compressedsize; ++i)
         {
             (*compressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
         }
@@ -156,7 +156,7 @@ void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
 
 template <typename T>
 void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
-                            /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize)
+                            /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
     if (isCompressed(uncompressedsize, size))
     {
@@ -180,7 +180,7 @@ void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
             abort();
         }
         // memcpy((T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, uncompressedsize * sizeof(uint32_t));
-        for (auto i = 0; i < uncompressedsize; ++i)
+        for (size_t i = 0; i < uncompressedsize; ++i)
         {
             (*uncompressed_fq_64)[i] = static_cast<T>(uncompressed_fq_32[i]);
         }

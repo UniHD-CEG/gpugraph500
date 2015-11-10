@@ -270,16 +270,16 @@ int main(int argc, char **argv)
 
 #ifdef _OPENCL
     OCLRunner oclrun;
-    OpenCL_BFS runBfs(store, *oclrun);
+    OpenCL_BFS bfs(store, *oclrun);
 #elif defined _CUDA
     // compression only available on CUDABFS
-#ifdef _COMPRESSION
-    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity, schema);
+/*#ifdef _COMPRESSION
+    CUDA_BFS bfs(store, gpus, queue_sizing, verbosity, schema);
+#else*/
+    CUDA_BFS bfs(store, gpus, queue_sizing, verbosity);
+//#endif
 #else
-    CUDA_BFS runBfs(store, gpus, queue_sizing, verbosity);
-#endif
-#else
-    CPUBFS_bin runBfs(store, verbosity, rank);
+    CPUBFS_bin bfs(store, verbosity, rank);
 #endif
 
     tstop = MPI_Wtime();
@@ -383,20 +383,20 @@ int main(int argc, char **argv)
 #ifdef INSTRUMENTED
         if (rank == 0)
         {
-            runBfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred, schema);
+            bfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred, schema);
         }
         else
         {
-            runBfs.runBFS(-1, lexp, lqueue, rowcom, colcom, predlistred, schema);
+            bfs.runBFS(-1, lexp, lqueue, rowcom, colcom, predlistred, schema);
         }
 #else
         if (rank == 0)
         {
-            runBfs.runBFS(tries[i], schema);
+            bfs.runBFS(tries[i], schema);
         }
         else
         {
-            runBfs.runBFS(-1, schema);
+            bfs.runBFS(-1, schema);
         }
 #endif
         rtstop = MPI_Wtime();
@@ -449,7 +449,7 @@ int main(int argc, char **argv)
             MPI_Bcast(&start, 1, MPI_LONG, 0, MPI_COMM_WORLD);
         }
         this_valid = validate_bfs_result<MatrixT>(store, edgelist, number_of_edges,
-                     vertices, static_cast<int64_t>(start), runBfs.getPredecessor(),
+                     vertices, static_cast<int64_t>(start), bfs.getPredecessor(),
                      &num_edges, &level);
         tstop = MPI_Wtime();
         if (rank == 0)

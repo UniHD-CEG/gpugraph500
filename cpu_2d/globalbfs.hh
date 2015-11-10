@@ -117,13 +117,13 @@ public:
 
 #ifdef _COMPRESSION
     typedef Compression<FQ_T> C_T;
-    C_T &schema;
+    // C_T &schema;
 #endif
 
 #ifdef INSTRUMENTED
 #ifdef _COMPRESSION
     void runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue, double &rowcom, double &colcom,
-                double &predlistred, C_T &schema);
+                double &predlistred, const C_T &schema);
 #else
     void runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue, double &rowcom, double &colcom,
                 double &predlistred);
@@ -132,7 +132,7 @@ public:
 #else
 
 #ifdef _COMPRESSION
-    void runBFS(typename STORE::vertexType startVertex, C_T &schema);
+    void runBFS(typename STORE::vertexType startVertex, const C_T &schema);
 #else
     void runBFS(typename STORE::vertexType startVertex);
 #endif
@@ -550,13 +550,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE, C_T>::runBFS(typename STORE::vertexT
 */
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 #ifdef INSTRUMENTED
-//void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue,
-//        double &rowcom, double &colcom, double &predlistred, C_T &schema)
 void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue,
-        double &rowcom, double &colcom, double &predlistred)
+        double &rowcom, double &colcom, double &predlistred, const C_T &schema)
+//void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue,
+//        double &rowcom, double &colcom, double &predlistred)
 #else
-//void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, C_T &schema)
-void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex)
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, const C_T &schema)
+//void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex)
 #endif
 // #endif
 {
@@ -567,32 +567,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     double comtstart, comtend;
     rowcom = 0;
     colcom = 0;
-#endif
-
-#ifdef _COMPRESSION
-    function <void(FQ_T *, const size_t &, FQ_T **, size_t &)> compress_lambda =
-        [&schema](FQ_T * a, const size_t & b, FQ_T **c, size_t & d)
-    {
-        return schema.compress(a, b, c, d);
-    };
-
-    function < void (FQ_T *, const int,/*Out*/FQ_T **, /*InOut*/size_t &) > decompress_lambda =
-        [&schema](FQ_T * a, const int b, FQ_T **c, size_t & d)
-    {
-        return schema.decompress(a, b, c, d);
-    };
-
-    function <void (FQ_T *, const int)> debugCompression_lambda =
-        [&schema](FQ_T * a, const int b)
-    {
-        return schema.debugCompression(a, b);
-    };
-
-    const function <bool (const size_t, const size_t)> isCompressed_lambda =
-        [&schema](const size_t a, const size_t b)
-    {
-        return schema.isCompressed(a, b);
-    };
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
@@ -742,12 +716,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
         vreduce(reduce, get,
 #ifdef _COMPRESSION
-                compress_lambda,
-                decompress_lambda,
-#if defined(_COMPRESSION) && defined(_COMPRESSIONDEBUG)
-                debugCompression_lambda,
-#endif
-                isCompressed_lambda,
+                schema,
 #endif
                 fq_64,
                 _outsize,
@@ -812,7 +781,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                compress_lambda(startaddr, uncompressedsize, &compressed_fq, compressedsize);
+                schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
+                //compress_lambda(startaddr, uncompressedsize, &compressed_fq, compressedsize);
 
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)

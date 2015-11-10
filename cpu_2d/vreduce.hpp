@@ -19,6 +19,10 @@
 #include <sstream>
 #include "bitlevelfunctions.h"
 
+#ifdef _COMPRESSION
+#include "compression/compression.hh"
+#endif
+
 using std::function;
 using std::is_sorted;
 
@@ -26,12 +30,7 @@ template<class T>
 void vreduce(function<void(T, long, T *, int)> &reduce,
              function < void(T, long, T *& /*Out*/, int & /*Out*/) > &get,
 #ifdef _COMPRESSION
-             function<void(T *, const size_t &, T **, size_t &)> &compress,
-             function < void(T *, const int, T ** /*Out*/, size_t & /*In-Out*/) > &decompress,
-#if defined(_COMPRESSION) && defined(_COMPRESSIONDEBUG)
-             function <void (T *, const int)> &debugCompression,
-#endif
-             const function <bool (const size_t, const size_t)> &isCompressed,
+             const Compression<T> &schema,
 #endif
              T *recv_buff, /* Out */
              int &rsize, /* Out */ // size of the final result
@@ -171,11 +170,11 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                compress(send, psizeTo, &compressed_fq, compressedsize);
+                schema.compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONDEBUG)
-                debugCompression(send, psizeTo);
+                schema.debugCompression(send, psizeTo);
 #endif
 
 #ifdef INSTRUMENTED
@@ -221,7 +220,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
                 uncompressedsize = originalsize;
-                decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                schema.decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
@@ -236,7 +235,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                if (isCompressed(originalsize, psizeFrom))
+                if (schema.isCompressed(originalsize, psizeFrom))
                 {
 
                     free(uncompressed_fq);
@@ -269,11 +268,11 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                compress(send, psizeTo, &compressed_fq, compressedsize);
+                schema.compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONDEBUG)
-                debugCompression(send, psizeTo);
+                schema.debugCompression(send, psizeTo);
 #endif
 
 #ifdef INSTRUMENTED
@@ -284,9 +283,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 previousRank = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
 
 #ifdef _COMPRESSION
-                MPI_Sendrecv(&psizeTo, 1, MPI_LONG,
+                MPI_Sendrecv(&psizeTo, 1, MPI_INT,
                              previousRank, it + 2,
-                             &originalsize, 1, MPI_LONG,
+                             &originalsize, 1, MPI_INT,
                              previousRank, it + 2,
                              comm, MPI_STATUS_IGNORE);
                 MPI_Sendrecv(compressed_fq, compressedsize, type,
@@ -317,7 +316,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
                 uncompressedsize = originalsize;
-                decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                schema.decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
@@ -333,7 +332,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                if (isCompressed(originalsize, psizeFrom))
+                if (schema.isCompressed(originalsize, psizeFrom))
                 {
                     free(uncompressed_fq);
                 }
@@ -389,7 +388,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     unsigned int reversedSliceIDs, targetNode;
     size_t csize=0;
 
-    compress(send, psizeTo, &compressed_fq, compressedsize);
+    schema.compress(send, psizeTo, &compressed_fq, compressedsize);
     MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, comm);
 
     disps[lastTargetNode] = 0;
@@ -458,7 +457,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         compressedsize = compressed_sizes[i];
         if (compressedsize != 0) {
                 uncompressedsize = sizes[i];
-                decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+                schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 assert(uncompressedsize == sizes[i]);
@@ -467,7 +466,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
                 memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
-                if (isCompressed(uncompressedsize, compressedsize)) {
+                if (schema.isCompressed(uncompressedsize, compressedsize)) {
                     free(uncompressed_fq);
                 }
         }
@@ -488,5 +487,4 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 #endif
 
 }
-
 #endif // VREDUCE_HPP
