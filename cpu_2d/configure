@@ -727,10 +727,10 @@ BASIC_PROFING_OTHER_FALSE
 BASIC_PROFING_OTHER_TRUE
 BASIC_PROFING_BFS_FALSE
 BASIC_PROFING_BFS_TRUE
-OPENMP_ON_OTHERS_FALSE
-OPENMP_ON_OTHERS_TRUE
-OPENMP_ON_CUDA_FALSE
-OPENMP_ON_CUDA_TRUE
+OMP_GENERAL_FALSE
+OMP_GENERAL_TRUE
+OMP_CUDA_FALSE
+OMP_CUDA_TRUE
 SCOREP_FALSE
 SCOREP_TRUE
 NVIDIA_ARCHITECTURE_KEPLER_FALSE
@@ -5828,19 +5828,19 @@ else
 fi
 
  if test x"$enable_cuda_openmp" = xyes; then
-  OPENMP_ON_CUDA_TRUE=
-  OPENMP_ON_CUDA_FALSE='#'
+  OMP_CUDA_TRUE=
+  OMP_CUDA_FALSE='#'
 else
-  OPENMP_ON_CUDA_TRUE='#'
-  OPENMP_ON_CUDA_FALSE=
+  OMP_CUDA_TRUE='#'
+  OMP_CUDA_FALSE=
 fi
 
  if test x"$enable_general_openmp" = xyes; then
-  OPENMP_ON_OTHERS_TRUE=
-  OPENMP_ON_OTHERS_FALSE='#'
+  OMP_GENERAL_TRUE=
+  OMP_GENERAL_FALSE='#'
 else
-  OPENMP_ON_OTHERS_TRUE='#'
-  OPENMP_ON_OTHERS_FALSE=
+  OMP_GENERAL_TRUE='#'
+  OMP_GENERAL_FALSE=
 fi
 
  if test x"$enable_bfs_basic_profiling" = xyes; then
@@ -16897,12 +16897,12 @@ if test -z "${SCOREP_TRUE}" && test -z "${SCOREP_FALSE}"; then
   as_fn_error $? "conditional \"SCOREP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${OPENMP_ON_CUDA_TRUE}" && test -z "${OPENMP_ON_CUDA_FALSE}"; then
-  as_fn_error $? "conditional \"OPENMP_ON_CUDA\" was never defined.
+if test -z "${OMP_CUDA_TRUE}" && test -z "${OMP_CUDA_FALSE}"; then
+  as_fn_error $? "conditional \"OMP_CUDA\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${OPENMP_ON_OTHERS_TRUE}" && test -z "${OPENMP_ON_OTHERS_FALSE}"; then
-  as_fn_error $? "conditional \"OPENMP_ON_OTHERS\" was never defined.
+if test -z "${OMP_GENERAL_TRUE}" && test -z "${OMP_GENERAL_FALSE}"; then
+  as_fn_error $? "conditional \"OMP_GENERAL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BASIC_PROFING_BFS_TRUE}" && test -z "${BASIC_PROFING_BFS_FALSE}"; then

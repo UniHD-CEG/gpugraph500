@@ -8,8 +8,6 @@ ACLOCAL_AMFLAGS=-I m4
 DEFINES=
 DEFINES_CUDA=
 
-# DEFINES+=-D_VECTORIZE_MPI
-
 ### Dynamic variables
 #
 

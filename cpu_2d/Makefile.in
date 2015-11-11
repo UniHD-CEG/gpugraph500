@@ -36,9 +36,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@OPENMP_ON_CUDA_TRUE@am__append_1 = $(OPENMP_FLAG),-D_CUDA_OPENMP,
-@OPENMP_ON_CUDA_TRUE@am__append_2 = -D_CUDA_OPENMP
-@OPENMP_ON_OTHERS_TRUE@am__append_3 = $(OPENMP_FLAG)
+@OMP_CUDA_TRUE@am__append_1 = $(OPENMP_FLAG),-D_CUDA_OPENMP,
+@OMP_CUDA_TRUE@am__append_2 = -D_CUDA_OPENMP
+@OMP_GENERAL_TRUE@am__append_3 = $(OPENMP_FLAG)
 @BASIC_PROFING_BFS_TRUE@am__append_4 = -DINSTRUMENTED,
 @BASIC_PROFING_OTHER_TRUE@am__append_5 = -DINSTRUMENTED
 @DEBUG_TRUE@am__append_6 = -D_DEBUG
@@ -291,20 +291,18 @@ DEFINES = $(am__append_2) $(am__append_3) $(am__append_5) \
 DEFINES_CUDA = $(am__append_1) $(am__append_4) $(am__append_8) \
 	$(am__append_12) $(am__append_13) $(am__append_16)
 
-# DEFINES+=-D_VECTORIZE_MPI
-
 ### Dynamic variables
 #
 @PTXAS_OTIMIZATION_TRUE@PTXAS = --ptxas-options="-O3"
 @NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_FALSE@NV_ARCHITECTURE = $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
 @NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_TRUE@NV_ARCHITECTURE = $(PTXAS) -arch=sm_35
 @NVIDIA_ARCHITECTURE_FERMI_TRUE@NV_ARCHITECTURE = $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
-@OPENMP_ON_CUDA_FALSE@@OPENMP_ON_OTHERS_FALSE@@SCOREP_TRUE@THREADS = none
-@OPENMP_ON_CUDA_FALSE@@OPENMP_ON_OTHERS_TRUE@@SCOREP_TRUE@THREADS = omp
+@OMP_CUDA_FALSE@@OMP_GENERAL_FALSE@@SCOREP_TRUE@THREADS = none
+@OMP_CUDA_FALSE@@OMP_GENERAL_TRUE@@SCOREP_TRUE@THREADS = omp
 
 ### Instrumentation. Score-P
 #
-@OPENMP_ON_CUDA_TRUE@@SCOREP_TRUE@THREADS = omp
+@OMP_CUDA_TRUE@@SCOREP_TRUE@THREADS = omp
 @SCOREP_TRUE@scorep_instrumentation_flag = --user --cuda --mpp=mpi --thread=$(THREADS) --nopdt --online-access --instrument-filter=\"filter.scorep\"
 @SCOREP_TRUE@SCOREP_INSTRUMENTATION = -D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
 @SCOREP_TRUE@LDFLAGS_SCOREP = @SCOREP_LFLAG@
@@ -312,8 +310,8 @@ DEFINES_CUDA = $(am__append_1) $(am__append_4) $(am__append_8) \
 @SCOREP_TRUE@SCOREP_CXXCPPFLAGS = @SCOREP_CPPFLAG@
 @SCOREP_FALSE@libcudart_static_path = @CUDA_LDFLAGS@
 @SCOREP_FALSE@libcudart_static_flag = @CUDA_LIBS@
-@OPENMP_ON_CUDA_TRUE@OPENMP_FLAG = @OPENMP_CXXFLAGS@
-@OPENMP_ON_OTHERS_TRUE@OPENMP_FLAG = @OPENMP_CXXFLAGS@
+@OMP_CUDA_TRUE@OPENMP_FLAG = @OPENMP_CXXFLAGS@
+@OMP_GENERAL_TRUE@OPENMP_FLAG = @OPENMP_CXXFLAGS@
 @COMPRESSION_TRUE@@DEBUG_COMPRESSION_TRUE@LLIBC = -static-libstdc++
 @COMPRESSION_TRUE@@SIMD_FALSE@INCPATH = -I.
 @COMPRESSION_TRUE@@SIMD_TRUE@INCPATH = -I. -Icompression/cpusimd/include

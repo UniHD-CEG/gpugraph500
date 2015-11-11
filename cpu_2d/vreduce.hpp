@@ -204,15 +204,12 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
                 MPI_Get_count(&status, type, &psizeFrom);
 #endif
 
-
-
-                assert(psizeFrom != MPI_UNDEFINED);
-
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
+                assert(psizeFrom != MPI_UNDEFINED);
                 assert(psizeFrom <= lowerId);
                 assert(psizeFrom <= originalsize);
 #endif
@@ -376,8 +373,6 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     int *sizes = (int *)malloc(communicatorSize * sizeof(int));
     int *disps = (int *)malloc(communicatorSize * sizeof(int));
 
-    // Transmission of the subslice sizes
-    MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
 
 #ifdef _COMPRESSION
     int *compressed_sizes = (int *)malloc(communicatorSize * sizeof(int));
@@ -388,7 +383,31 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     size_t csize=0;
 
     schema.compress(send, psizeTo, &compressed_fq, compressedsize);
-    MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, comm);
+
+    int *composed_sizes = (int *)malloc(2 * communicatorSize * sizeof(int));
+    int *composed_ints = (int *)malloc(2 * sizeof(int));
+
+    composed_ints[0] = psizeTo;
+    composed_ints[1] = compressedsize;
+
+    MPI_Allgather(composed_ints, 1, MPI_2INT, composed_sizes, 1, MPI_2INT, comm);
+
+
+    int totalsize = 2 * communicatorSize;
+/*#ifdef _OPENMP
+    #pragma omp parallel for
+#endif*/
+
+    for (int i=0, j=0; i < totalsize; ++i) {
+        if (i % 2 == 0) {
+            sizes[j] = composed_sizes[i];
+            compressed_sizes[j] = composed_sizes[i+1];
+            ++j;
+        }
+    }
+
+    free(composed_ints);
+    free(composed_sizes);
 
     disps[lastTargetNode] = 0;
     compressed_disps[lastTargetNode] = 0;
@@ -412,6 +431,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
     compressed_recv_buff = (T *)malloc(csize*sizeof(T));
 #else
+    // Transmission of the subslice sizes
+    MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
+
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
     unsigned int reversedSliceIDs, targetNode;
@@ -447,12 +469,20 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
 
-    // reensamble uncompressed chunks
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
     int total_uncompressedsize=0;
 #endif
 
-    for (int i=0; i<communicatorSize; ++i) {
+    // reensamble uncompressed chunks
+    int i=0;
+#ifdef _OPENMP
+#ifdef _COMPRESSIONVERIFY
+    #pragma omp parallel for private(compressedsize, uncompressedsize, uncompressed_fq, total_uncompressedsize)
+#else
+    #pragma omp parallel for private(compressedsize, uncompressedsize, uncompressed_fq)
+#endif
+#endif
+    for (i=0; i<communicatorSize; ++i) {
         compressedsize = compressed_sizes[i];
         if (compressedsize != 0) {
                 uncompressedsize = sizes[i];

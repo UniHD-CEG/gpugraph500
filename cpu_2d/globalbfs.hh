@@ -437,10 +437,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
     mtypesize = 8 * sizeof(MType);
     store_col_length = store.getLocColLength();
 
+long i;
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
-    for (long i = 0; i < mask_size; ++i)
+    for (i = 0; i < mask_size; ++i)
     {
         MType tmp = 0;
         int jindex, iindex = i * mtypesize;
@@ -486,6 +487,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 #endif
 {
+int communicatorRank;
+MPI_Comm_rank(col_comm, &communicatorRank); // current rank
+
 #ifdef INSTRUMENTED
     double tstart, tend;
     lexp = 0;
@@ -717,9 +721,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
 #ifdef _COMPRESSION
+                int *vectorizedsize = (int *)malloc(2* sizeof(int));
+                vectorizedsize[0] = originalsize;
+                vectorizedsize[1] = compressedsize;
 
-                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
-                MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
+                MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
@@ -727,35 +733,30 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 MPI_Bcast(compressed_fq, compressedsize, fq_tp_type, root_rank, row_comm);
 #else
-                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+                MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
 #ifdef _COMPRESSION
 
-                uncompressedsize = static_cast<size_t>(originalsize);
-                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                if (communicatorRank != root_rank) {
+                    uncompressedsize = static_cast<size_t>(originalsize);
+                    schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                }
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
-                if (schema.isCompressed(originalsize, compressedsize))
-                {
-                    assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
+                if (communicatorRank != root_rank) {
+                    if (schema.isCompressed(originalsize, compressedsize))
+                    {
+                        assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
+                    }
+                    assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
+                    schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
+                } else {
+                    assert(is_sorted(startaddr, startaddr + originalsize));
                 }
-                else
-                {
-                    assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
-                }
-                assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-                schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
 #endif
 
-                // Todo: Save (G/C)PU cycles. decompression not needed for MPI rank Root. The original array is available.
-                /*
-                if (rank != root_rank){
-                    schema.decompress(compressed_fq, compressedsize, startaddr, uncompressedsize);
-                    delete[] compressed_fq;
-                }
-                */
 
 #endif
 
@@ -773,9 +774,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #ifdef _COMPRESSION
                 if (schema.isCompressed(originalsize, compressedsize))
                 {
-                    free(uncompressed_fq);
+                    if (communicatorRank != root_rank) {
+                        free(uncompressed_fq);
+                    }
                     free(compressed_fq);
                 }
+                free(vectorizedsize);
 #endif
 
 #ifdef INSTRUMENTED
@@ -791,8 +795,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 FQ_T *compressed_fq = NULL, *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
-                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
-                MPI_Bcast(&compressedsize, 1, MPI_LONG, root_rank, row_comm);
+                int *vectorizedsize = (int *)malloc(2* sizeof(int));
+
+                MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
+                originalsize = vectorizedsize[0];
+                compressedsize = vectorizedsize[1];
                 compressed_fq = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
@@ -806,7 +813,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 }
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
-
+                // Please Note: fq_64 buffer has been alloceted in the children class.
+                // In case of CUDA, it has been allocated using cudaMalloc. In that case,
+                // it would be pinned memory and therefore can not be modified using
+                // normal C/C++ memory functions. Further info on the
+                // (this)->bfsMemCpy() call bellow.
                 MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
                 memcpy(compressed_fq, fq_64, compressedsize * sizeof(FQ_T));
@@ -824,7 +835,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #else
                 int originalsize;
-                MPI_Bcast(&originalsize, 1, MPI_LONG, root_rank, row_comm);
+                MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 assert(originalsize <= fq_64_length);
 #endif
@@ -843,6 +854,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
 #ifdef _COMPRESSION
+                free(vectorizedsize);
                 if (schema.isCompressed(originalsize, compressedsize))
                 {
                     free(uncompressed_fq);
