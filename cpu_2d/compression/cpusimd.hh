@@ -14,7 +14,7 @@ using std::string;
 using std::vector;
 using std::equal;
 
-template <typename T>
+template <typename T, typename T_C>
 class CpuSimd: public Compression<T>
 {
 private:
@@ -25,8 +25,8 @@ private:
 public:
     CpuSimd();
     void debugCompression(T *fq, const int size) const;
-    void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize) const ;
-    void decompress(T *compressed_fq_64, const int size,
+    void compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const ;
+    void decompress(T_C *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
@@ -34,7 +34,7 @@ public:
     void reconfigure(int compressionThreshold, string compressionCodec);
 };
 
-template <typename T>
+template <typename T, typename T_C>
 CpuSimd<T>::CpuSimd()
 {
     SIMDCOMPRESSION_THRESHOLD = 512; // use 0xffffff (2^32) to transparently disable
@@ -42,7 +42,7 @@ CpuSimd<T>::CpuSimd()
     codec = *CODECFactory::getFromName(codecName);
 }
 
-template <typename T>
+template <typename T, typename T_C>
 void CpuSimd<T>::reconfigure(int compressionThreshold, string compressionCodec)
 {
     assert(compressionThreshold > 0);
@@ -52,7 +52,7 @@ void CpuSimd<T>::reconfigure(int compressionThreshold, string compressionCodec)
     SIMDCOMPRESSION_THRESHOLD = static_cast<uint32_t>(compressionThreshold);
 }
 
-template <typename T>
+template <typename T, typename T_C>
 void CpuSimd<T>::debugCompression(T *fq, const int size) const
 {
     if (size > 0)
@@ -106,8 +106,8 @@ void CpuSimd<T>::debugCompression(T *fq, const int size) const
     }
 }
 
-template <typename T>
-void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
+template <typename T, typename T_C>
+void CpuSimd<T>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
                           size_t &compressedsize) const
 {
     if (isCompressible(size))
@@ -154,8 +154,8 @@ void CpuSimd<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
     }
 }
 
-template <typename T>
-void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
+template <typename T, typename T_C>
+void CpuSimd<T>::decompress(T_C *compressed_fq_64, const int size,
                             /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
     if (isCompressed(uncompressedsize, size))
@@ -198,7 +198,7 @@ void CpuSimd<T>::decompress(T *compressed_fq_64, const int size,
     }
 }
 
-template <typename T>
+template <typename T, typename T_C>
 void CpuSimd<T>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
                                    const size_t uncompressedsize) const
 {
@@ -208,13 +208,13 @@ void CpuSimd<T>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
     }
 }
 
-template <typename T>
+template <typename T, typename T_C>
 inline bool CpuSimd<T>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
     return (isCompressible(originalsize) && originalsize != compressedsize);
 }
 
-template <typename T>
+template <typename T, typename T_C>
 inline string CpuSimd<T>::name() const
 {
     return "cpusimd";

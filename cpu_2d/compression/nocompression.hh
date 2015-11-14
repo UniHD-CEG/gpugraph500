@@ -6,13 +6,13 @@
 
 using namespace std::chrono;
 
-template <typename T>
+template <typename T, typename T_C>
 class NoCompression: public Compression<T>
 {
 public:
     void debugCompression(T *fq, const int size) const;
-    void compress(T *fq_64, const size_t &size, T **compressed_fq_64, size_t &compressedsize) const;
-    void decompress(T *compressed_fq_64, const int size,
+    void compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const;
+    void decompress(T_C *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
@@ -20,7 +20,7 @@ public:
     void reconfigure(int compressionThreshold, string compressionExtraArgument);
 };
 
-template <typename T>
+template<typename T, typename T_C>
 void NoCompression<T>::reconfigure(int compressionThreshold, string compressionExtraArgument)
 {
     assert(compressionThreshold >= 0);
@@ -28,7 +28,7 @@ void NoCompression<T>::reconfigure(int compressionThreshold, string compressionE
 }
 
 
-template <typename T>
+template<typename T, typename T_C>
 void NoCompression<T>::debugCompression(T *fq, const int size) const
 {
 
@@ -54,36 +54,36 @@ void NoCompression<T>::debugCompression(T *fq, const int size) const
 
 }
 
-template <typename T>
-void NoCompression<T>::compress(T *fq_64, const size_t &size, T **compressed_fq_64,
+template<typename T, typename T_C>
+void NoCompression<T>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
                                 size_t &compressedsize) const
 {
     compressedsize = size;
     *compressed_fq_64 = fq_64;
 }
 
-template <typename T>
-void NoCompression<T>::decompress(T *compressed_fq_64, const int size,
+template<typename T, typename T_C>
+void NoCompression<T>::decompress(T_C *compressed_fq_64, const int size,
                                   /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
     uncompressedsize = size;
     *uncompressed_fq_64 = compressed_fq_64;
 }
 
-template <typename T>
+template<typename T, typename T_C>
 void NoCompression<T>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
         const size_t uncompressedsize) const
 {
     assert(memcmp(fq, uncompressed_fq_64, uncompressedsize * sizeof(T)) == 0);
 }
 
-template <typename T>
+template<typename T, typename T_C>
 inline bool NoCompression<T>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
     return (false && originalsize != compressedsize);
 }
 
-template <typename T>
+template<typename T, typename T_C>
 inline string NoCompression<T>::name() const
 {
     return "nocompression";

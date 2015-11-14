@@ -17,33 +17,33 @@ using std::shared_ptr;
 using std::cerr;
 using std::endl;
 
-template <typename T>
-static map<string, shared_ptr<Compression<T>>> initializeCompressfactory()
+template <typename T,typename T_C>
+static map<string, shared_ptr<Compression<T,T_C>>> initializeCompressfactory()
 {
-    map <string, shared_ptr<Compression<T>>> schemes;
+    map <string, shared_ptr<Compression<T,T_C>>> schemes;
 
 #ifdef _SIMD // CPU-SIMD
-    schemes["cpusimd"] = shared_ptr<Compression<T>>(new CpuSimd<T>());
+    schemes["cpusimd"] = shared_ptr<Compression<T,T_C>>(new CpuSimd<T,T_C>());
 #else
-#ifdef _SIMTCOMPRESS // GPU-SIMT
-    schemes["gpusimt"] = shared_ptr<Compression<T>>(new GpuSimt<T>());
+#ifdef _SIMT // GPU-SIMT
+    schemes["gpusimt"] = shared_ptr<Compression<T,T_C>>(new GpuSimt<T,T_C>());
 #endif
 #endif
-    schemes["nocompression"] = shared_ptr<Compression<T>>(new NoCompression<T>());
+    schemes["nocompression"] = shared_ptr<Compression<T,T_C>>(new NoCompression<T,T_C>());
 
     return schemes;
 }
 
 
-template <typename T>
+template <typename T,typename T_C>
 class CompressionFactory
 {
 public:
-    static map<string, shared_ptr<Compression<T>>> compressionschemes;
-    static shared_ptr<Compression<T>> defaultptr;
+    static map<string, shared_ptr<Compression<T,T_C>>> compressionschemes;
+    static shared_ptr<Compression<T,T_C>> defaultptr;
 
 
-    static shared_ptr<Compression<T>> &getFromName(string name)
+    static shared_ptr<Compression<T,T_C>> &getFromName(string name)
     {
         if (compressionschemes.find(name) == compressionschemes.end())
         {
@@ -53,10 +53,10 @@ public:
         return compressionschemes[name];
     }
 };
-template <typename T>
-map<string, shared_ptr<Compression<T>>> CompressionFactory<T>::compressionschemes = initializeCompressfactory<T>();
-template <typename T>
-shared_ptr<Compression<T>> CompressionFactory<T>::defaultptr = shared_ptr<Compression<T>>(nullptr);
+template <typename T,typename T_C>
+map<string, shared_ptr<Compression<T,T_C>>> CompressionFactory<T,T_C>::compressionschemes = initializeCompressfactory<T>();
+template <typename T,typename T_C>
+shared_ptr<Compression<T,T_C>> CompressionFactory<T,T_C>::defaultptr = shared_ptr<Compression<T,T_C>>(nullptr);
 
 
 #endif // BFS_MULTINODE_COMPRESSIONFACTORY_H
