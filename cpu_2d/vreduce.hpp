@@ -26,11 +26,11 @@
 using std::function;
 using std::is_sorted;
 
-template<class T>
+template <typename T,typename T_C>
 void vreduce(function<void(T, long, T *, int)> &reduce,
              function < void(T, long, T *& /*Out*/, int & /*Out*/) > &get,
 #ifdef _COMPRESSION
-             const Compression<T> &schema,
+             const Compression<T,T_C> &schema,
 #endif
              T *recv_buff, /* Out */
              int &rsize, /* Out */ // size of the final result

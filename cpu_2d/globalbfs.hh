@@ -97,7 +97,7 @@ public:
     typename STORE::vertexType *getPredecessor();
 
 #ifdef _COMPRESSION
-    typedef Compression<FQ_T> C_T;
+    typedef Compression<FQ_T,FQ_T> C_T;
 #endif
 
 #ifdef INSTRUMENTED
