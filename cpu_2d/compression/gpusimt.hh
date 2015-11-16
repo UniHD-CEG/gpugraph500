@@ -1,5 +1,5 @@
-#ifndef BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H
-#define BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H
+#ifndef BFS_MULTINODE_GPUSIMT_COMPRESSION_H
+#define BFS_MULTINODE_GPUSIMT_COMPRESSION_H
 
 #include "compression.hh"
 #include <chrono>
@@ -7,7 +7,7 @@
 using namespace std::chrono;
 
 template <typename T, typename T_C>
-class NoCompression: public Compression<T,T_C>
+class GpuSimt: public Compression<T,T_C>
 {
 public:
     void debugCompression(T *fq, const int size) const;
@@ -21,7 +21,7 @@ public:
 };
 
 template<typename T, typename T_C>
-void NoCompression<T,T_C>::reconfigure(int compressionThreshold, string compressionExtraArgument)
+void GpuSimt<T,T_C>::reconfigure(int compressionThreshold, string compressionExtraArgument)
 {
     assert(compressionThreshold >= 0);
     assert(compressionExtraArgument.length() >= 0);
@@ -29,7 +29,7 @@ void NoCompression<T,T_C>::reconfigure(int compressionThreshold, string compress
 
 
 template<typename T, typename T_C>
-void NoCompression<T,T_C>::debugCompression(T *fq, const int size) const
+void GpuSimt<T,T_C>::debugCompression(T *fq, const int size) const
 {
 
     size_t compressedsize, uncompressedsize = static_cast<size_t>(size);
@@ -49,13 +49,13 @@ void NoCompression<T,T_C>::debugCompression(T *fq, const int size) const
      */
     verifyCompression(fq, uncompressed_fq_64, uncompressedsize);
     double compressratio = 0.0;
-    printf("debug:: no-compression, data: %ldB c/d: %04ld/%04ldus, %02.3f%% gained\n", size * sizeof(int), encode_time,
+    printf("debug:: gpusimt, data: %ldB c/d: %04ld/%04ldus, %02.3f%% gained\n", size * sizeof(int), encode_time,
            decode_time, compressratio);
 
 }
 
 template<typename T, typename T_C>
-void NoCompression<T,T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
+void GpuSimt<T,T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
                                 size_t &compressedsize) const
 {
     compressedsize = size;
@@ -63,7 +63,7 @@ void NoCompression<T,T_C>::compress(T *fq_64, const size_t &size, T_C **compress
 }
 
 template<typename T, typename T_C>
-void NoCompression<T,T_C>::decompress(T_C *compressed_fq_64, const int size,
+void GpuSimt<T,T_C>::decompress(T_C *compressed_fq_64, const int size,
                                   /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
     uncompressedsize = size;
@@ -71,23 +71,23 @@ void NoCompression<T,T_C>::decompress(T_C *compressed_fq_64, const int size,
 }
 
 template<typename T, typename T_C>
-void NoCompression<T,T_C>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
+void GpuSimt<T,T_C>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
         const size_t uncompressedsize) const
 {
     assert(memcmp(fq, uncompressed_fq_64, uncompressedsize * sizeof(T)) == 0);
 }
 
 template<typename T, typename T_C>
-inline bool NoCompression<T,T_C>::isCompressed(const size_t originalsize, const size_t compressedsize) const
+inline bool GpuSimt<T,T_C>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
     return (false && originalsize != compressedsize);
 }
 
 template<typename T, typename T_C>
-inline string NoCompression<T,T_C>::name() const
+inline string GpuSimt<T,T_C>::name() const
 {
-    return "nocompression";
+    return "gpusimt";
 }
 
 
-#endif // BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H
+#endif // BFS_MULTINODE_GPUSIMT_COMPRESSION_H
