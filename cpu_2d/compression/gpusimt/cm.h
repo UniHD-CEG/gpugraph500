@@ -60,8 +60,12 @@ using namespace std;
 // using namespace mgpu;
 using namespace thrust::system::cuda::experimental;
 
+
 extern size_t int_size;
 extern size_t float_size;
+extern bool delta;
+
+/*
 extern unsigned int hash_seed;
 extern queue<string> op_type;
 extern bool op_case;
@@ -85,14 +89,13 @@ extern bool verbose;
 extern bool save_dict;
 extern bool interactive;
 extern bool ssd;
-extern bool delta;
 extern bool star;
 extern map<string, char*> index_buffers;
 extern map<string, char*> buffers;
 extern map<string, size_t> buffer_sizes;
 extern queue<string> buffer_names;
 extern size_t total_buffer_size;
-extern thrust::device_vector<unsigned char> scratch;
+//extern thrust::device_vector<unsigned char> scratch;
 extern thrust::device_vector<int> ranj;
 extern size_t alloced_sz;
 //extern ContextPtr context;
@@ -100,14 +103,14 @@ extern map<unsigned int, map<unsigned long long int, size_t> > char_hash; // map
 extern bool scan_state;
 extern unsigned int statement_count;
 extern map<string, map<string, bool> > used_vars;
-extern map<string, unsigned int> cpy_bits;
-extern map<string, long long int> cpy_init_val;
+//extern map<string, unsigned int> cpy_bits;
+//extern map<string, long long int> cpy_init_val;
 extern bool phase_copy;
 extern map<string,bool> min_max_eq;
 extern vector<void*> alloced_mem;
 extern map<string, string> filter_var;
 
-/*
+
 template<typename T>
 struct uninitialized_host_allocator
         : std::allocator<T>

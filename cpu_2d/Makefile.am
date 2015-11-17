@@ -145,7 +145,7 @@ if SIMD
   COMPRESSION_OBJECTS=@SIMD_OBJECTS@
 else
 if SIMT
-  COMPRESSION_OBJECTS="SIMT_OBJECTS"
+  COMPRESSION_OBJECTS=@SIMT_OBJECTS@
 else
   COMPRESSION_OBJECTS="ADD_MORE_TYPES_HERE"
 endif
@@ -305,7 +305,7 @@ if SIMT
 endif
 	@echo ""
 	@echo "--- Compiling GPU/SIMT"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/compress.cu -o $@
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
 	@echo "    NVCC      $@"
 	@echo ""
 

@@ -224,6 +224,7 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SIMD_FLAGS = @SIMD_FLAGS@
 SIMD_OBJECTS = @SIMD_OBJECTS@
+SIMT_OBJECTS = @SIMT_OBJECTS@
 STRIP = @STRIP@
 VERSION = @VERSION@
 WARN_CFLAGS = @WARN_CFLAGS@
@@ -341,7 +342,7 @@ AM_CFLAGS = @CC_MFLAG@ @CFLAGS@ $(D_FLAG) @WARN_CFLAGS@
 NVCXX = @NVCC@
 AM_LD = $(PROFILER) @MPICXX@
 @SIMD_FALSE@@SIMT_FALSE@COMPRESSION_OBJECTS = "ADD_MORE_TYPES_HERE"
-@SIMD_FALSE@@SIMT_TRUE@COMPRESSION_OBJECTS = "SIMT_OBJECTS"
+@SIMD_FALSE@@SIMT_TRUE@COMPRESSION_OBJECTS = @SIMT_OBJECTS@
 
 ### List of sources to compile
 #
@@ -830,7 +831,7 @@ cudacompress.o: compression/gpusimt/cm.h compression/gpusimt/cudacompress.cu
 @SIMT_TRUE@	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling GPU/SIMT"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/compress.cu -o $@
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
 	@echo "    NVCC      $@"
 	@echo ""
 

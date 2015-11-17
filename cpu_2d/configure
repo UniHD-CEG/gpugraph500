@@ -707,6 +707,7 @@ SCOREP_LFLAG
 SCOREP_LLIBS
 SCOREP_CPPFLAG
 g500_OBJECTS
+SIMT_OBJECTS
 SIMD_OBJECTS
 LIBOBJS
 EGREP
@@ -6694,6 +6695,7 @@ simd_H_FILES=
 for item in `ls compression/cpusimd/include/*h 2> /dev/null`; do
   simd_H_FILES+=" $item"
 done
+
 
 
 

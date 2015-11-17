@@ -286,6 +286,7 @@ for item in `ls compression/cpusimd/include/*h 2> /dev/null`; do
 done
 
 AC_SUBST([SIMD_OBJECTS])
+AC_SUBST([SIMT_OBJECTS])
 AC_SUBST([g500_OBJECTS])
 AC_SUBST([SCOREP_CPPFLAG])
 AC_SUBST([SCOREP_LLIBS])

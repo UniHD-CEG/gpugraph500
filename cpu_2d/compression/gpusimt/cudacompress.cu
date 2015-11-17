@@ -37,8 +37,10 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 }
 #endif
 
-//thrust::device_vector<unsigned char> scratch;
+thrust::device_vector<unsigned char> scratch;
 bool phase_copy = 0;
+map<string, unsigned int> cpy_bits;
+map<string, long long int> cpy_init_val;
 map<string, unsigned int> cnt_counts;
 string curr_file;
 map<string,bool> min_max_eq;
