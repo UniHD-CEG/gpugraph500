@@ -144,6 +144,7 @@ if test "$ac_test_CFLAGS" != "set"; then
               AX_CHECK_COMPILE_FLAG($flag, [icc_archflag=$flag; break])
             done
           fi
+          # AX_CHECK_COMPILE_FLAG(-ipo, [icc_archflag="$icc_archflag -ipo"])
           AC_MSG_CHECKING([for icc architecture flag])
 	  AC_MSG_RESULT($icc_archflag)
           if test "x$icc_archflag" != xunknown; then
@@ -168,7 +169,7 @@ if test "$ac_test_CFLAGS" != "set"; then
      AX_CHECK_COMPILE_FLAG(-ffast-math, CFLAGS="$CFLAGS -ffast-math")
 
      AX_CHECK_COMPILE_FLAG(-funroll-loops, CFLAGS="$CFLAGS -funroll-loops")
-     # AX_CHECK_COMPILE_FLAG(-flto, CFLAGS="$CFLAGS -flto")
+     AX_CHECK_COMPILE_FLAG(-flto, CFLAGS="$CFLAGS -flto")
 
      AX_GCC_ARCHFLAG($acx_maxopt_portable)
      CC_OO="-O3"

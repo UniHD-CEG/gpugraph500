@@ -662,6 +662,7 @@ PTHREAD_CC
 ax_pthread_config
 BUILDOPENCL_FALSE
 BUILDOPENCL_TRUE
+IPO_LDFLAG
 WARN_MPICC
 WARN_MPICXX
 WARN_CXXFLAGS
@@ -686,6 +687,7 @@ build_os
 build_vendor
 build_cpu
 build
+CUDA_AUTOFLAGS
 CUDA_LIBS
 CUDA_CPPFLAGS
 NVCC_PROG
@@ -768,8 +770,6 @@ ac_ct_CXX
 CPPFLAGS
 LDFLAGS
 CXXFLAGS
-ALLCXXFLAGS
-ALLCFLAGS
 CXX
 CC
 INSIDE_GNOME_COMMON_FALSE
@@ -842,22 +842,22 @@ enable_dependency_tracking
 with_mpi
 with_mpicc
 with_mpicxx
-enable_compression
-enable_ptxas_otimization
 enable_bfs_basic_profiling
 enable_other_basic_profiling
-enable_cuda_openmp
-enable_general_openmp
 enable_scorep
+enable_compression
 enable_simd
 enable_simt
-enable_verify_compression
 enable_debug_compression
+enable_verify_compression
+enable_cuda_openmp
+enable_general_openmp
 enable_cuda
+enable_ptxas_otimization
+enable_nvidia_architecture
 enable_debug
 enable_debugging
 enable_quiet
-enable_nvidia_architecture
 with_cuda
 enable_portable_binary
 with_gcc_arch
@@ -883,8 +883,6 @@ host_alias
 target_alias
 CC
 CXX
-ALLCFLAGS
-ALLCXXFLAGS
 CXXFLAGS
 LDFLAGS
 LIBS
@@ -1515,54 +1513,58 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --enable-compression    Enabled data compression through the network. This
-                          option is available only when --enable-cuda is
-                          active (default). Enabled by default.
-  --enable-ptxas_otimization
-                          Selects whether PTXAS will be optimized or not. This
-                          option will only be used if --enable-cuda is present
-                          (default). The default PTXAS optimization is -O3.
-                          Disabled by default.
   --enable-bfs-basic-profiling
-                          Displays statistics for each BFS run. Enabled by
-                          default.
+                          Instrumentation. Displays statistics for each BFS
+                          run. Enabled by default.
   --enable-other-basic-profiling
-                          Displays graph500 default statistics. Enabled by
+                          Instrumentation. Displays graph500 default
+                          statistics. Enabled by default.
+  --enable-scorep         Instrumentation. Enable instrumentation with
+                          Scalasca/ScoreP. Disabled by default.
+  --enable-compression    Compression. Enabled data compression through the
+                          network. This option is available only when
+                          --enable-cuda is active (default). Enabled by
                           default.
-  --enable-cuda-openmp    Selects whether or not OpenMP will be enabled. This
-                          option applies only to CUDA files. Disabled by
-                          default.
-  --enable-general-openmp Selects whether or not OpenMP will be enabled. This
-                          option applies to any non-CUDA file. Disabled by
-                          default.
-  --enable-scorep         Enable instrumentation with Scalasca/ScoreP.
-                          Disabled by default.
-  --enable-simd           MPI packets will be sent compressed using the
-                          SIMDCompression library This option is only active
-                          if --enable-compression is selected. Enabled by
-                          default.
-  --enable-simt           Use CUDA implementation of compression. Not
-                          implemented yet. Disabled by default.
-  --enable-verify-compression
-                          Sends both compressed and decompressed data through
-                          the network. Checks decompression after
-                          transmission. Disabled by default.
+  --enable-simd           Compression. MPI packets will be sent compressed
+                          using the PFOR-delta SIMDCompression library. This
+                          option is only active if --enable-compression is
+                          selected. This option will be enabled by default if
+                          --enable-compression is active and no compression
+                          method is selected.
+  --enable-simt           Compression. Use CUDA implementation of compression.
+                          Not implemented yet. Disabled by default.
   --enable-debug-compression
-                          Shows statistics of compression rate, time of
-                          compression, codec, ETC. Disabled by default.
-  --enable-cuda           Use CUDA implementation of the BFS runs. Requires
-                          hardware support. Enabled by default.
-  --enable-debug          Provides extra traces of runtime variables. Disabled
+                          Compression. Shows statistics of compression rate,
+                          time of compression, codec, ETC. Disabled by
+                          default.
+  --enable-verify-compression
+                          Compression. Sends both compressed and decompressed
+                          data through the network. Checks decompression after
+                          transmission. Disabled by default.
+  --enable-cuda-openmp    Mode. Selects whether or not OpenMP will be enabled.
+                          This option applies only to CUDA files. Disabled by
+                          default.
+  --enable-general-openmp Mode. Selects whether or not OpenMP will be enabled.
+                          This option applies to any non-CUDA file. Disabled
                           by default.
-  --enable-debugging      Enables -g option on compiler (debugging). when
-                          enabled, --enable-code-optimization will be set to
-                          O0 and --optimization-flags will be set to ''
-                          (empty). Disabled by default.
-  --enable-quiet          Disable compile mensages when running make.
+  --enable-cuda           Mode. Use CUDA implementation of the BFS runs.
+                          Requires hardware support. Enabled by default.
+  --enable-ptxas_otimization
+                          Mode. Selects whether PTXAS will be optimized or
+                          not. This option will only be used if --enable-cuda
+                          is present (default). The default PTXAS optimization
+                          is -O3. Disabled by default.
   --enable-nvidia-architecture=fermi|kepler|auto
-                          Selects the NVIDIA target architecture. Requires
-                          --enable-cuda to be selected (default). Default
-                          option is 'fermi'
+                          Mode. Selects the NVIDIA target architecture.
+                          Requires --enable-cuda to be selected (default).
+                          Default option is 'fermi'
+  --enable-debug          Debug. Provides extra traces of runtime variables.
+                          Disabled by default.
+  --enable-debugging      Debug. Enables -g option on compiler (debugging).
+                          when enabled, --enable-code-optimization will be set
+                          to O0 and --optimization-flags will be set to ''
+                          (empty). Disabled by default.
+  --enable-quiet          Debug. Disable compile mensages when running make.
   --enable-portable-binary
                           disable compiler optimizations that would produce
                           unportable binaries
@@ -1608,8 +1610,6 @@ Optional Packages:
 Some influential environment variables:
   CC          The C compiler
   CXX         The C++ compiler
-  ALLCFLAGS   Customized C source compilation flags
-  ALLCXXFLAGS Customized C++ source compilation flags
   CXXFLAGS    C++ compiler flags
   LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
               nonstandard directory <lib dir>
@@ -3437,8 +3437,6 @@ fi
 
 ## User Redefine compilers.
 #
-
-
 
 
 
@@ -5610,26 +5608,6 @@ fi
 #
 
 #   Values: yes | no
-#   Default value: yes
-# Check whether --enable-compression was given.
-if test "${enable_compression+set}" = set; then :
-  enableval=$enable_compression; enable_compression=$enableval
-else
-  enable_compression=yes
-fi
-
-
-#   Values: yes | no
-#   Default value: no
-# Check whether --enable-ptxas_otimization was given.
-if test "${enable_ptxas_otimization+set}" = set; then :
-  enableval=$enable_ptxas_otimization;
-else
-  enable_ptxas_otimization=no
-fi
-
-
-#   Values: yes | no
 #   Default value: no
 # Check whether --enable-bfs-basic-profiling was given.
 if test "${enable_bfs_basic_profiling+set}" = set; then :
@@ -5646,6 +5624,68 @@ if test "${enable_other_basic_profiling+set}" = set; then :
   enableval=$enable_other_basic_profiling;
 else
   enable_other_basic_profiling=yes
+fi
+
+
+#   Values: yes | no
+#   Default value: no
+# Check whether --enable-scorep was given.
+if test "${enable_scorep+set}" = set; then :
+  enableval=$enable_scorep;
+else
+  enable_scorep=no
+fi
+
+
+#   Values: yes | no
+#   Default value: yes
+# Check whether --enable-compression was given.
+if test "${enable_compression+set}" = set; then :
+  enableval=$enable_compression; enable_compression=$enableval
+else
+  enable_compression=yes
+fi
+
+
+#   Values: yes | no
+#   Default value: yes
+#   External links:
+#     https://github.com/lemire/SIMDCompressionAndIntersection
+# Check whether --enable-simd was given.
+if test "${enable_simd+set}" = set; then :
+  enableval=$enable_simd;
+else
+  enable_simd=no
+fi
+
+
+#   Values: yes | no
+#   Default value: yes
+# Check whether --enable-simt was given.
+if test "${enable_simt+set}" = set; then :
+  enableval=$enable_simt;
+else
+  enable_simt=no
+fi
+
+
+#   Values: yes | no
+#   Default value: no
+# Check whether --enable-debug-compression was given.
+if test "${enable_debug_compression+set}" = set; then :
+  enableval=$enable_debug_compression;
+else
+  enable_debug_compression=no
+fi
+
+
+#   Values: yes | no
+#   Default value: no
+# Check whether --enable-verify-compression was given.
+if test "${enable_verify_compression+set}" = set; then :
+  enableval=$enable_verify_compression;
+else
+  enable_verify_compression=no
 fi
 
 
@@ -5670,64 +5710,37 @@ fi
 
 
 #   Values: yes | no
-#   Default value: no
-# Check whether --enable-scorep was given.
-if test "${enable_scorep+set}" = set; then :
-  enableval=$enable_scorep;
-else
-  enable_scorep=no
-fi
-
-
-#   Values: yes | no
-#   Default value: yes
-#   External links:
-#     https://github.com/lemire/SIMDCompressionAndIntersection
-# Check whether --enable-simd was given.
-if test "${enable_simd+set}" = set; then :
-  enableval=$enable_simd;
-else
-  enable_simd=yes
-fi
-
-
-#   Values: yes | no
-#   Default value: yes
-# Check whether --enable-simt was given.
-if test "${enable_simt+set}" = set; then :
-  enableval=$enable_simt;
-else
-  enable_simt=no
-fi
-
-
-#   Values: yes | no
-#   Default value: no
-# Check whether --enable-verify-compression was given.
-if test "${enable_verify_compression+set}" = set; then :
-  enableval=$enable_verify_compression;
-else
-  enable_verify_compression=no
-fi
-
-
-#   Values: yes | no
-#   Default value: no
-# Check whether --enable-debug-compression was given.
-if test "${enable_debug_compression+set}" = set; then :
-  enableval=$enable_debug_compression;
-else
-  enable_debug_compression=no
-fi
-
-
-#   Values: yes | no
 #   Default value: yes
 # Check whether --enable-cuda was given.
 if test "${enable_cuda+set}" = set; then :
   enableval=$enable_cuda;
 else
   enable_cuda=yes
+fi
+
+
+#   Values: yes | no
+#   Default value: no
+# Check whether --enable-ptxas_otimization was given.
+if test "${enable_ptxas_otimization+set}" = set; then :
+  enableval=$enable_ptxas_otimization;
+else
+  enable_ptxas_otimization=no
+fi
+
+
+#   Values: fermi | kepler | auto
+#   Default value: fermi
+# Check whether --enable-nvidia-architecture was given.
+if test "${enable_nvidia_architecture+set}" = set; then :
+  enableval=$enable_nvidia_architecture; case "${enableval}" in
+      fermi) enable_nvidia_architecture=fermi ;;
+      kepler) enable_nvidia_architecture=kepler ;;
+      auto) enable_nvidia_architecture=auto ;;
+      *) as_fn_error $? "bad value ${enableval} for --enable-nvidia-architecture" "$LINENO" 5 ;;
+esac
+else
+  enable_nvidia_architecture=fermi
 fi
 
 
@@ -5761,24 +5774,19 @@ else
 fi
 
 
-#   Values: fermi | kepler | auto
-#   Default value: fermi
-# Check whether --enable-nvidia-architecture was given.
-if test "${enable_nvidia_architecture+set}" = set; then :
-  enableval=$enable_nvidia_architecture; case "${enableval}" in
-  fermi) enable_nvidia_architecture=fermi ;;
-  kepler) enable_nvidia_architecture=kepler ;;
-  auto) enable_nvidia_architecture=auto ;;
-  *) as_fn_error $? "bad value ${enableval} for --enable-nvidia-architecture" "$LINENO" 5 ;;
-esac
-else
-  enable_nvidia_architecture=fermi
+### preprocess options
+#
+
+if test x"$enable_compression" = xyes -a x"$enable_simd" = xno; then
+  if test x"$enable_simt" = xno; then
+    enable_simd=yes
+  fi
+  :
 fi
-
-
 
 ### declare conditionals
 #
+
  if test x"$enable_simd" = xyes; then
   SIMD_TRUE=
   SIMD_FALSE='#'
@@ -6664,6 +6672,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #
 
 SIMD_OBJECTS="bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o"
+SIMT_OBJECTS="cudacompress.o"
 g500_OBJECTS="main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o"
 
 SCOREP_CPPFLAG=
@@ -7960,6 +7969,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
   # AX_CUDA
+  GENCODE_SM20="-gencode=arch=compute_20,code=\"sm_20,compute_20\""
+  GENCODE_SM30="-gencode=arch=compute_30,code=\"sm_30,compute_30\""
+  GENCODE_SM35="-gencode=arch=compute_35,code=\"sm_35,compute_35\""
+  GENCODE_SM50="-gencode=arch=compute_50,code=\"sm_50,compute_50\""
+  CUDA_AUTOFLAGS="$GENCODE_SM20 $GENCODE_SM30 $GENCODE_SM35 $GENCODE_SM50"
+
 fi
 
 # ------------------------------------------------------------------------------
@@ -9764,6 +9779,7 @@ fi
 
             done
           fi
+          # AX_CHECK_COMPILE_FLAG(-ipo, [icc_archflag="$icc_archflag -ipo"])
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icc architecture flag" >&5
 $as_echo_n "checking for icc architecture flag... " >&6; }
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $icc_archflag" >&5
@@ -9925,7 +9941,41 @@ else
   :
 fi
 
-     # AX_CHECK_COMPILE_FLAG(-flto, CFLAGS="$CFLAGS -flto")
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto" >&5
+$as_echo_n "checking whether C compiler accepts -flto... " >&6; }
+if ${ax_cv_check_cflags___flto+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -flto"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_check_cflags___flto=yes
+else
+  ax_cv_check_cflags___flto=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___flto" >&5
+$as_echo "$ax_cv_check_cflags___flto" >&6; }
+if test "x$ax_cv_check_cflags___flto" = xyes; then :
+  CFLAGS="$CFLAGS -flto"
+else
+  :
+fi
+
 
 
 
@@ -10640,6 +10690,7 @@ fi
 
             done
           fi
+          # AX_CHECK_COMPILE_FLAG(-ipo, [icc_archflag="$icc_archflag -ipo"])
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icc architecture flag" >&5
 $as_echo_n "checking for icc architecture flag... " >&6; }
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $icc_archflag" >&5
@@ -10801,7 +10852,41 @@ else
   :
 fi
 
-     # AX_CHECK_COMPILE_FLAG(-flto, CXXFLAGS="$CXXFLAGS -flto")
+     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts -flto" >&5
+$as_echo_n "checking whether C++ compiler accepts -flto... " >&6; }
+if ${ax_cv_check_cxxflags___flto+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS  -flto"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ax_cv_check_cxxflags___flto=yes
+else
+  ax_cv_check_cxxflags___flto=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CXXFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cxxflags___flto" >&5
+$as_echo "$ax_cv_check_cxxflags___flto" >&6; }
+if test "x$ax_cv_check_cxxflags___flto" = xyes; then :
+  CXXFLAGS="$CXXFLAGS -flto"
+else
+  :
+fi
+
 
 
 
@@ -12361,6 +12446,16 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 WARN_MPICXX="-pedantic -Wall -Wextra"
 WARN_MPICC="-pedantic -Wall -Wextra"
 
+
+
+IPO_LDFLAG=
+hasFLTO=`echo $CXXFLAGS | grep -i "\-flto"`
+hasIPO=`echo $CXXFLAGS | grep -i "\-flto"`
+if test x"$hasFLTO" != x ; then
+  IPO_LDFLAG=-flto
+elif test x"$hasIPO" != x ; then
+  IPO_LDFLAG=-ipo
+fi
 
 
 # ------------------------------------------------------------------------------

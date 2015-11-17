@@ -42,6 +42,9 @@ host_triplet = @host@
 @BASIC_PROFING_BFS_TRUE@am__append_4 = -DINSTRUMENTED,
 @BASIC_PROFING_OTHER_TRUE@am__append_5 = -DINSTRUMENTED
 @DEBUG_TRUE@am__append_6 = -D_DEBUG
+
+### Compression
+#
 @COMPRESSION_TRUE@am__append_7 = -D_COMPRESSION
 @COMPRESSION_TRUE@am__append_8 = -D_COMPRESSION,
 @COMPRESSION_TRUE@@DEBUG_COMPRESSION_TRUE@am__append_9 = -D_COMPRESSIONDEBUG
@@ -110,8 +113,6 @@ am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
-ALLCFLAGS = @ALLCFLAGS@
-ALLCXXFLAGS = @ALLCXXFLAGS@
 AMTAR = @AMTAR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -130,6 +131,7 @@ CL_LIBS = @CL_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CPUEXT_FLAGS = @CPUEXT_FLAGS@
+CUDA_AUTOFLAGS = @CUDA_AUTOFLAGS@
 CUDA_CFLAGS = @CUDA_CFLAGS@
 CUDA_CPPFLAGS = @CUDA_CPPFLAGS@
 CUDA_LDFLAGS = @CUDA_LDFLAGS@
@@ -183,6 +185,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+IPO_LDFLAG = @IPO_LDFLAG@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -294,7 +297,7 @@ DEFINES_CUDA = $(am__append_1) $(am__append_4) $(am__append_8) \
 ### Dynamic variables
 #
 @PTXAS_OTIMIZATION_TRUE@PTXAS = --ptxas-options="-O3"
-@NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_FALSE@NV_ARCHITECTURE = $(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+@NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_FALSE@NV_ARCHITECTURE = $(PTXAS) @CUDA_AUTOFLAGS@
 @NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_TRUE@NV_ARCHITECTURE = $(PTXAS) -arch=sm_35
 @NVIDIA_ARCHITECTURE_FERMI_TRUE@NV_ARCHITECTURE = $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
 @OMP_CUDA_FALSE@@OMP_GENERAL_FALSE@@SCOREP_TRUE@THREADS = none
@@ -329,7 +332,7 @@ MPICFLAGS = @CC_MFLAG@ @C99@ @CC_MBITS@ -pipe $(DEFINES) @MPI_CFLAGS@ @CFLAGS@ @
 MPICXXFLAGS = @CXX_MFLAG@ @C11@ @CXX_MBITS@ -pipe $(DEFINES) @MPI_CXXFLAGS@ @CXXFLAGS@ @WARN_MPICXX@
 NVCXXFLAGS = ,@CXX_MBITS@,@CXX_OO@,-pipe,$(DEFINES_CUDA)
 AM_LDLIBS = $(LLIBS_SCOREP) $(libcudart_static_path) -L@CUDA_LIBDIR@ @MPI_CXXLDFLAGS@ $(libcudart_static_flag) -lcuda $(LLIBC)
-AM_LDFLAGS = @CXX_MFLAG@ $(LDFLAGS_SCOREP) $(OPENMP_FLAG) -Wl,@CXX_OO@
+AM_LDFLAGS = @CXX_MFLAG@ @IPO_LDFLAG@ $(LDFLAGS_SCOREP) $(OPENMP_FLAG) -Wl,@CXX_OO@
 AM_CXXFLAGS = @CXX_MFLAG@ @CXXFLAGS@ @WARN_CXXFLAGS@
 AM_CFLAGS = @CC_MFLAG@ @CFLAGS@ $(D_FLAG) @WARN_CFLAGS@
 
@@ -337,7 +340,8 @@ AM_CFLAGS = @CC_MFLAG@ @CFLAGS@ $(D_FLAG) @WARN_CFLAGS@
 #
 NVCXX = @NVCC@
 AM_LD = $(PROFILER) @MPICXX@
-@SIMD_FALSE@COMPRESSION_OBJECTS = "ADD_MORE_TYPES_HERE"
+@SIMD_FALSE@@SIMT_FALSE@COMPRESSION_OBJECTS = "ADD_MORE_TYPES_HERE"
+@SIMD_FALSE@@SIMT_TRUE@COMPRESSION_OBJECTS = "SIMT_OBJECTS"
 
 ### List of sources to compile
 #
@@ -687,11 +691,6 @@ uninstall-am:
 	pdf-am ps ps-am uninstall uninstall-am
 
 
-### Compression
-#
-@COMPRESSION_TRUE@@SIMD_FALSE@@SIMT_FALSE@ @echo "Compression is enabled, but not specified."
-@COMPRESSION_TRUE@@SIMD_FALSE@@SIMT_FALSE@ @exit
-
 ### Make/ Build rules
 #
 
@@ -738,6 +737,10 @@ bitpacking.o: compression/cpusimd/include/bitpacking.h compression/cpusimd/src/b
 @SIMD_TRUE@	@echo "============================================================================"
 @SIMD_TRUE@	@echo "== Compiling"
 @SIMD_TRUE@	@echo "============================================================================"
+@SIMD_FALSE@@SIMT_TRUE@	@echo ""
+@SIMD_FALSE@@SIMT_TRUE@	@echo "============================================================================"
+@SIMD_FALSE@@SIMT_TRUE@	@echo "== Compiling"
+@SIMD_FALSE@@SIMT_TRUE@	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling CPU/SIMD compression"
 	$(Q)$(CXX) $(AM_CXXFLAGS) -c compression/cpusimd/src/bitpacking.cpp -Icompression/cpusimd/include
@@ -819,6 +822,17 @@ bitlevelfunctions.o: bitlevelfunctions.h bitlevelfunctions.cpp
 cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) -o $@ cpubfs_bin.cpp
 	@echo "    MPICXX    $@"
+
+cudacompress.o: compression/gpusimt/cm.h compression/gpusimt/cudacompress.cu
+	@echo ""
+@SIMT_TRUE@	@echo "============================================================================"
+@SIMT_TRUE@	@echo "== Compiling"
+@SIMT_TRUE@	@echo "============================================================================"
+	@echo ""
+	@echo "--- Compiling GPU/SIMT"
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/compress.cu -o $@
+	@echo "    NVCC      $@"
+	@echo ""
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 	@echo ""

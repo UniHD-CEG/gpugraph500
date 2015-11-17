@@ -15,12 +15,27 @@
 // PFOR and PFOR-DELTA Compression and decompression routines
 
 
+// /usr/local/cuda-6.5/bin/nvcc  -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false -c -ccbin g++ -std=c++11 -Xcompiler ,-flto,-m64,-O3,-pipe,  -D_COMPRESSION, -D_SIMD, -D_CUDA, "-I/home/mhauck/distlibs/openmpi/include" --compiler-options -fno-strict-aliasing -O3 -use_fast_math  -m64 -I/usr/local/cuda-6.5/include -I. compress.cu -o compress.o
+
+
 #include <stdio.h>
 #include <iomanip>
 #include <thrust/extrema.h>
 #include "cm.h"
 
 using namespace std;
+
+#ifndef gpuErrchk
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess)
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+#endif
 
 //thrust::device_vector<unsigned char> scratch;
 bool phase_copy = 0;
@@ -282,7 +297,10 @@ void pfor_delta_compress(void* source, size_t source_len, string file_name, thru
         recCount = source_len/float_size;
 
     void* ss;
-    CUDA_SAFE_CALL(cudaMalloc((void **) &ss, recCount*float_size));
+    //CUDA_SAFE_CALL(cudaMalloc((void **) &ss, recCount*float_size));
+    gpuErrchk(cudaMalloc((void **) &ss, recCount*float_size));
+    //cudaMalloc((void **) &ss, recCount*float_size);
+
 
     if (tp == 0) {
         thrust::device_ptr<int_type> s((int_type*)source);
@@ -329,11 +347,15 @@ void pfor_delta_compress(void* source, size_t source_len, string file_name, thru
 
     fit_count = bit_count/bits;
     void* d_v1;
-    CUDA_SAFE_CALL(cudaMalloc((void **) &d_v1, 12));
+    //CUDA_SAFE_CALL(cudaMalloc((void **) &d_v1, 12));
+    gpuErrchk(cudaMalloc((void **) &d_v1, 12));
+    //cudaMalloc((void **) &d_v1, 12);
     thrust::device_ptr<unsigned int> dd_v((unsigned int*)d_v1);
 
     void* s_v1;
-    CUDA_SAFE_CALL(cudaMalloc((void **) &s_v1, 8));
+    // CUDA_SAFE_CALL(cudaMalloc((void **) &s_v1, 8));
+    gpuErrchk(cudaMalloc((void **) &s_v1, 8));
+    //cudaMalloc((void **) &s_v1, 8);
     thrust::device_ptr<long long int> dd_sv((long long int*)s_v1);
 
     dd_sv[0] = orig_lower_val;
@@ -342,8 +364,8 @@ void pfor_delta_compress(void* source, size_t source_len, string file_name, thru
     dd_v[2] = bit_count;
 
 
-    //void* d;
-    //CUDA_SAFE_CALL(cudaMalloc((void **) &d, recCount*float_size));
+    ////void* d;
+    ////CUDA_SAFE_CALL(cudaMalloc((void **) &d, recCount*float_size));
 
     thrust::device_ptr<char> dd((char*)source);
     thrust::fill(dd, dd+source_len,0);

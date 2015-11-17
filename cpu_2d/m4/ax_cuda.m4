@@ -31,42 +31,41 @@ dnl Code:
 AC_DEFUN([AX_CUDA],
 [dnl
 AC_PREREQ([2.50])
-# ax_enable_cuda=AC_ARG_WITH([cuda], AS_HELP_STRING([--with-cuda], [check for Cuda [[yes]]]),
-#     [case $withval in
-# 	  yes | no)
-# 	    # Explicitly enable or disable Cuda but determine
-# 	    # Cuda prefix automatically.
-# 	    ax_enable_cuda=$withval
-# 	    ;;
-# 	  *)
-# 	    # Enable Cuda and use ARG as the Cuda prefix.
-# 	    # ARG must be an existing directory.
-# 	    ax_enable_cuda=yes
-# 	    CUDA=`cd "${withval-/}" > /dev/null 2>&1 && pwd`
-# 	    if test -z "$CUDA" ; then
-# 		AC_MSG_ERROR([invalid value '$withval' for --with-cuda])
-# 	    fi
-# 	    ;;
-# 	esac])
+#ax_enable_cuda=AC_ARG_WITH([cuda], AS_HELP_STRING([--with-cuda], [check for Cuda [[yes]]]),
+#    [case $withval in
+#	  yes | no)
+#	    # Explicitly enable or disable Cuda but determine
+#	    # Cuda prefix automatically.
+#	    ax_enable_cuda=$withval
+#	    ;;
+#	  *)
+#	    # Enable Cuda and use ARG as the Cuda prefix.
+#	    # ARG must be an existing directory.
+#	    ax_enable_cuda=yes
+#	    CUDA=`cd "${withval-/}" > /dev/null 2>&1 && pwd`
+#	    if test -z "$CUDA" ; then
+#		AC_MSG_ERROR([invalid value '$withval' for --with-cuda])
+#	    fi
+#	    ;;
+#	esac])
 
 ax_enable_cuda=$enable_cuda
 CFLAGS_save="$CFLAGS"
 LDFLAGS_save="$LDFLAGS"
 LIBS_save="$LIBS"
 
+AC_LANG_PUSH([C])
+
 #  # from AX_CHECK_CUDA
-#  NVCC=${NVCC_PATH}
-#  CUDA_FLAGS=${CUDA_CFLAGS}
-#  CUDA_INC=${cuda_prefix}/include
-#  CUDA_LIB=${CUDA_LIBDIR}
+CC=${NVCC_PATH}
+CFLAGS=${CUDA_CFLAGS}
+# CUDA_INC=${cuda_prefix}/include
+# CUDA_LIB=${CUDA_LIBDIR}
 
 if test x$ax_enable_cuda == xno ; then
 	AC_MSG_CHECKING([whether to enable Cuda support])
 	AC_MSG_RESULT([$ax_enable_cuda])
 else
-
-	AC_LANG_PUSH([C])
-
 	AC_CACHE_CHECK([for Cuda prefix], [ax_cv_cuda],
 	[if test "${CUDA+set}" = set ; then
 	    ax_cv_cuda=`cd "${CUDA-/}" > /dev/null 2>&1 && pwd`
@@ -100,26 +99,29 @@ else
 	AC_MSG_CHECKING([whether to enable Cuda support])
 	if test x$ax_enable_cuda != xno ; then
 	    if test "${CUDA+set}" = set && test -d "$CUDA/include" && test -d "$CUDA/lib" ; then
-			ax_enable_cuda=yes
-	    	elif test x$ax_enable_cuda = x ; then
+	    	ax_enable_cuda=yes
+	    	CUDA_LIB=lib
+	  	elif test "${CUDA+set}" = set && test -d "$CUDA/include" && test -d "$CUDA/lib64" ; then
+	  		ax_enable_cuda=yes
+	    	CUDA_LIB=lib64
+	    elif test x$ax_enable_cuda = x ; then
 			ax_enable_cuda=no
 	    else
 			# Fail if Cuda was explicitly enabled.
 			AC_MSG_RESULT([failure])
-			# AC_MSG_ERROR([check your Cuda setup])
+			AC_MSG_ERROR([check your Cuda setup])
 	    fi
 	fi
 	AC_MSG_RESULT([$ax_enable_cuda])
 	if test x$ax_enable_cuda = xyes ; then
 		# Check CUDA driver version
 
-    	CFLAGS="$CFLAGS -I$CUDA/include"
-
 		AC_CACHE_VAL(mx_cv_CXXFLAGS,mx_cv_CXXFLAGS="${CXXFLAGS}")
 		AC_CACHE_VAL(mx_cv_LDFLAGS,mx_cv_LDFLAGS="${LDFLAGS}")
 
-		AC_SUBST(CXXFLAGS,"${CXXFLAGS} -I${CUDA}/include")
-		AC_SUBST(LDFLAGS,"${LDFLAGS} -L${CUDA}/lib -lcudart")
+		#AC_SUBST(CXXFLAGS,"${CXXFLAGS} -I${CUDA}/include")
+		AC_SUBST(CXX,"nvcc")
+		#AC_SUBST(LDFLAGS,"${LDFLAGS} -L${CUDA}/{CUDA_LIB} -lcudart")
 
 		AC_CACHE_VAL(mx_cv_cuda_driver_version,
 			if test "${CUDA_DRIVER_VERSION+set}" = set ; then
@@ -127,13 +129,14 @@ else
 			else
 	    		mx_cv_cuda_driver_version=
 
-	    		ac_compile='$CUDA/bin/nvcc -c $CFLAGS conftest.$ac_ext >&5'
 	    		AC_MSG_CHECKING([whether to enable Cuda compiling])
 	    		AC_COMPILE_IFELSE([
 		  			AC_LANG_SOURCE([[
-						#include <stdio.h>
+			    		#include <iostream>
+						#include <cstdlib>
 						#include <cuda.h>
 						#include <cuda_runtime.h>
+						#include <stdio.h>
 
 						int main(){
 							int deviceCount=0, driverVersion = 0;
@@ -152,16 +155,17 @@ else
 					]])],
 	    			[AC_MSG_RESULT([yes])],
 	    			[AC_MSG_RESULT([no])
-	    			AC_MSG_WARN([CUDA compiling execution failed])]
+	    			AC_MSG_FAILURE([CUDA compiling execution failed])]
 	    		)
 
-	    		ac_link='$CUDA/bin/nvcc -o conftest$ac_exeext $CFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 	    		AC_MSG_CHECKING([whether to enable Cuda linking])
 	    		AC_LINK_IFELSE([
 	    			AC_LANG_SOURCE([[
-						#include <stdio.h>
+			    		#include <iostream>
+						#include <cstdlib>
 						#include <cuda.h>
 						#include <cuda_runtime.h>
+						#include <stdio.h>
 
 						int main(){
 							int deviceCount=0, driverVersion = 0;
@@ -180,16 +184,17 @@ else
 					]])],
 	    			[AC_MSG_RESULT([yes])],
 	    			[AC_MSG_RESULT([no])
-	    			AC_MSG_WARN([CUDA linking execution failed])]
+	    			AC_MSG_FAILURE([CUDA linking execution failed])]
 	    		)
 
-	    		ac_run='$CUDA/bin/nvcc -o conftest$ac_exeext $CFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 	    		AC_MSG_CHECKING([whether to enable Cuda runing])
 	    		AC_RUN_IFELSE([
 		  			AC_LANG_SOURCE([[
-						#include <stdio.h>
+			    		#include <iostream>
+						#include <cstdlib>
 						#include <cuda.h>
 						#include <cuda_runtime.h>
+						#include <stdio.h>
 
 						int main(){
 							int deviceCount=0, driverVersion = 0;
@@ -213,7 +218,7 @@ else
 	    			`rm /tmp/testfile.log`
 	    			AC_MSG_RESULT([$mx_cv_cuda_driver_version])],
 	    			[AC_MSG_RESULT([no])
-	    			AC_MSG_WARN([CUDA code execution failed])]
+	    			AC_MSG_FAILURE([CUDA code execution failed])]
 	    		)
 
 	    		AC_SUBST(CUDA_DRIVER_VERSION, $mx_cv_cuda_driver_version)
@@ -226,7 +231,7 @@ else
 
 
 		if test x$CUDA_DRIVER_VERSION = x ; then
-	    	AC_MSG_WARN([can not determine CUDA driver version number])
+	    	AC_MSG_ERROR([can not determine CUDA driver version number])
 		fi
 
 		AC_MSG_CHECKING([if CUDA driver version is sufficient])
@@ -275,9 +280,11 @@ else
 		    	AC_MSG_CHECKING([whether to enable Cuda runing])
 		    	AC_RUN_IFELSE([
 			  		AC_LANG_SOURCE([[
-						#include <stdio.h>
+			    		#include <iostream>
+						#include <cstdlib>
 						#include <cuda.h>
 						#include <cuda_runtime.h>
+						#include <stdio.h>
 
 						int main(){
 							int deviceCount;
@@ -307,7 +314,7 @@ else
 		    		AC_MSG_RESULT([$mx_cv_cuda_version])
 		    		],[
 		    		AC_MSG_RESULT([no])
-		    		AC_MSG_WARN([CUDA code execution failed])
+		    		AC_MSG_FAILURE([CUDA code execution failed])
 		    		]
 		    	)
 
@@ -323,7 +330,7 @@ else
 		)
 
 		if test x$CUDA_VERSION = x ; then
-	    	AC_MSG_WARN([can not determine CUDA version number])
+	    	AC_MSG_ERROR([can not determine CUDA version number])
 		fi
 
 		AC_MSG_CHECKING([if CUDA version is sufficient])

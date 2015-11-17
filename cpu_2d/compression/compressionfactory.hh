@@ -54,7 +54,7 @@ public:
     }
 };
 template <typename T,typename T_C>
-map<string, shared_ptr<Compression<T,T_C>>> CompressionFactory<T,T_C>::compressionschemes = initializeCompressfactory<T>();
+map<string, shared_ptr<Compression<T,T_C>>> CompressionFactory<T,T_C>::compressionschemes = initializeCompressfactory<T,T_C>();
 template <typename T,typename T_C>
 shared_ptr<Compression<T,T_C>> CompressionFactory<T,T_C>::defaultptr = shared_ptr<Compression<T,T_C>>(nullptr);
 

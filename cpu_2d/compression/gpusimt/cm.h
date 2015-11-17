@@ -95,7 +95,7 @@ extern size_t total_buffer_size;
 extern thrust::device_vector<unsigned char> scratch;
 extern thrust::device_vector<int> ranj;
 extern size_t alloced_sz;
-extern ContextPtr context;
+//extern ContextPtr context;
 extern map<unsigned int, map<unsigned long long int, size_t> > char_hash; // mapping between column's string hashes and string positions
 extern bool scan_state;
 extern unsigned int statement_count;
@@ -107,6 +107,7 @@ extern map<string,bool> min_max_eq;
 extern vector<void*> alloced_mem;
 extern map<string, string> filter_var;
 
+/*
 template<typename T>
 struct uninitialized_host_allocator
         : std::allocator<T>
@@ -136,8 +137,7 @@ struct uninitialized_allocator
 
 struct set_minus : public binary_function<int,bool,int>
 {
-    /*! Function call operator. The return value is <tt>lhs + rhs</tt>.
-     */
+    //! Function call operator. The return value is <tt>lhs + rhs</tt>.
     __host__ __device__ int operator()(const int &lhs, const bool &rhs) const {
         if (rhs) return lhs;
         else return -1;
@@ -177,8 +177,7 @@ struct float_equal_to
 
 struct int_upper_equal_to
 {
-    /*! Function call operator. The return value is <tt>lhs == rhs</tt>.
-     */
+    //! Function call operator. The return value is <tt>lhs == rhs</tt>.
     __host__ __device__ bool operator()(const int_type &lhs, const int_type &rhs) const {
         return (lhs >> 32)  == (rhs >> 32);
     }
@@ -186,8 +185,7 @@ struct int_upper_equal_to
 
 struct float_upper_equal_to
 {
-    /*! Function call operator. The return value is <tt>lhs == rhs</tt>.
-     */
+    //! Function call operator. The return value is <tt>lhs == rhs</tt>.
     __host__ __device__ bool operator()(const float_type &lhs, const float_type &rhs) const {
         return ((int_type)lhs >> 32)  == ((int_type)rhs >> 32);
     }
@@ -510,5 +508,6 @@ struct parse_functor
 
     }
 };
+*/
 
-
+#endif // ADD_H_GUARD

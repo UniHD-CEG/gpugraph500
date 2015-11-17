@@ -21,7 +21,7 @@ else
 if NVIDIA_ARCHITECTURE_KEPLER
   NV_ARCHITECTURE=$(PTXAS) -arch=sm_35
 else
-  NV_ARCHITECTURE=$(PTXAS) -gencode=arch=compute_20,code=\"sm_20,compute_20\" -gencode=arch=compute_30,code=\"sm_30,compute_30\" -gencode=arch=compute_35,code=\"sm_35,compute_35\"
+  NV_ARCHITECTURE=$(PTXAS) @CUDA_AUTOFLAGS@
 endif
 endif
 
@@ -75,12 +75,6 @@ endif
 ### Compression
 #
 if COMPRESSION
-if !SIMD
-if !SIMT
- @echo "Compression is enabled, but not specified."
- @exit
-endif
-endif
   DEFINES+=-D_COMPRESSION
   DEFINES_CUDA+=-D_COMPRESSION,
 if DEBUG_COMPRESSION
@@ -133,7 +127,7 @@ MPICXXFLAGS=@CXX_MFLAG@ @C11@ @CXX_MBITS@ -pipe $(DEFINES) @MPI_CXXFLAGS@ @CXXFL
 NVCXXFLAGS=,@CXX_MBITS@,@CXX_OO@,-pipe,$(DEFINES_CUDA)
 AM_LDLIBS=$(LLIBS_SCOREP) $(libcudart_static_path) -L@CUDA_LIBDIR@ @MPI_CXXLDFLAGS@ $(libcudart_static_flag) -lcuda $(LLIBC)
 
-AM_LDFLAGS=@CXX_MFLAG@ $(LDFLAGS_SCOREP) $(OPENMP_FLAG) -Wl,@CXX_OO@
+AM_LDFLAGS=@CXX_MFLAG@ @IPO_LDFLAG@ $(LDFLAGS_SCOREP) $(OPENMP_FLAG) -Wl,@CXX_OO@
 AM_CXXFLAGS=@CXX_MFLAG@ @CXXFLAGS@ @WARN_CXXFLAGS@
 AM_CFLAGS=@CC_MFLAG@ @CFLAGS@ $(D_FLAG) @WARN_CFLAGS@
 
@@ -150,7 +144,11 @@ AM_LD=$(PROFILER) @MPICXX@
 if SIMD
   COMPRESSION_OBJECTS=@SIMD_OBJECTS@
 else
+if SIMT
+  COMPRESSION_OBJECTS="SIMT_OBJECTS"
+else
   COMPRESSION_OBJECTS="ADD_MORE_TYPES_HERE"
+endif
 endif
 
 if COMPRESSION
@@ -208,6 +206,13 @@ if SIMD
 	@echo "============================================================================"
 	@echo "== Compiling"
 	@echo "============================================================================"
+else
+if SIMT
+	@echo ""
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
+endif
 endif
 	@echo ""
 	@echo "--- Compiling CPU/SIMD compression"
@@ -290,6 +295,19 @@ bitlevelfunctions.o: bitlevelfunctions.h bitlevelfunctions.cpp
 cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator/graph_generator.h generator/user_settings.h
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) -o $@ cpubfs_bin.cpp
 	@echo "    MPICXX    $@"
+
+cudacompress.o: compression/gpusimt/cm.h compression/gpusimt/cudacompress.cu
+	@echo ""
+if SIMT
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
+endif
+	@echo ""
+	@echo "--- Compiling GPU/SIMT"
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/compress.cu -o $@
+	@echo "    NVCC      $@"
+	@echo ""
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 	@echo ""

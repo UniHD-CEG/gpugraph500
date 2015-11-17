@@ -138,7 +138,7 @@ void CpuSimd<T,T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_
         }
         for (size_t i = 0; i < compressedsize; ++i)
         {
-            (*compressed_fq_64)[i] = static_cast<T,T_C>(compressed_fq_32[i]);
+            (*compressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
         }
         free(fq_32);
         free(compressed_fq_32);
@@ -182,7 +182,7 @@ void CpuSimd<T,T_C>::decompress(T_C *compressed_fq_64, const int size,
         // memcpy((T *)uncompressed_fq_64, (uint32_t *)uncompressed_fq_32, uncompressedsize * sizeof(uint32_t));
         for (size_t i = 0; i < uncompressedsize; ++i)
         {
-            (*uncompressed_fq_64)[i] = static_cast<T,T_C>(uncompressed_fq_32[i]);
+            (*uncompressed_fq_64)[i] = static_cast<T>(uncompressed_fq_32[i]);
         }
         free(compressed_fq_32);
         free(uncompressed_fq_32);

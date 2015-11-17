@@ -143,6 +143,7 @@ if test "$ac_test_CXXFLAGS" != "set"; then
               AX_CHECK_COMPILE_FLAG($flag, [icc_archflag=$flag; break])
             done
           fi
+          # AX_CHECK_COMPILE_FLAG(-ipo, [icc_archflag="$icc_archflag -ipo"])
           AC_MSG_CHECKING([for icc architecture flag])
 	  AC_MSG_RESULT($icc_archflag)
           if test "x$icc_archflag" != xunknown; then
@@ -161,13 +162,13 @@ if test "$ac_test_CXXFLAGS" != "set"; then
 
      #  -fstrict-aliasing for gcc-2.95+
      AX_CHECK_COMPILE_FLAG(-fstrict-aliasing,
-	CXXFLAGS="$CXXFLAGS -fstrict-aliasing")
+      [CXXFLAGS="$CXXFLAGS -fstrict-aliasing"])
 
      # note that we enable "unsafe" fp optimization with other compilers, too
      AX_CHECK_COMPILE_FLAG(-ffast-math, CXXFLAGS="$CXXFLAGS -ffast-math")
 
      AX_CHECK_COMPILE_FLAG(-funroll-loops, CXXFLAGS="$CXXFLAGS -funroll-loops")
-     # AX_CHECK_COMPILE_FLAG(-flto, CXXFLAGS="$CXXFLAGS -flto")
+     AX_CHECK_COMPILE_FLAG(-flto, CXXFLAGS="$CXXFLAGS -flto")
 
      AX_GCC_ARCHFLAG($acx_maxopt_portable,
      [CXXFLAGS="$CXXFLAGS $ax_cv_gcc_archflag"])
