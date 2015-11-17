@@ -12,8 +12,6 @@
  *  limitations under the License.
  */
 
-#define EPSILON    (1.0E-8)
-
 #ifndef ADD_H_GUARD
 #define ADD_H_GUARD
 
@@ -44,11 +42,9 @@
 #include <set>
 #include <vector>
 #include <stack>
-// #include "strings.h"
 #include <ctime>
 #include <limits>
 #include <fstream>
-// #include "moderngpu-master/include/moderngpu.cuh"
 
 typedef long long int int_type;
 typedef unsigned int int32_type;
@@ -57,7 +53,6 @@ typedef unsigned char int8_type;
 typedef double float_type;
 
 using namespace std;
-// using namespace mgpu;
 using namespace thrust::system::cuda::experimental;
 
 
