@@ -50,15 +50,16 @@ AC_PREREQ([2.50])
 #	esac])
 
 ax_enable_cuda=$enable_cuda
-CFLAGS_save="$CFLAGS"
-LDFLAGS_save="$LDFLAGS"
-LIBS_save="$LIBS"
+CXX_save="${CXX}"
+CXXFLAGS_save="${CXXFLAGS}"
+LDFLAGS_save="${LDFLAGS}"
+LIBS_save="${LIBS}"
 
-AC_LANG_PUSH([C])
+AC_LANG_PUSH([C++])
 
 #  # from AX_CHECK_CUDA
-CC=${NVCC_PATH}
-CFLAGS=${CUDA_CFLAGS}
+CXX=${NVCC_PATH}
+CXXFLAGS=${CUDA_CFLAGS}
 # CUDA_INC=${cuda_prefix}/include
 # CUDA_LIB=${CUDA_LIBDIR}
 
@@ -119,9 +120,9 @@ else
 		AC_CACHE_VAL(mx_cv_CXXFLAGS,mx_cv_CXXFLAGS="${CXXFLAGS}")
 		AC_CACHE_VAL(mx_cv_LDFLAGS,mx_cv_LDFLAGS="${LDFLAGS}")
 
-		#AC_SUBST(CXXFLAGS,"${CXXFLAGS} -I${CUDA}/include")
-		AC_SUBST(CXX,"nvcc")
-		#AC_SUBST(LDFLAGS,"${LDFLAGS} -L${CUDA}/{CUDA_LIB} -lcudart")
+		##AC_SUBST(CXXFLAGS,"${CXXFLAGS} -I${CUDA}/include")
+		#AC_SUBST(CXX,"nvcc")
+		##AC_SUBST(LDFLAGS,"${LDFLAGS} -L${CUDA}/{CUDA_LIB} -lcudart")
 
 		AC_CACHE_VAL(mx_cv_cuda_driver_version,
 			if test "${CUDA_DRIVER_VERSION+set}" = set ; then
@@ -150,7 +151,7 @@ else
 				    		cudaSetDevice(dev);
 
 				    		cudaDriverGetVersion(&driverVersion);
-				    		printf("%d.%d",driverVersion/1000, (driverVersion%100)/10);
+				    		// printf("%d.%d",driverVersion/1000, (driverVersion%100)/10);
 				        }
 					]])],
 	    			[AC_MSG_RESULT([yes])],
@@ -179,7 +180,7 @@ else
 				    		cudaSetDevice(dev);
 
 				    		cudaDriverGetVersion(&driverVersion);
-				    		printf("%d.%d",driverVersion/1000, (driverVersion%100)/10);
+				    		// printf("%d.%d",driverVersion/1000, (driverVersion%100)/10);
 				        }
 					]])],
 	    			[AC_MSG_RESULT([yes])],
@@ -211,7 +212,7 @@ else
 				    		printf("%d.%d",driverVersion/1000, (driverVersion%100)/10);
 				        }
 					]])],
-	    			[AC_MSG_RESULT([yes])
+	    			[AC_MSG_RESULT([])
 	    			AC_MSG_CHECKING([CUDA Driver version])
 	    			mx_cv_cuda_driver_version=`./conftest"${EXEEXT}" > /tmp/testfile.log`
 	    			mx_cv_cuda_driver_version=`cat /tmp/testfile.log`
@@ -306,7 +307,7 @@ else
 				        	}
 				        }
 					]])],[
-		    		AC_MSG_RESULT([yes])
+		    		AC_MSG_RESULT([])
 		    		AC_MSG_CHECKING([CUDA architecture])
 		    		mx_cv_cuda_version=`./conftest"${EXEEXT}" > /tmp/testfile.log`
 		    		mx_cv_cuda_version=`cat /tmp/testfile.log`
@@ -374,12 +375,15 @@ else
 	fi
 fi
 
-CFLAGS="$CFLAGS_save"
-LDFLAGS="$LDFLAGS_save"
-LIBS="$LIBS_save"
-AC_LANG_POP([C])
+AC_LANG_POP([C++])
+
+CXX="${CXX_save}"
+CXXFLAGS="${CXXFLAGS_save}"
+LDFLAGS="${LDFLAGS_save}"
+LIBS="${LIBS_save}"
 
 AC_SUBST([CUDA])
 ])
 
 dnl cuda.m4 ends here
+

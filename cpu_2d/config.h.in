@@ -58,6 +58,9 @@
 /* Define to 1 if you have the <cpuid.h> header file. */
 #undef HAVE_CPUID_H
 
+/* Define if you have Cuda. */
+#undef HAVE_CUDA
+
 /* define if the compiler supports basic C++11 syntax */
 #undef HAVE_CXX11
 

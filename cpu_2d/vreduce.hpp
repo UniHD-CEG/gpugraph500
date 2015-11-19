@@ -26,7 +26,11 @@
 using std::function;
 using std::is_sorted;
 
+#ifdef _COMPRESSION
 template <typename T,typename T_C>
+#else
+template <typename T>
+#endif
 void vreduce(function<void(T, long, T *, int)> &reduce,
              function < void(T, long, T *& /*Out*/, int & /*Out*/) > &get,
 #ifdef _COMPRESSION

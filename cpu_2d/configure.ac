@@ -1,4 +1,26 @@
-#                                               -*- Autoconf -*-
+dnl  Process this file with autoconf to produce a configure script.
+
+define(G500_COPYRIGHT,[[
+
+Copyright 2015, University of Heidelberg
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+]])
+
+AC_COPYRIGHT(G500_COPYRIGHT)
+AH_TOP(/*G500_COPYRIGHT*/)
+
 # Process this file with autoconf to produce a configure script.
 
 
@@ -161,7 +183,7 @@ AC_ARG_ENABLE([ptxas_otimization],
 #   Values: fermi | kepler | auto
 #   Default value: fermi
 AC_ARG_ENABLE(nvidia-architecture,
-AS_HELP_STRING([--enable-nvidia-architecture=fermi|kepler|auto],
+AS_HELP_STRING([--enable-nvidia-architecture=<fermi|kepler|auto>],
       [Mode. Selects the NVIDIA target architecture. Requires --enable-cuda to be selected (default).
       Default option is 'fermi']),
 [case "${enableval}" in
@@ -331,7 +353,7 @@ if test "x$enable_cuda" = xyes; then
     AC_MSG_FAILURE([NVIDIA CUDA nvcc compiler not found or CUDA support disabled. Check the $PATH variable to CUDA or specify --with-cuda=/path/to/cuda])
   fi
   CIT_CUDA_CONFIG
-  # AX_CUDA
+  AX_CUDA
   GENCODE_SM20="-gencode=arch=compute_20,code=\"sm_20,compute_20\""
   GENCODE_SM30="-gencode=arch=compute_30,code=\"sm_30,compute_30\""
   GENCODE_SM35="-gencode=arch=compute_35,code=\"sm_35,compute_35\""

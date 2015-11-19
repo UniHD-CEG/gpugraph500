@@ -18,8 +18,8 @@ AC_DEFUN([AX_CXX_WARNINGS],[
     dnl ******************************
 
     AC_ARG_ENABLE(cxx-warnings, 
-                  AC_HELP_STRING([--enable-cxx-warnings=@<:@no/minimum/yes/maximum/error@:>@],
-                                 [Turn on C++ compiler warnings]),,
+                  AC_HELP_STRING([--enable-cxx-warnings=<no|minimum|yes|maximum|error>],
+                                 [Turn on C++ compiler warnings. Default selection is maximum]),,
                   [enable_cxx_warnings="m4_default([$1],[yes])"])
 
     if test "x$GCC" != xyes; then
