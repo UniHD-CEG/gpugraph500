@@ -257,12 +257,19 @@ AC_CHECK_HEADERS([fcntl.h limits.h stddef.h sys/time.h])
 ### Checks for typedefs, structures, and compiler characteristics.
 #
 
+m4_ifndef([AC_C_RESTRICT],[gl_C_RESTRICT],[])
+AC_C_RESTRICT
+AX_GCC_FUNC_ATTRIBUTE([aligned])
+AX_GCC_FUNC_ATTRIBUTE([vector])
+AX_GCC_FUNC_ATTRIBUTE([const])
+AX_GCC_FUNC_ATTRIBUTE([malloc])
+AX_GCC_FUNC_ATTRIBUTE([noreturn])
+AX_GCC_FUNC_ATTRIBUTE([vector_size])
 AC_HEADER_STDBOOL
 AC_C_INLINE
 AC_TYPE_INT32_T
 AC_TYPE_INT64_T
 AC_TYPE_INT8_T
-AC_C_RESTRICT
 AC_TYPE_SIZE_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
@@ -276,6 +283,9 @@ AC_CHECK_TYPES([ptrdiff_t])
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memmove memset select])
+AX_CHECK_PAGE_ALIGNED_MALLOC
+AC_CHECK_FUNCS([_mm_malloc _mm_free memalign posix_memalign])
+AX_FUNC_POSIX_MEMALIGN
 AC_LANG_PUSH([C++])
 AC_CHECK_FUNCS([pow sqrt])
 AC_LANG_POP([C++])

@@ -52,7 +52,8 @@ if [ "x$G500_ENABLE_RUNTIME_SCALASCA" = "xyes" ]; then
   scalasca="scalasca -analyze -e scorep_g500_testreduce`date +"%F-%s"`"
   $scalasca mpirun --display-map -np 16 ../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 2 -be $codec -btr $rowthreshold -btc $columnthreshold
 else
-  mpirun --display-map -np 16 ../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 2 -be $codec -btr $rowthreshold -btc $columnthreshold
+  mpirun --display-map -np 16 ../cpu_2d/g500 -s $scale_factor -C 4 -gpus 1 -qs 1 -be $codec -btr $rowthreshold -btc $columnthreshold
+
 fi
 
 

@@ -88,6 +88,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/aclocal-include.m4 \
 	$(top_srcdir)/m4/ax_check_cl.m4 \
 	$(top_srcdir)/m4/ax_check_compile_flag.m4 \
 	$(top_srcdir)/m4/ax_check_cuda.m4 \
+	$(top_srcdir)/m4/ax_check_page_aligned_malloc.m4 \
 	$(top_srcdir)/m4/ax_check_scorep.m4 \
 	$(top_srcdir)/m4/ax_compare_version.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
@@ -96,7 +97,9 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/aclocal-include.m4 \
 	$(top_srcdir)/m4/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/m4/ax_cxx_maxopt.m4 \
 	$(top_srcdir)/m4/ax_cxx_warnings.m4 $(top_srcdir)/m4/ax_ext.m4 \
+	$(top_srcdir)/m4/ax_func_posix_memalign.m4 \
 	$(top_srcdir)/m4/ax_gcc_archflag.m4 \
+	$(top_srcdir)/m4/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4/ax_gcc_version.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_avx_xgetbv.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_cpuid.m4 \
