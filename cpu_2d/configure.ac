@@ -34,13 +34,29 @@ AM_ACLOCAL_INCLUDE(m4)
 ## User Redefine compilers.
 #
 
-AC_ARG_VAR(CC, [The C compiler])
-AC_ARG_VAR(CXX, [The C++ compiler])
+AC_ARG_VAR(CXXFLAGS, [C++ compiler flags])
+AC_ARG_VAR(CFLAGS, [C compiler flags])
+
+if test x"$CXXFLAGS" = x ; then
+  [ac_enabled_cxxflags=no]
+else
+  [ac_enabled_cxxflags=yes]
+fi
+
+if test x"$CFLAGS" = x ; then
+  [ac_enabled_cflags=no]
+else
+  [ac_enabled_cflags=yes]
+fi
 
 ## Checks for programs.
 #
 
 AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_CC_STDC
 AX_CXX_COMPILE_STDCXX_11(,[mandatory])
 AC_MSG_CHECKING([required -std=c++11 support])
 C11=
@@ -53,10 +69,6 @@ else
     AC_MSG_RESULT([yes])
 fi
 AC_SUBST(C11)
-AC_PROG_CC
-AC_PROG_CPP
-AC_PROG_INSTALL
-AC_PROG_CC_STDC
 c99=`echo $CC | grep "99"`
 C99=
 if test "x${c99}" = x; then
@@ -429,20 +441,14 @@ AX_CHECK_COMPILE_FLAG($mbits_flag,
   [CXX_MBITS=$mbits_flag], [])
 AC_LANG_POP([C++])
 AC_SUBST([CXX_MBITS])
-
 AC_C_FIND_ENDIAN
-if test x"$enable_debugging" = xno -a x"$CFLAGS" = x ; then
+if test x"$ac_enabled_cflags" = xno ; then
   AX_CC_MAXOPT
 fi
-
-if test x"$enable_debugging" = xno -a x"$CXXFLAGS" = x ; then
+if test x"$ac_enabled_cxxflags" = xno ; then
   AX_CXX_MAXOPT
+  AX_MPICXX_MAXOPT
 fi
-AC_MSG_RESULT([cc: $CFLAGS])
-AC_MSG_RESULT([cxx: $CXXFLAGS])
-AC_MSG_RESULT([cxx: $enable_debugging])
-
-AX_MPICXX_MAXOPT
 AX_CC_WARNINGS([maximum], [-pedantic -Wextra])
 AX_CXX_WARNINGS([maximum], [-pedantic -Wextra -Weffc++])
 WARN_MPICXX="-pedantic -Wall -Wextra"

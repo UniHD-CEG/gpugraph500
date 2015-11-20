@@ -74,8 +74,8 @@ host_triplet = @host@
 # Other. e.g SIMT
 @CUDA_TRUE@am__append_13 = -D_CUDA,
 @CUDA_TRUE@am__append_14 = -D_CUDA
-@DEBUGGING_TRUE@am__append_15 = $(D_FLAG)
-@DEBUGGING_TRUE@am__append_16 = $(D_FLAG),
+@DEBUGGING_TRUE@am__append_15 = $(D_FLAG) \
+@DEBUGGING_TRUE@	-fopt-info-all=@PACKAGE_NAME@.vectorization.out
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
@@ -323,7 +323,7 @@ DEFINES = $(am__append_2) $(am__append_3) $(am__append_5) \
 	$(am__append_10) $(am__append_11) $(am__append_14) \
 	$(am__append_15)
 DEFINES_CUDA = $(am__append_1) $(am__append_4) $(am__append_8) \
-	$(am__append_12) $(am__append_13) $(am__append_16)
+	$(am__append_12) $(am__append_13)
 
 ### Dynamic variables
 #
@@ -365,7 +365,7 @@ NVCXXFLAGS = ,@CXX_MBITS@,@CXX_OO@,-pipe,$(DEFINES_CUDA)
 AM_LDLIBS = $(LLIBS_SCOREP) $(libcudart_static_path) -L@CUDA_LIBDIR@ @MPI_CXXLDFLAGS@ $(libcudart_static_flag) -lcuda $(LLIBC)
 AM_LDFLAGS = @CXX_MFLAG@ @IPO_LDFLAG@ $(LDFLAGS_SCOREP) $(OPENMP_FLAG) -Wl,@CXX_OO@
 AM_CXXFLAGS = @CXX_MFLAG@ @CXXFLAGS@ @WARN_CXXFLAGS@
-AM_CFLAGS = @CC_MFLAG@ @CFLAGS@ $(D_FLAG) @WARN_CFLAGS@
+AM_CFLAGS = @CC_MFLAG@ @CFLAGS@ @WARN_CFLAGS@
 
 ### Compilers
 #
@@ -721,6 +721,7 @@ uninstall-am:
 	maintainer-clean-local mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am uninstall uninstall-am
 
+@DEBUGGING_TRUE@  # DEFINES_CUDA+=$(D_FLAG)
 
 ### Make/ Build rules
 #
@@ -861,7 +862,7 @@ cudacompress.o: compression/gpusimt/cm.h compression/gpusimt/cudacompress.cu
 @SIMT_TRUE@	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling GPU/SIMT"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
 	@echo "    NVCC      $@"
 	@echo ""
 
@@ -872,7 +873,7 @@ cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 @SIMD_TRUE@	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 

@@ -134,8 +134,9 @@ endif
 
 if DEBUGGING
   D_FLAG=-g
-  DEFINES+=$(D_FLAG) -ftree-vectorize -ftree-vectorizer-verbose=5
-  DEFINES_CUDA+=$(D_FLAG),-ftree-vectorize,-ftree-vectorizer-verbose=5
+  DEFINES+=$(D_FLAG)
+  DEFINES+=-fopt-info-all=@PACKAGE_NAME@.vectorization.out
+  # DEFINES_CUDA+=$(D_FLAG)
 endif
 
 
@@ -150,7 +151,7 @@ AM_LDLIBS=$(LLIBS_SCOREP) $(libcudart_static_path) -L@CUDA_LIBDIR@ @MPI_CXXLDFLA
 
 AM_LDFLAGS=@CXX_MFLAG@ @IPO_LDFLAG@ $(LDFLAGS_SCOREP) $(OPENMP_FLAG) -Wl,@CXX_OO@
 AM_CXXFLAGS=@CXX_MFLAG@ @CXXFLAGS@ @WARN_CXXFLAGS@
-AM_CFLAGS=@CC_MFLAG@ @CFLAGS@ $(D_FLAG) @WARN_CFLAGS@
+AM_CFLAGS=@CC_MFLAG@ @CFLAGS@ @WARN_CFLAGS@
 
 ### Compilers
 #
@@ -326,7 +327,7 @@ if SIMT
 endif
 	@echo ""
 	@echo "--- Compiling GPU/SIMT"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
 	@echo "    NVCC      $@"
 	@echo ""
 
@@ -339,7 +340,7 @@ if SIMD
 endif
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS)"@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 
