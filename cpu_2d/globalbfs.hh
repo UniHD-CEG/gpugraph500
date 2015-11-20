@@ -432,30 +432,34 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::setBackInqueue() { }
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
 {
-    int mtypesize, store_col_length;
+    const long mtypesize = 8 * sizeof(MType);
+    const long store_col_length = store.getLocColLength();
 
-    mtypesize = 8 * sizeof(MType);
-    store_col_length = store.getLocColLength();
-
-long i;
-#ifdef _OPENMP
-    #pragma omp parallel for
+#ifdef _CUDA_OPENMP
+    #pragma omp parallel
+    {
+    #pragma omp for schedule (guided, 2)
 #endif
-    for (i = 0; i < mask_size; ++i)
+
+    for (long i = 0L; i < mask_size; ++i)
     {
         MType tmp = 0;
-        int jindex, iindex = i * mtypesize;
+        const long iindex = i * mtypesize;
         const long mask_word_end = std::min(mtypesize, store_col_length - iindex);
-        for (long j = 0; j < mask_word_end; ++j)
+        for (long j = 0L; j < mask_word_end; ++j)
         {
-            jindex = iindex + j;
+            const long jindex = iindex + j;
             if (predecessor[jindex] != -1)
             {
-                tmp |= 1 << j;
+                tmp |= 1L << j;
             }
         }
         owenmask[i] = tmp;
     }
+
+#ifdef _CUDA_OPENMP
+    }
+#endif
 }
 
 /**

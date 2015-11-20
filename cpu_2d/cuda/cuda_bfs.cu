@@ -366,7 +366,7 @@ void CUDA_BFS::getBackPredecessor()
             const vertexType pred = predecessor[jsize];
             if ((pred != -1) && ((jsize) < storeColLength))
             {
-                tmp |= 1 << j;
+                tmp |= 1L << j;
                 if (pred > -2)
                 {
                     predecessor[jsize] = store.localtoglobalRow(
