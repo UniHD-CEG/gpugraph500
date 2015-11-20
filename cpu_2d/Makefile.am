@@ -134,8 +134,8 @@ endif
 
 if DEBUGGING
   D_FLAG=-g
-  DEFINES+=$(D_FLAG)
-  DEFINES_CUDA+=$(D_FLAG),
+  DEFINES+=$(D_FLAG) -ftree-vectorize -ftree-vectorizer-verbose=5
+  DEFINES_CUDA+=$(D_FLAG),-ftree-vectorize,-ftree-vectorizer-verbose=5
 endif
 
 

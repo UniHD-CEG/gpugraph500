@@ -431,8 +431,17 @@ AC_LANG_POP([C++])
 AC_SUBST([CXX_MBITS])
 
 AC_C_FIND_ENDIAN
-AX_CC_MAXOPT
-AX_CXX_MAXOPT
+if test x"$enable_debugging" = xno -a x"$CFLAGS" = x ; then
+  AX_CC_MAXOPT
+fi
+
+if test x"$enable_debugging" = xno -a x"$CXXFLAGS" = x ; then
+  AX_CXX_MAXOPT
+fi
+AC_MSG_RESULT([cc: $CFLAGS])
+AC_MSG_RESULT([cxx: $CXXFLAGS])
+AC_MSG_RESULT([cxx: $enable_debugging])
+
 AX_MPICXX_MAXOPT
 AX_CC_WARNINGS([maximum], [-pedantic -Wextra])
 AX_CXX_WARNINGS([maximum], [-pedantic -Wextra -Weffc++])

@@ -242,13 +242,12 @@ void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, int &outsize)
  */
 void CUDA_BFS::setModOutgoingFQ(vertexType *startaddr, int insize)
 {
-    int numGpus;
 
-    numGpus = csr_problem->num_gpus;
+    const int numGpus = csr_problem->num_gpus;
 
-#ifdef _CUDA_OPENMP
-    #pragma omp parallel for
-#endif
+// #ifdef _CUDA_OPENMP
+//     #pragma omp parallel for
+// #endif
 
     for (int i = 0; i < numGpus; ++i)
     {
@@ -342,26 +341,28 @@ bool CUDA_BFS::istheresomethingnew()
 void CUDA_BFS::getBackPredecessor()
 {
     //terminate all operations
-    long sizeOfMType, storeColLength;
+
 
     bfsGPU->testOverflow(*csr_problem);
     b40c::util::B40CPerror(csr_problem->ExtractResults(predecessor, store.localtoglobalRow(0)),
                            "Extraction of result failed", __FILE__, __LINE__);
     bfsGPU->finalize();
-    sizeOfMType = 8 * sizeof(MType);
-    storeColLength = store.getLocColLength();
+    const long sizeOfMType = 8L * sizeof(MType);
+    const long storeColLength = (long)store.getLocColLength();
 
 #ifdef _CUDA_OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel
+    {
+    #pragma omp for schedule (guided, 2)
 #endif
 
-    for (long i = 0; i < mask_size; ++i)
+    for (long i = 0L; i < mask_size; ++i)
     {
         MType tmp = 0;
-        int isize = i * sizeOfMType;
-        for (long j = 0; j < sizeOfMType; ++j)
+        const long isize = i * sizeOfMType;
+        for (long j = 0L; j < sizeOfMType; ++j)
         {
-            int jsize = isize + j;
+            const long jsize = isize + j;
             const vertexType pred = predecessor[jsize];
             if ((pred != -1) && ((jsize) < storeColLength))
             {
@@ -379,13 +380,16 @@ void CUDA_BFS::getBackPredecessor()
         }
         owenmask[i] = tmp;
     }
+
+#ifdef _CUDA_OPENMP
+    }
+#endif
 }
 
 void CUDA_BFS::getBackOutqueue()
 {
     long queue_sizes[csr_problem->num_gpus];
-    int numGpus;
-    numGpus = csr_problem->num_gpus;
+    const int numGpus = csr_problem->num_gpus;
 
 #ifdef _DEBUG
     b40c::util::B40CPerror(bfsGPU->testOverflow(*csr_problem));
@@ -499,7 +503,7 @@ void CUDA_BFS::setBackInqueue()
     typename MatrixT::vertexType *qb_nxt = queuebuff;
     typename MatrixT::vertexType *end_local;
     typename Csr::GraphSlice *gs;
-    int numGpus = csr_problem->num_gpus;
+    const int numGpus = csr_problem->num_gpus;
 
 #ifdef _DEBUG
     CheckQueue<vertexType>::ErrorCode errorCode;
@@ -551,7 +555,7 @@ void CUDA_BFS::setBackInqueue()
 
     //set length of current queue
 #ifdef _CUDA_OPENMP
-    #pragma omp parallel for
+     #pragma omp parallel for
 #endif
 
     for (int i = 0; i < numGpus; ++i)
@@ -568,9 +572,9 @@ void CUDA_BFS::setStartVertex(vertexType start)
     done = false;
     vertexType src_owner, rstart, lstart = -1;
     typename Csr::GraphSlice *gs;
-    int cpro_verbosity = 0, numGpus, visited_mask_bytes;
+    int cpro_verbosity = 0, visited_mask_bytes;
 
-    numGpus = csr_problem->num_gpus;
+    const int numGpus = csr_problem->num_gpus;
 
 #ifdef INSTRUMENTED
     if (verbosity >= 24)
@@ -660,7 +664,7 @@ void CUDA_BFS::setStartVertex(vertexType start)
 
 void CUDA_BFS::runLocalBFS()
 {
-    int numGpus = csr_problem->num_gpus;
+    const int numGpus = csr_problem->num_gpus;
 
     //finish outstanding copys
     for (int i = 0; i < numGpus; ++i)
