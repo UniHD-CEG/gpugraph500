@@ -172,16 +172,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         MType *&tmpmap)
 {
     MPI_Status status;
-    int communicatorSize, communicatorRank, intLdSize, power2intLdSize, residuum;
+    int communicatorSize, communicatorRank;
     const int psize = mask_size;
-    int mtypesize = 8 * sizeof(MType);
+    const int mtypesize = 8 * sizeof(MType);
     //step 1
     MPI_Comm_size(col_comm, &communicatorSize);
     MPI_Comm_rank(col_comm, &communicatorRank);
 
-    intLdSize = ilogb(static_cast<double>(communicatorSize)); //integer log_2 of size
-    power2intLdSize = 1 << intLdSize; // 2^n
-    residuum = communicatorSize - power2intLdSize;
+    const int intLdSize = ilogb(static_cast<double>(communicatorSize)); //integer log_2 of size
+    const int power2intLdSize = 1 << intLdSize; // 2^n
+    const int residuum = communicatorSize - power2intLdSize;
 
 
     //step 2
@@ -203,7 +203,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             for (int i = 0; i < psize; ++i)
             {
                 MType tmpm = tmpmap[i];
-                int size = i * mtypesize;
+                const int size = i * mtypesize;
                 while (tmpm != 0)
                 {
                     int last = ffsl(tmpm) - 1;
@@ -225,10 +225,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             for (int i = 0; i < psize; ++i)
             {
                 MType tmpm = tmpmap[i];
-                int size = i * mtypesize;
+                const int size = i * mtypesize;
                 while (tmpm != 0)
                 {
-                    int last = ffsl(tmpm) - 1;
+                    const int last = ffsl(tmpm) - 1;
                     tmp[p] = owen[size + last];
                     ++p;
                     tmpm ^= (1 << last);
@@ -248,17 +248,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
     if ((((communicatorRank & 1) == 0) && (communicatorRank < 2 * residuum)) || (communicatorRank >= 2 * residuum))
     {
-        int ssize, vrank, offset, lowers, uppers, size, index, ioffset;
+        int ssize, offset, lowers, uppers, size, index, ioffset;
 
         ssize = psize;
-        vrank = newRank(communicatorRank);
+        const int vrank = newRank(communicatorRank);
         offset = 0;
 
         for (int it = 0; it < intLdSize; ++it)
         {
             int orankEven, orankOdd, iterator2, iterator3;
-            lowers = ssize / 2; //lower slice size
-            uppers = ssize - lowers; //upper slice size
+            const int lowers = (int) ssize * 0.5f; //lower slice size
+            const int uppers = ssize - lowers; //upper slice size
             size = lowers * mtypesize;
             orankEven = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
             orankOdd = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
@@ -275,14 +275,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
                 for (int i = 0; i < lowers; ++i)
                 {
-                    ioffset = i + offset;
-                    tmpmap[ioffset] &= ~owenmap[ioffset];
-                    owenmap[ioffset] |= tmpmap[ioffset];
+                    tmpmap[i + offset] &= ~owenmap[i + offset];
+                    owenmap[i + offset] |= tmpmap[i + offset];
                 }
                 for (int i = lowers; i < ssize; ++i)
                 {
-                    ioffset = i + offset;
-                    tmpmap[ioffset] = (~tmpmap[ioffset]) & owenmap[ioffset];
+                    tmpmap[i + offset] = (~tmpmap[i + offset]) & owenmap[i + offset];
                 }
                 //Generation of foreign updates
                 int p = 0;
@@ -344,7 +342,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     MType tmpm = tmpmap[i + offset];
                     while (tmpm != 0)
                     {
-                        int last = ffsl(tmpm) - 1;
+                        const int last = ffsl(tmpm) - 1;
                         tmp[p] = owen[(i + offset) * mtypesize + last];
                         ++p;
                         tmpm ^= (1 << last);
@@ -365,7 +363,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     int lindex = (i + offset + lowers) * mtypesize;
                     while (tmpm != 0)
                     {
-                        int last = ffsl(tmpm) - 1;
+                        const int last = ffsl(tmpm) - 1;
                         owen[lindex + last] = tmp[p + size];
                         ++p;
                         tmpm ^= (1 << last);
@@ -543,10 +541,10 @@ MPI_Comm_rank(col_comm, &communicatorRank); // current rank
 #endif
 
     // moved anonymous functions outside loop
-    function <void(FQ_T, long, FQ_T *, int)> reduce =
+    const function <void(FQ_T, long, FQ_T *, int)> reduce =
         bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
              static_cast<Derived *>(this), _1, _2, _3, _4);
-    function <void(FQ_T, long, FQ_T *&, int &)> get =
+    const function <void(FQ_T, long, FQ_T *&, int &)> get =
         bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
              static_cast<Derived *>(this), _1, _2, _3, _4);
 
@@ -731,7 +729,7 @@ MPI_Comm_rank(col_comm, &communicatorRank); // current rank
 
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
 
-#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
+#if defined(_COMPRESSIONVERIFY)
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
@@ -748,7 +746,7 @@ MPI_Comm_rank(col_comm, &communicatorRank); // current rank
                     schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
                 }
 
-#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
+#if defined(_COMPRESSIONVERIFY)
                 if (communicatorRank != root_rank) {
                     if (schema.isCompressed(originalsize, compressedsize))
                     {
@@ -806,7 +804,7 @@ MPI_Comm_rank(col_comm, &communicatorRank); // current rank
                 compressedsize = vectorizedsize[1];
                 compressed_fq = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
 
-#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
+#if defined(_COMPRESSIONVERIFY)
                 assert(originalsize <= fq_64_length);
                 FQ_T *startaddr = NULL;
                 startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));

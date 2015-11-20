@@ -31,8 +31,8 @@ template <typename T,typename T_C>
 #else
 template <typename T>
 #endif
-void vreduce(function<void(T, long, T *, int)> &reduce,
-             function < void(T, long, T *& /*Out*/, int & /*Out*/) > &get,
+void vreduce(const function<void(T, long, T *, int)> &reduce,
+             const function < void(T, long, T *& /*Out*/, int & /*Out*/) > &get,
 #ifdef _COMPRESSION
              const Compression<T,T_C> &schema,
 #endif
@@ -47,7 +47,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
             )
 {
 
-    int communicatorSize, communicatorRank, intLdSize , power2intLdSize, residuum, previousRank;
+    int communicatorSize, communicatorRank, previousRank;
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
@@ -73,9 +73,9 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     //step 1
     MPI_Comm_size(comm, &communicatorSize);
     MPI_Comm_rank(comm, &communicatorRank);
-    intLdSize = ilogb(static_cast<double>(communicatorSize)); //integer log_2 of size
-    power2intLdSize = 1 << intLdSize;
-    residuum = communicatorSize - (1 << intLdSize);
+    const int intLdSize = ilogb(static_cast<double>(communicatorSize)); //integer log_2 of size
+    const int power2intLdSize = 1 << intLdSize;
+    const int residuum = communicatorSize - (1 << intLdSize);
 
     //step 2
     if (communicatorRank < 2 * residuum)
@@ -397,10 +397,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
     MPI_Allgather(composed_ints, 1, MPI_2INT, composed_sizes, 1, MPI_2INT, comm);
 
 
-    int totalsize = 2 * communicatorSize;
-/*#ifdef _OPENMP
-    #pragma omp parallel for
-#endif*/
+    const int totalsize = 2 * communicatorSize;
 
     for (int i=0, j=0; i < totalsize; ++i) {
         if (i % 2 == 0) {
@@ -473,26 +470,18 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
 
-#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
+#ifdef _COMPRESSIONVERIFY
     int total_uncompressedsize=0;
 #endif
 
     // reensamble uncompressed chunks
-    int i=0;
-#ifdef _OPENMP
-#ifdef _COMPRESSIONVERIFY
-    #pragma omp parallel for private(compressedsize, uncompressedsize, uncompressed_fq, total_uncompressedsize)
-#else
-    #pragma omp parallel for private(compressedsize, uncompressedsize, uncompressed_fq)
-#endif
-#endif
-    for (i=0; i<communicatorSize; ++i) {
+    for (int i=0; i<communicatorSize; ++i) {
         compressedsize = compressed_sizes[i];
         if (compressedsize != 0) {
                 uncompressedsize = sizes[i];
                 schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
 
-#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
+#ifdef _COMPRESSIONVERIFY
                 assert(uncompressedsize == sizes[i]);
                 assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
                 total_uncompressedsize += uncompressedsize;
@@ -505,7 +494,7 @@ void vreduce(function<void(T, long, T *, int)> &reduce,
         }
     }
 
-#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
+#ifdef _COMPRESSIONVERIFY
     assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
 #endif
 #endif
