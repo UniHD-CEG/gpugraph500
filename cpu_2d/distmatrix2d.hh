@@ -26,7 +26,7 @@
 
 
 // WOLO: without local offset; ALG: vertex alligment; PAD: pad the row slices, so that they are equal
-template<class vertextyp, class rowoffsettyp, bool WOLO = false, int ALG = 1, bool PAD = false>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO = false, int ALG = 1, bool PAD = false>
 class DistMatrix2d
 {
 public:
@@ -127,7 +127,7 @@ public:
  *Computes the owner node of a specific edge
  *
  */
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
 int DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::computeOwner(int64_t row, int64_t column)
 {
     int64_t rowSlice, columnSlice;
@@ -154,7 +154,7 @@ int DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::computeOwner(int64_t 
     return rowSlice * C + columnSlice;
 }
 
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
 bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::comparePackedEdgeR(packed_edge i, packed_edge j)
 {
 
@@ -172,7 +172,7 @@ bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::comparePackedEdgeR(p
     }
 }
 
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
 bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::comparePackedEdgeC(packed_edge i, packed_edge j)
 {
 
@@ -190,7 +190,7 @@ bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::comparePackedEdgeC(p
     }
 }
 
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
 DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::DistMatrix2d(int64_t _R, int64_t _C) : R(_R), C(_C),
     row_pointer(NULL),
     column_index(NULL)
@@ -203,7 +203,7 @@ DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::DistMatrix2d(int64_t _R, 
     c = rank % C;
 }
 
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
 DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::~DistMatrix2d()
 {
 
@@ -229,7 +229,7 @@ DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::~DistMatrix2d()
  *
  * Should be optimised.
 */
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
 void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_edge *input, int64_t numberOfEdges,
         bool undirected)
 {
@@ -246,14 +246,16 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     MPI_Status status;
 
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(guided, 4)
 #endif
 
     //get max vtx
     for (vertexType i = 0; i < numberOfEdges; ++i)
     {
-        packed_edge read = input[i];
+        const packed_edge read = input[i];
+        #pragma omp atomic
         maxVertex = (maxVertex > read.v0) ? maxVertex : read.v0;
+        #pragma omp atomic
         maxVertex = (maxVertex > read.v1) ? maxVertex : read.v1;
     }
 
@@ -602,6 +604,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
+
     for (vertexType i = 0; i < row_length; ++i)
     {
         if (row_elem[i] != row_pointer[i + 1] - row_pointer[i])
@@ -626,18 +629,20 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     // remove duplicates
     // The next section is very bad, because it use too much memory.
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(guided, 2)
 #endif
 
     for (vertexType i = 0; i < row_length; ++i)
     {
         rowtyp tmp_row_num = row_elem[i];
         //Search for duplicates in every row
-        int rpointer = row_pointer[i + 1];
+        cinst int rpointer = row_pointer[i + 1];
         for (rowtyp j = row_pointer[i] + 1; j < rpointer; ++j)
         {
             if (column_index[j - 1] == column_index[j])
+            {
                 --tmp_row_num;
+            }
         }
         row_elem[i] = tmp_row_num;
     }
@@ -655,7 +660,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
 
     //Copy unique entries in every row
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(guided, 2)
 #endif
 
     for (vertexType i = 0; i < row_length; ++i)
@@ -672,7 +677,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
             tmp_column_index[next_elem] = column_index[row_pointer[i]];
         }
         ++next_elem;
-        int rpointer = row_pointer[i + 1];
+        const int rpointer = row_pointer[i + 1];
         for (rowtyp j = row_pointer[i] + 1; j < rpointer; ++j)
         {
             if (column_index[j - 1] != column_index[j])
@@ -697,7 +702,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     column_index = tmp_column_index;
 }
 
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
 void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_edge *&input,
         int64_t &numberOfEdges,
         bool undirected)
@@ -709,31 +714,34 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
         //generate other direction to be undirected
         input = (packed_edge *) realloc(input, 2 * numberOfEdges * sizeof(packed_edge));
 
-#ifdef _OPENMP
-        #pragma omp parallel for
+ #ifdef _OPENMP
+         #pragma omp parallel for schedule(guided, 2)
 #endif
 
-        for (long i = 0; i < numberOfEdges; ++i)
+        for (int64_t i = 0LL; i < numberOfEdges; ++i)
         {
-            packed_edge read = input[i];
+            const packed_edge read = input[i];
 
             input[numberOfEdges + i].v0 = read.v1;
             input[numberOfEdges + i].v1 = read.v0;
 
+            #pragma omp atomic
             maxVertex = (maxVertex > read.v0) ? maxVertex : read.v0;
+            #pragma omp atomic
             maxVertex = (maxVertex > read.v1) ? maxVertex : read.v1;
         }
 
-        numberOfEdges = 2 * numberOfEdges;
+        numberOfEdges = 2LL * numberOfEdges;
     }
     else
     {
 
-#ifdef _OPENMP
-        #pragma omp parallel for
-#endif
+// race in maxVertex
+// #ifdef _OPENMP
+//         #pragma omp parallel for
+// #endif
 
-        for (long i = 0; i < numberOfEdges; ++i)
+        for (int64_t i = 0LL; i < numberOfEdges; ++i)
         {
             packed_edge read = input[i];
 
@@ -750,7 +758,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
         globalNumberOfVertex +=
             (globalNumberOfVertex % R > 0) ? R - globalNumberOfVertex % R : 0;
     }
-    int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1 : 0);
+    int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1LL : 0LL);
     row_start = (r * (numAlg / R) + ((r < numAlg % R) ? r : numAlg % R)) * ALG;
     row_length = (numAlg / R + ((r < numAlg % R) ? 1 : 0)) * ALG;
     column_start = (c * (numAlg / C) + ((c < numAlg % C) ? c : numAlg % C)) * ALG;
@@ -786,9 +794,9 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     int64_t ua_sl_size = numAlg / R;
 
     // offset for transmission
-    int64_t sl_start = 0;
+    int64_t sl_start = 0LL;
     owen_offset[0] = 0;
-    for (long i = 1; i < R; ++i)
+    for (int64_t i = 1LL; i < R; ++i)
     {
         if (res > 0)
         {
@@ -806,17 +814,17 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     owen_offset[R] = numberOfEdges;
 
     // compute transmission sizes
-    for (long i = 0; i < R; ++i)
+    for (int64_t i = 0LL; i < R; ++i)
     {
-        owen_send_size[i] = owen_offset[i + 1] - owen_offset[i];
+        owen_send_size[i] = owen_offset[i + 1LL] - owen_offset[i];
     }
     // send others sizes to receive sizes
     MPI_Alltoall(owen_send_size, 1, MPI_INT, other_size, 1, MPI_INT, col_comm);
     // compute transmission offsets
     other_offset[0] = 0;
-    for (long i = 1; i <= R ; ++i)
+    for (int64_t i = 1LL; i <= R ; ++i)
     {
-        other_offset[i] = other_size[i - 1] + other_offset[i - 1];
+        other_offset[i] = other_size[i - 1LL] + other_offset[i - 1LL];
     }
     numberOfEdges = other_offset[R];
 
@@ -855,7 +863,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     // offset for transmission
     sl_start = 0;
     owen_offset[0] = 0;
-    for (long i = 1; i < C; ++i)
+    for (int64_t i = 1LL; i < C; ++i)
     {
         if (res > 0)
         {
@@ -874,7 +882,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     owen_offset[C] = numberOfEdges;
 
     // compute transmission sizes
-    for (long i = 0; i < C; ++i)
+    for (int64_t i = 0LL; i < C; ++i)
     {
         owen_send_size[i] = owen_offset[i + 1] - owen_offset[i];
     }
@@ -882,7 +890,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     MPI_Alltoall(owen_send_size, 1, MPI_INT, other_size, 1, MPI_INT, row_comm);
     // compute transmission offsets
     other_offset[0] = 0;
-    for (long i = 1; i <= C ; ++i)
+    for (int64_t i = 1LL; i <= C ; ++i)
     {
         other_offset[i] = other_size[i - 1] + other_offset[i - 1];
     }
@@ -1004,18 +1012,21 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 #ifdef _OPENMP
     #pragma omp parallel
     {
-        int this_thread = omp_get_thread_num(), num_threads = omp_get_num_threads();
-        vertexType start = (this_thread) * row_length / num_threads;
-        vertexType end   = (this_thread + 1) * row_length / num_threads;
+        const int this_thread = omp_get_thread_num();
+        const int num_threads = omp_get_num_threads();
+        const vertexType start = (this_thread) * row_length / num_threads;
+        const vertexType end   = (this_thread + 1) * row_length / num_threads;
 
 
         packed_edge startEdge = {start + row_start, 0};
-        vertexType j = std::lower_bound(input, input + numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
+        vertexType jj = std::lower_bound(input, input + numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
 
-        for (vertexType i = start; i < end && j < numberOfEdges; ++i)
+        #pragma omp for schedule(guided, 2)
+        for (vertexType i = start, j = jj; i < end && j < numberOfEdges; ++i)
         {
             vertexType last_valid = -1;
             rowtyp inrow = 0;
+            const rowtyp r_pointer = row_pointer[i];
 
             while (j < numberOfEdges && input[j].v0 - row_start == i)
             {
@@ -1025,11 +1036,11 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 
                     if (WOLO)
                     {
-                        column_index[row_pointer[i] + inrow] = input[j].v1 - column_start;
+                        column_index[r_pointer + inrow] = input[j].v1 - column_start;
                     }
                     else
                     {
-                        column_index[row_pointer[i] + inrow] = input[j].v1;
+                        column_index[r_pointer + inrow] = input[j].v1;
                     }
                     ++inrow;
                     ++j;
@@ -1044,11 +1055,11 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 
                     if (WOLO)
                     {
-                        column_index[row_pointer[i] + inrow] = input[j].v1 - column_start;
+                        column_index[r_pointer + inrow] = input[j].v1 - column_start;
                     }
                     else
                     {
-                        column_index[row_pointer[i] + inrow] = input[j].v1;
+                        column_index[r_pointer + inrow] = input[j].v1;
                     }
                     ++inrow;
                 }
@@ -1064,6 +1075,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     {
         vertexType last_valid = -1;
         rowtyp inrow = 0;
+        const rowtyp r_pointer = row_pointer[i];
 
         while (j < numberOfEdges && input[j].v0 - row_start == i)
         {
@@ -1072,11 +1084,11 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
                 last_valid = input[j].v1;
                 if (WOLO)
                 {
-                    column_index[row_pointer[i] + inrow] = input[j].v1 - column_start;
+                    column_index[r_pointer + inrow] = input[j].v1 - column_start;
                 }
                 else
                 {
-                    column_index[row_pointer[i] + inrow] = input[j].v1;
+                    column_index[r_pointer + inrow] = input[j].v1;
                 }
                 ++inrow;
                 ++j;
@@ -1090,11 +1102,11 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
             {
                 if (WOLO)
                 {
-                    column_index[row_pointer[i] + inrow] = input[j].v1 - column_start;
+                    column_index[r_pointer + inrow] = input[j].v1 - column_start;
                 }
                 else
                 {
-                    column_index[row_pointer[i] + inrow] = input[j].v1;
+                    column_index[r_pointer + inrow] = input[j].v1;
                 }
                 ++inrow;
             }
@@ -1105,7 +1117,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 #endif
 }
 
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
 std::vector <typename DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::fold_prop>
 DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getFoldProperties() const
 {
@@ -1203,7 +1215,7 @@ DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getFoldProperties() const
  * For Validator
  * Computes the column and the local pointer of the verteces in an array
  */
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
 void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getVertexDistributionForPred(size_t count,
         const vertexType *vertex_p,
         int *owner_p,
@@ -1238,7 +1250,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getVertexDistributio
  * 32bits Check
  * Checks if all values in the Matrix are smaller than 32bits
  */
-template<class vertextyp, class rowoffsettyp, bool WOLO, int ALG, bool PAD>
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
 bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesSmallerThan32Bits() const
 {
 

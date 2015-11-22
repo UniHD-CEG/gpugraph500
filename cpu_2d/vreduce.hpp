@@ -303,7 +303,9 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
                 MPI_Get_count(&status, type, &psizeFrom);
 #endif
 
+#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                 assert(psizeFrom != MPI_UNDEFINED);
+#endif
 
 #ifdef INSTRUMENTED
                 startTimeQueueProcessing = MPI_Wtime();

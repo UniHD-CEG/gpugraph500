@@ -274,7 +274,7 @@ struct CsrProblem
         } else {
             // Copy out
 #ifdef _OPENMP
-    #pragma omp parallel for
+     #pragma omp parallel for
 #endif
             for (int gpu = 0; gpu < num_gpus; ++gpu) {
                 const long offset = gpu * sliceNodes;

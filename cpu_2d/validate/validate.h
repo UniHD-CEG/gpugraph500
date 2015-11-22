@@ -40,7 +40,7 @@ static inline ptrdiff_t ptrdiff_min(ptrdiff_t a, ptrdiff_t b)
  * most) each CHUNKSIZE one-sided operations. */
 /* It seams as there is a limit of the number of MPI_Get in an epoche in OpenMPI.
  * An incresed Chunksize can in this way problematic. */
-#define CHUNKSIZE (1 << 20)
+#define CHUNKSIZE (1ULL << 20ULL)
 #define HALF_CHUNKSIZE ((CHUNKSIZE) / 2)
 
 
@@ -58,35 +58,41 @@ static inline uint16_t get_depth_from_pred_entry(int64_t val)
 
 //void write_pred_entry_depth(int64_t* loc, uint16_t depth);
 
-template<class T>
+template<typename T>
 void write_pred_entry_depth(T *loc, uint16_t depth)
 {
     assert(sizeof(T) == 8);
+#ifdef _OPENMP
+    #pragma omp atomic
+#endif
     *loc = (*loc & static_cast<T>(0xFFFFFFFFFFFF)) | ((T)(depth & 0xFFFF) << 48);
 }
 
 
 /* Returns true if all values are in range. */
-template<class MatrixT>
+template<typename MatrixT>
 static int check_value_ranges(const MatrixT &store, const int64_t nglobalverts,
                               const typename MatrixT::vertexType *const pred)
 {
     int any_range_errors = 0;
+    const ptrdiff_t colLength = static_cast<ptrdiff_t>(store.getLocColLength());
     {
-        for (size_t ii = 0; ii < static_cast<size_t>(store.getLocColLength()); ii += CHUNKSIZE)
+        for (ptrdiff_t ii = 0; ii < colLength; ii += CHUNKSIZE)
         {
-            ptrdiff_t i_start = ii;
-            ptrdiff_t i_end = ptrdiff_min(ii + CHUNKSIZE, store.getLocColLength());
-            ptrdiff_t i;
-            assert(i_start >= 0 && i_start <= (ptrdiff_t)store.getLocColLength());
-            assert(i_end >= 0 && i_end <= (ptrdiff_t)store.getLocColLength());
+            const ptrdiff_t i_start = ii;
+            const ptrdiff_t i_end = ptrdiff_min(ii + CHUNKSIZE, store.getLocColLength());
+            // ptrdiff_t i;
+            // commented out j.r. 2015
+            // assert(i_start >= 0 && i_start <= (ptrdiff_t)store.getLocColLength());
+            // assert(i_end >= 0 && i_end <= (ptrdiff_t)store.getLocColLength());
+
 #ifdef _OPENMP
-            #pragma omp parallel for reduction(||:any_range_errors)
+            #pragma omp parallel for reduction(||:any_range_errors) schedule(guided, 4)
 #endif
-            for (i = i_start; i < i_end; ++i)
+            for (ptrdiff_t i = i_start; i < i_end; ++i)
             {
-                int64_t p = get_pred_from_pred_entry(pred[i]);
-                if (p < -1 || p >= nglobalverts)
+                const int64_t p = get_pred_from_pred_entry(pred[i]);
+                if (p < -1LL || p >= nglobalverts)
                 {
                     fprintf(stderr, "(%ld:%ld): Validation error: parent of vertex %" PRId64 " is out-of-range value %" PRId64 ".\n",
                             store.getLocalRowID(), store.getLocalColumnID() , static_cast<int64_t>(store.localtoglobalCol(i)),
@@ -103,7 +109,7 @@ static int check_value_ranges(const MatrixT &store, const int64_t nglobalverts,
 /* Use the predecessors in the given map to write the BFS levels to the high 16
  * bits of each element in pred; this also catches some problems in pred
  * itself.  Returns true if the predecessor map is valid. */
-template<class MatrixT>
+template<typename MatrixT>
 static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
                                const typename MatrixT::vertexType nlocalverts, const size_t maxlocalverts, const typename MatrixT::vertexType root,
                                typename MatrixT::vertexType *const pred, int *level)
@@ -113,19 +119,28 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
     int root_owner;
     size_t root_local;
     store.getVertexDistributionForPred(1, &root, &root_owner, &root_local);
-    int root_is_mine = (root_owner == store.getLocalColumnID());
+    const int root_is_mine = (root_owner == store.getLocalColumnID());
     if (root_is_mine)
     {
         assert(root_local < static_cast<size_t>(nlocalverts));
     }
 
     {
+        const ptrdiff_t n_localverts = (ptrdiff_t)nlocalverts;
+
 #ifdef _OPENMP
-        #pragma omp parallel for
+        #pragma omp parallel for schedule(guided, 4)
 #endif
-        for (ptrdiff_t i = 0; i < (ptrdiff_t)nlocalverts; ++i) write_pred_entry_depth(&pred[i], UINT16_MAX);
-        if (root_is_mine) write_pred_entry_depth(&pred[root_local], 0);
+        for (ptrdiff_t i = 0; i < n_localverts; ++i)
+        {
+            write_pred_entry_depth(&pred[i], UINT16_MAX)
+        }
+        if (root_is_mine)
+        {
+            write_pred_entry_depth(&pred[root_local], 0);
+        }
     }
+
     MPI_Comm row_comm; //, col_comm;
     MPI_Comm_split(MPI_COMM_WORLD, store.getLocalRowID(), store.getLocalColumnID(), &row_comm);
     // Split by column, rank by row
@@ -142,29 +157,34 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
     int iter_number = 0;
 
     {
+        const ptrdiff_t max_local_verts = (ptrdiff_t)maxlocalverts
         /* Iteratively update depth[v] = min(depth[v], depth[pred[v]] + 1) [saturating at UINT16_MAX] until no changes. */
         while (1)
         {
             int any_changes = 0;
-            for (ptrdiff_t ii = 0; ii < (ptrdiff_t)maxlocalverts; ii += CHUNKSIZE)
+            for (ptrdiff_t ii = 0; ii < max_local_verts; ii += CHUNKSIZE)
             {
-                ptrdiff_t i_start = ptrdiff_min(ii, nlocalverts);
-                ptrdiff_t i_end = ptrdiff_min(ii + CHUNKSIZE, nlocalverts);
+                const ptrdiff_t i_start = ptrdiff_min(ii, nlocalverts);
+                const ptrdiff_t i_end = ptrdiff_min(ii + CHUNKSIZE, nlocalverts);
                 begin_gather(pred_win);
-                assert(i_start >= 0 && i_start <= (ptrdiff_t)nlocalverts);
-                assert(i_end >= 0 && i_end <= (ptrdiff_t)nlocalverts);
-#ifdef _OPENMP
-                #pragma omp parallel for
-#endif
+
+                // commented out jr 2015
+                // assert(i_start >= 0 && i_start <= (ptrdiff_t)nlocalverts);
+                // assert(i_end >= 0 && i_end <= (ptrdiff_t)nlocalverts);
+// #ifdef _OPENMP
+//                 #pragma omp parallel for
+// #endif
                 for (ptrdiff_t i = i_start; i < i_end; ++i)
                 {
                     pred_vtx[i - i_start] = get_pred_from_pred_entry(pred[i]);
                 }
 
                 store.getVertexDistributionForPred(i_end - i_start, pred_vtx, pred_owner, pred_local);
+
 #ifdef _OPENMP
-                #pragma omp parallel for
+                #pragma omp parallel for schedule(guided, 4)
 #endif
+
                 for (ptrdiff_t i = i_start; i < i_end; ++i)
                 {
                     if (pred[i] != -1)
@@ -177,12 +197,15 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
                     }
                 }
                 end_gather(pred_win);
+                const int64_t localCol = store.getLocalColumnID();
+
 #ifdef _OPENMP
-                #pragma omp parallel for reduction(&&:validation_passed) reduction(||:any_changes)
+                #pragma omp parallel for reduction(&&:validation_passed) reduction(||:any_changes) schedule(guided, 4)
 #endif
+
                 for (ptrdiff_t i = i_start; i < i_end; ++i)
                 {
-                    if (store.getLocalColumnID() == root_owner && (size_t)i == root_local) continue;
+                    if ( localCol == root_owner && (size_t)i == root_local) continue;
                     if (get_depth_from_pred_entry(pred_pred[i - i_start]) != UINT16_MAX)
                     {
                         if (get_depth_from_pred_entry(pred[i]) != UINT16_MAX
@@ -224,7 +247,7 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
  * of pred to contain the BFS level number (or -1 if not visited) of each
  * vertex; this is based on the predecessor map if the user didn't provide it.
  * */
-template<class MatrixT>
+template<typename MatrixT>
 int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t number_of_edges,
                         const int64_t nglobalverts, const typename MatrixT::vertexType root, typename MatrixT::vertexType *const pred,
                         typename MatrixT::vertexType *const edge_visit_count_ptr, int *level)
@@ -253,16 +276,16 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
     int root_is_mine = (root_owner == store.getLocalColumnID());
 
     /* Get maximum values so loop counts are consistent across ranks. */
-    uint64_t maxlocalverts_ui = store.getLocColLength();
+    const uint64_t maxlocalverts_ui = static_cast<uint64_t>store.getLocColLength();
     MPI_Allreduce(MPI_IN_PLACE, &maxlocalverts_ui, 1, MPI_UINT64_T, MPI_MAX, MPI_COMM_WORLD);
-    size_t maxlocalverts = (size_t)maxlocalverts_ui;
+    const size_t maxlocalverts = (size_t)maxlocalverts_ui;
 
     assert(pred);
 
     /* Check that root is its own parent. */
     if (root_is_mine)
     {
-        assert(root_local < static_cast<size_t>(store.getLocColLength()));
+        assert(root_local < maxlocalverts);
         if (get_pred_from_pred_entry(pred[root_local]) != root)
         {
             fprintf(stderr, "(%ld:%ld): Validation error: parent of root vertex %" PRId64 " is %" PRId64
@@ -276,17 +299,17 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
 
     /* Check that nothing else is its own parent. */
     {
-        int *pred_owner = (int *)xmalloc(size_min(CHUNKSIZE, store.getLocColLength()) * sizeof(int));
-        size_t *pred_local = (size_t *)xmalloc(size_min(CHUNKSIZE, store.getLocColLength()) * sizeof(size_t));
+        int *pred_owner = (int *)xmalloc(size_min(CHUNKSIZE, maxlocalverts_ui) * sizeof(int));
+        size_t *pred_local = (size_t *)xmalloc(size_min(CHUNKSIZE, maxlocalverts_ui) * sizeof(size_t));
         typename MatrixT::vertexType *pred_vtx = (typename MatrixT::vertexType *)xmalloc(size_min(CHUNKSIZE,
-                                             store.getLocColLength()) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
-        for (ptrdiff_t ii = 0; ii < (ptrdiff_t)store.getLocColLength(); ii += CHUNKSIZE)
+                                             maxlocalverts_ui) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
+        for (ptrdiff_t ii = 0; ii < (ptrdiff_t)maxlocalverts_ui; ii += CHUNKSIZE)
         {
             ptrdiff_t i_start = ii;
-            ptrdiff_t i_end = ptrdiff_min(ii + CHUNKSIZE, store.getLocColLength());
+            ptrdiff_t i_end = ptrdiff_min(ii + CHUNKSIZE, maxlocalverts_ui);
 
-            assert(i_start >= 0 && i_start <= (ptrdiff_t)store.getLocColLength());
-            assert(i_end >= 0 && i_end <= (ptrdiff_t)store.getLocColLength());
+            assert(i_start >= 0 && i_start <= (ptrdiff_t)maxlocalverts_ui);
+            assert(i_end >= 0 && i_end <= (ptrdiff_t)maxlocalverts_ui);
 #ifdef _OPENMP
             #pragma omp parallel for
 #endif
@@ -315,19 +338,21 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
         free(pred_local);
         free(pred_vtx);
     }
+
     assert(pred);
+
     if (validation_passed == 0)
     {
-        printf("other tests faild\n");
+        printf("other tests failed\n");
     }
     {
         /* Create a vertex depth map to use for later validation. */
-        int pred_ok = build_bfs_depth_map(store, nglobalverts, store.getLocColLength(), maxlocalverts, root, pred, level);
-        if (!pred_ok) validation_passed = 0;
+        int pred_ok = build_bfs_depth_map(store, nglobalverts, maxlocalverts_ui, maxlocalverts, root, pred, level);
+        if (!pred_ok) { validation_passed = 0; }
     }
     if (validation_passed == 0)
     {
-        printf("depth map creation faild\n");
+        printf("depth map creation failed\n");
     }
     {
         MPI_Comm row_comm, col_comm;
@@ -340,7 +365,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
         * predecessor.  Also, count visited edges (including duplicates and
         * self-loops).  */
 
-        long pred_visited_size = store.getLocColLength() / 64 + ((store.getLocColLength() % 64 > 0) ? 1 : 0);
+        int pred_visited_size = (int)(maxlocalverts_ui / 64ULL) + ((maxlocalverts_ui & 63ULL > 0) ? 1 : 0);
         uint64_t *pred_visited = (uint64_t *) malloc(pred_visited_size * sizeof(uint64_t));
         memset(pred_visited, 0, pred_visited_size * sizeof(uint64_t));
         int64_t *rowPred = (int64_t *) malloc(store.getLocRowLength() * sizeof(int64_t));
@@ -363,18 +388,17 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
                 MPI_Bcast(&rowPred[store.globaltolocalRow(it->gstartvtx)], it->size, MPI_INT64_T, it->sendColSl, row_comm);
             }
         }
+
 #ifdef _OPENMP
         #pragma omp parallel for reduction(+: edge_visit_count) reduction(&&: valid_level)
 #endif
-        for (long i = 0; i < number_of_edges; ++i)
+        for (int64_t i = 0LL; i < number_of_edges; ++i)
         {
-            packed_edge edge = edgelist[i];
-
-            int64_t p_vertex0 = rowPred[store.globaltolocalRow(edge.v0)];
-            int64_t p_vertex1 = pred[store.globaltolocalCol(edge.v1)];
-
-            uint16_t d0 = get_depth_from_pred_entry(p_vertex0);
-            uint16_t d1 = get_depth_from_pred_entry(p_vertex1);
+            const packed_edge edge = edgelist[i];
+            const int64_t p_vertex0 = rowPred[store.globaltolocalRow(edge.v0)];
+            const int64_t p_vertex1 = pred[store.globaltolocalCol(edge.v1)];
+            const uint16_t d0 = get_depth_from_pred_entry(p_vertex0);
+            const uint16_t d1 = get_depth_from_pred_entry(p_vertex1);
             // test if level diverenz is max. 1
             if ((d0 - d1 > 1 || d1 - d0 > 1))
             {
@@ -394,16 +418,16 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
             // predecessor
             if (edge.v0 == get_pred_from_pred_entry(p_vertex1))
             {
-                uint64_t vertex1_loc = store.globaltolocalCol(edge.v1);
-                uint64_t word_index = vertex1_loc / 64;
-                uint64_t bit_index  = vertex1_loc % 64;
+                const uint64_t vertex1_loc = store.globaltolocalCol(edge.v1);
+                const uint64_t word_index = vertex1_loc / 64ULL;
+                const uint64_t bit_index  = vertex1_loc & 63ULL;
 
-                if ((pred_visited[word_index] & (1 << bit_index)) == 0)
+                if ((pred_visited[word_index] & (1ULL << bit_index)) == 0)
                 {
 #ifdef _OPENMP
                     #pragma omp atomic
 #endif
-                    pred_visited[word_index] |= 1 << bit_index;
+                    pred_visited[word_index] |= 1ULL << bit_index;
                 }
             }
             //count "visited" edge
@@ -418,27 +442,32 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
         }
 
         MPI_Allreduce(MPI_IN_PLACE, pred_visited, pred_visited_size, MPI_UINT64_T, MPI_BOR, col_comm);
+
+        // const uint64_t colLength = static_cast<uint64_t>maxlocalverts_ui;
+
+        const uint64_t invDiv64 = 1 / 64ULL;
 #ifdef _OPENMP
         #pragma omp parallel for reduction(&&: all_visited)
 #endif
-        for (long i = 0; i < store.getLocColLength(); ++i)
+        for (uint64_t i = 0ULL; i < maxlocalverts_ui; ++i)
         {
             // check that there is a mark for each vertex that there is an edge
             // to its claimed predecessor
-            if ((pred_visited[i / 64] & 1 << (i % 64)) == 0)
+            if ((pred_visited[i * invDiv64] & 1ULL << (i & 63ULL)) == 0)
             {
                 //execept if there is no predecessor
                 if (get_pred_from_pred_entry(pred[i]) != -1 &&
                     get_pred_from_pred_entry(pred[i]) != store.localtoglobalCol(i))
                 {
                     fprintf(stderr, "predecessor(%ld) of Vertex %ld is invalid!\n", get_pred_from_pred_entry(pred[i]),
-                            static_cast<long>(store.localtoglobalCol(i)));
+                            static_cast<int64_t>(store.localtoglobalCol(i)));
                     all_visited = 0;
                 }
             }
         }
         free(rowPred);
         free(pred_visited);
+
         MPI_Comm_free(&row_comm);
         MPI_Comm_free(&col_comm);
 
@@ -446,6 +475,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
         {
             fprintf(stderr, "Not all vertexes with an edge are visited.\n");
         }
+
         validation_passed = validation_passed && valid_level && all_visited;
         MPI_Allreduce(MPI_IN_PLACE, &edge_visit_count, 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
         *edge_visit_count_ptr = edge_visit_count / 2;
