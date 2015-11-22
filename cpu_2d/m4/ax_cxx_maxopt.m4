@@ -143,7 +143,9 @@ if test "$ac_test_CXXFLAGS" != "set"; then
               AX_CHECK_COMPILE_FLAG($flag, [icc_archflag=$flag; break])
             done
           fi
-          # AX_CHECK_COMPILE_FLAG(-ipo, [icc_archflag="$icc_archflag -ipo"])
+          if test x"$enable_strong_optimizations" = xyes ; then
+             AX_CHECK_COMPILE_FLAG(-ipo, [icc_archflag="$icc_archflag -ipo"])
+	  fi
           AC_MSG_CHECKING([for icc architecture flag])
 	  AC_MSG_RESULT($icc_archflag)
           if test "x$icc_archflag" != xunknown; then
@@ -166,9 +168,11 @@ if test "$ac_test_CXXFLAGS" != "set"; then
 
      # note that we enable "unsafe" fp optimization with other compilers, too
      AX_CHECK_COMPILE_FLAG(-ffast-math, CXXFLAGS="$CXXFLAGS -ffast-math")
-
-     AX_CHECK_COMPILE_FLAG(-funroll-loops, CXXFLAGS="$CXXFLAGS -funroll-loops")
-     AX_CHECK_COMPILE_FLAG(-flto, CXXFLAGS="$CXXFLAGS -flto")
+     
+     if test x"$enable_strong_optimizations" = xyes ; then
+        AX_CHECK_COMPILE_FLAG(-funroll-loops, CXXFLAGS="$CXXFLAGS -funroll-loops")
+        AX_CHECK_COMPILE_FLAG(-flto, CXXFLAGS="$CXXFLAGS -flto")
+     fi
 
      AX_GCC_ARCHFLAG($acx_maxopt_portable,
      [CXXFLAGS="$CXXFLAGS $ax_cv_gcc_archflag"])

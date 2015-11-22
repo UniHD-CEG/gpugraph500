@@ -248,7 +248,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
     if ((((communicatorRank & 1) == 0) && (communicatorRank < 2 * residuum)) || (communicatorRank >= 2 * residuum))
     {
-        int ssize, offset, lowers, uppers, size, index, ioffset;
+        int ssize, offset, size, index;
 
         ssize = psize;
         const int vrank = newRank(communicatorRank);

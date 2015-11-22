@@ -91,6 +91,7 @@ endif
 
 if DEBUG
   DEFINES+=-D_DEBUG
+  DEFINES_CUDA+=-D_DEBUG,
 endif
 
 ### Compression

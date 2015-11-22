@@ -54,16 +54,6 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
     T *compressed_fq=NULL, *uncompressed_fq=NULL, *compressed_recv_buff=NULL;
 #endif
 
-    // auxiliar lambdas
-    const function<int (int)> newRank = [&residuum](int oldr)
-    {
-        return (oldr < 2 * residuum) ? oldr / 2 : oldr - residuum;
-    };
-    const function<int (int)> oldRank = [&residuum](int newr)
-    {
-        return (newr <  residuum) ? newr * 2 : newr + residuum;
-    };
-
     //time mesurement
 #ifdef INSTRUMENTED
     double startTimeQueueProcessing;
@@ -76,6 +66,16 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
     const int intLdSize = ilogb(static_cast<double>(communicatorSize)); //integer log_2 of size
     const int power2intLdSize = 1 << intLdSize;
     const int residuum = communicatorSize - (1 << intLdSize);
+
+    // auxiliar lambdas
+    const function<int (int)> newRank = [&residuum](int oldr)
+    {
+        return (oldr < 2 * residuum) ? oldr / 2 : oldr - residuum;
+    };
+    const function<int (int)> oldRank = [&residuum](int newr)
+    {
+        return (newr <  residuum) ? newr * 2 : newr + residuum;
+    };
 
     //step 2
     if (communicatorRank < 2 * residuum)

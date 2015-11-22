@@ -61,20 +61,21 @@ host_triplet = @host@
 @BASIC_PROFING_BFS_TRUE@am__append_4 = -DINSTRUMENTED,
 @BASIC_PROFING_OTHER_TRUE@am__append_5 = -DINSTRUMENTED
 @DEBUG_TRUE@am__append_6 = -D_DEBUG
+@DEBUG_TRUE@am__append_7 = -D_DEBUG,
 
 ### Compression
 #
-@COMPRESSION_TRUE@am__append_7 = -D_COMPRESSION
-@COMPRESSION_TRUE@am__append_8 = -D_COMPRESSION,
-@COMPRESSION_TRUE@@DEBUG_COMPRESSION_TRUE@am__append_9 = -D_COMPRESSIONDEBUG
-@COMPRESSION_TRUE@@VERIFY_COMPRESSION_TRUE@am__append_10 = -D_COMPRESSIONVERIFY
-@COMPRESSION_TRUE@@SIMD_TRUE@am__append_11 = -D_SIMD
-@COMPRESSION_TRUE@@SIMD_TRUE@am__append_12 = -D_SIMD,
+@COMPRESSION_TRUE@am__append_8 = -D_COMPRESSION
+@COMPRESSION_TRUE@am__append_9 = -D_COMPRESSION,
+@COMPRESSION_TRUE@@DEBUG_COMPRESSION_TRUE@am__append_10 = -D_COMPRESSIONDEBUG
+@COMPRESSION_TRUE@@VERIFY_COMPRESSION_TRUE@am__append_11 = -D_COMPRESSIONVERIFY
+@COMPRESSION_TRUE@@SIMD_TRUE@am__append_12 = -D_SIMD
+@COMPRESSION_TRUE@@SIMD_TRUE@am__append_13 = -D_SIMD,
 
 # Other. e.g SIMT
-@CUDA_TRUE@am__append_13 = -D_CUDA,
-@CUDA_TRUE@am__append_14 = -D_CUDA
-@DEBUGGING_TRUE@am__append_15 = $(D_FLAG) \
+@CUDA_TRUE@am__append_14 = -D_CUDA,
+@CUDA_TRUE@am__append_15 = -D_CUDA
+@DEBUGGING_TRUE@am__append_16 = $(D_FLAG) \
 @DEBUGGING_TRUE@	-fopt-info-all=@PACKAGE_NAME@.vectorization.out
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
@@ -319,11 +320,11 @@ top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 DEFINES = $(am__append_2) $(am__append_3) $(am__append_5) \
-	$(am__append_6) $(am__append_7) $(am__append_9) \
-	$(am__append_10) $(am__append_11) $(am__append_14) \
-	$(am__append_15)
-DEFINES_CUDA = $(am__append_1) $(am__append_4) $(am__append_8) \
-	$(am__append_12) $(am__append_13)
+	$(am__append_6) $(am__append_8) $(am__append_10) \
+	$(am__append_11) $(am__append_12) $(am__append_15) \
+	$(am__append_16)
+DEFINES_CUDA = $(am__append_1) $(am__append_4) $(am__append_7) \
+	$(am__append_9) $(am__append_13) $(am__append_14)
 
 ### Dynamic variables
 #
