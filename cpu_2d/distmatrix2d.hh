@@ -18,6 +18,7 @@
 
 #ifdef _OPENMP
 #include <omp.h>
+#define OMP_CHUNK 4
 #endif
 
 #if defined( __PMODE__)
@@ -245,17 +246,21 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     int gunfinished, someting_unfinshed;
     MPI_Status status;
 
-#ifdef _OPENMP
-    #pragma omp parallel for schedule(guided, 4)
-#endif
+/**
+ * omp reduction max for omp 3.1+
+ * commented out due to dedlocks with high SF
+ */
 
+/*
+#ifdef _OPENMP
+    #pragma omp parallel for schedule(guided, OMP_CHUNK) reduction(max:maxVertex)
+#endif
+*/
     //get max vtx
     for (vertexType i = 0; i < numberOfEdges; ++i)
     {
         const packed_edge read = input[i];
-        #pragma omp atomic
         maxVertex = (maxVertex > read.v0) ? maxVertex : read.v0;
-        #pragma omp atomic
         maxVertex = (maxVertex > read.v1) ? maxVertex : read.v1;
     }
 
@@ -601,8 +606,9 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
 
 
     //sanity check
+
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
     for (vertexType i = 0; i < row_length; ++i)
@@ -616,8 +622,9 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
 
 //4. Sort column indices
     //sort edge list
+
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
     for (vertexType i = 0; i < row_length; ++i)
@@ -628,15 +635,16 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
 //5. Remove duplicate column indices
     // remove duplicates
     // The next section is very bad, because it use too much memory.
+
 #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided, 2)
+    #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
     for (vertexType i = 0; i < row_length; ++i)
     {
         rowtyp tmp_row_num = row_elem[i];
         //Search for duplicates in every row
-        cinst int rpointer = row_pointer[i + 1];
+        const rowtyp rpointer = row_pointer[i + 1];
         for (rowtyp j = row_pointer[i] + 1; j < rpointer; ++j)
         {
             if (column_index[j - 1] == column_index[j])
@@ -659,8 +667,13 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     tmp_column_index = new vertexType[tmp_row_pointer[row_length]];
 
     //Copy unique entries in every row
+/**
+ * comment out openmp if getting deadlocks
+ * performance increase worthed? 
+ * race condition on tmp_column_index?
+ */
 #ifdef _OPENMP
-    #pragma omp parallel for schedule(guided, 2)
+    #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
     for (vertexType i = 0; i < row_length; ++i)
@@ -707,6 +720,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
         int64_t &numberOfEdges,
         bool undirected)
 {
+
     int64_t maxVertex = -1;
 
     if (undirected)
@@ -714,8 +728,14 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
         //generate other direction to be undirected
         input = (packed_edge *) realloc(input, 2 * numberOfEdges * sizeof(packed_edge));
 
- #ifdef _OPENMP
-         #pragma omp parallel for schedule(guided, 2)
+
+/**
+ * omp reduction max for omp 3.1+
+ * performance increasement worthed?
+ */
+
+#ifdef _OPENMP
+        #pragma omp parallel for schedule(guided, OMP_CHUNK) reduction(max : maxVertex)
 #endif
 
         for (int64_t i = 0LL; i < numberOfEdges; ++i)
@@ -724,31 +744,34 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 
             input[numberOfEdges + i].v0 = read.v1;
             input[numberOfEdges + i].v1 = read.v0;
-
-            #pragma omp atomic
+  
             maxVertex = (maxVertex > read.v0) ? maxVertex : read.v0;
-            #pragma omp atomic
             maxVertex = (maxVertex > read.v1) ? maxVertex : read.v1;
-        }
 
+        }
         numberOfEdges = 2LL * numberOfEdges;
     }
     else
     {
 
-// race in maxVertex
-// #ifdef _OPENMP
-//         #pragma omp parallel for
-// #endif
+/**
+ * omp reduction max for omp 3.1+
+ * comment out if experimenting deadlocks with high SF
+ * performance increasement worthed?
+ */
+#ifdef _OPENMP
+        #pragma omp parallel for schedule(guided, OMP_CHUNK) reduction(max : maxVertex)
+#endif
 
         for (int64_t i = 0LL; i < numberOfEdges; ++i)
         {
-            packed_edge read = input[i];
+            const packed_edge read = input[i];
 
             maxVertex = (maxVertex > read.v0) ? maxVertex : read.v0;
             maxVertex = (maxVertex > read.v1) ? maxVertex : read.v1;
         }
     }
+
     MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_INT64_T, MPI_MAX, MPI_COMM_WORLD);
     //because start at 0
     globalNumberOfVertex += 1;
@@ -925,16 +948,34 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     rowtyp *row_elm = new rowtyp[row_length];
     row_pointer = new rowtyp[row_length + 1];
 
+/**
+ * omp worthed?
+ */
+/*
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static, OMP_CHUNK)
 #endif
+*/
 
-    for (long i = 0; i < row_length; ++i)
-    {
+/*
+    const int64_t t_chunk = 8LL;
+    for (int64_t ii = 0LL; ii < row_length; ii+=t_chunk) { 
+        for (int64_t i = ii; i < ii+t_chunk; ++i)
+        {
+            row_elm[i - ii] = 0;
+        }
+    }
+*/
+    for (int64_t i = 0LL; i < row_length; ++i) {
         row_elm[i] = 0;
     }
 
+/**
+ * The commented out omp region hangs up the app (OMP 3.1)
+ */
+
 #ifdef _OPENMP
+/*
     #pragma omp parallel
     {
         int this_thread = omp_get_thread_num(), num_threads = omp_get_num_threads();
@@ -944,7 +985,9 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
         vertexType j = std::lower_bound(input, input + numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
 
         for (vertexType i = start; i < end && j < numberOfEdges; ++i)
-        {
+*/
+      for (vertexType i = 0, j = 0; i < row_length && j < numberOfEdges; ++i)  
+      {
             vertexType last_valid = -1;
 
             while (j < numberOfEdges && input[j].v0 - row_start == i)
@@ -968,7 +1011,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
                 ++j;
             }
         }
-    }
+//    }
 #endif
 
 #ifndef _OPENMP
@@ -1009,20 +1052,29 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     column_index = new vertexType[row_pointer[row_length]];
 
     //build columns
+
+
+/**
+ * This commented out omp region hangs up the app (OMP 3.1)
+ */
+
 #ifdef _OPENMP
-    #pragma omp parallel
-    {
-        const int this_thread = omp_get_thread_num();
-        const int num_threads = omp_get_num_threads();
-        const vertexType start = (this_thread) * row_length / num_threads;
-        const vertexType end   = (this_thread + 1) * row_length / num_threads;
 
+/*
+   #pragma omp parallel
+   {
+       const int this_thread = omp_get_thread_num();
+       const int num_threads = omp_get_num_threads();
+       const vertexType start = (this_thread) * row_length / num_threads;
+       const vertexType end   = (this_thread + 1) * row_length / num_threads;
+       const packed_edge startEdge = {start + row_start, 0};
 
-        packed_edge startEdge = {start + row_start, 0};
-        vertexType jj = std::lower_bound(input, input + numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
+       vertexType jj = std::lower_bound(input, input + numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
 
-        #pragma omp for schedule(guided, 2)
         for (vertexType i = start, j = jj; i < end && j < numberOfEdges; ++i)
+        {
+*/
+        for (vertexType i = 0, j = 0; i < row_length && j < numberOfEdges; ++i)
         {
             vertexType last_valid = -1;
             rowtyp inrow = 0;
@@ -1067,8 +1119,9 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
                 ++j;
             }
         }
-    }
+//    }
 #endif
+
 
 #ifndef _OPENMP
     for (vertexType i = 0, j = 0; i < row_length && j < numberOfEdges; ++i)
@@ -1224,13 +1277,13 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getVertexDistributio
     int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1 : 0);
     int64_t c_residuum = numAlg % C;
     int64_t c_SliceSize = numAlg / C;
-    long maxCount = (ptrdiff_t) count;
+    ptrdiff_t maxCount = (ptrdiff_t) count;
 
 #ifdef _OPENMP
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
-    for (long i = 0; i < maxCount; ++i)
+    for (ptrdiff_t i = 0; i < maxCount; ++i)
     {
         vertexType temporalVertex = vertex_p[i];
         if (temporalVertex / ((c_SliceSize + 1) * ALG) >= c_residuum)
@@ -1257,7 +1310,7 @@ bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesSmallerThan
     const rowtyp *rowp = this->getRowPointer();
     const vertexType *columnp = this->getColumnIndex();
     bool allSmaller = true;
-    long val64;
+    int64_t val64;
     int i = 0, rowLength = this->getLocRowLength();
     rowtyp j, max_j;
 
@@ -1267,9 +1320,8 @@ bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesSmallerThan
         max_j = rowp[i + 1];
         while (allSmaller && j < max_j)
         {
-            val64 = static_cast<long>(columnp[j]);
-            // if (((val64 >> 32) & 0xFFFFFFFF) != 0x00000000) {
-            if (val64 > 0xFFFFFFFF)
+            val64 = static_cast<int64_t>(columnp[j]);
+            if (val64 > 0xFFFFFFFFLL)
             {
                 allSmaller = false;
             }

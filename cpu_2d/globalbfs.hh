@@ -436,7 +436,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
 #ifdef _CUDA_OPENMP
     #pragma omp parallel
     {
-    #pragma omp for schedule (guided, 2)
+    #pragma omp for schedule (guided, OMP_CHUNK)
 #endif
 
     for (long i = 0L; i < mask_size; ++i)
