@@ -223,20 +223,38 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_INSTRUMENTATION) $(SCOREP_CXXCPPFLAGS) $(INCPATH) -o main.o main.cpp
 	@echo "    MPICC     $@"
 
+
+vp4dc.o: vp4dc.c
+        @echo ""
+        @echo "============================================================================"
+        @echo "== Compiling"
+        @echo "============================================================================"
+	$(CC) -O3 $(CFLAGS) -funroll-loops -c $(BIT)vp4dc.c
+
+vp4dd.o: $(BIT)vp4dd.c
+	$(CC) -O3 $(CFLAGS) -funroll-loops -c $(BIT)vp4dd.c
+
 bitpacking.o: compression/cpusimd/include/bitpacking.h compression/cpusimd/src/bitpacking.cpp
-if SIMD
+#if SIMD
 	@echo ""
 	@echo "============================================================================"
 	@echo "== Compiling"
 	@echo "============================================================================"
-else
-if SIMT
-	@echo ""
-	@echo "============================================================================"
-	@echo "== Compiling"
-	@echo "============================================================================"
-endif
-endif
+#else
+#if SIMT
+#	@echo ""
+#	@echo "============================================================================"
+#	@echo "== Compiling"
+#	@echo "============================================================================"
+#else
+#if IMPROVED_SIMD
+#        @echo ""
+#        @echo "============================================================================"
+#        @echo "== Compiling"
+#        @echo "============================================================================"
+#endif
+#endif
+#endif
 	@echo ""
 	@echo "--- Compiling CPU/SIMD compression"
 	$(Q)$(CXX) $(AM_CXXFLAGS) -c compression/cpusimd/src/bitpacking.cpp -Icompression/cpusimd/include
@@ -321,11 +339,11 @@ cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator
 
 cudacompress.o: compression/gpusimt/cm.h compression/gpusimt/cudacompress.cu
 	@echo ""
-if SIMT
+#if SIMT
 	@echo "============================================================================"
 	@echo "== Compiling"
 	@echo "============================================================================"
-endif
+#endif
 	@echo ""
 	@echo "--- Compiling GPU/SIMT"
 	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
@@ -334,11 +352,11 @@ endif
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 	@echo ""
-if SIMD
+#if SIMD
 	@echo "============================================================================"
 	@echo "== Compiling"
 	@echo "============================================================================"
-endif
+#endif
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
 	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o

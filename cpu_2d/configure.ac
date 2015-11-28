@@ -127,6 +127,16 @@ AC_ARG_ENABLE([simd],
     [enable_simd=no])
 
 #   Values: yes | no
+#   Default value: no
+#   External links:
+#     https://github.com/powturbo/TurboPFor
+AC_ARG_ENABLE([simd+],
+    AS_HELP_STRING([--enable-simd+],
+      [It is related with data compression. MPI packets will be sent compressed using a PFOR-delta improved library: Turbo-PFOR.
+      It is only active if --enable-compression is selected.]),,
+    [enable_simd+=no])
+
+#   Values: yes | no
 #   Default value: yes
 AC_ARG_ENABLE([simt],
     AS_HELP_STRING([--enable-simt],
@@ -271,6 +281,7 @@ fi
 
 AM_CONDITIONAL([STRONG_OPTIMIZATIONS], [test x"$enable_strong_optimizations" = xyes])
 AM_CONDITIONAL([VECTOR_OPTIMIZATIONS], [test x"$enable_vector_optimizations" = xyes])
+AM_CONDITIONAL([IMPROVED_SIMD], [test x"$enable_simd+" = xyes])
 AM_CONDITIONAL([SIMD], [test x"$enable_simd" = xyes])
 AM_CONDITIONAL([SIMT], [test x"$enable_simt" = xyes])
 AM_CONDITIONAL([PTXAS_OTIMIZATION], [test x"$enable_ptxas_otimization" = xyes])
