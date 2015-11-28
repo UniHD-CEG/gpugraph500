@@ -27,14 +27,14 @@ using std::function;
 using std::is_sorted;
 
 #ifdef _COMPRESSION
-template <typename T,typename T_C>
+template <typename T, typename T_C>
 #else
 template <typename T>
 #endif
 void vreduce(const function<void(T, long, T *, int)> &reduce,
-             const function < void(T, long, T *& /*Out*/, int & /*Out*/) > &get,
+             const function <void(T, long, T *& /*Out*/, int & /*Out*/)> &get,
 #ifdef _COMPRESSION
-             const Compression<T,T_C> &schema,
+             const Compression<T, T_C> &schema,
 #endif
              T *recv_buff, /* Out */
              int &rsize, /* Out */ // size of the final result
@@ -51,7 +51,7 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
-    T *compressed_fq=NULL, *uncompressed_fq=NULL, *compressed_recv_buff=NULL;
+    T *compressed_fq = NULL, *uncompressed_fq = NULL, *compressed_recv_buff = NULL;
 #endif
 
     //time mesurement
@@ -386,7 +386,7 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
     unsigned int reversedSliceIDs, targetNode;
-    size_t csize=0;
+    size_t csize = 0;
 
     schema.compress(send, psizeTo, &compressed_fq, compressedsize);
 
@@ -401,10 +401,12 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
 
     const int totalsize = 2 * communicatorSize;
 
-    for (int i=0, j=0; i < totalsize; ++i) {
-        if (i % 2 == 0) {
+    for (int i = 0, j = 0; i < totalsize; ++i)
+    {
+        if (i % 2 == 0)
+        {
             sizes[j] = composed_sizes[i];
-            compressed_sizes[j] = composed_sizes[i+1];
+            compressed_sizes[j] = composed_sizes[i + 1];
             ++j;
         }
     }
@@ -432,7 +434,7 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
     csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
-    compressed_recv_buff = (T *)malloc(csize*sizeof(T));
+    compressed_recv_buff = (T *)malloc(csize * sizeof(T));
 #else
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
@@ -473,26 +475,29 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
 
 #ifdef _COMPRESSIONVERIFY
-    int total_uncompressedsize=0;
+    int total_uncompressedsize = 0;
 #endif
 
     // reensamble uncompressed chunks
-    for (int i=0; i<communicatorSize; ++i) {
+    for (int i = 0; i < communicatorSize; ++i)
+    {
         compressedsize = compressed_sizes[i];
-        if (compressedsize != 0) {
-                uncompressedsize = sizes[i];
-                schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+        if (compressedsize != 0)
+        {
+            uncompressedsize = sizes[i];
+            schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
 
 #ifdef _COMPRESSIONVERIFY
-                assert(uncompressedsize == sizes[i]);
-                assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-                total_uncompressedsize += uncompressedsize;
+            assert(uncompressedsize == sizes[i]);
+            assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
+            total_uncompressedsize += uncompressedsize;
 #endif
 
-                memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
-                if (schema.isCompressed(uncompressedsize, compressedsize)) {
-                    free(uncompressed_fq);
-                }
+            memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
+            if (schema.isCompressed(uncompressedsize, compressedsize))
+            {
+                free(uncompressed_fq);
+            }
         }
     }
 

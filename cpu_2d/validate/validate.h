@@ -150,7 +150,7 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
     gather *pred_win = init_gather((void *)pred, nlocalverts, sizeof(int64_t), pred_pred, size_min(CHUNKSIZE, nlocalverts),
                                    size_min(CHUNKSIZE, nlocalverts), MPI_INT64_T, row_comm);
     typename MatrixT::vertexType *pred_vtx = (typename MatrixT::vertexType *)xmalloc(size_min(CHUNKSIZE,
-                                         nlocalverts) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
+            nlocalverts) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
     int *pred_owner = (int *)xmalloc(size_min(CHUNKSIZE, nlocalverts) * sizeof(int));
     size_t *pred_local = (size_t *)xmalloc(size_min(CHUNKSIZE, nlocalverts) * sizeof(size_t));
     int iter_number = 0;
@@ -203,7 +203,7 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
 
                 for (ptrdiff_t i = i_start; i < i_end; ++i)
                 {
-                    if ( store.getLocalColumnID() == root_owner && (size_t)i == root_local) continue;
+                    if (store.getLocalColumnID() == root_owner && (size_t)i == root_local) continue;
                     if (get_depth_from_pred_entry(pred_pred[i - i_start]) != UINT16_MAX)
                     {
                         if (get_depth_from_pred_entry(pred[i]) != UINT16_MAX
@@ -301,7 +301,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
         int *pred_owner = (int *)xmalloc(size_min(CHUNKSIZE, maxlocalverts_ui) * sizeof(int));
         size_t *pred_local = (size_t *)xmalloc(size_min(CHUNKSIZE, maxlocalverts_ui) * sizeof(size_t));
         typename MatrixT::vertexType *pred_vtx = (typename MatrixT::vertexType *)xmalloc(size_min(CHUNKSIZE,
-                                             maxlocalverts_ui) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
+                maxlocalverts_ui) * sizeof(int64_t)); /* Vertex (not depth) part of pred map */
         for (ptrdiff_t ii = 0; ii < (ptrdiff_t)maxlocalverts_ui; ii += CHUNKSIZE)
         {
             ptrdiff_t i_start = ii;
@@ -351,9 +351,9 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
         /* Create a vertex depth map to use for later validation. */
         int pred_ok = build_bfs_depth_map(store, nglobalverts, maxlocalverts_ui, maxlocalverts, root, pred, level);
         if (!pred_ok)
-        { 
-	    validation_passed = 0;
-	}
+        {
+            validation_passed = 0;
+        }
     }
     if (validation_passed == 0)
     {
@@ -393,11 +393,11 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
                 MPI_Bcast(&rowPred[store.globaltolocalRow(it->gstartvtx)], it->size, MPI_INT64_T, it->sendColSl, row_comm);
             }
         }
-/*4
-#ifdef _OPENMP
-        #pragma omp parallel for reduction(+: edge_visit_count) reduction(&&: valid_level) schedule(guided, OMP_CHUNK)
-#endif
-*/
+        /*4
+        #ifdef _OPENMP
+                #pragma omp parallel for reduction(+: edge_visit_count) reduction(&&: valid_level) schedule(guided, OMP_CHUNK)
+        #endif
+        */
         for (int64_t i = 0LL; i < number_of_edges; ++i)
         {
             const packed_edge edge = edgelist[i];
@@ -430,9 +430,9 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
 
                 if ((pred_visited[word_index] & (1 << bit_index)) == 0)
                 {
-/*#ifdef _OPENMP
-                    #pragma omp atomic
-#endif*/
+                    /*#ifdef _OPENMP
+                                        #pragma omp atomic
+                    #endif*/
                     pred_visited[word_index] |= 1 << bit_index;
                 }
             }

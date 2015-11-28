@@ -1,7 +1,7 @@
 /**
     Copyright (C) powturbo 2013-2015
     GPL v2 License
-  
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -22,14 +22,14 @@
     - email    : powturbo [_AT_] gmail [_DOT_] com
 **/
 //  bitunpack_.h - "Integer Compression" Bit Packing
-  #ifndef VSTO
-#include "conf.h"       
+#ifndef VSTO
+#include "conf.h"
 #include "bitutil.h"
- 
+
 #include "bitunpack.h"
 
-#define PAD8(__x) (((__x)+7)/8) 
-              
+#define PAD8(__x) (((__x)+7)/8)
+
 //-----------------------------------------------------------------------------------------------------------------
 #define VSTO(op, i, ov, parm) _mm_storeu_si128(op++, ov)
 
@@ -46,38 +46,44 @@
 }
 #define BITUNPACK0(__parm) __parm = _mm_setzero_si128()
 
-unsigned char *bitunpackv32( unsigned char *__restrict in, unsigned n, unsigned *__restrict out, unsigned b) { unsigned char *ip = in+PAD8(n*b); __m128i sv; BITUNPACKV32(in, n, b, out, sv); return ip; }
+unsigned char *bitunpackv32(unsigned char *__restrict in, unsigned n, unsigned *__restrict out, unsigned b) { unsigned char *ip = in + PAD8(n * b); __m128i sv; BITUNPACKV32(in, n, b, out, sv); return ip; }
 #undef VSTO
 #undef BITUNPACK0
 
-//------------------------------------------------------																
+//------------------------------------------------------
 #define VSTO(__op, i, __ov, __sv) __ov = UNZIGZAG128_32(__ov); SCAN128_32(__ov,__sv); _mm_storeu_si128(__op++, __sv)
 
 #include __FILE__
 #define BITUNPACK0(__parm)
 
-unsigned char *bitzunpackv32( unsigned char *__restrict in, unsigned n, unsigned *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); 
-  __m128i sv = _mm_set1_epi32(start); 
-  BITUNPACKV32(in, n, b, out, sv); return ip; 
+unsigned char *bitzunpackv32(unsigned char *__restrict in, unsigned n, unsigned *__restrict out, unsigned start,
+                             unsigned b)
+{
+    unsigned char *ip = in + PAD8(n * b);
+    __m128i sv = _mm_set1_epi32(start);
+    BITUNPACKV32(in, n, b, out, sv); return ip;
 }
 #undef VSTO
 #undef BITUNPACK0
 
-//------------------------------------------------------																
+//------------------------------------------------------
 #define VSTO(__op, i, __ov, __sv) SCAN128_32(__ov,__sv); _mm_storeu_si128(__op++, __sv)
 
 #include __FILE__
 #define BITUNPACK0(__parm)
 
-unsigned char *bitdunpackv32( unsigned char *__restrict in, unsigned n, unsigned *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); 
-  __m128i sv = _mm_set1_epi32(start);
-  BITUNPACKV32(in, n, b, out, sv); return ip; 
+unsigned char *bitdunpackv32(unsigned char *__restrict in, unsigned n, unsigned *__restrict out, unsigned start,
+                             unsigned b)
+{
+    unsigned char *ip = in + PAD8(n * b);
+    __m128i sv = _mm_set1_epi32(start);
+    BITUNPACKV32(in, n, b, out, sv); return ip;
 }
 #undef VSTO
 #undef BITUNBLKV32_0
 #undef BITUNPACK0
 
-//--------------------------------------------------------------------------------------------------------------------------------------------- 
+//---------------------------------------------------------------------------------------------------------------------------------------------
 #define VSTO(__op, i, __ov, __sv) SCANI128_32(__ov,__sv,cv); _mm_storeu_si128(__op++, __sv);
 
 #include __FILE__
@@ -93,15 +99,18 @@ unsigned char *bitdunpackv32( unsigned char *__restrict in, unsigned n, unsigned
 }
 #define BITUNPACK0(__parm) __parm = _mm_add_epi32(__parm, cv); cv = _mm_set1_epi32(4)
 
-unsigned char *bitd1unpackv32( unsigned char *__restrict in, unsigned n, unsigned *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b);
-  __m128i sv = _mm_set1_epi32(start), cv = _mm_set_epi32(4,3,2,1);
-  BITUNPACKV32(in, n, b, out, sv); return ip; 
+unsigned char *bitd1unpackv32(unsigned char *__restrict in, unsigned n, unsigned *__restrict out, unsigned start,
+                              unsigned b)
+{
+    unsigned char *ip = in + PAD8(n * b);
+    __m128i sv = _mm_set1_epi32(start), cv = _mm_set_epi32(4, 3, 2, 1);
+    BITUNPACKV32(in, n, b, out, sv); return ip;
 }
 #undef VSTO
 #undef BITUNBLKV32_0
 #undef BITUNPACK0
 
-  #else
+#else
 #include <strings.h>
 #include <emmintrin.h>
 
@@ -142,7 +151,7 @@ unsigned char *bitd1unpackv32( unsigned char *__restrict in, unsigned n, unsigne
     case 30: mv = _mm_set1_epi32((1u<<30)-1);  BITUNPACKV32_30(__iv, __ov, __parm); break;\
     case 31: mv = _mm_set1_epi32((1u<<31)-1);  BITUNPACKV32_31(__iv, __ov, __parm); break;\
     case 32: mv = _mm_set1_epi32((1ull<<32)-1);BITUNPACKV32_32(__iv, __ov, __parm); break;\
-	case 33 ... 63: break;\
+    case 33 ... 63: break;\
   }\
 }
-  #endif
+#endif

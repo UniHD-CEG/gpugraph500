@@ -1,7 +1,7 @@
 /**
     Copyright (C) powturbo 2013-2015
     GPL v2 License
-  
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -21,8 +21,8 @@
     - twitter  : https://twitter.com/powturbo
     - email    : powturbo [_AT_] gmail [_DOT_] com
 **/
-//    bitpackv.c - "Integer Compression" SIMD bit packing 
-  #ifndef VSTI
+//    bitpackv.c - "Integer Compression" SIMD bit packing
+#ifndef VSTI
 #include <emmintrin.h>
 #include "bitpack.h"
 #include "bitutil.h"
@@ -31,41 +31,50 @@
 
 #define VSTI(ip, i, iv, parm)
 #define IPP(ip, i, iv) _mm_loadu_si128(ip++)
-#include __FILE__ 
-  
-unsigned char *bitpackv32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned b) { unsigned char *pout = out+PAD8(n*b); BITPACKV32(in, n, b, out, 0); return pout; }
-unsigned char *bitpackv16(unsigned short *__restrict in, unsigned n, unsigned char *__restrict out, unsigned b) { unsigned char *pout = out+PAD8(n*b); BITPACKV32(in, n, b, out, 0); return pout; }
-#undef VSTI 
+#include __FILE__
+
+unsigned char *bitpackv32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned b) { unsigned char *pout = out + PAD8(n * b); BITPACKV32(in, n, b, out, 0); return pout; }
+unsigned char *bitpackv16(unsigned short *__restrict in, unsigned n, unsigned char *__restrict out, unsigned b) { unsigned char *pout = out + PAD8(n * b); BITPACKV32(in, n, b, out, 0); return pout; }
+#undef VSTI
 #undef IPP
 
 //------------------------------------------------------------------------------------------------------------------------------
 #define VSTI(__ip, __i, __iv, __sv) v = _mm_loadu_si128(__ip++); __iv = DELTA128_32(v,__sv); __sv = v
 #define IPP(ip, i, __iv) __iv
-#include __FILE__ 
+#include __FILE__
 
-unsigned char *bitdpackv32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start, unsigned b) { unsigned char *pout = out+PAD8(n*b);
-  __m128i v,sv = _mm_set1_epi32(start);
-  BITPACKV32(in, n, b, out, sv); return pout; 
+unsigned char *bitdpackv32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start,
+                           unsigned b)
+{
+    unsigned char *pout = out + PAD8(n * b);
+    __m128i v, sv = _mm_set1_epi32(start);
+    BITPACKV32(in, n, b, out, sv); return pout;
 }
 #undef VSTI
 
 //------------------------------------------------------------------------------------------------------------------------------
 #define VSTI(__ip, __i, __iv, __sv) v = _mm_loadu_si128(__ip++); __iv = _mm_sub_epi32(DELTA128_32(v,__sv),cv); __sv = v
 
-unsigned char *bitd1packv32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start, unsigned b) { unsigned char *pout = out+PAD8(n*b);
-  __m128i v, sv = _mm_set1_epi32(start), cv = _mm_set1_epi32(1);
-  BITPACKV32(in, n, b, out, sv); return pout; 
+unsigned char *bitd1packv32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start,
+                            unsigned b)
+{
+    unsigned char *pout = out + PAD8(n * b);
+    __m128i v, sv = _mm_set1_epi32(start), cv = _mm_set1_epi32(1);
+    BITPACKV32(in, n, b, out, sv); return pout;
 }
 #undef VSTI
 //------------------------------------------------------------------------------------------------------------------------------
 #define VSTI(__ip, __i, __iv, __sv) v = _mm_loadu_si128(__ip++); __iv = DELTA128_32(v,__sv); __sv = v; __iv = ZIGZAG128_32(__iv)
 
-unsigned char *bitzpackv32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start, unsigned b) { unsigned char *pout = out+PAD8(n*b);
-  __m128i v, sv = _mm_set1_epi32(start), cv = _mm_set1_epi32(1);
-  BITPACKV32(in, n, b, out, sv); return pout; 
+unsigned char *bitzpackv32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start,
+                           unsigned b)
+{
+    unsigned char *pout = out + PAD8(n * b);
+    __m128i v, sv = _mm_set1_epi32(start), cv = _mm_set1_epi32(1);
+    BITPACKV32(in, n, b, out, sv); return pout;
 }
 #undef VSTI
-  #else
+#else
 #include <strings.h>
 #include <emmintrin.h>
 
@@ -73,10 +82,10 @@ unsigned char *bitzpackv32(unsigned       *__restrict in, unsigned n, unsigned c
 #define IPPE(__op)
 
 #include "bitpackv32_.h"
- 
+
 #define BITPACKV32(__pip, __n, __nbits, __pop, __parm) { __m128i *__ip=(__m128i *)__pip,*__op=(__m128i *)__pop; typeof(__ip[0]) *__ipe=(__ip)+(__n);\
   switch(__nbits) {\
-    case  0:  												    		    break;\
+    case  0:                                                                break;\
     case  1:{  BITPACKV32_1( __ip, __op, __parm); /*while(__ip < __ipe);*/} break;\
     case  2:{  BITPACKV32_2( __ip, __op, __parm); /*while(__ip < __ipe)*/;} break;\
     case  3:{  BITPACKV32_3( __ip, __op, __parm); /*while(__ip < __ipe);*/} break;\
@@ -111,4 +120,4 @@ unsigned char *bitzpackv32(unsigned       *__restrict in, unsigned n, unsigned c
     case 32:{  BITPACKV32_32(__ip, __op, __parm); /*while(__ip < __ipe);*/} break;\
   }\
 }
-  #endif
+#endif

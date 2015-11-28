@@ -1,7 +1,7 @@
 /**
     Copyright (C) powturbo 2013-2015
     GPL v2 License
-  
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -21,31 +21,36 @@
     - twitter  : https://twitter.com/powturbo
     - email    : powturbo [_AT_] gmail [_DOT_] com
 **/
-//      bitunpack_.h - "Integer Compression" Bit Packing 
+//      bitunpack_.h - "Integer Compression" Bit Packing
 
-  #ifndef BPI
+#ifndef BPI
 #include "conf.h"
 #include "bitutil.h"
 #include "bitunpack.h"
 #define PAD8(__x) (((__x)+7)/8)
-#pragma clang diagnostic push 
+#pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsequenced"
 
 //-----------------------------------------------------------------------------------------------------------------
 #define DSTI(__op)
 #define BPI(__w, __x, __parm) __w
 #include __FILE__
-unsigned char *bitunpack32(  unsigned char *__restrict in, unsigned n, unsigned           *__restrict out				 , unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out,    0); return ip; }
-unsigned char *bitunpack16(  unsigned char *__restrict in, unsigned n, unsigned short     *__restrict out				 , unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out,    0); return ip; }
-unsigned char *bitunpack64(  unsigned char *__restrict in, unsigned n, uint64_t           *__restrict out				 , unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK64(in, n, b, out,    0); return ip; }
+unsigned char *bitunpack32(unsigned char *__restrict in, unsigned n, unsigned           *__restrict out              ,
+                           unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out,    0); return ip; }
+unsigned char *bitunpack16(unsigned char *__restrict in, unsigned n, unsigned short     *__restrict out              ,
+                           unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out,    0); return ip; }
+unsigned char *bitunpack64(unsigned char *__restrict in, unsigned n, uint64_t           *__restrict out              ,
+                           unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK64(in, n, b, out,    0); return ip; }
 #undef BPI
 #undef DSTI
 //-----------------------------------------------------------------------------------------------------------------
 #define DSTI(__op)
 #define BPI(__w, __x, __parm) (__parm += (__w) + 1)
 #include __FILE__
-unsigned char *bitd1unpack32(unsigned char *__restrict in, unsigned n, unsigned       *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out, start); return ip; }
-unsigned char *bitd1unpack16(unsigned char *__restrict in, unsigned n, unsigned short *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out, start); return ip; }
+unsigned char *bitd1unpack32(unsigned char *__restrict in, unsigned n, unsigned       *__restrict out, unsigned start,
+                             unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out, start); return ip; }
+unsigned char *bitd1unpack16(unsigned char *__restrict in, unsigned n, unsigned short *__restrict out, unsigned start,
+                             unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out, start); return ip; }
 #undef BPI
 #undef DSTI
 
@@ -53,8 +58,10 @@ unsigned char *bitd1unpack16(unsigned char *__restrict in, unsigned n, unsigned 
 #define DSTI(__op)
 #define BPI(__w, __x, __parm) (__parm += (__w))
 #include __FILE__
-unsigned char *bitdunpack32( unsigned char *__restrict in, unsigned n, unsigned       *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out, start); return ip; }
-unsigned char *bitdunpack16( unsigned char *__restrict in, unsigned n, unsigned short *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out, start); return ip; }
+unsigned char *bitdunpack32(unsigned char *__restrict in, unsigned n, unsigned       *__restrict out, unsigned start,
+                            unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out, start); return ip; }
+unsigned char *bitdunpack16(unsigned char *__restrict in, unsigned n, unsigned short *__restrict out, unsigned start,
+                            unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out, start); return ip; }
 #undef BPI
 #undef DSTI
 
@@ -63,7 +70,8 @@ unsigned char *bitdunpack16( unsigned char *__restrict in, unsigned n, unsigned 
 #define DSTI(__op)
 #define BPI(__w, __x, __parm) (__parm += zigzagdec32(__w))
 #include __FILE__
-unsigned char *bitzunpack32( unsigned char *__restrict in, unsigned n, unsigned       *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out, start); return ip; }
+unsigned char *bitzunpack32(unsigned char *__restrict in, unsigned n, unsigned       *__restrict out, unsigned start,
+                            unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out, start); return ip; }
 //unsigned char *bitzunpack16( unsigned char *__restrict in, unsigned n, unsigned short *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out, start); return ip; }
 #undef BPI
 #undef DSTI
@@ -73,8 +81,10 @@ unsigned char *bitzunpack32( unsigned char *__restrict in, unsigned n, unsigned 
 #define BPI(__w, __x, __parm) (__parm + (__w))
 #include __FILE__
 
-unsigned char *bitfunpack32( unsigned char *__restrict in, unsigned n, unsigned       *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out, start); return ip; }
-unsigned char *bitfunpack16( unsigned char *__restrict in, unsigned n, unsigned short *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out, start); return ip; }
+unsigned char *bitfunpack32(unsigned char *__restrict in, unsigned n, unsigned       *__restrict out, unsigned start,
+                            unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out, start); return ip; }
+unsigned char *bitfunpack16(unsigned char *__restrict in, unsigned n, unsigned short *__restrict out, unsigned start,
+                            unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out, start); return ip; }
 #undef BPI
 #undef DSTI
 
@@ -82,21 +92,23 @@ unsigned char *bitfunpack16( unsigned char *__restrict in, unsigned n, unsigned 
 #define DSTI(__op) start += 32
 #define BPI(__w, __x, __parm) (__parm + (__w)+__x+1)
 #include __FILE__
-unsigned char *bitf1unpack32(unsigned char *__restrict in, unsigned n, unsigned       *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out, start); return ip; }
-unsigned char *bitf1unpack16(unsigned char *__restrict in, unsigned n, unsigned short *__restrict out, unsigned start, unsigned b) { unsigned char *ip = in+PAD8(n*b); BITUNPACK32(in, n, b, out, start); return ip; }
+unsigned char *bitf1unpack32(unsigned char *__restrict in, unsigned n, unsigned       *__restrict out, unsigned start,
+                             unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out, start); return ip; }
+unsigned char *bitf1unpack16(unsigned char *__restrict in, unsigned n, unsigned short *__restrict out, unsigned start,
+                             unsigned b) { unsigned char *ip = in + PAD8(n * b); BITUNPACK32(in, n, b, out, start); return ip; }
 #undef BPI
 #undef DSTI
 
 
 #pragma clang diagnostic pop
 
-  #else
+#else
 #include <stdint.h>
-#define DST( __op, __x, __w, __parm) *__op++ = BPI(__w, __x, __parm)  	//__op[__x] = BPI(__w,__x,__parm) // 
+#define DST( __op, __x, __w, __parm) *__op++ = BPI(__w, __x, __parm)    //__op[__x] = BPI(__w,__x,__parm) // 
 
 #define USE_BITUNPACK 64
 
-  #if USE_BITUNPACK == 64
+#if USE_BITUNPACK == 64
 #include "bitunpack64_.h"
 #define BITUNPACK32(__ip, __n, __nbits, __op, __parm) { typeof(__op[0]) *__ope = __op + __n,*_op=__op;\
   switch(__nbits) {\
@@ -134,7 +146,7 @@ unsigned char *bitf1unpack16(unsigned char *__restrict in, unsigned n, unsigned 
     case 31: do BITUNPACK64_31(__ip, __op, __parm) while(__op<__ope); break;\
     case 32: do BITUNPACK64_32(__ip, __op, __parm) while(__op<__ope); break;\
   }\
-} 
+}
 
 #define BITUNPACK64(__ip, __n, __nbits, __op, __parm) { typeof(__op[0]) *__ope = __op + __n,*_op=__op;\
   switch(__nbits) {\
@@ -204,9 +216,9 @@ unsigned char *bitf1unpack16(unsigned char *__restrict in, unsigned n, unsigned 
     case 63: do BITUNPACK64_63(__ip, __op, __parm) while(__op<__ope); break;\
     case 64: do BITUNPACK64_64(__ip, __op, __parm) while(__op<__ope); break;\
   }\
-} 
+}
 
-  #elif USE_BITUNPACK == 32
+#elif USE_BITUNPACK == 32
 #include "bitunpack32_.h" // Not included in the github package
 #define BITUNPACK32(__ip, __n, __nbits, __op, __parm) { typeof(__op[0]) *__ope = __op + __n;\
   switch(__nbits) {\
@@ -244,6 +256,6 @@ unsigned char *bitf1unpack16(unsigned char *__restrict in, unsigned n, unsigned 
     case 31: do BITUNPACK32_31(__ip, __op, __parm) while(__op<__ope); break;\
     case 32: do BITUNPACK32_32(__ip, __op, __parm) while(__op<__ope); break;\
   }\
-} 
-  #endif
-  #endif
+}
+#endif
+#endif

@@ -1,14 +1,24 @@
-#ifndef BFS_MULTINODE_IMPROVEDSIMD_COMPRESSION_H
-#define BFS_MULTINODE_IMPROVEDSIMD_COMPRESSION_H
+#ifndef BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H
+#define BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H
+
+//#define ORDER_MODE 1 // mode=0 increasing. mode=1 strictly increasing sequence
+//#define BLOCK_SIZE (64*1024)
+//#define PACK_SIZE 128
 
 #include "compression.hh"
+#include "vp4dc.h"
+#include "vp4dd.h"
 
 #include <chrono>
 using namespace std::chrono;
 
+
 template <typename T, typename T_C>
-class NoCompression: public Compression<T,T_C>
+class CpuImprovedSimd: public Compression<T, T_C>
 {
+private:
+    uint32_t SIMDCOMPRESSION_THRESHOLD;
+    inline bool isCompressible(int size) const { return (size > SIMDCOMPRESSION_THRESHOLD); };
 public:
     void debugCompression(T *fq, const int size) const;
     void compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const;
@@ -20,18 +30,27 @@ public:
     void reconfigure(int compressionThreshold, string compressionExtraArgument);
 };
 
-template<typename T, typename T_C>
-void NoCompression<T,T_C>::reconfigure(int compressionThreshold, string compressionExtraArgument)
+template <typename T, typename T_C>
+CpuImprovedSimd<T, T_C>::CpuImprovedSimd()
 {
+    SIMDCOMPRESSION_THRESHOLD = 64; // use 0xffffff (2^32) to transparently disable
+}
+
+template<typename T, typename T_C>
+void CpuImprovedSimd<T, T_C>::reconfigure(int compressionThreshold, string compressionExtraArgument)
+{
+    SIMDCOMPRESSION_THRESHOLD = compressionThreshold;
     assert(compressionThreshold >= 0);
     assert(compressionExtraArgument.length() >= 0);
 }
 
 
 template<typename T, typename T_C>
-void NoCompression<T,T_C>::debugCompression(T *fq, const int size) const
+void CpuImprovedSimd<T, T_C>::debugCompression(T *fq, const int size) const
 {
-
+    /**
+     * disabled:
+     */
     size_t compressedsize, uncompressedsize = static_cast<size_t>(size);
     T *compressed_fq_64, *uncompressed_fq_64;
     high_resolution_clock::time_point time_0, time_1;
@@ -55,39 +74,71 @@ void NoCompression<T,T_C>::debugCompression(T *fq, const int size) const
 }
 
 template<typename T, typename T_C>
-void NoCompression<T,T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
-                                size_t &compressedsize) const
+void CpuImprovedSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
+                                     size_t &compressedsize) const
 {
-    compressedsize = size;
-    *compressed_fq_64 = fq_64;
+    if (isCompressible(size))
+    {
+        // L948
+        const unsigned char *ptr_to_endaddress = p4denc64(fq_64, size, &compressed_fq_64);
+        compressedsize = static_cast<std::size_t>(ptr_to_endaddress - *compressed_fq_64);
+        //
+        // unsigned pa[BLOCK_SIZE + 2048];
+        // bitdelta32(fq_64 + 1, --n, pa, fq_64[0], mode);
+        // vbput32(compressed_fq_64, fq_64[0]);
+        // return n == 128 ? p4dencv32(pa, n, compressed_fq_64) : p4denc32(pa, n, compressed_fq_64);
+
+    }
+    else
+    {
+        /**
+         * Buffer will not be compressed (Small size. Not worthed)
+         */
+        compressedsize = size;
+        *compressed_fq_64 = fq_64;
+    }
 }
 
 template<typename T, typename T_C>
-void NoCompression<T,T_C>::decompress(T_C *compressed_fq_64, const int size,
-                                  /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
+void CpuImprovedSimd<T, T_C>::decompress(T_C *compressed_fq_64, const int size,
+                                       /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
-    uncompressedsize = size;
-    *uncompressed_fq_64 = compressed_fq_64;
+    if (isCompressed(uncompressedsize, size))
+    {
+        //
+        p4ddec64(compressed_fq_64, uncompressedsize, &uncompressed_fq_64);
+    }
+    else
+    {
+        /**
+         * Buffer was not compressed (Small size. Not worthed)
+         */
+        uncompressedsize = size;
+        *uncompressed_fq_64 = compressed_fq_64;
+    }
 }
 
 template<typename T, typename T_C>
-void NoCompression<T,T_C>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
+void CpuImprovedSimd<T, T_C>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
         const size_t uncompressedsize) const
 {
-    assert(memcmp(fq, uncompressed_fq_64, uncompressedsize * sizeof(T)) == 0);
+    if (isCompressible(uncompressedsize))
+    {
+        assert(memcmp(fq, uncompressed_fq_64, uncompressedsize * sizeof(T)) == 0);
+    }
 }
 
 template<typename T, typename T_C>
-inline bool NoCompression<T,T_C>::isCompressed(const size_t originalsize, const size_t compressedsize) const
+inline bool CpuImprovedSimd<T, T_C>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
-    return (false && originalsize != compressedsize);
+    return (isCompressible(originalsize) && originalsize != compressedsize);
 }
 
 template<typename T, typename T_C>
-inline string NoCompression<T,T_C>::name() const
+inline string CpuImprovedSimd<T, T_C>::name() const
 {
-    return "nocompression";
+    return "improvedsimd";
 }
 
 
-#endif // BFS_MULTINODE_IMPROVEDSIMD_COMPRESSION_H
+#endif // BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H

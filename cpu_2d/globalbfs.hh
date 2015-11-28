@@ -39,10 +39,10 @@ using namespace std::placeholders;
 /*
  * This classs implements a distributed level synchronus BFS on global scale.
  */
-template < typename Derived,
-         typename FQ_T,  // Queue Type
-         typename MType, // Bitmap mask
-         typename STORE > // Storage of Matrix
+template <typename Derived,
+          typename FQ_T,  // Queue Type
+          typename MType, // Bitmap mask
+          typename STORE> // Storage of Matrix
 class GlobalBFS
 {
 private:
@@ -97,7 +97,7 @@ public:
     typename STORE::vertexType *getPredecessor();
 
 #ifdef _COMPRESSION
-    typedef Compression<FQ_T,FQ_T> C_T;
+    typedef Compression<FQ_T, FQ_T> C_T;
 #endif
 
 #ifdef INSTRUMENTED
@@ -382,23 +382,24 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     int *sizes = (int *)malloc(communicatorSize * sizeof(int));
     int *disps = (int *)malloc(communicatorSize * sizeof(int));
 
-    const unsigned int maskLengthRes = psize % (1<<intLdSize);
+    const unsigned int maskLengthRes = psize % (1 << intLdSize);
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
 
-    sizes[lastTargetNode] = (psize>>intLdSize) * mtypesize;
+    sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
     disps[lastTargetNode] = 0;
 
     for (unsigned int slice = 1; slice < power2intLdSize; ++slice)
     {
         const unsigned int reversedSliceIDs = reverse(slice, intLdSize);
         const unsigned int targetNode = oldRank(reversedSliceIDs);
-        sizes[targetNode] = ((psize>>intLdSize) + (((power2intLdSize-reversedSliceIDs-1) < maskLengthRes)? 1:0)) * mtypesize;
+        sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
+                            mtypesize;
         disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
         lastTargetNode = targetNode;
     }
     sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
-                static_cast<int>(store.getLocColLength()-disps[lastTargetNode]));
+                                     static_cast<int>(store.getLocColLength() - disps[lastTargetNode]));
 
     //nodes without a partial resulty
     int index;
@@ -436,24 +437,24 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
 #ifdef _CUDA_OPENMP
     #pragma omp parallel
     {
-    #pragma omp for schedule (guided, OMP_CHUNK)
+        #pragma omp for schedule (guided, OMP_CHUNK)
 #endif
 
-    for (long i = 0L; i < mask_size; ++i)
-    {
-        MType tmp = 0;
-        const long iindex = i * mtypesize;
-        const long mask_word_end = std::min(mtypesize, store_col_length - iindex);
-        for (long j = 0L; j < mask_word_end; ++j)
+        for (long i = 0L; i < mask_size; ++i)
         {
-            const long jindex = iindex + j;
-            if (predecessor[jindex] != -1)
+            MType tmp = 0;
+            const long iindex = i * mtypesize;
+            const long mask_word_end = std::min(mtypesize, store_col_length - iindex);
+            for (long j = 0L; j < mask_word_end; ++j)
             {
-                tmp |= 1L << j;
+                const long jindex = iindex + j;
+                if (predecessor[jindex] != -1)
+                {
+                    tmp |= 1L << j;
+                }
             }
+            owenmask[i] = tmp;
         }
-        owenmask[i] = tmp;
-    }
 
 #ifdef _CUDA_OPENMP
     }
@@ -475,10 +476,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 #ifdef INSTRUMENTED
 #ifdef _COMPRESSION
-void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp,
+        double &lqueue,
         double &rowcom, double &colcom, double &predlistred, const C_T &schema)
 #else
-void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue,
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp,
+        double &lqueue,
         double &rowcom, double &colcom, double &predlistred)
 #endif
 #else
@@ -489,8 +492,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 #endif
 {
-int communicatorRank;
-MPI_Comm_rank(col_comm, &communicatorRank); // current rank
+    int communicatorRank;
+    MPI_Comm_rank(col_comm, &communicatorRank); // current rank
 
 #ifdef INSTRUMENTED
     double tstart, tend;
@@ -605,7 +608,7 @@ MPI_Comm_rank(col_comm, &communicatorRank); // current rank
 #endif
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_BEGIN(allReduceBC_handle, "BFSRUN_region_allReduceBC", SCOREP_USER_REGION_TYPE_COMMON)
+            SCOREP_USER_REGION_BEGIN(allReduceBC_handle, "BFSRUN_region_allReduceBC", SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
             // MPI_Allreduce(MPI_IN_PLACE, predecessor ,store.getLocColLength(),MPI_LONG,MPI_MAX,col_comm);
@@ -615,7 +618,7 @@ MPI_Comm_rank(col_comm, &communicatorRank); // current rank
                                    owenmask, tmpmask);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-        SCOREP_USER_REGION_END(allReduceBC_handle)
+            SCOREP_USER_REGION_END(allReduceBC_handle)
 #endif
 
 #ifdef INSTRUMENTED
@@ -723,7 +726,7 @@ MPI_Comm_rank(col_comm, &communicatorRank); // current rank
 #endif
 
 #ifdef _COMPRESSION
-                int *vectorizedsize = (int *)malloc(2* sizeof(int));
+                int *vectorizedsize = (int *)malloc(2 * sizeof(int));
                 vectorizedsize[0] = originalsize;
                 vectorizedsize[1] = compressedsize;
 
@@ -741,20 +744,24 @@ MPI_Comm_rank(col_comm, &communicatorRank); // current rank
 
 #ifdef _COMPRESSION
 
-                if (communicatorRank != root_rank) {
+                if (communicatorRank != root_rank)
+                {
                     uncompressedsize = static_cast<size_t>(originalsize);
                     schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
                 }
 
 #if defined(_COMPRESSIONVERIFY)
-                if (communicatorRank != root_rank) {
+                if (communicatorRank != root_rank)
+                {
                     if (schema.isCompressed(originalsize, compressedsize))
                     {
                         assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                     }
                     assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
                     schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
-                } else {
+                }
+                else
+                {
                     assert(is_sorted(startaddr, startaddr + originalsize));
                 }
 #endif
@@ -776,7 +783,8 @@ MPI_Comm_rank(col_comm, &communicatorRank); // current rank
 #ifdef _COMPRESSION
                 if (schema.isCompressed(originalsize, compressedsize))
                 {
-                    if (communicatorRank != root_rank) {
+                    if (communicatorRank != root_rank)
+                    {
                         free(uncompressed_fq);
                     }
                     free(compressed_fq);
@@ -797,7 +805,7 @@ MPI_Comm_rank(col_comm, &communicatorRank); // current rank
 
                 FQ_T *compressed_fq = NULL, *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
-                int *vectorizedsize = (int *)malloc(2* sizeof(int));
+                int *vectorizedsize = (int *)malloc(2 * sizeof(int));
 
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
                 originalsize = vectorizedsize[0];

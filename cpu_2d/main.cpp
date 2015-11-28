@@ -265,12 +265,12 @@ int main(int argc, char **argv)
      * @values "nocompression", "cpusimd", "gpusimt"
      */
 #ifdef _SIMD
-    Compression<vertexType,vertexType> &schema = *CompressionFactory<vertexType,vertexType>::getFromName("cpusimd");
+    Compression<vertexType, vertexType> &schema = *CompressionFactory<vertexType, vertexType>::getFromName("cpusimd");
     schema.reconfigure(compressionThreshold, compressionCodec);
 #elif defined _SIMT
-    Compression<vertexType,vertexType> &schema = *CompressionFactory<vertexType,vertexType>::getFromName("gpusimt");
+    Compression<vertexType, vertexType> &schema = *CompressionFactory<vertexType, vertexType>::getFromName("gpusimt");
 #else
-    Compression<vertexType,vertexType> &schema = *CompressionFactory<vertexType,vertexType>::getFromName("nocompression");
+    Compression<vertexType, vertexType> &schema = *CompressionFactory<vertexType, vertexType>::getFromName("nocompression");
 #endif
 #endif
 

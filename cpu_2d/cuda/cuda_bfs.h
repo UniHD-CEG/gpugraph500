@@ -35,7 +35,7 @@ using namespace b40c::graph::bfs;
 typedef long long vertexType;
 typedef unsigned int rowtyp;
 
-class CUDA_BFS : public GlobalBFS < CUDA_BFS, vertexType, unsigned char,
+class CUDA_BFS : public GlobalBFS <CUDA_BFS, vertexType, unsigned char,
     DistMatrix2d<vertexType, rowtyp, true, 1, true>  // use local ids
     >
 {

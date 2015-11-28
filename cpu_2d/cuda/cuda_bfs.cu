@@ -12,10 +12,10 @@
 #endif
 
 CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing,
- int64_t _verbosity
- ) :
+                   int64_t _verbosity
+                  ) :
     GlobalBFS
-    < CUDA_BFS, vertexType, unsigned char, MatrixT >(_store),
+    <CUDA_BFS, vertexType, unsigned char, MatrixT>(_store),
     verbosity(_verbosity),
     queue_sizing(_queue_sizing),
     vmask(0)
@@ -353,33 +353,33 @@ void CUDA_BFS::getBackPredecessor()
 #ifdef _CUDA_OPENMP
     #pragma omp parallel
     {
-    #pragma omp for schedule (guided, 2)
+        #pragma omp for schedule (guided, 2)
 #endif
 
-    for (long i = 0L; i < mask_size; ++i)
-    {
-        MType tmp = 0;
-        const long isize = i * sizeOfMType;
-        for (long j = 0L; j < sizeOfMType; ++j)
+        for (long i = 0L; i < mask_size; ++i)
         {
-            const long jsize = isize + j;
-            const vertexType pred = predecessor[jsize];
-            if ((pred != -1) && ((jsize) < storeColLength))
+            MType tmp = 0;
+            const long isize = i * sizeOfMType;
+            for (long j = 0L; j < sizeOfMType; ++j)
             {
-                tmp |= 1L << j;
-                if (pred > -2)
+                const long jsize = isize + j;
+                const vertexType pred = predecessor[jsize];
+                if ((pred != -1) && ((jsize) < storeColLength))
                 {
-                    predecessor[jsize] = store.localtoglobalRow(
-                                             pred & Csr::ProblemType::VERTEX_ID_MASK);
-                }
-                else
-                {
-                    predecessor[jsize] = store.localtoglobalCol(jsize);
+                    tmp |= 1L << j;
+                    if (pred > -2)
+                    {
+                        predecessor[jsize] = store.localtoglobalRow(
+                                                 pred & Csr::ProblemType::VERTEX_ID_MASK);
+                    }
+                    else
+                    {
+                        predecessor[jsize] = store.localtoglobalCol(jsize);
+                    }
                 }
             }
+            owenmask[i] = tmp;
         }
-        owenmask[i] = tmp;
-    }
 
 #ifdef _CUDA_OPENMP
     }
@@ -555,7 +555,7 @@ void CUDA_BFS::setBackInqueue()
 
     //set length of current queue
 #ifdef _CUDA_OPENMP
-     #pragma omp parallel for
+    #pragma omp parallel for
 #endif
 
     for (int i = 0; i < numGpus; ++i)

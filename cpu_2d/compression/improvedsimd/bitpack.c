@@ -1,7 +1,7 @@
 /**
     Copyright (C) powturbo 2013-2015
     GPL v2 License
-  
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -21,13 +21,13 @@
     - twitter  : https://twitter.com/powturbo
     - email    : powturbo [_AT_] gmail [_DOT_] com
 **/
-//     bitpack.c - "Integer Compression" bit packing 
-  #ifndef IPPB
+//     bitpack.c - "Integer Compression" bit packing
+#ifndef IPPB
 #include <stdio.h>
 #include "bitpack.h"
-#include "bitutil.h" 
- 
-#pragma clang diagnostic push 
+#include "bitutil.h"
+
+#pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunsequenced"
 
 #define PAD8(__x) ( (((__x)+8-1)/8) )
@@ -36,11 +36,11 @@
 #define SRC( __ip,__x) (*__ip++)
 #define SRC1(__ip,__x) (*(__ip))
 #include __FILE__
- 
-unsigned char *bitpack32(unsigned           *__restrict in, unsigned n, unsigned char *__restrict out, unsigned nb) { unsigned char *pout = out+PAD8(n*nb); BITPACK32(in, n, nb, out, 0); return pout; } 
-unsigned char *bitpack16(unsigned short     *__restrict in, unsigned n, unsigned char *__restrict out, unsigned nb) { unsigned char *pout = out+PAD8(n*nb); BITPACK32(in, n, nb, out, 0); return pout; }
-unsigned char *bitpack64(uint64_t           *__restrict in, unsigned n, unsigned char *__restrict out, unsigned nb) { unsigned char *pout = out+PAD8(n*nb); BITPACK64(in, n, nb, out, 0); return pout; }
-#undef IPPB 
+
+unsigned char *bitpack32(unsigned           *__restrict in, unsigned n, unsigned char *__restrict out, unsigned nb) { unsigned char *pout = out + PAD8(n * nb); BITPACK32(in, n, nb, out, 0); return pout; }
+unsigned char *bitpack16(unsigned short     *__restrict in, unsigned n, unsigned char *__restrict out, unsigned nb) { unsigned char *pout = out + PAD8(n * nb); BITPACK32(in, n, nb, out, 0); return pout; }
+unsigned char *bitpack64(uint64_t           *__restrict in, unsigned n, unsigned char *__restrict out, unsigned nb) { unsigned char *pout = out + PAD8(n * nb); BITPACK64(in, n, nb, out, 0); return pout; }
+#undef IPPB
 #undef SRC
 #undef SRC1
 
@@ -49,7 +49,8 @@ unsigned char *bitpack64(uint64_t           *__restrict in, unsigned n, unsigned
 #define SRC1(__ip,__x) (*__ip - start)
 #include __FILE__
 
-unsigned char *bitdpack32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start, unsigned nb) { unsigned char *pout = out+PAD8(n*nb); unsigned as; BITPACK32(in, n, nb, out, start); return pout; } 
+unsigned char *bitdpack32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start,
+                          unsigned nb) { unsigned char *pout = out + PAD8(n * nb); unsigned as; BITPACK32(in, n, nb, out, start); return pout; }
 #undef IPPB
 #undef SRC
 #undef SRC1
@@ -58,7 +59,8 @@ unsigned char *bitdpack32(unsigned       *__restrict in, unsigned n, unsigned ch
 #define SRC( __ip,__x) as
 #define SRC1(__ip,__x) (*__ip - start-1)
 #include __FILE__
-unsigned char *bitd1pack32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start, unsigned nb) { unsigned char *pout = out+PAD8(n*nb); unsigned as; BITPACK32(in, n, nb, out, start); return pout; } 
+unsigned char *bitd1pack32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start,
+                           unsigned nb) { unsigned char *pout = out + PAD8(n * nb); unsigned as; BITPACK32(in, n, nb, out, start); return pout; }
 #undef IPPB
 #undef SRC
 #undef SRC1
@@ -68,7 +70,8 @@ unsigned char *bitd1pack32(unsigned       *__restrict in, unsigned n, unsigned c
 #define SRC( __ip,__x) as
 #define SRC1(__ip,__x) (*__ip - start)
 #include __FILE__
-unsigned char *bitfpack32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start, unsigned nb) { unsigned char *pout = out+PAD8(n*nb); unsigned as; BITPACK32(in, n, nb, out, start); return pout; } 
+unsigned char *bitfpack32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start,
+                          unsigned nb) { unsigned char *pout = out + PAD8(n * nb); unsigned as; BITPACK32(in, n, nb, out, start); return pout; }
 #undef IPPB
 #undef SRC
 #undef SRC1
@@ -77,7 +80,8 @@ unsigned char *bitfpack32(unsigned       *__restrict in, unsigned n, unsigned ch
 #define SRC( __ip,__x) as
 #define SRC1(__ip,__x) (*__ip - start-1)
 #include __FILE__
-unsigned char *bitf1pack32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start, unsigned nb) { unsigned char *pout = out+PAD8(n*nb); unsigned as; BITPACK32(in, n, nb, out, start); return pout; } 
+unsigned char *bitf1pack32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start,
+                           unsigned nb) { unsigned char *pout = out + PAD8(n * nb); unsigned as; BITPACK32(in, n, nb, out, start); return pout; }
 #undef IPPB
 #undef SRC
 #undef SRC1
@@ -87,18 +91,19 @@ unsigned char *bitf1pack32(unsigned       *__restrict in, unsigned n, unsigned c
 #define SRC1(__ip,__x) zigzagenc32(*__ip - start)
 #include __FILE__
 
-unsigned char *bitzpack32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start, unsigned nb) { unsigned char *pout = out+PAD8(n*nb); unsigned as; BITPACK32(in, n, nb, out, start); return pout; } 
+unsigned char *bitzpack32(unsigned       *__restrict in, unsigned n, unsigned char *__restrict out, unsigned start,
+                          unsigned nb) { unsigned char *pout = out + PAD8(n * nb); unsigned as; BITPACK32(in, n, nb, out, start); return pout; }
 #undef IPPB
 #undef SRC
 #undef SRC1
 //-----------------------------------------------------------------------------------------------
 #pragma clang diagnostic pop
-  #else
+#else
 #include <stdint.h>
 #define USE_BITPACK 64
 #define SRCI(__ip)
 
-  #if USE_BITPACK == 64
+#if USE_BITPACK == 64
 #include "bitpack64_.h"
 #define BITPACK32(__ip, __n, __nbits, __op, __parm) { typeof(__ip[0]) *_ipe=(__ip)+(__n);/*((__n+31)&0xffffffe0u)*/;\
   switch(__nbits) {\
@@ -208,7 +213,7 @@ unsigned char *bitzpack32(unsigned       *__restrict in, unsigned n, unsigned ch
   }\
 }
 
-  #else
+#else
 #include "bitpack32_.h" // Not included in the github package
 #define BITPACK32(__ip, __n, __nbits, __op, __parm) do { typeof(__ip[0]) *_ipe=(__ip)+(__n);/*((__n+31)&0xffffffe0u)*/;\
   switch(__nbits) {\
@@ -247,5 +252,5 @@ unsigned char *bitzpack32(unsigned       *__restrict in, unsigned n, unsigned ch
     case 32:do BITPACK32_32(__ip, __op, __parm) while(__ip < _ipe);\
   }\
 } while(0)
-  #endif
-  #endif
+#endif
+#endif

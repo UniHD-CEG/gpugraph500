@@ -1,7 +1,7 @@
 /**
     Copyright (C) powturbo 2013-2015
     GPL v2 License
-  
+
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -21,7 +21,7 @@
     - twitter  : https://twitter.com/powturbo
     - email    : powturbo [_AT_] gmail [_DOT_] com
 **/
-//     bitpackv32.h - "Integer Compression" simd bit packing 
+//     bitpackv32.h - "Integer Compression" simd bit packing
 #define BITBLKV32_1(ip, i, op, parm) { __m128i ov,iv;\
   VSTI(ip, i*32+ 0, iv, parm); ov =                                      IPP(ip, i*32+ 0, iv);\
   VSTI(ip, i*32+ 1, iv, parm); ov = _mm_or_si128(ov, _mm_slli_epi32(     IPP(ip, i*32+ 1, iv),  1));\

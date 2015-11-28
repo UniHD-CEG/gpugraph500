@@ -246,16 +246,16 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     int gunfinished, someting_unfinshed;
     MPI_Status status;
 
-/**
- * omp reduction max for omp 3.1+
- * commented out due to dedlocks with high SF
- */
+    /**
+     * omp reduction max for omp 3.1+
+     * commented out due to dedlocks with high SF
+     */
 
-/*
-#ifdef _OPENMP
-    #pragma omp parallel for schedule(guided, OMP_CHUNK) reduction(max:maxVertex)
-#endif
-*/
+    /*
+    #ifdef _OPENMP
+        #pragma omp parallel for schedule(guided, OMP_CHUNK) reduction(max:maxVertex)
+    #endif
+    */
     //get max vtx
     for (vertexType i = 0; i < numberOfEdges; ++i)
     {
@@ -667,11 +667,11 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     tmp_column_index = new vertexType[tmp_row_pointer[row_length]];
 
     //Copy unique entries in every row
-/**
- * comment out openmp if getting deadlocks
- * performance increase worthed? 
- * race condition on tmp_column_index?
- */
+    /**
+     * comment out openmp if getting deadlocks
+     * performance increase worthed?
+     * race condition on tmp_column_index?
+     */
 #ifdef _OPENMP
     #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
@@ -729,10 +729,10 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
         input = (packed_edge *) realloc(input, 2 * numberOfEdges * sizeof(packed_edge));
 
 
-/**
- * omp reduction max for omp 3.1+
- * performance increasement worthed?
- */
+        /**
+         * omp reduction max for omp 3.1+
+         * performance increasement worthed?
+         */
 
 #ifdef _OPENMP
         #pragma omp parallel for schedule(guided, OMP_CHUNK) reduction(max : maxVertex)
@@ -744,7 +744,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 
             input[numberOfEdges + i].v0 = read.v1;
             input[numberOfEdges + i].v1 = read.v0;
-  
+
             maxVertex = (maxVertex > read.v0) ? maxVertex : read.v0;
             maxVertex = (maxVertex > read.v1) ? maxVertex : read.v1;
 
@@ -754,11 +754,11 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     else
     {
 
-/**
- * omp reduction max for omp 3.1+
- * comment out if experimenting deadlocks with high SF
- * performance increasement worthed?
- */
+        /**
+         * omp reduction max for omp 3.1+
+         * comment out if experimenting deadlocks with high SF
+         * performance increasement worthed?
+         */
 #ifdef _OPENMP
         #pragma omp parallel for schedule(guided, OMP_CHUNK) reduction(max : maxVertex)
 #endif
@@ -948,69 +948,70 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     rowtyp *row_elm = new rowtyp[row_length];
     row_pointer = new rowtyp[row_length + 1];
 
-/**
- * omp worthed?
- */
-/*
-#ifdef _OPENMP
-    #pragma omp parallel for schedule(static, OMP_CHUNK)
-#endif
-*/
+    /**
+     * omp worthed?
+     */
+    /*
+    #ifdef _OPENMP
+        #pragma omp parallel for schedule(static, OMP_CHUNK)
+    #endif
+    */
 
-/*
-    const int64_t t_chunk = 8LL;
-    for (int64_t ii = 0LL; ii < row_length; ii+=t_chunk) { 
-        for (int64_t i = ii; i < ii+t_chunk; ++i)
-        {
-            row_elm[i - ii] = 0;
+    /*
+        const int64_t t_chunk = 8LL;
+        for (int64_t ii = 0LL; ii < row_length; ii+=t_chunk) {
+            for (int64_t i = ii; i < ii+t_chunk; ++i)
+            {
+                row_elm[i - ii] = 0;
+            }
         }
-    }
-*/
-    for (int64_t i = 0LL; i < row_length; ++i) {
+    */
+    for (int64_t i = 0LL; i < row_length; ++i)
+    {
         row_elm[i] = 0;
     }
 
-/**
- * The commented out omp region hangs up the app (OMP 3.1)
- */
+    /**
+     * The commented out omp region hangs up the app (OMP 3.1)
+     */
 
 #ifdef _OPENMP
-/*
-    #pragma omp parallel
+    /*
+        #pragma omp parallel
+        {
+            int this_thread = omp_get_thread_num(), num_threads = omp_get_num_threads();
+            vertexType start = (this_thread) * row_length / num_threads;
+            vertexType end   = (this_thread + 1) * row_length / num_threads;
+            packed_edge startEdge = {start + row_start, 0};
+            vertexType j = std::lower_bound(input, input + numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
+
+            for (vertexType i = start; i < end && j < numberOfEdges; ++i)
+    */
+    for (vertexType i = 0, j = 0; i < row_length && j < numberOfEdges; ++i)
     {
-        int this_thread = omp_get_thread_num(), num_threads = omp_get_num_threads();
-        vertexType start = (this_thread) * row_length / num_threads;
-        vertexType end   = (this_thread + 1) * row_length / num_threads;
-        packed_edge startEdge = {start + row_start, 0};
-        vertexType j = std::lower_bound(input, input + numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
+        vertexType last_valid = -1;
 
-        for (vertexType i = start; i < end && j < numberOfEdges; ++i)
-*/
-      for (vertexType i = 0, j = 0; i < row_length && j < numberOfEdges; ++i)  
-      {
-            vertexType last_valid = -1;
-
-            while (j < numberOfEdges && input[j].v0 - row_start == i)
+        while (j < numberOfEdges && input[j].v0 - row_start == i)
+        {
+            if (input[j].v0 != input[j].v1)
             {
-                if (input[j].v0 != input[j].v1)
-                {
-                    last_valid = input[j].v1;
-                    ++row_elm[i];
-                    ++j;
-                    break;
-                }
-                ++j;
-            }
-            while (j < numberOfEdges && input[j].v0 - row_start == i)
-            {
-                if (input[j].v0 != input[j].v1 && last_valid != input[j].v1)
-                {
-                    ++row_elm[i];
-                }
                 last_valid = input[j].v1;
+                ++row_elm[i];
                 ++j;
+                break;
             }
+            ++j;
         }
+        while (j < numberOfEdges && input[j].v0 - row_start == i)
+        {
+            if (input[j].v0 != input[j].v1 && last_valid != input[j].v1)
+            {
+                ++row_elm[i];
+            }
+            last_valid = input[j].v1;
+            ++j;
+        }
+    }
 //    }
 #endif
 
@@ -1054,71 +1055,71 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     //build columns
 
 
-/**
- * This commented out omp region hangs up the app (OMP 3.1)
- */
+    /**
+     * This commented out omp region hangs up the app (OMP 3.1)
+     */
 
 #ifdef _OPENMP
 
-/*
-   #pragma omp parallel
-   {
-       const int this_thread = omp_get_thread_num();
-       const int num_threads = omp_get_num_threads();
-       const vertexType start = (this_thread) * row_length / num_threads;
-       const vertexType end   = (this_thread + 1) * row_length / num_threads;
-       const packed_edge startEdge = {start + row_start, 0};
+    /*
+       #pragma omp parallel
+       {
+           const int this_thread = omp_get_thread_num();
+           const int num_threads = omp_get_num_threads();
+           const vertexType start = (this_thread) * row_length / num_threads;
+           const vertexType end   = (this_thread + 1) * row_length / num_threads;
+           const packed_edge startEdge = {start + row_start, 0};
 
-       vertexType jj = std::lower_bound(input, input + numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
+           vertexType jj = std::lower_bound(input, input + numberOfEdges, startEdge, DistMatrix2d::comparePackedEdgeR) - input;
 
-        for (vertexType i = start, j = jj; i < end && j < numberOfEdges; ++i)
-        {
-*/
-        for (vertexType i = 0, j = 0; i < row_length && j < numberOfEdges; ++i)
-        {
-            vertexType last_valid = -1;
-            rowtyp inrow = 0;
-            const rowtyp r_pointer = row_pointer[i];
-
-            while (j < numberOfEdges && input[j].v0 - row_start == i)
+            for (vertexType i = start, j = jj; i < end && j < numberOfEdges; ++i)
             {
-                if (input[j].v0 != input[j].v1)
-                {
-                    last_valid = input[j].v1;
+    */
+    for (vertexType i = 0, j = 0; i < row_length && j < numberOfEdges; ++i)
+    {
+        vertexType last_valid = -1;
+        rowtyp inrow = 0;
+        const rowtyp r_pointer = row_pointer[i];
 
-                    if (WOLO)
-                    {
-                        column_index[r_pointer + inrow] = input[j].v1 - column_start;
-                    }
-                    else
-                    {
-                        column_index[r_pointer + inrow] = input[j].v1;
-                    }
-                    ++inrow;
-                    ++j;
-                    break;
-                }
-                ++j;
-            }
-            while (j < numberOfEdges && input[j].v0 - row_start == i)
+        while (j < numberOfEdges && input[j].v0 - row_start == i)
+        {
+            if (input[j].v0 != input[j].v1)
             {
-                if (input[j].v0 != input[j].v1 && last_valid != input[j].v1)
-                {
-
-                    if (WOLO)
-                    {
-                        column_index[r_pointer + inrow] = input[j].v1 - column_start;
-                    }
-                    else
-                    {
-                        column_index[r_pointer + inrow] = input[j].v1;
-                    }
-                    ++inrow;
-                }
                 last_valid = input[j].v1;
+
+                if (WOLO)
+                {
+                    column_index[r_pointer + inrow] = input[j].v1 - column_start;
+                }
+                else
+                {
+                    column_index[r_pointer + inrow] = input[j].v1;
+                }
+                ++inrow;
                 ++j;
+                break;
             }
+            ++j;
         }
+        while (j < numberOfEdges && input[j].v0 - row_start == i)
+        {
+            if (input[j].v0 != input[j].v1 && last_valid != input[j].v1)
+            {
+
+                if (WOLO)
+                {
+                    column_index[r_pointer + inrow] = input[j].v1 - column_start;
+                }
+                else
+                {
+                    column_index[r_pointer + inrow] = input[j].v1;
+                }
+                ++inrow;
+            }
+            last_valid = input[j].v1;
+            ++j;
+        }
+    }
 //    }
 #endif
 
@@ -1204,7 +1205,7 @@ DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getFoldProperties() const
         col_size_res = 0;
         //column end
         vertexType colnextstart = ((col_size_res > 0) ? (newprop.sendColSl + 1) * (ua_col_size + 1) :
-                               (newprop.sendColSl + 1) * ua_col_size + numAlg % C) * ALG;
+                                   (newprop.sendColSl + 1) * ua_col_size + numAlg % C) * ALG;
         newprop.size = (newprop.gstartvtx + newprop.size <= colnextstart) ? newprop.size : colnextstart -
                        newprop.gstartvtx;
 
@@ -1228,7 +1229,7 @@ DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getFoldProperties() const
         col_size_res -= a_quot + 1;
         //column end
         vertexType colnextstart = ((col_size_res > 0) ? (newprop.sendColSl + 1) * (ua_col_size + 1) :
-                               (newprop.sendColSl + 1) * ua_col_size + numAlg % C) * ALG;
+                                   (newprop.sendColSl + 1) * ua_col_size + numAlg % C) * ALG;
         newprop.size = (newprop.gstartvtx + newprop.size <= colnextstart) ? newprop.size : colnextstart -
                        newprop.gstartvtx;
 
@@ -1255,7 +1256,7 @@ DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getFoldProperties() const
         newprop.size = (newprop.gstartvtx + newprop.size < row_end) ? newprop.size : row_end - newprop.gstartvtx;
         //column end
         vertexType colnextstart = ((col_size_res > 0) ? (newprop.sendColSl + 1) * (ua_col_size + 1) :
-                               (newprop.sendColSl + 1) * ua_col_size + numAlg % C) * ALG;
+                                   (newprop.sendColSl + 1) * ua_col_size + numAlg % C) * ALG;
         newprop.size = (newprop.gstartvtx + newprop.size <= colnextstart) ? newprop.size : colnextstart -
                        newprop.gstartvtx;
         fold_fq_props.push_back(newprop);
