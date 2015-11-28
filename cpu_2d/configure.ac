@@ -346,6 +346,7 @@ AC_LANG_POP([C++])
 
 SIMD_OBJECTS="bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o"
 SIMT_OBJECTS="cudacompress.o"
+IMPROVEDSIMD_OBJECTS="vp4dc.o vp4dd.o"
 g500_OBJECTS="main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o"
 
 SCOREP_CPPFLAG=

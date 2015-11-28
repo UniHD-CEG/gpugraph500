@@ -169,8 +169,12 @@ if SIMD
 else
 if SIMT
   COMPRESSION_OBJECTS=@SIMT_OBJECTS@
+if IMPROVED_SIMD
+else
+  COMPRESSION_OBJECTS=@IMPROVEDSIMD_OBJECTS@
 else
   COMPRESSION_OBJECTS="ADD_MORE_TYPES_HERE"
+endif
 endif
 endif
 
@@ -217,22 +221,22 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		../b40c/graph/bfs/partition_contract/downsweep/cta.cuh ../b40c/partition/downsweep/cta.cuh ../b40c/graph/bfs/partition_contract/downsweep/tile.cuh \
 		../b40c/partition/downsweep/tile.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh ../b40c/partition/downsweep/kernel_policy.cuh \
 		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h \
-		compression/cpusimd.hh compression/nocompression.hh
+		compression/cpusimd.hh compression/nocompression.hh compression/improvedsimd.hh
 	@echo ""
 	@echo "--- Compiling g500"
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_INSTRUMENTATION) $(SCOREP_CXXCPPFLAGS) $(INCPATH) -o main.o main.cpp
 	@echo "    MPICC     $@"
 
 
-vp4dc.o: vp4dc.c
-        @echo ""
-        @echo "============================================================================"
-        @echo "== Compiling"
-        @echo "============================================================================"
-	$(CC) -O3 $(CFLAGS) -funroll-loops -c $(BIT)vp4dc.c
+vp4dc.o: compression/improvedsimd/vp4dc.c
+	@echo ""
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
+	$(Q)$(CC) $(AM_CFLAGS) -c compression/improvedsimd/vp4dc.c -Icompression/improvedsimd
 
-vp4dd.o: $(BIT)vp4dd.c
-	$(CC) -O3 $(CFLAGS) -funroll-loops -c $(BIT)vp4dd.c
+vp4dd.o: compression/improvedsimd/vp4dd.c
+	$(Q)$(CC) $(AM_CFLAGS) -c compression/improvedsimd/vp4dd.c -Icompression/improvedsimd
 
 bitpacking.o: compression/cpusimd/include/bitpacking.h compression/cpusimd/src/bitpacking.cpp
 #if SIMD
@@ -339,11 +343,11 @@ cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator
 
 cudacompress.o: compression/gpusimt/cm.h compression/gpusimt/cudacompress.cu
 	@echo ""
-#if SIMT
+# if SIMT
 	@echo "============================================================================"
 	@echo "== Compiling"
 	@echo "============================================================================"
-#endif
+# endif
 	@echo ""
 	@echo "--- Compiling GPU/SIMT"
 	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
