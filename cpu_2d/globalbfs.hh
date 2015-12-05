@@ -698,6 +698,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #ifdef _COMPRESSION
 		compressionType *compressed_fq;
                 FQ_T *uncompressed_fq;
+		bool isCompressed = false;
 #endif
 
 #ifdef INSTRUMENTED
@@ -717,11 +718,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
                 uncompressedsize = static_cast<size_t>(originalsize);
-                schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
+                isCompressed = schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
-                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
-                schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
+		if (isCompressed) {
+                	schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                	schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
+		}
 #endif
 
 #endif
@@ -734,10 +737,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
 
 #if defined(_COMPRESSIONVERIFY)
-                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+		if (schema.isCompressed(originalsize, compressedsize))
+		{
+                	MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+		}
 #endif
 
-                MPI_Bcast(compressed_fq, compressedsize, fq_tp_type, root_rank, row_comm);
+		if (isCompressed)
+		{
+                	MPI_Bcast(compressed_fq, compressedsize, fq_tp_type, root_rank, row_comm);
+		}
+		else
+		{
+			MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+		}
 #else
                 MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
@@ -748,18 +761,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 if (communicatorRank != root_rank)
                 {
                     uncompressedsize = static_cast<size_t>(originalsize);
-                    schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                    isCompressed = schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
                 }
 
 #if defined(_COMPRESSIONVERIFY)
                 if (communicatorRank != root_rank)
                 {
-                    if (schema.isCompressed(originalsize, compressedsize))
+                    if (isCompressed)
                     {
                         assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
+                    	assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
+                    	schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
                     }
-                    assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-                    schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
                 }
                 else
                 {
@@ -776,13 +789,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 
 #ifdef _COMPRESSION
-                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq, originalsize);
+                if (isCompressed) 
+		{
+			static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq, originalsize);
+		}
+		else
+		{
+			static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
+		}
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #endif
 
 #ifdef _COMPRESSION
-                if (schema.isCompressed(originalsize, compressedsize))
+                if (isCompressed)
                 {
                     if (communicatorRank != root_rank)
                     {
@@ -806,6 +826,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 compressionType *compressed_fq = NULL;
 		FQ_T *uncompressed_fq = NULL;
+		bool isCompressed = false;
                 int originalsize, compressedsize;
                 int *vectorizedsize = (int *)malloc(2 * sizeof(int));
 
@@ -815,41 +836,50 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
 
 #if defined(_COMPRESSIONVERIFY)
-                assert(originalsize <= fq_64_length);
-                FQ_T *startaddr = NULL;
-                startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
-                if (startaddr == NULL)
-                {
-                    printf("\nERROR: Memory allocation error!");
-                    abort();
-                }
-                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+		if (schema.isCompressed(originalsize, compressedsize))
+		{
+                	assert(originalsize <= fq_64_length);
+                	FQ_T *startaddr = NULL;
+                	startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
+                	if (startaddr == NULL)
+                	{
+                    		printf("\nERROR: Memory allocation error!");
+                    		abort();
+                	}
+                	MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+		}
 #endif
                 // Please Note: fq_64 buffer has been alloceted in the children class.
                 // In case of CUDA, it has been allocated using cudaMalloc. In that case,
                 // it would be pinned memory and therefore can not be modified using
                 // normal C/C++ memory functions. Further info on the
-                // (this)->bfsMemCpy() call bellow.
+                // (this)->bfsMemCpy() call below.
                 MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
 
                 memcpy(compressed_fq, fq_64, compressedsize * sizeof(FQ_T));
                 uncompressedsize = static_cast<size_t>(originalsize);
-                schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
-                if (schema.isCompressed(originalsize, compressedsize))
+                isCompressed = schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                if (isCompressed)
                 {
                     static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq, originalsize);
                 }
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
-                assert(is_sorted(fq_64, fq_64 + originalsize));
-                schema.verifyCompression(startaddr, fq_64, originalsize);
+		if (isCompressed)
+		{
+                	assert(is_sorted(fq_64, fq_64 + originalsize));
+                	schema.verifyCompression(startaddr, fq_64, originalsize);
+		}
 #endif
 
 #else
                 int originalsize;
                 MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
-                assert(originalsize <= fq_64_length);
+		if (isCompressed)
+		{
+                	assert(originalsize <= fq_64_length);
+		}
 #endif
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
@@ -867,7 +897,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
                 free(vectorizedsize);
-                if (schema.isCompressed(originalsize, compressedsize))
+                if (isCompressed)
                 {
                     free(uncompressed_fq);
                     free(compressed_fq);

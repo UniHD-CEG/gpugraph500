@@ -121,7 +121,7 @@ public:
                                       size_t *local_p) const;
 
     bool allValuesSmallerThan32Bits() const;
-    bool allValuePositive() const;
+    bool allValuesPositive() const;
 };
 
 /**
@@ -1340,7 +1340,7 @@ bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesSmallerThan
  * Checks if all values in the Matrix are possitive
  */
 template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
-bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuePositive() const
+bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesPositive() const
 {
 
     const rowtyp *rowp = this->getRowPointer();
@@ -1356,7 +1356,7 @@ bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuePositive() c
         while (allPositive && j < max_j)
         {
 	    const vertexType x = columnp[j];
-            const bool isPositive = (0&x^((0^x)&-(0<x)));
+            const bool isPositive = (x>=0);
             if (!isPositive)
             {
                 allPositive = false;

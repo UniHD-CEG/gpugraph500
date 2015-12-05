@@ -12,9 +12,9 @@ template <typename T, typename T_C>
 class Compression
 {
 public:
-    virtual void debugCompression(T *fq, const int size) const = 0;
-    virtual void compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const = 0;
-    virtual void decompress(T_C *compressed_fq_64, const int size,
+    virtual void debugCompression(T *fq, const size_t size) const = 0;
+    virtual bool compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const = 0;
+    virtual bool decompress(T_C *compressed_fq_64, const int size,
                             /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const = 0;
     virtual void verifyCompression(const T *fq, const T *uncompressed_fq_64,
                                    const size_t uncompressedsize) const = 0;

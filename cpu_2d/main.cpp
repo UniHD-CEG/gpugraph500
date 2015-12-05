@@ -270,11 +270,11 @@ int main(int argc, char **argv)
     {
         printf("Check matrix values (positive)...");
     }
-    if (!store.allValuesSmallerThan32Bits())
+    if (!store.allValuesPositive())
     {
-        printf("error. Not all values in the graph are positive.\n");
-        MPI_Finalize();
-        exit(1);
+        printf("debug. Not all values in the graph are positive.\n");
+        //MPI_Finalize();
+        //exit(1);
     }
     if (rank == 0)
     {
@@ -288,7 +288,7 @@ int main(int argc, char **argv)
      * @values "nocompression", "cpusimd", "gpusimt"
      */
 #if defined(_SIMD)
-    Compression<vertexType, compressionType> &schema = *CompressionFactory<vertexType, compressionType>::getFromName("cpusimd");
+    Compression<vertexType, vertexType> &schema = *CompressionFactory<vertexType, vertexType>::getFromName("cpusimd");
     schema.reconfigure(compressionThreshold, compressionCodec);
 #elif defined(_SIMD_PLUS)
     Compression<vertexType, compressionType> &schema = *CompressionFactory<vertexType, compressionType>::getFromName("simdplus");

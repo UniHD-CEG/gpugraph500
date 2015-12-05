@@ -24,9 +24,9 @@ private:
     inline bool isCompressible(int size) const { return (size > SIMDCOMPRESSION_THRESHOLD); };
 public:
     CpuSimd();
-    void debugCompression(T *fq, const int size) const;
-    void compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const ;
-    void decompress(T_C *compressed_fq_64, const int size,
+    void debugCompression(T *fq, const size_t size) const;
+    inline bool compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const ;
+    inline bool decompress(T_C *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
@@ -53,12 +53,17 @@ void CpuSimd<T, T_C>::reconfigure(int compressionThreshold, string compressionCo
 }
 
 template <typename T, typename T_C>
-void CpuSimd<T, T_C>::debugCompression(T *fq, const int size) const
+void CpuSimd<T, T_C>::debugCompression(T *fq, const size_t size) const
 {
+	assert(fq != NULL);
+        assert(size >= 0);
+
+/*
     if (size > 0)
     {
         size_t compressedsize, uncompressedsize = static_cast<size_t>(size);
-        T *compressed_fq, *uncompressed_fq;
+        T_C *compressed_fq;
+	T *uncompressed_fq;
         high_resolution_clock::time_point time_0, time_1;
         time_0 = high_resolution_clock::now();
         compress(fq, uncompressedsize, &compressed_fq, compressedsize);
@@ -74,9 +79,11 @@ void CpuSimd<T, T_C>::debugCompression(T *fq, const int size) const
             free(compressed_fq);
             free(uncompressed_fq);
         }
+*/
         /**
          * Check validity of results
          */
+/*
         double compressionratio = (static_cast<double>(compressedsize) / static_cast<double>(uncompressedsize));
         double compresspercent = (100.0 - 100.0 * compressionratio);
         long dataSize = (size * sizeof(int));
@@ -104,12 +111,14 @@ void CpuSimd<T, T_C>::debugCompression(T *fq, const int size) const
                dataUnit.c_str(), encode_time, decode_time,
                compresspercent);
     }
+*/
 }
 
 template <typename T, typename T_C>
-void CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
+inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
                                size_t &compressedsize) const
 {
+    bool compressed;
     if (isCompressible(size))
     {
         uint32_t *fq_32 = (uint32_t *)malloc(size * sizeof(uint32_t));
@@ -130,7 +139,7 @@ void CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq
         // Todo: find solution
         assert(compressedsize < size);
         *compressed_fq_64 = NULL;
-        *compressed_fq_64 = (T *)malloc(compressedsize * sizeof(T));
+        *compressed_fq_64 = (T_C *)malloc(compressedsize * sizeof(T_C));
         if (*compressed_fq_64 == NULL)
         {
             printf("\nERROR: Memory allocation error!");
@@ -138,11 +147,12 @@ void CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq
         }
         for (size_t i = 0; i < compressedsize; ++i)
         {
-            (*compressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
+            (*compressed_fq_64)[i] = static_cast<T_C>(compressed_fq_32[i]);
         }
         free(fq_32);
         free(compressed_fq_32);
         //std::cout << "[c]-->origsize: " << size << " compressedsize:" << compressedsize << std::endl;
+	compressed = true;
     }
     else
     {
@@ -150,14 +160,17 @@ void CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq
          * Buffer will not be compressed (Small size. Not worthed)
          */
         compressedsize = size;
-        *compressed_fq_64 = fq_64;
+        // *compressed_fq_64 = reinterpret_cast<T_C *>(fq_64);
+	compressed = false;
     }
+    return compressed;
 }
 
 template <typename T, typename T_C>
-void CpuSimd<T, T_C>::decompress(T_C *compressed_fq_64, const int size,
+inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_64, const int size,
                                  /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
+    bool compressed;
     if (isCompressed(uncompressedsize, size))
     {
         uint32_t *uncompressed_fq_32 = (uint32_t *) malloc(uncompressedsize * sizeof(uint32_t));
@@ -187,6 +200,7 @@ void CpuSimd<T, T_C>::decompress(T_C *compressed_fq_64, const int size,
         free(compressed_fq_32);
         free(uncompressed_fq_32);
         //std::cout << "[d]-->origsize: " << uncompressedsize << " compressedsize:" << size << std::endl;
+	compressed = true;
     }
     else
     {
@@ -194,8 +208,10 @@ void CpuSimd<T, T_C>::decompress(T_C *compressed_fq_64, const int size,
          * Buffer was not compressed (Small size. Not worthed)
          */
         uncompressedsize = size;
-        *uncompressed_fq_64 = compressed_fq_64;
+	compressed = false;
+        //*uncompressed_fq_64 = reinterpret_cast<T *>(compressed_fq_64);
     }
+	return compressed;
 }
 
 template <typename T, typename T_C>
@@ -208,11 +224,13 @@ void CpuSimd<T, T_C>::verifyCompression(const T *fq, const T *uncompressed_fq_64
     }
 }
 
+
 template <typename T, typename T_C>
 inline bool CpuSimd<T, T_C>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
     return (isCompressible(originalsize) && originalsize != compressedsize);
 }
+
 
 template <typename T, typename T_C>
 inline string CpuSimd<T, T_C>::name() const

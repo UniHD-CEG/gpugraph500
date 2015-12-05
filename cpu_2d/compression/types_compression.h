@@ -3,7 +3,7 @@
 
 
 #ifdef _SIMD
-typedef int64_t compressionType;
+typedef long long compressionType;
 #elif defined(_SIMD_PLUS)
 typedef unsigned char compressionType;
 #elif defined(_SIMT)
