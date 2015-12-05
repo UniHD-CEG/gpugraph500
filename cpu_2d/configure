@@ -727,6 +727,7 @@ MPICXX
 MPI_CLDFLAGS
 MPI_CFLAGS
 MPICC
+SIMD_PLUS_OBJECTS
 simd_H_FILES
 SCOREP_LFLAG
 SCOREP_LLIBS
@@ -771,6 +772,8 @@ SIMT_FALSE
 SIMT_TRUE
 SIMD_FALSE
 SIMD_TRUE
+SIMD_PLUS_FALSE
+SIMD_PLUS_TRUE
 VECTOR_OPTIMIZATIONS_FALSE
 VECTOR_OPTIMIZATIONS_TRUE
 STRONG_OPTIMIZATIONS_FALSE
@@ -877,6 +880,7 @@ enable_other_basic_profiling
 enable_scorep
 enable_compression
 enable_simd
+enable_simd_
 enable_simt
 enable_debug_compression
 enable_verify_compression
@@ -1566,6 +1570,10 @@ Optional Features:
                           --enable-compression is selected. It will be enabled
                           by default if --enable-compression is active and no
                           compression method is selected.
+  --enable-simd+          It is related with data compression. MPI packets
+                          will be sent compressed using a PFOR-delta improved
+                          library: Turbo-PFOR. It is only active if
+                          --enable-compression is selected.
   --enable-simt           It is related with data compression. Use CUDA
                           implementation for data compression. Not implemented
                           yet. Disabled by default.
@@ -5751,6 +5759,18 @@ fi
 
 
 #   Values: yes | no
+#   Default value: no
+#   External links:
+#     https://github.com/powturbo/TurboPFor
+# Check whether --enable-simd+ was given.
+if test "${enable_simd_+set}" = set; then :
+  enableval=$enable_simd_; enable_simdplus=yes
+else
+  enable_simdplus=no
+fi
+
+
+#   Values: yes | no
 #   Default value: yes
 # Check whether --enable-simt was given.
 if test "${enable_simt+set}" = set; then :
@@ -5910,7 +5930,7 @@ if test x"$enable_openmp" = xno ; then
 fi
 
 if test x"$enable_compression" = xyes -a x"$enable_simd" = xno; then
-  if test x"$enable_simt" = xno; then
+  if test x"$enable_simt" = xno -a x"$enable_simdplus" = xno; then
     enable_simd=yes
   fi
   :
@@ -5933,6 +5953,14 @@ fi
 else
   VECTOR_OPTIMIZATIONS_TRUE='#'
   VECTOR_OPTIMIZATIONS_FALSE=
+fi
+
+ if test x"$enable_simdplus" = xyes; then
+  SIMD_PLUS_TRUE=
+  SIMD_PLUS_FALSE='#'
+else
+  SIMD_PLUS_TRUE='#'
+  SIMD_PLUS_FALSE=
 fi
 
  if test x"$enable_simd" = xyes; then
@@ -6700,6 +6728,56 @@ fi
 
 
 
+
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __attribute__((always_inline))" >&5
+$as_echo_n "checking for __attribute__((always_inline))... " >&6; }
+if ${ax_cv_have_func_attribute_always_inline+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+                    inline __attribute__((always_inline)) int foo( void ) { return 0; }
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+                                      if test -s conftest.err; then :
+  ax_cv_have_func_attribute_always_inline=no
+else
+  ax_cv_have_func_attribute_always_inline=yes
+fi
+else
+  ax_cv_have_func_attribute_always_inline=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_have_func_attribute_always_inline" >&5
+$as_echo "$ax_cv_have_func_attribute_always_inline" >&6; }
+
+    if test yes = $ax_cv_have_func_attribute_always_inline; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_FUNC_ATTRIBUTE_ALWAYS_INLINE 1
+_ACEOF
+
+fi
+
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for stdbool.h that conforms to C99" >&5
 $as_echo_n "checking for stdbool.h that conforms to C99... " >&6; }
 if ${ac_cv_header_stdbool_h+:} false; then :
@@ -7224,6 +7302,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 SIMD_OBJECTS="bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o"
 SIMT_OBJECTS="cudacompress.o"
+SIMD_PLUS_OBJECTS="vp4dc.o vp4dd.o"
 g500_OBJECTS="main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o"
 
 SCOREP_CPPFLAG=
@@ -7245,6 +7324,7 @@ simd_H_FILES=
 for item in `ls compression/cpusimd/include/*h 2> /dev/null`; do
   simd_H_FILES+=" $item"
 done
+
 
 
 
@@ -9971,7 +10051,7 @@ done
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether mandatory -msse4.1 flag is supported" >&5
 $as_echo_n "checking whether mandatory -msse4.1 flag is supported... " >&6; }
-  if test x"$enable_simd" = xyes; then
+  if test x"$enable_simd" = xyes -o x"$enable_simdplus" = xyes; then
       ax_have_minimun_sse4_ext=`echo $SIMD_FLAGS | grep -i "sse4"`
       if test "x$ax_have_minimun_sse4_ext" = x; then
           { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -18135,6 +18215,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${VECTOR_OPTIMIZATIONS_TRUE}" && test -z "${VECTOR_OPTIMIZATIONS_FALSE}"; then
   as_fn_error $? "conditional \"VECTOR_OPTIMIZATIONS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${SIMD_PLUS_TRUE}" && test -z "${SIMD_PLUS_FALSE}"; then
+  as_fn_error $? "conditional \"SIMD_PLUS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${SIMD_TRUE}" && test -z "${SIMD_FALSE}"; then

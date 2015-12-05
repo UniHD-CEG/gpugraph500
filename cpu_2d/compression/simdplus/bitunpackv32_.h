@@ -1,7 +1,7 @@
 /**
     Copyright (C) powturbo 2013-2015
     GPL v2 License
-
+  
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -20,7 +20,7 @@
     - github   : https://github.com/powturbo
     - twitter  : https://twitter.com/powturbo
     - email    : powturbo [_AT_] gmail [_DOT_] com
-**/
+**/ 
 /*#define BITUNBLKV32_0(ip, i, op, parm) {\
   OPU(op,i*0+ 0, 0, parm);\
   OPU(op,i*0+ 1, 0, parm);\

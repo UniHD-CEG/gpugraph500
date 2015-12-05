@@ -133,8 +133,9 @@ AC_ARG_ENABLE([simd],
 AC_ARG_ENABLE([simd+],
     AS_HELP_STRING([--enable-simd+],
       [It is related with data compression. MPI packets will be sent compressed using a PFOR-delta improved library: Turbo-PFOR.
-      It is only active if --enable-compression is selected.]),,
-    [enable_simd+=no])
+      It is only active if --enable-compression is selected.]),
+      [enable_simdplus=yes],
+    [enable_simdplus=no])
 
 #   Values: yes | no
 #   Default value: yes
@@ -270,7 +271,7 @@ if test x"$enable_openmp" = xno ; then
 fi
 
 if test x"$enable_compression" = xyes -a x"$enable_simd" = xno; then
-  if test x"$enable_simt" = xno; then
+  if test x"$enable_simt" = xno -a x"$enable_simdplus" = xno; then
     [enable_simd=yes]
   fi
   :
@@ -281,7 +282,7 @@ fi
 
 AM_CONDITIONAL([STRONG_OPTIMIZATIONS], [test x"$enable_strong_optimizations" = xyes])
 AM_CONDITIONAL([VECTOR_OPTIMIZATIONS], [test x"$enable_vector_optimizations" = xyes])
-AM_CONDITIONAL([IMPROVED_SIMD], [test x"$enable_simd+" = xyes])
+AM_CONDITIONAL([SIMD_PLUS], [test x"$enable_simdplus" = xyes])
 AM_CONDITIONAL([SIMD], [test x"$enable_simd" = xyes])
 AM_CONDITIONAL([SIMT], [test x"$enable_simt" = xyes])
 AM_CONDITIONAL([PTXAS_OTIMIZATION], [test x"$enable_ptxas_otimization" = xyes])
@@ -316,6 +317,7 @@ AX_GCC_FUNC_ATTRIBUTE([const])
 AX_GCC_FUNC_ATTRIBUTE([malloc])
 AX_GCC_FUNC_ATTRIBUTE([noreturn])
 AX_GCC_FUNC_ATTRIBUTE([vector_size])
+AX_GCC_FUNC_ATTRIBUTE([always_inline])
 AC_HEADER_STDBOOL
 AC_C_INLINE
 AC_TYPE_INT32_T
@@ -346,7 +348,7 @@ AC_LANG_POP([C++])
 
 SIMD_OBJECTS="bitpacking.o integratedbitpacking.o simdbitpacking.o usimdbitpacking.o simdintegratedbitpacking.o varintdecode.o streamvbyte.o simdpackedsearch.o simdpackedselect.o frameofreference.o for.o"
 SIMT_OBJECTS="cudacompress.o"
-IMPROVEDSIMD_OBJECTS="vp4dc.o vp4dd.o"
+SIMD_PLUS_OBJECTS="vp4dc.o vp4dd.o"
 g500_OBJECTS="main.o utils.o splittable_mrg.o make_graph.o graph_generator.o onesided.o onesided_emul.o bitlevelfunctions.o"
 
 SCOREP_CPPFLAG=
@@ -376,6 +378,7 @@ AC_SUBST([SCOREP_CPPFLAG])
 AC_SUBST([SCOREP_LLIBS])
 AC_SUBST([SCOREP_LFLAG])
 AC_SUBST([simd_H_FILES])
+AC_SUBST([SIMD_PLUS_OBJECTS])
 
 ### Check for required libraries.
 #
@@ -432,7 +435,7 @@ if test "x$enable_compression" = xyes; then
   AX_EXT
   AC_CHECK_HEADERS([cpuid.h])
   AC_MSG_CHECKING([whether mandatory -msse4.1 flag is supported])
-  if test x"$enable_simd" = xyes; then
+  if test x"$enable_simd" = xyes -o x"$enable_simdplus" = xyes; then
       ax_have_minimun_sse4_ext=`echo $SIMD_FLAGS | grep -i "sse4"`
       if test "x$ax_have_minimun_sse4_ext" = x; then
           AC_MSG_RESULT([no])

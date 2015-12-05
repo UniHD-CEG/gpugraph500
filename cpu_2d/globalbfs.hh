@@ -13,7 +13,6 @@
 #include <functional>
 #include <stdlib.h>
 #include <algorithm>
-
 #ifdef _SCOREP_USER_INSTRUMENTATION
 #include "scorep/SCOREP_User.h"
 #endif
@@ -26,6 +25,7 @@ using namespace std::chrono;
 
 #ifdef _COMPRESSION
 #include "compression/compression.hh"
+#include "compression/types_compression.h"
 #endif
 
 using std::function;
@@ -97,13 +97,13 @@ public:
     typename STORE::vertexType *getPredecessor();
 
 #ifdef _COMPRESSION
-    typedef Compression<FQ_T, FQ_T> C_T;
+    typedef Compression<FQ_T, compressionType> CompressionClassT;
 #endif
 
 #ifdef INSTRUMENTED
 #ifdef _COMPRESSION
     void runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue, double &rowcom, double &colcom,
-                double &predlistred, const C_T &schema);
+                double &predlistred, const CompressionClassT &schema);
 #else
     void runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue, double &rowcom, double &colcom,
                 double &predlistred);
@@ -112,7 +112,7 @@ public:
 #else
 
 #ifdef _COMPRESSION
-    void runBFS(typename STORE::vertexType startVertex, const C_T &schema);
+    void runBFS(typename STORE::vertexType startVertex, const CompressionClassT &schema);
 #else
     void runBFS(typename STORE::vertexType startVertex);
 #endif
@@ -478,7 +478,7 @@ template<typename Derived, typename FQ_T, typename MType, typename STORE>
 #ifdef _COMPRESSION
 void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp,
         double &lqueue,
-        double &rowcom, double &colcom, double &predlistred, const C_T &schema)
+        double &rowcom, double &colcom, double &predlistred, const CompressionClassT &schema)
 #else
 void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, double &lexp,
         double &lqueue,
@@ -486,7 +486,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 #else
 #ifdef _COMPRESSION
-void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, const C_T &schema)
+void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex, const CompressionClassT &schema)
 #else
 void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType startVertex)
 #endif
@@ -696,7 +696,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 int originalsize;
                 FQ_T *startaddr;
 #ifdef _COMPRESSION
-                FQ_T *compressed_fq, *uncompressed_fq;
+		compressionType *compressed_fq;
+                FQ_T *uncompressed_fq;
 #endif
 
 #ifdef INSTRUMENTED
@@ -803,14 +804,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
 
-                FQ_T *compressed_fq = NULL, *uncompressed_fq = NULL;
+                compressionType *compressed_fq = NULL;
+		FQ_T *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
                 int *vectorizedsize = (int *)malloc(2 * sizeof(int));
 
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
                 originalsize = vectorizedsize[0];
                 compressedsize = vectorizedsize[1];
-                compressed_fq = (FQ_T *)malloc(compressedsize * sizeof(FQ_T));
+                compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
 
 #if defined(_COMPRESSIONVERIFY)
                 assert(originalsize <= fq_64_length);

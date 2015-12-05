@@ -31,7 +31,7 @@ template <typename T, typename T_C>
 #else
 template <typename T>
 #endif
-void vreduce(const function<void(T, long, T *, int)> &reduce,
+void vreduce(const function <void(T, long, T *, int)> &reduce,
              const function <void(T, long, T *& /*Out*/, int & /*Out*/)> &get,
 #ifdef _COMPRESSION
              const Compression<T, T_C> &schema,
@@ -51,7 +51,10 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
-    T *compressed_fq = NULL, *uncompressed_fq = NULL, *compressed_recv_buff = NULL;
+    T *uncompressed_fq = NULL;
+    T_C *compressed_fq = NULL;
+    T_C *compressed_recv_buff = NULL;
+    T_C *temporal_recv_buff = NULL;
 #endif
 
     //time mesurement
@@ -195,7 +198,7 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
                              comm, MPI_STATUS_IGNORE);
                 MPI_Sendrecv(compressed_fq, compressedsize, type,
                              previousRank, it + 2,
-                             recv_buff, lowerId, type,
+                             temporal_recv_buff, lowerId, type,
                              previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
@@ -220,7 +223,7 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
                 uncompressedsize = originalsize;
-                schema.decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
@@ -290,7 +293,7 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
                              comm, MPI_STATUS_IGNORE);
                 MPI_Sendrecv(compressed_fq, compressedsize, type,
                              previousRank, it + 2,
-                             recv_buff, upperId, type,
+                             temporal_recv_buff, upperId, type,
                              previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
@@ -318,7 +321,7 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
                 uncompressedsize = originalsize;
-                schema.decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
@@ -434,7 +437,7 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
     csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
-    compressed_recv_buff = (T *)malloc(csize * sizeof(T));
+    compressed_recv_buff = (T_C *)malloc(csize * sizeof(T_C));
 #else
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
@@ -512,6 +515,7 @@ void vreduce(const function<void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
     free(compressed_sizes);
     free(compressed_disps);
+    free(temporal_recv_buff);
     free(compressed_recv_buff);
 #endif
 

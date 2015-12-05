@@ -44,6 +44,10 @@
 #include "cpubfs_bin.h"
 #endif
 
+// vertexType, compressionType
+#include "types_bfs.h"
+
+
 using std::vector;
 using std::knuth_b;
 using std::uniform_int_distribution;
@@ -246,11 +250,11 @@ int main(int argc, char **argv)
     // Check Matrix. Values lower than 32 bits are needed for SIMDcompression
     if (rank == 0)
     {
-        printf("Check matrix values...");
+        printf("Check matrix values (lower than 2^32)...");
     }
     if (!store.allValuesSmallerThan32Bits())
     {
-        printf("error::simd-compression: Not all values in the graph are lower than 2^32\n");
+        printf("error. Not all values in the graph are lower than 2^32\n");
         MPI_Finalize();
         exit(1);
     }
@@ -260,17 +264,38 @@ int main(int argc, char **argv)
     }
 #endif
 
+#if defined(_COMPRESSION) // && defined(_SIMD_PLUS)
+    // Check Matrix. Values are possitive
+    if (rank == 0)
+    {
+        printf("Check matrix values (positive)...");
+    }
+    if (!store.allValuesSmallerThan32Bits())
+    {
+        printf("error. Not all values in the graph are positive.\n");
+        MPI_Finalize();
+        exit(1);
+    }
+    if (rank == 0)
+    {
+        printf(" done!\n");
+    }
+#endif
+
+
 #ifdef _COMPRESSION
     /**
      * @values "nocompression", "cpusimd", "gpusimt"
      */
-#ifdef _SIMD
-    Compression<vertexType, vertexType> &schema = *CompressionFactory<vertexType, vertexType>::getFromName("cpusimd");
+#if defined(_SIMD)
+    Compression<vertexType, compressionType> &schema = *CompressionFactory<vertexType, compressionType>::getFromName("cpusimd");
     schema.reconfigure(compressionThreshold, compressionCodec);
-#elif defined _SIMT
-    Compression<vertexType, vertexType> &schema = *CompressionFactory<vertexType, vertexType>::getFromName("gpusimt");
+#elif defined(_SIMD_PLUS)
+    Compression<vertexType, compressionType> &schema = *CompressionFactory<vertexType, compressionType>::getFromName("simdplus");
+#elif defined(_SIMT)
+    Compression<vertexType, compressionType> &schema = *CompressionFactory<vertexType, compressionType>::getFromName("gpusimt");
 #else
-    Compression<vertexType, vertexType> &schema = *CompressionFactory<vertexType, vertexType>::getFromName("nocompression");
+    Compression<vertexType, compressionType> &schema = *CompressionFactory<vertexType, compressionType>::getFromName("nocompression");
 #endif
 #endif
 

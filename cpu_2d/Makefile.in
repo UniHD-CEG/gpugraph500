@@ -71,11 +71,13 @@ host_triplet = @host@
 @COMPRESSION_TRUE@@VERIFY_COMPRESSION_TRUE@am__append_11 = -D_COMPRESSIONVERIFY
 @COMPRESSION_TRUE@@SIMD_TRUE@am__append_12 = -D_SIMD
 @COMPRESSION_TRUE@@SIMD_TRUE@am__append_13 = -D_SIMD,
+@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_TRUE@am__append_14 = -D_SIMD_PLUS
+@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_TRUE@am__append_15 = -D_SIMD_PLUS,
 
 # Other. e.g SIMT
-@CUDA_TRUE@am__append_14 = -D_CUDA,
-@CUDA_TRUE@am__append_15 = -D_CUDA
-@DEBUGGING_TRUE@am__append_16 = $(D_FLAG) \
+@CUDA_TRUE@am__append_16 = -D_CUDA,
+@CUDA_TRUE@am__append_17 = -D_CUDA
+@DEBUGGING_TRUE@am__append_18 = $(D_FLAG) \
 @DEBUGGING_TRUE@	-fopt-info-all=@PACKAGE_NAME@.vectorization.out
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
@@ -255,6 +257,7 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SIMD_FLAGS = @SIMD_FLAGS@
 SIMD_OBJECTS = @SIMD_OBJECTS@
+SIMD_PLUS_OBJECTS = @SIMD_PLUS_OBJECTS@
 SIMT_OBJECTS = @SIMT_OBJECTS@
 STRIP = @STRIP@
 VERSION = @VERSION@
@@ -321,10 +324,11 @@ AUTOMAKE_OPTIONS = foreign subdir-objects
 ACLOCAL_AMFLAGS = -I m4
 DEFINES = $(am__append_2) $(am__append_3) $(am__append_5) \
 	$(am__append_6) $(am__append_8) $(am__append_10) \
-	$(am__append_11) $(am__append_12) $(am__append_15) \
-	$(am__append_16)
+	$(am__append_11) $(am__append_12) $(am__append_14) \
+	$(am__append_17) $(am__append_18)
 DEFINES_CUDA = $(am__append_1) $(am__append_4) $(am__append_7) \
-	$(am__append_9) $(am__append_13) $(am__append_14)
+	$(am__append_9) $(am__append_13) $(am__append_15) \
+	$(am__append_16)
 
 ### Dynamic variables
 #
@@ -348,9 +352,11 @@ DEFINES_CUDA = $(am__append_1) $(am__append_4) $(am__append_7) \
 @OMP_CUDA_TRUE@OPENMP_FLAG = @OPENMP_CXXFLAGS@
 @OMP_GENERAL_TRUE@OPENMP_FLAG = @OPENMP_CXXFLAGS@
 @COMPRESSION_TRUE@@DEBUG_COMPRESSION_TRUE@LLIBC = -static-libstdc++
-@COMPRESSION_TRUE@@SIMD_FALSE@INCPATH = -I.
+@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_FALSE@INCPATH = -I.
+@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_TRUE@INCPATH = -I. -Icompression/simdplus
 @COMPRESSION_TRUE@@SIMD_TRUE@INCPATH = -I. -Icompression/cpusimd/include
-@COMPRESSION_TRUE@@SIMD_FALSE@g500_HEADER_LIST = 
+@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_FALSE@g500_HEADER_LIST = 
+@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_TRUE@g500_HEADER_LIST = 
 @COMPRESSION_TRUE@@SIMD_TRUE@g500_HEADER_LIST = @simd_H_FILES@
 @CUDA_FALSE@bfs_object = cpubfs_bin.o
 @CUDA_TRUE@bfs_object = cuda_bfs_cuda.o
@@ -372,7 +378,8 @@ AM_CFLAGS = @CC_MFLAG@ @CFLAGS@ @WARN_CFLAGS@
 #
 NVCXX = @NVCC@
 AM_LD = $(PROFILER) @MPICXX@
-@SIMD_FALSE@@SIMT_FALSE@COMPRESSION_OBJECTS = "ADD_MORE_TYPES_HERE"
+@SIMD_FALSE@@SIMD_PLUS_FALSE@@SIMT_FALSE@COMPRESSION_OBJECTS = "ADD_MORE_TYPES_HERE"
+@SIMD_FALSE@@SIMD_PLUS_TRUE@@SIMT_FALSE@COMPRESSION_OBJECTS = @SIMD_PLUS_OBJECTS@
 @SIMD_FALSE@@SIMT_TRUE@COMPRESSION_OBJECTS = @SIMT_OBJECTS@
 
 ### List of sources to compile
@@ -759,21 +766,27 @@ main.o: main.cpp validate/validate.h distmatrix2d.hh generator/graph_generator.h
 		../b40c/graph/bfs/partition_contract/downsweep/cta.cuh ../b40c/partition/downsweep/cta.cuh ../b40c/graph/bfs/partition_contract/downsweep/tile.cuh \
 		../b40c/partition/downsweep/tile.cuh ../b40c/graph/bfs/partition_contract/downsweep/kernel_policy.cuh ../b40c/partition/downsweep/kernel_policy.cuh \
 		../b40c/graph/bfs/copy/kernel.cuh ../b40c/graph/bfs/copy/cta.cuh ../b40c/graph/bfs/copy/kernel_policy.cuh globalbfs.hh bitlevelfunctions.h cpubfs_bin.h \
-		compression/cpusimd.hh compression/nocompression.hh
+		compression/cpusimd.hh compression/nocompression.hh compression/simdplus.hh
 	@echo ""
 	@echo "--- Compiling g500"
 	$(Q)$(MPICXX) -c $(MPICXXFLAGS) $(SCOREP_INSTRUMENTATION) $(SCOREP_CXXCPPFLAGS) $(INCPATH) -o main.o main.cpp
 	@echo "    MPICC     $@"
 
+vp4dc.o: compression/simdplus/vp4dc.c
+	@echo ""
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
+	$(Q)$(CC) $(AM_CFLAGS) -DNDEBUG $(INCPATH) -c compression/simdplus/vp4dc.c
+
+vp4dd.o: compression/simdplus/vp4dd.c
+	$(Q)$(CC) $(AM_CFLAGS) -DNDEBUG $(INCPATH) -c compression/simdplus/vp4dd.c
+
 bitpacking.o: compression/cpusimd/include/bitpacking.h compression/cpusimd/src/bitpacking.cpp
-@SIMD_TRUE@	@echo ""
-@SIMD_TRUE@	@echo "============================================================================"
-@SIMD_TRUE@	@echo "== Compiling"
-@SIMD_TRUE@	@echo "============================================================================"
-@SIMD_FALSE@@SIMT_TRUE@	@echo ""
-@SIMD_FALSE@@SIMT_TRUE@	@echo "============================================================================"
-@SIMD_FALSE@@SIMT_TRUE@	@echo "== Compiling"
-@SIMD_FALSE@@SIMT_TRUE@	@echo "============================================================================"
+	@echo ""
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling CPU/SIMD compression"
 	$(Q)$(CXX) $(AM_CXXFLAGS) -c compression/cpusimd/src/bitpacking.cpp -Icompression/cpusimd/include
@@ -858,9 +871,9 @@ cpubfs_bin.o: cpubfs_bin.cpp cpubfs_bin.h globalbfs.hh distmatrix2d.hh generator
 
 cudacompress.o: compression/gpusimt/cm.h compression/gpusimt/cudacompress.cu
 	@echo ""
-@SIMT_TRUE@	@echo "============================================================================"
-@SIMT_TRUE@	@echo "== Compiling"
-@SIMT_TRUE@	@echo "============================================================================"
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling GPU/SIMT"
 	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
@@ -869,9 +882,9 @@ cudacompress.o: compression/gpusimt/cm.h compression/gpusimt/cudacompress.cu
 
 cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 	@echo ""
-@SIMD_TRUE@	@echo "============================================================================"
-@SIMD_TRUE@	@echo "== Compiling"
-@SIMD_TRUE@	@echo "============================================================================"
+	@echo "============================================================================"
+	@echo "== Compiling"
+	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
 	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o

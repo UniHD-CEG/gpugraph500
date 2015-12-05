@@ -1,7 +1,7 @@
 /**
     Copyright (C) powturbo 2013-2015
     GPL v2 License
-
+  
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -21,7 +21,7 @@
     - twitter  : https://twitter.com/powturbo
     - email    : powturbo [_AT_] gmail [_DOT_] com
 **/
-// bitpack include
+// bitpack include 
 #define BITBLK32_1(ip, i, op, parm) { ; register uint32_t w;;\
   IPPB(ip, i*32+ 0, parm); w  = (uint32_t)SRC(ip, i*32+ 0)      ;\
   IPPB(ip, i*32+ 1, parm); w |= (uint32_t)SRC(ip, i*32+ 1) <<  1;\

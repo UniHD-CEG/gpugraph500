@@ -121,6 +121,7 @@ public:
                                       size_t *local_p) const;
 
     bool allValuesSmallerThan32Bits() const;
+    bool allValuePositive() const;
 };
 
 /**
@@ -1334,5 +1335,38 @@ bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesSmallerThan
     return allSmaller;
 }
 
+/**
+ * allPositive Check
+ * Checks if all values in the Matrix are possitive
+ */
+template<typename vertextyp, typename rowoffsettyp, bool WOLO, int ALG, bool PAD>
+bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuePositive() const
+{
+
+    const rowtyp *rowp = this->getRowPointer();
+    const vertexType *columnp = this->getColumnIndex();
+    bool allPositive = true;
+    int i = 0, rowLength = this->getLocRowLength();
+    rowtyp j, max_j;
+
+    while (allPositive && i < rowLength)
+    {
+        j = rowp[i];
+        max_j = rowp[i + 1];
+        while (allPositive && j < max_j)
+        {
+	    const vertexType x = columnp[j];
+            const bool isPositive = (0&x^((0^x)&-(0<x)));
+            if (!isPositive)
+            {
+                allPositive = false;
+            }
+            ++j;
+        }
+        ++i;
+    }
+
+    return allPositive;
+}
 
 #endif // DISTMATRIX2D_HH

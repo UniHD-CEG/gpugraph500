@@ -94,6 +94,9 @@ limitations under the License.
 /* Define to 1 if the system has the `aligned' function attribute */
 #undef HAVE_FUNC_ATTRIBUTE_ALIGNED
 
+/* Define to 1 if the system has the `always_inline' function attribute */
+#undef HAVE_FUNC_ATTRIBUTE_ALWAYS_INLINE
+
 /* Define to 1 if the system has the `const' function attribute */
 #undef HAVE_FUNC_ATTRIBUTE_CONST
 

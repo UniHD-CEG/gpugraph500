@@ -1,9 +1,5 @@
-#ifndef BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H
-#define BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H
-
-//#define ORDER_MODE 1 // mode=0 increasing. mode=1 strictly increasing sequence
-//#define BLOCK_SIZE (64*1024)
-//#define PACK_SIZE 128
+#ifndef BFS_MULTINODE_SIMDPLUS_COMPRESSION_H
+#define BFS_MULTINODE_SIMDPLUS_COMPRESSION_H
 
 #include "compression.hh"
 #include "vp4dc.h"
@@ -14,12 +10,13 @@ using namespace std::chrono;
 
 
 template <typename T, typename T_C>
-class CpuImprovedSimd: public Compression<T, T_C>
+class SimdPlus: public Compression<T, T_C>
 {
 private:
     uint32_t SIMDCOMPRESSION_THRESHOLD;
     inline bool isCompressible(int size) const { return (size > SIMDCOMPRESSION_THRESHOLD); };
 public:
+    SimdPlus();
     void debugCompression(T *fq, const int size) const;
     void compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const;
     void decompress(T_C *compressed_fq_64, const int size,
@@ -31,13 +28,13 @@ public:
 };
 
 template <typename T, typename T_C>
-CpuImprovedSimd<T, T_C>::CpuImprovedSimd()
+SimdPlus<T, T_C>::SimdPlus()
 {
     SIMDCOMPRESSION_THRESHOLD = 64; // use 0xffffff (2^32) to transparently disable
 }
 
 template<typename T, typename T_C>
-void CpuImprovedSimd<T, T_C>::reconfigure(int compressionThreshold, string compressionExtraArgument)
+void SimdPlus<T, T_C>::reconfigure(int compressionThreshold, string compressionExtraArgument)
 {
     SIMDCOMPRESSION_THRESHOLD = compressionThreshold;
     assert(compressionThreshold >= 0);
@@ -46,16 +43,17 @@ void CpuImprovedSimd<T, T_C>::reconfigure(int compressionThreshold, string compr
 
 
 template<typename T, typename T_C>
-void CpuImprovedSimd<T, T_C>::debugCompression(T *fq, const int size) const
+void SimdPlus<T, T_C>::debugCompression(T *fq, const int size) const
 {
     /**
      * disabled:
      */
     size_t compressedsize, uncompressedsize = static_cast<size_t>(size);
-    T *compressed_fq_64, *uncompressed_fq_64;
+    T_C *compressed_fq_64;
+    T *uncompressed_fq_64;
     high_resolution_clock::time_point time_0, time_1;
     time_0 = high_resolution_clock::now();
-    compress(fq, uncompressedsize, &compressed_fq_64, compressedsize);
+    compress(reinterpret_cast<uint64_t *>(fq), uncompressedsize, &compressed_fq_64, compressedsize);
     time_1 = high_resolution_clock::now();
     long encode_time = duration_cast<nanoseconds>(time_1 - time_0).count();
     time_0 = high_resolution_clock::now();
@@ -66,7 +64,7 @@ void CpuImprovedSimd<T, T_C>::debugCompression(T *fq, const int size) const
     /**
      * Check validity of results
      */
-    verifyCompression(fq, uncompressed_fq_64, uncompressedsize);
+    verifyCompression(reinterpret_cast<uint64_t *>(fq), uncompressed_fq_64, uncompressedsize);
     double compressratio = 0.0;
     printf("debug:: no-compression, data: %ldB c/d: %04ld/%04ldus, %02.3f%% gained\n", size * sizeof(int), encode_time,
            decode_time, compressratio);
@@ -74,13 +72,13 @@ void CpuImprovedSimd<T, T_C>::debugCompression(T *fq, const int size) const
 }
 
 template<typename T, typename T_C>
-void CpuImprovedSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
+void SimdPlus<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
                                      size_t &compressedsize) const
 {
     if (isCompressible(size))
     {
         // L948
-        const unsigned char *ptr_to_endaddress = p4denc64(fq_64, size, &compressed_fq_64);
+        const unsigned char *ptr_to_endaddress = p4denc64(reinterpret_cast<uint64_t *>(fq_64), size, &compressed_fq_64);
         compressedsize = static_cast<std::size_t>(ptr_to_endaddress - *compressed_fq_64);
         //
         // unsigned pa[BLOCK_SIZE + 2048];
@@ -95,18 +93,20 @@ void CpuImprovedSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compr
          * Buffer will not be compressed (Small size. Not worthed)
          */
         compressedsize = size;
-        *compressed_fq_64 = fq_64;
+        *compressed_fq_64 = reinterpret_cast<uint64_t *>(fq_64);
     }
 }
 
 template<typename T, typename T_C>
-void CpuImprovedSimd<T, T_C>::decompress(T_C *compressed_fq_64, const int size,
+void SimdPlus<T, T_C>::decompress(T_C *compressed_fq_64, const int size,
                                        /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
     if (isCompressed(uncompressedsize, size))
     {
         //
-        p4ddec64(compressed_fq_64, uncompressedsize, &uncompressed_fq_64);
+	uncompressed_fq_64 = reinterpret_cast<uint64_t **>(uncompressed_fq_64);
+        p4ddec64(compressed_fq_64, uncompressedsize, *uncompressed_fq_64);
+	uncompressed_fq_64 = reinterpret_cast<T **>(uncompressed_fq_64);
     }
     else
     {
@@ -114,12 +114,12 @@ void CpuImprovedSimd<T, T_C>::decompress(T_C *compressed_fq_64, const int size,
          * Buffer was not compressed (Small size. Not worthed)
          */
         uncompressedsize = size;
-        *uncompressed_fq_64 = compressed_fq_64;
+        *uncompressed_fq_64 = reinterpret_cast<T *>(compressed_fq_64);
     }
 }
 
 template<typename T, typename T_C>
-void CpuImprovedSimd<T, T_C>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
+void SimdPlus<T, T_C>::verifyCompression(const T *fq, const T *uncompressed_fq_64,
         const size_t uncompressedsize) const
 {
     if (isCompressible(uncompressedsize))
@@ -129,16 +129,16 @@ void CpuImprovedSimd<T, T_C>::verifyCompression(const T *fq, const T *uncompress
 }
 
 template<typename T, typename T_C>
-inline bool CpuImprovedSimd<T, T_C>::isCompressed(const size_t originalsize, const size_t compressedsize) const
+inline bool SimdPlus<T, T_C>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
     return (isCompressible(originalsize) && originalsize != compressedsize);
 }
 
 template<typename T, typename T_C>
-inline string CpuImprovedSimd<T, T_C>::name() const
+inline string SimdPlus<T, T_C>::name() const
 {
-    return "improvedsimd";
+    return "simdplus";
 }
 
 
-#endif // BFS_MULTINODE_NOCOMPRESSION_COMPRESSION_H
+#endif // BFS_MULTINODE_SIMDPLUS_COMPRESSION_H

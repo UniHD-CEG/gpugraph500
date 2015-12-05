@@ -6,10 +6,13 @@
 #include <map>
 #include <string>
 #include "compression.hh"
-#ifdef _SIMD
+#if defined(_SIMD)
 #include "cpusimd.hh"
-#endif
+#elif defined (_SIMD_PLUS)
+#include "simdplus.hh"
+#else
 #include "nocompression.hh"
+#endif
 
 using std::map;
 using std::string;
@@ -22,15 +25,15 @@ static map<string, shared_ptr<Compression<T, T_C>>> initializeCompressfactory()
 {
     map <string, shared_ptr<Compression<T, T_C>>> schemes;
 
-#if defined(_SIMD) // CPU-SIMD
+#if defined(_SIMD) // Lemire's
     schemes["cpusimd"] = shared_ptr<Compression<T, T_C>>(new CpuSimd<T, T_C>());
-#elif defined(_SIMD_IMPROVED) // CPU-SIMD_IMPROVED
-    schemes["improvedsimd"] = shared_ptr<Compression<T, T_C>>(new CpuImprovedSimd<T, T_C>());
-#elif defined(_SIMT) // GPU-SIMT
+#elif defined(_SIMD_PLUS) // Turbo-PFOR
+    schemes["simdplus"] = shared_ptr<Compression<T, T_C>>(new SimdPlus<T, T_C>());
+#elif defined(_SIMT) // CUDA
     schemes["gpusimt"] = shared_ptr<Compression<T, T_C>>(new GpuSimt<T, T_C>());
-#endif
+#else
     schemes["nocompression"] = shared_ptr<Compression<T, T_C>>(new NoCompression<T, T_C>());
-
+#endif
     return schemes;
 }
 
