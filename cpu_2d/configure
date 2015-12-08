@@ -693,8 +693,6 @@ SED
 endian
 CXX_MBITS
 CC_MBITS
-CXX_MFLAG
-CC_MFLAG
 CPUEXT_FLAGS
 SIMD_FLAGS
 host_os
@@ -1550,49 +1548,50 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --enable-bfs-basic-profiling
+  --disable-bfs-basic-profiling
                           It is related with instrumentation. Displays
-                          statistical data on each BFS run. Enabled by
-                          default.
-  --enable-other-basic-profiling
+                          statistical data on each BFS run. (Enabled by
+                          default)
+  --disable-other-basic-profiling
                           It is related with instrumentation. Displays
-                          graph500 default statistics. Enabled by default.
+                          graph500 default statistics. (Enabled by default)
   --enable-scorep         It is related with instrumentation. Enables
                           instrumentation with Scalasca/ScoreP. ScoreP must be
-                          detected by ./configure. Disabled by default.
-  --enable-compression    It is related with data compression. Enables data
+                          detected by ./configure. (Disabled by default)]
+  --disable-compression   It is related with data compression. Enables data
                           compression through the network. This option is
                           available only when --enable-cuda (BFS runs using
-                          CUDA) is active (default). Enabled by default.
-  --enable-simd           It is related with data compression. MPI packets
-                          will be sent compressed using the PFOR-delta
-                          SIMDCompression library. It is only active if
+                          CUDA) is active (default). (Enabled by default)
+  --disable-simd          It is related with data compression. MPI packets
+                          will be sent compressed using the PFOR-delta D.
+                          Lemire SIMDCompression library. It is only active if
                           --enable-compression is selected. It will be enabled
                           by default if --enable-compression is active and no
-                          compression method is selected.
+                          compression method is selected. (Enabled by default)
   --enable-simd+          It is related with data compression. MPI packets
                           will be sent compressed using a PFOR-delta improved
                           library: Turbo-PFOR. It is only active if
-                          --enable-compression is selected.
+                          --enable-compression is selected. (Disabled by
+                          default)
   --enable-simt           It is related with data compression. Use CUDA
                           implementation for data compression. Not implemented
-                          yet. Disabled by default.
+                          yet. (Disabled by default)
   --enable-debug-compression
                           It is related with data compression. Shows
                           statistics of compression rate, time of compression,
-                          codec, ETC. Disabled by default.
+                          codec, ETC. (Disabled by default)
   --enable-verify-compression
                           It is related with data compression. Sends both
                           compressed and decompressed data through the
                           network. Checks decompression after transmission.
-                          Disabled by default.
+                          (Disabled by default)
   --enable-strong-optimizations
                           It is related with optimizations. Enables strong
                           compiler optimizations on the compiler. These
                           optimizations have been tested and work fine.
-                          Disable if your ejecutable fails of hangs. Disabled
-                          by default.
-  --enable-vector-optimizations
+                          Disable if your ejecutable fails of hangs. (Disabled
+                          by default)
+  --disable-vector-optimizations
                           It is related with optimizations. Auto-aligns
                           allocated memory depending on the detected processor
                           capabilities. Adds hints to the compiler when data
@@ -1600,38 +1599,40 @@ Optional Features:
                           autovectorize that data. The run afterwards using hw
                           SIMD instructions. These optimizations have been
                           tested and work fine. Disable if your ejecutable
-                          fails of hangs. Enabled by default.
+                          fails or hangs. Not fully implemented. (Enabled by
+                          default)
   --enable-openmp         It is related with optimizations. Enables or
                           disables both --enable-cuda-openmp and
                           --enable-general-openmp. This option overrides both
-                          openmp settings. Not set by default.
+                          openmp settings. (Not set by default)
   --enable-cuda-openmp    Related with optimizations. Selects whether OpenMP
                           will be enabled. This option applies to CUDA C
-                          files. Disabled by default.
+                          files. (Disabled by default)
   --enable-general-openmp It is related with optimizations. Selects whether
                           OpenMP will be enabled. This option applies to
-                          general C and C++ files. Disabled by default.
-  --enable-cuda           It is related with optimizations. Use the CUDA
+                          general C and C++ files. (Disabled by default)
+  --disable-cuda          It is related with optimizations. Use the CUDA
                           implementation of the BFS runs. Requires NVIDIA
-                          hardware support. Enabled by default.
+                          hardware support. (Enabled by default)
   --enable-ptxas_otimization
                           It is related with optimizations. Selects whether
                           CUDA assembly (PTXAS) will be optimized or not. This
                           option will only be used if --enable-cuda is present
                           (default). The default PTXAS optimization is -O3.
-                          Disabled by default.
+                          (Disabled by default)
   --enable-nvidia-architecture=<fermi|kepler|auto|detect>
                           It is related with optimizations.. Selects the
                           NVIDIA target architecture. Requires --enable-cuda
                           to be selected (default). Default option is
                           'detect'. In case detection does not succeed auto
-                          mode is selected
+                          mode is selected. Detect mode is not fully
+                          implemented
   --enable-debug          It is related with debugging. Provides extra traces
-                          at runtime. Disabled by default.
+                          at runtime. (Disabled by default)
   --enable-debugging      It is related with debugging. Enables -g option on
-                          compiler (debugging). Disabled by default.
+                          compiler (debugging). (Disabled by default)
   --enable-quiet          It is related with debugging. Disable compile
-                          mensages when running make.
+                          mensages when running make. (Disabled by default)
   --enable-portable-binary
                           disable compiler optimizations that would produce
                           unportable binaries
@@ -5712,7 +5713,7 @@ fi
 if test "${enable_bfs_basic_profiling+set}" = set; then :
   enableval=$enable_bfs_basic_profiling;
 else
-  enable_bfs_basic_profiling=no
+  enable_bfs_basic_profiling=yes
 fi
 
 
@@ -5764,7 +5765,7 @@ fi
 #     https://github.com/powturbo/TurboPFor
 # Check whether --enable-simd+ was given.
 if test "${enable_simd_+set}" = set; then :
-  enableval=$enable_simd_; enable_simdplus=yes
+  enableval=$enable_simd_; enable_simdplus=$enableval
 else
   enable_simdplus=no
 fi
@@ -10074,102 +10075,21 @@ fi
 ### Checks latest architecture flag
 #
 
-mflag=
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for the latest architecture flag supported" >&5
-$as_echo_n "checking for the latest architecture flag supported... " >&6; }
-mflag=`echo $SIMD_FLAGS | awk '{ printf $NF; }'`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $mflag" >&5
-$as_echo "$mflag" >&6; }
-CC_MFLAG=
-as_CACHEVAR=`$as_echo "ax_cv_check_cflags__$mflag" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $mflag" >&5
-$as_echo_n "checking whether C compiler accepts $mflag... " >&6; }
-if eval \${$as_CACHEVAR+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-  ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  $mflag"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  eval "$as_CACHEVAR=yes"
-else
-  eval "$as_CACHEVAR=no"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  CFLAGS=$ax_check_save_flags
-fi
-eval ac_res=\$$as_CACHEVAR
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
-  CC_MFLAG=$mflag
-else
-  :
-fi
-
-
-CXX_MFLAG=
-ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-as_CACHEVAR=`$as_echo "ax_cv_check_cxxflags__$mflag" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts $mflag" >&5
-$as_echo_n "checking whether C++ compiler accepts $mflag... " >&6; }
-if eval \${$as_CACHEVAR+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-  ax_check_save_flags=$CXXFLAGS
-  CXXFLAGS="$CXXFLAGS  $mflag"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-  eval "$as_CACHEVAR=yes"
-else
-  eval "$as_CACHEVAR=no"
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  CXXFLAGS=$ax_check_save_flags
-fi
-eval ac_res=\$$as_CACHEVAR
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
-  CXX_MFLAG=$mflag
-else
-  :
-fi
-
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
+# Disabled as -march is included. This flag may reduce portaility.
+# mflag=
+# AC_MSG_CHECKING([for the latest architecture flag supported])
+# mflag=`echo $SIMD_FLAGS | awk '{ printf $NF; }'`
+# AC_MSG_RESULT([$mflag])
+# CC_MFLAG=
+# AX_CHECK_COMPILE_FLAG($mflag,
+#   [CC_MFLAG=$mflag], [])
+# AC_SUBST([CC_MFLAG])
+# CXX_MFLAG=
+# AC_LANG_PUSH([C++])
+# AX_CHECK_COMPILE_FLAG($mflag,
+#   [CXX_MFLAG=$mflag], [])
+# AC_LANG_POP([C++])
+# AC_SUBST([CXX_MFLAG])
 
 ### Checks machine architecture
 #

@@ -87,22 +87,22 @@ AX_MPI_PRE
 #   Default value: no
 AC_ARG_ENABLE([bfs-basic-profiling],
     AS_HELP_STRING([--enable-bfs-basic-profiling],
-      [It is related with instrumentation. Displays statistical data on each BFS run. Enabled by default.]),,
-    [enable_bfs_basic_profiling=no])
+      [It is related with instrumentation. Displays statistical data on each BFS run. (Enabled by default)]),,
+    [enable_bfs_basic_profiling=yes])
 
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([other-basic-profiling],
     AS_HELP_STRING([--enable-other-basic-profiling],
       [It is related with instrumentation. Displays graph500 default statistics.
-      Enabled by default.]),,
+      (Enabled by default)]),,
     [enable_other_basic_profiling=yes])
 
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([scorep],
     AS_HELP_STRING([--enable-scorep],
-      [It is related with instrumentation. Enables instrumentation with Scalasca/ScoreP. ScoreP must be detected by ./configure. Disabled by default.]),,
+      It is related with instrumentation. Enables instrumentation with Scalasca/ScoreP. ScoreP must be detected by ./configure. (Disabled by default)]),,
     [enable_scorep=no])
 
 #   Values: yes | no
@@ -110,7 +110,7 @@ AC_ARG_ENABLE([scorep],
 AC_ARG_ENABLE([compression],
     AS_HELP_STRING([--enable-compression],
       [It is related with data compression. Enables data compression through the network. This option is available only when --enable-cuda (BFS runs using CUDA) is active (default).
-      Enabled by default.]),
+      (Enabled by default)]),
     [enable_compression=$enableval],
     [enable_compression=yes])
 
@@ -120,10 +120,10 @@ AC_ARG_ENABLE([compression],
 #     https://github.com/lemire/SIMDCompressionAndIntersection
 AC_ARG_ENABLE([simd],
     AS_HELP_STRING([--enable-simd],
-      [It is related with data compression. MPI packets will be sent compressed using the PFOR-delta SIMDCompression library.
+      [It is related with data compression. MPI packets will be sent compressed using the PFOR-delta D. Lemire SIMDCompression library.
       It is only active if --enable-compression is selected.
       It will be enabled by default if --enable-compression is active
-      and no compression method is selected.]),,
+      and no compression method is selected. (Enabled by default)]),,
     [enable_simd=no])
 
 #   Values: yes | no
@@ -133,22 +133,22 @@ AC_ARG_ENABLE([simd],
 AC_ARG_ENABLE([simd+],
     AS_HELP_STRING([--enable-simd+],
       [It is related with data compression. MPI packets will be sent compressed using a PFOR-delta improved library: Turbo-PFOR.
-      It is only active if --enable-compression is selected.]),
-      [enable_simdplus=yes],
+      It is only active if --enable-compression is selected. (Disabled by default)]),
+      [enable_simdplus=$enableval],
     [enable_simdplus=no])
 
 #   Values: yes | no
 #   Default value: yes
 AC_ARG_ENABLE([simt],
     AS_HELP_STRING([--enable-simt],
-      [It is related with data compression. Use CUDA implementation for data compression. Not implemented yet. Disabled by default.]),,
+      [It is related with data compression. Use CUDA implementation for data compression. Not implemented yet. (Disabled by default)]),,
     [enable_simt=no])
 
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([debug-compression],
     AS_HELP_STRING([--enable-debug-compression],
-      [It is related with data compression. Shows statistics of compression rate, time of compression, codec, ETC. Disabled by default.]),,
+      [It is related with data compression. Shows statistics of compression rate, time of compression, codec, ETC. (Disabled by default)]),,
     [enable_debug_compression=no])
 
 #   Values: yes | no
@@ -156,23 +156,23 @@ AC_ARG_ENABLE([debug-compression],
 AC_ARG_ENABLE([verify-compression],
     AS_HELP_STRING([--enable-verify-compression],
       [It is related with data compression. Sends both compressed and decompressed data through the network. Checks decompression after transmission.
-      Disabled by default.]),,
+      (Disabled by default)]),,
     [enable_verify_compression=no])
 
 #   Values: yes | no
 #   Default value: yes
 AC_ARG_ENABLE([strong-optimizations],
     AS_HELP_STRING([--enable-strong-optimizations],
-      [It is related with optimizations. Enables strong compiler optimizations on the compiler. These optimizations have been tested and work fine. Disable if your ejecutable fails of hangs.
-      Disabled by default.]),,
+      [It is related with optimizations. Enables strong compiler optimizations on the compiler. These optimizations have been tested and work fine. Disable if your executable fails or hangs.
+      (Disabled by default)]),,
     [enable_strong_optimizations=no])
 
 #   Values: yes | no
 #   Default value: yes
 AC_ARG_ENABLE([vector-optimizations],
     AS_HELP_STRING([--enable-vector-optimizations],
-      [It is related with optimizations. Auto-aligns allocated memory depending on the detected processor capabilities. Adds hints to the compiler when data is not self-dependant, so the compiler can autovectorize that data. The run afterwards using hw SIMD instructions. These optimizations have been tested and work fine. Disable if your ejecutable fails of hangs.
-      Enabled by default.]),,
+      [It is related with optimizations. Auto-aligns allocated memory depending on the detected processor capabilities. Adds hints to the compiler when data is not self-dependant, so the compiler can autovectorize that data. The run afterwards using hw SIMD instructions. These optimizations have been tested and work fine. Disable if your executable fails or hangs. Not fully implemented. 
+      (Enabled by default)]),,
     [enable_vector_optimizations=yes])
 
 #   Values: yes | no
@@ -181,7 +181,7 @@ AC_ARG_ENABLE([openmp],
     AS_HELP_STRING([--enable-openmp],
       [It is related with optimizations. Enables or disables both --enable-cuda-openmp and --enable-general-openmp.
       This option overrides both openmp settings.
-      Not set by default.]),,
+      (Not set by default)]),,
     [enable_openmp=])
 
 #   Values: yes | no
@@ -190,7 +190,7 @@ AC_ARG_ENABLE([cuda-openmp],
     AS_HELP_STRING([--enable-cuda-openmp],
       [Related with optimizations. Selects whether OpenMP will be enabled.
       This option applies to CUDA C files.
-      Disabled by default.]),,
+      (Disabled by default)]),,
     [enable_cuda_openmp=no])
 
 #   Values: yes | no
@@ -199,7 +199,7 @@ AC_ARG_ENABLE([general-openmp],
     AS_HELP_STRING([--enable-general-openmp],
       [It is related with optimizations. Selects whether OpenMP will be enabled.
       This option applies to general C and C++ files.
-      Disabled by default.]),,
+      (Disabled by default)]),,
     [enable_general_openmp=no])
 
 #   Values: yes | no
@@ -207,7 +207,7 @@ AC_ARG_ENABLE([general-openmp],
 AC_ARG_ENABLE([cuda],
     AS_HELP_STRING([--enable-cuda],
       [It is related with optimizations. Use the CUDA implementation of the BFS runs.
-      Requires NVIDIA hardware support. Enabled by default.]),,
+      Requires NVIDIA hardware support. (Enabled by default)]),,
     [enable_cuda=yes])
 
 #   Values: yes | no
@@ -217,7 +217,7 @@ AC_ARG_ENABLE([ptxas_otimization],
       [It is related with optimizations. Selects whether CUDA assembly (PTXAS) will be optimized or not.
       This option will only be used if --enable-cuda is present (default).
       The default PTXAS optimization is -O3.
-      Disabled by default.]),,
+      (Disabled by default)]),,
     [enable_ptxas_otimization=no])
 
 #   Values: fermi | kepler | auto
@@ -225,7 +225,7 @@ AC_ARG_ENABLE([ptxas_otimization],
 AC_ARG_ENABLE(nvidia-architecture,
 AS_HELP_STRING([--enable-nvidia-architecture=<fermi|kepler|auto|detect>],
       [It is related with optimizations.. Selects the NVIDIA target architecture. Requires --enable-cuda to be selected (default).
-      Default option is 'detect'. In case detection does not succeed auto mode is selected]),
+      Default option is 'detect'. In case detection does not succeed auto mode is selected. Detect mode is not fully implemented]),
 [case "${enableval}" in
       fermi) enable_nvidia_architecture=fermi ;;
       kepler) enable_nvidia_architecture=kepler ;;
@@ -239,7 +239,7 @@ esac],[enable_nvidia_architecture=fermi])
 AC_ARG_ENABLE([debug],
     AS_HELP_STRING([--enable-debug],
       [It is related with debugging. Provides extra traces at runtime.
-      Disabled by default.]),,
+      (Disabled by default)]),,
     [enable_debug=no])
 
 #   Values: yes | no
@@ -247,14 +247,14 @@ AC_ARG_ENABLE([debug],
 AC_ARG_ENABLE([debugging],
     AS_HELP_STRING([--enable-debugging],
       [It is related with debugging. Enables -g option on compiler (debugging).
-      Disabled by default.]),,
+      (Disabled by default)]),,
     [enable_debugging=no])
 
 #   Values: yes | no
 #   Default value: no
 AC_ARG_ENABLE([quiet],
     AS_HELP_STRING([--enable-quiet],
-      [It is related with debugging. Disable compile mensages when running make.]),,
+      [It is related with debugging. Disable compile mensages when running make.      (Disabled by default)]),,
     [enable_quiet=no])
 
 ### preprocess options
@@ -453,20 +453,21 @@ fi
 ### Checks latest architecture flag
 #
 
-mflag=
-AC_MSG_CHECKING([for the latest architecture flag supported])
-mflag=`echo $SIMD_FLAGS | awk '{ printf $NF; }'`
-AC_MSG_RESULT([$mflag])
-CC_MFLAG=
-AX_CHECK_COMPILE_FLAG($mflag,
-  [CC_MFLAG=$mflag], [])
-AC_SUBST([CC_MFLAG])
-CXX_MFLAG=
-AC_LANG_PUSH([C++])
-AX_CHECK_COMPILE_FLAG($mflag,
-  [CXX_MFLAG=$mflag], [])
-AC_LANG_POP([C++])
-AC_SUBST([CXX_MFLAG])
+# Disabled as -march is included. This flag may reduce portaility.
+# mflag=
+# AC_MSG_CHECKING([for the latest architecture flag supported])
+# mflag=`echo $SIMD_FLAGS | awk '{ printf $NF; }'`
+# AC_MSG_RESULT([$mflag])
+# CC_MFLAG=
+# AX_CHECK_COMPILE_FLAG($mflag,
+#   [CC_MFLAG=$mflag], [])
+# AC_SUBST([CC_MFLAG])
+# CXX_MFLAG=
+# AC_LANG_PUSH([C++])
+# AX_CHECK_COMPILE_FLAG($mflag,
+#   [CXX_MFLAG=$mflag], [])
+# AC_LANG_POP([C++])
+# AC_SUBST([CXX_MFLAG])
 
 ### Checks machine architecture
 #

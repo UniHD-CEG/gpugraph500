@@ -1,0 +1,1 @@
+../scripts/slurm/debugger.sh

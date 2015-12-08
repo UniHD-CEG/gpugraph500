@@ -3,7 +3,7 @@
 echo "This script will run your BFS application using 4 SLURM processes and 4 MPI Nodes."
 echo "It uses gdb to debug the code. Edit the Makefile, set code_debug=yes and run make."
 echo ""
-echo "ps. set 'debug_code=yes' in Makefile"
+echo "ps. use ./configure --enable-debugging && make; to build the application."
 
 if [ "$#" != "2" ]; then
 	echo "usage: $0 <N> <SF>"
@@ -44,13 +44,17 @@ if [ ! -d $iseval ];then
 fi
 
 # 2^2 (4 proceses, 4 GPUs/ Nodes)
-# srun --tasks=PROCESSES --ntasks-per-node=2 $mpirun -np 4 --display-map gdb -ex run -ex "set confirm off" --args ../cpu_2d/g500 -s $SF -C $N -gpus 1 -qs 2
+srun --tasks=4 --ntasks-per-node=2 $mpirun --display-map gdb -ex run -ex "set confirm off" --args ../cpu_2d/g500 -s $SF -C $N -gpus 1 -qs 2 -btr 64 -be "frameofreference"
 
 # 3^2 (9 proceses, 9 GPUs/ Nodes)
-# srun --tasks=9 --ntasks-per-node=2 $mpirun -np 9 --display-map gdb -ex run -ex "set confirm off" --args ../cpu_2d/g500 -s $SF -C $N -gpus 1 -qs 2.1
+# srun --tasks=9 --ntasks-per-node=2 $mpirun  --display-map gdb -ex run -ex "set confirm off" --args ../cpu_2d/g500 -s $SF -C $N -gpus 1 -qs 2 -btr 64 -be "frameofreference"
 
 # 4^2 (16 proceses, 16 GPUs/ Nodes)
-# srun --tasks=16 --ntasks-per-node=2 $mpirun -np 16 --display-map gdb -ex run -ex "set confirm off" --args ../cpu_2d/g500 -s $SF -C $N -gpus 1 -qs 2
+# srun --tasks=16 --ntasks-per-node=2 $mpirun  --display-map gdb -ex run -ex "set confirm off" --args ../cpu_2d/g500 -s $SF -C $N -gpus 1 -qs 2 -btr 64 -be "frameofreference"
 
+# mpirun -np $PROCESSES
 # N^2 (N^2 processes, N^2 GPUs/ Nodes)
-srun --tasks=$PROCESSES --ntasks-per-node=2 $mpirun -np $PROCESSES --display-map gdb -ex run -ex "set confirm off" --args ../cpu_2d/g500 -s $SF -C $N -gpus 1 -qs 2
+# srun --tasks=$PROCESSES --ntasks-per-node=2 $mpirun  --display-map gdb -ex run -ex "set confirm off" --args ../cpu_2d/g500 -s $SF -C $N -gpus 1 -qs 2 -btr 64 -be "frameofreference"
+
+
+
