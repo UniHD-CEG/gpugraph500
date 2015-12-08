@@ -161,11 +161,11 @@ AC_ARG_ENABLE([verify-compression],
 
 #   Values: yes | no
 #   Default value: yes
-AC_ARG_ENABLE([strong-optimizations],
-    AS_HELP_STRING([--enable-strong-optimizations],
-      [It is related with optimizations. Enables strong compiler optimizations on the compiler. These optimizations have been tested and work fine. Disable if your executable fails or hangs.
+AC_ARG_ENABLE([aggressive-optimizations],
+    AS_HELP_STRING([--enable-aggressive-optimizations],
+      [It is related with optimizations. Enables aggressive compiler optimizations on the compiler. These optimizations have been tested and work fine. Disable if your executable fails or hangs.
       (Disabled by default)]),,
-    [enable_strong_optimizations=no])
+    [enable_aggressive_optimizations=no])
 
 #   Values: yes | no
 #   Default value: yes
@@ -216,7 +216,7 @@ AC_ARG_ENABLE([ptxas_otimization],
     AS_HELP_STRING([--enable-ptxas_otimization],
       [It is related with optimizations. Selects whether CUDA assembly (PTXAS) will be optimized or not.
       This option will only be used if --enable-cuda is present (default).
-      The default PTXAS optimization is -O3.
+      The default PTXAS optimization is -O2.
       (Disabled by default)]),,
     [enable_ptxas_otimization=no])
 
@@ -280,7 +280,7 @@ fi
 ### declare conditionals
 #
 
-AM_CONDITIONAL([STRONG_OPTIMIZATIONS], [test x"$enable_strong_optimizations" = xyes])
+AM_CONDITIONAL([STRONG_OPTIMIZATIONS], [test x"$enable_aggressive_optimizations" = xyes])
 AM_CONDITIONAL([VECTOR_OPTIMIZATIONS], [test x"$enable_vector_optimizations" = xyes])
 AM_CONDITIONAL([SIMD_PLUS], [test x"$enable_simdplus" = xyes])
 AM_CONDITIONAL([SIMD], [test x"$enable_simd" = xyes])

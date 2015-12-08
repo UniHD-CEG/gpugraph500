@@ -33,7 +33,7 @@ DEFINES_CUDA=
 #
 
 if PTXAS_OTIMIZATION
-  PTXAS=--ptxas-options="-O3"
+  PTXAS=--ptxas-options="-O2"
 endif
 
 if NVIDIA_ARCHITECTURE_FERMI
@@ -245,9 +245,11 @@ vp4dc.o: compression/simdplus/vp4dc.c
 	@echo "== Compiling"
 	@echo "============================================================================"
 	$(Q)$(CC) $(AM_CFLAGS) -DNDEBUG $(INCPATH) -c compression/simdplus/vp4dc.c
+	@echo "    CC        $@"
 
 vp4dd.o: compression/simdplus/vp4dd.c
 	$(Q)$(CC) $(AM_CFLAGS) -DNDEBUG $(INCPATH) -c compression/simdplus/vp4dd.c
+	@echo "    CC        $@"
 
 bitpacking.o: compression/cpusimd/include/bitpacking.h compression/cpusimd/src/bitpacking.cpp
 	@echo ""
@@ -343,7 +345,7 @@ cudacompress.o: compression/gpusimt/cm.h compression/gpusimt/cudacompress.cu
 	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling GPU/SIMT"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) @MPI_CXXFLAGS@ --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -Icompression/gpusimt compression/gpusimt/cudacompress.cu -o $@
 	@echo "    NVCC      $@"
 	@echo ""
 
@@ -354,7 +356,7 @@ cuda_bfs_cuda.o: cuda/cuda_bfs.cu
 	@echo "============================================================================"
 	@echo ""
 	@echo "--- Compiling CUDA/BFS"
-	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) "@MPI_CXXFLAGS@" --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
+	$(Q)$(NVCXX) $(NV_ARCHITECTURE) -c -ccbin @CXX@ -Xcompiler $(NVCXXFLAGS) @MPI_CXXFLAGS@ --compiler-options -fno-strict-aliasing @CXX_OO@ -use_fast_math @CUDA_CFLAGS@ -I.. cuda/cuda_bfs.cu -o cuda_bfs_cuda.o
 	@echo "    NVCC      $@"
 	@echo ""
 
