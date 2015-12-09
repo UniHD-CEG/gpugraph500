@@ -212,27 +212,27 @@ AC_ARG_ENABLE([cuda],
 
 #   Values: yes | no
 #   Default value: no
-AC_ARG_ENABLE([ptxas_otimization],
-    AS_HELP_STRING([--enable-ptxas_otimization],
+AC_ARG_ENABLE([ptxa-optimizations],
+    AS_HELP_STRING([--enable-ptxa-optimizations],
       [It is related with optimizations. Selects whether CUDA assembly (PTXAS) will be optimized or not.
       This option will only be used if --enable-cuda is present (default).
-      The default PTXAS optimization is -O2.
+      The default PTXAS optimization is -O3.
       (Disabled by default)]),,
-    [enable_ptxas_otimization=no])
+    [enable_ptxa_optimizations=no])
 
-#   Values: fermi | kepler | auto
-#   Default value: fermi
+#   Values: fermi | kepler | all | detect
+#   Default value: detect
 AC_ARG_ENABLE(nvidia-architecture,
 AS_HELP_STRING([--enable-nvidia-architecture=<fermi|kepler|auto|detect>],
       [It is related with optimizations.. Selects the NVIDIA target architecture. Requires --enable-cuda to be selected (default).
-      Default option is 'detect'. In case detection does not succeed auto mode is selected. Detect mode is not fully implemented]),
+      Default option is 'detect'. In case detection does not succeed 'all' mode is selected. Detect mode is not fully implemented]),
 [case "${enableval}" in
       fermi) enable_nvidia_architecture=fermi ;;
       kepler) enable_nvidia_architecture=kepler ;;
-      auto) enable_nvidia_architecture=auto ;;
-      detect) enable_nvidia_architecture=auto ;;
+      all) enable_nvidia_architecture=all ;;
+      detect) enable_nvidia_architecture=detect ;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-nvidia-architecture) ;;
-esac],[enable_nvidia_architecture=fermi])
+esac],[enable_nvidia_architecture=detect])
 
 #   Values: yes | no
 #   Default value:
@@ -285,7 +285,7 @@ AM_CONDITIONAL([VECTOR_OPTIMIZATIONS], [test x"$enable_vector_optimizations" = x
 AM_CONDITIONAL([SIMD_PLUS], [test x"$enable_simdplus" = xyes])
 AM_CONDITIONAL([SIMD], [test x"$enable_simd" = xyes])
 AM_CONDITIONAL([SIMT], [test x"$enable_simt" = xyes])
-AM_CONDITIONAL([PTXAS_OTIMIZATION], [test x"$enable_ptxas_otimization" = xyes])
+AM_CONDITIONAL([PTXAS_OTIMIZATION], [test x"$enable_ptxa_optimizations" = xyes])
 AM_CONDITIONAL([NVIDIA_ARCHITECTURE_FERMI], [test x"$enable_nvidia_architecture" = xfermi])
 AM_CONDITIONAL([NVIDIA_ARCHITECTURE_KEPLER], [test x"$enable_nvidia_architecture" = xkepler])
 AM_CONDITIONAL([SCOREP], [test x"$enable_scorep" = xyes])
@@ -399,7 +399,7 @@ AX_MPI_POST
 
 EXTOLL=no
 AC_MSG_CHECKING([whether mpi has Extoll support])
-omp_extoll=`ompi_info |grep -i mca | grep extoll 2> /dev/null`
+omp_extoll=`ompi_info 2> /dev/null |grep -i mca | grep extoll`
 if test x"$omp_extoll" = x; then
     AC_MSG_RESULT([no])
 else
@@ -419,11 +419,21 @@ if test "x$enable_cuda" = xyes; then
   fi
   CIT_CUDA_CONFIG
   AX_CUDA
-  GENCODE_SM20="-gencode=arch=compute_20,code=\"sm_20,compute_20\""
-  GENCODE_SM30="-gencode=arch=compute_30,code=\"sm_30,compute_30\""
-  GENCODE_SM35="-gencode=arch=compute_35,code=\"sm_35,compute_35\""
-  GENCODE_SM50="-gencode=arch=compute_50,code=\"sm_50,compute_50\""
-  CUDA_AUTOFLAGS="$GENCODE_SM20 $GENCODE_SM30 $GENCODE_SM35 $GENCODE_SM50"
+  GENCODE_SM20="-gencode=arch=compute_20,code=\"sm_20\""
+  GENCODE_SM30="-gencode=arch=compute_30,code=\"sm_30\""
+  GENCODE_SM35="-gencode=arch=compute_35,code=\"sm_35\""
+  GENCODE_SM37="-gencode=arch=compute_37,code=\"sm_37\""
+  GENCODE_SM50="-gencode=arch=compute_50,code=\"sm_50\""
+  
+  if test x"$enable_nvidia_architecture" = xdetect ; then
+    if test x"$mx_cv_cuda_major" = x -o x"$mx_cv_cuda_minor" = x ; then
+       CUDA_AUTOFLAGS="$GENCODE_SM20 $GENCODE_SM30 $GENCODE_SM35 $GENCODE_SM37 $GENCODE_SM50"
+    else
+       CUDA_AUTOFLAGS="-arch=sm_${mx_cv_cuda_major}${mx_cv_cuda_minor}"
+    fi
+  else
+    CUDA_AUTOFLAGS="$GENCODE_SM20 $GENCODE_SM30 $GENCODE_SM35 $GENCODE_SM37 $GENCODE_SM50"
+  fi 
   AC_SUBST([CUDA_AUTOFLAGS])
 fi
 
@@ -460,12 +470,12 @@ fi
 # AC_MSG_RESULT([$mflag])
 # CC_MFLAG=
 # AX_CHECK_COMPILE_FLAG($mflag,
-#   [CC_MFLAG=$mflag], [])
+#    [CC_MFLAG=$mflag], [])
 # AC_SUBST([CC_MFLAG])
 # CXX_MFLAG=
 # AC_LANG_PUSH([C++])
 # AX_CHECK_COMPILE_FLAG($mflag,
-#   [CXX_MFLAG=$mflag], [])
+#    [CXX_MFLAG=$mflag], [])
 # AC_LANG_POP([C++])
 # AC_SUBST([CXX_MFLAG])
 
@@ -509,6 +519,13 @@ elif test x"$hasIPO" != x ; then
   IPO_LDFLAG=-ipo
 fi
 AC_SUBST([IPO_LDFLAG])
+
+MARCH=
+if test x"$ax_cv_gcc_archflag" != xunknown ; then
+  [MARCH=$ax_cv_gcc_archflag]
+fi
+AC_SUBST([MARCH])
+
 
 # ------------------------------------------------------------------------------
 # Checks OpenCL

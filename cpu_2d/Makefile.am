@@ -28,12 +28,13 @@ ACLOCAL_AMFLAGS=-I m4
 
 DEFINES=
 DEFINES_CUDA=
+INCPATH=
 
 ### Dynamic variables
 #
 
 if PTXAS_OTIMIZATION
-  PTXAS=--ptxas-options="-O2"
+  PTXAS=--ptxas-options="-O3"
 endif
 
 if NVIDIA_ARCHITECTURE_FERMI
@@ -110,13 +111,13 @@ endif
 if SIMD
   DEFINES+=-D_SIMD
   DEFINES_CUDA+=-D_SIMD,
-  INCPATH=-I. -Icompression/cpusimd/include
+  INCPATH+=-I. -Icompression/cpusimd/include
   g500_HEADER_LIST=@simd_H_FILES@
 else
 if SIMD_PLUS
   DEFINES+=-D_SIMD_PLUS
   DEFINES_CUDA+=-D_SIMD_PLUS,
-  INCPATH=-I. -Icompression/simdplus
+  INCPATH+=-I. -Icompression/simdplus
   g500_HEADER_LIST=
 else
   INCPATH=-I.
@@ -160,7 +161,7 @@ NVCXXFLAGS=,@CXX_MBITS@,@CXX_OO@,-pipe,$(DEFINES_CUDA)
 AM_LDLIBS=$(LLIBS_SCOREP) $(libcudart_static_path) -L@CUDA_LIBDIR@ @MPI_CXXLDFLAGS@ $(libcudart_static_flag) -lcuda $(LLIBC)
 
 # @CXX_MFLAG
-AM_LDFLAGS=@IPO_LDFLAG@ $(LDFLAGS_SCOREP) $(OPENMP_FLAG) -Wl,@CXX_OO@
+AM_LDFLAGS=@IPO_LDFLAG@ @CXX_MBITS@ @MARCH@ $(LDFLAGS_SCOREP) $(OPENMP_FLAG) -Wl,@CXX_OO@
 # @CXX_MFLAG
 AM_CXXFLAGS=@CXXFLAGS@ @WARN_CXXFLAGS@
 # @CC_MFLAG

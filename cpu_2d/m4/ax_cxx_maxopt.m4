@@ -176,7 +176,6 @@ if test "$ac_test_CXXFLAGS" != "set"; then
      if test x"$enable_aggressive_optimizations" = xyes ; then
         AX_CHECK_COMPILE_FLAG(-funroll-loops, CXXFLAGS="$CXXFLAGS -funroll-loops")
         AX_CHECK_COMPILE_FLAG(-flto, CXXFLAGS="$CXXFLAGS -flto")
-        AX_CHECK_COMPILE_FLAG(-DNDEBUG, CXXFLAGS="$CXXFLAGS -DNDEBUG")
      fi
 
      AX_GCC_ARCHFLAG($acx_maxopt_portable,

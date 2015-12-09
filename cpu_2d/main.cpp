@@ -16,7 +16,6 @@
 #include "generator/make_graph.h"
 #include "distmatrix2d.hh"
 
-
 #if __cplusplus > 199711L  //std c++11 is a requirement
 #include <random>
 #else
@@ -166,8 +165,8 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    if (rank == 0)
+ 
+   if (rank == 0)
     {
         externalArgumentsIterate(argc, argv, scale, edgefactor, num_of_iterations, verbosity,
                                  R, C, R_set, C_set, graph_gen,

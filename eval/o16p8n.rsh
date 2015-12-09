@@ -2,8 +2,8 @@
 #SBATCH -J test_reduce
 #SBATCH --get-user-env
 #SBATCH --tasks=16
-#SBATCH --ntasks-per-node=2
-#SBATCH --gres=gpu:1
+#SBATCH --ntasks-per-node=16
+#SBATCH --gres=gpu:16
 
 MAX_SF=22
 CODEC=s4-bp128-d4
