@@ -157,7 +157,11 @@ if test "$ac_test_CXXFLAGS" != "set"; then
 
     gnu)
      # default optimization flags for gcc on all systems
-     CXXFLAGS="-O3 -fomit-frame-pointer"
+     if test x"$enable_debugging" = xyes ; then
+       CXXFLAGS="-O2"
+     else
+       CXXFLAGS="-O3 -fomit-frame-pointer"
+     fi
 
      # -malign-double for x86 systems
      AX_CHECK_COMPILE_FLAG(-malign-double, CXXFLAGS="$CXXFLAGS -malign-double")
@@ -169,9 +173,10 @@ if test "$ac_test_CXXFLAGS" != "set"; then
      # note that we enable "unsafe" fp optimization with other compilers, too
      AX_CHECK_COMPILE_FLAG(-ffast-math, CXXFLAGS="$CXXFLAGS -ffast-math")
      
-     if test x"$enable_strong_optimizations" = xyes ; then
+     if test x"$enable_aggressive_optimizations" = xyes ; then
         AX_CHECK_COMPILE_FLAG(-funroll-loops, CXXFLAGS="$CXXFLAGS -funroll-loops")
         AX_CHECK_COMPILE_FLAG(-flto, CXXFLAGS="$CXXFLAGS -flto")
+        AX_CHECK_COMPILE_FLAG(-DNDEBUG, CXXFLAGS="$CXXFLAGS -DNDEBUG")
      fi
 
      AX_GCC_ARCHFLAG($acx_maxopt_portable,
