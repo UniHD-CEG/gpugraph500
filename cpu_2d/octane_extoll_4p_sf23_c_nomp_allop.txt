@@ -1,0 +1,16 @@
+
+ ========================   JOB MAP   ========================
+
+ Data for node: octane001	Num procs: 1
+ 	Process OMPI jobid: [62363,1] Process rank: 0
+
+ Data for node: octane002	Num procs: 1
+ 	Process OMPI jobid: [62363,1] Process rank: 1
+
+ Data for node: octane003	Num procs: 1
+ 	Process OMPI jobid: [62363,1] Process rank: 2
+
+ Data for node: octane004	Num procs: 1
+ 	Process OMPI jobid: [62363,1] Process rank: 3
+
+ =============================================================

@@ -1,0 +1,112 @@
+--------------------------------------------------------------------------
+The following command line options and corresponding MCA parameter have
+been deprecated and replaced as follows:
+
+  Command line options:
+    Deprecated:  --bynode, -bynode
+    Replacement: --map-by node
+
+  Equivalent MCA parameter:
+    Deprecated:  rmaps_base_bynode
+    Replacement: rmaps_base_mapping_policy=node
+
+The deprecated forms *will* disappear in a future version of Open MPI.
+Please update to the new syntax.
+--------------------------------------------------------------------------
+ Data for JOB [64173,1] offset 0
+
+ ========================   JOB MAP   ========================
+
+ Data for node: creek03	Num slots: 2	Max slots: 0	Num procs: 2
+ 	Process OMPI jobid: [64173,1] App: 0 Process rank: 0
+ 	Process OMPI jobid: [64173,1] App: 0 Process rank: 5
+
+ Data for node: creek04	Num slots: 2	Max slots: 0	Num procs: 2
+ 	Process OMPI jobid: [64173,1] App: 0 Process rank: 1
+ 	Process OMPI jobid: [64173,1] App: 0 Process rank: 6
+
+ Data for node: creek05	Num slots: 2	Max slots: 0	Num procs: 2
+ 	Process OMPI jobid: [64173,1] App: 0 Process rank: 2
+ 	Process OMPI jobid: [64173,1] App: 0 Process rank: 7
+
+ Data for node: creek06	Num slots: 2	Max slots: 0	Num procs: 2
+ 	Process OMPI jobid: [64173,1] App: 0 Process rank: 3
+ 	Process OMPI jobid: [64173,1] App: 0 Process rank: 8
+
+ Data for node: creek07	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [64173,1] App: 0 Process rank: 4
+
+ =============================================================
+row slices: 3, column slices: 3
+graph_generation:               1.925149 s
+Input list of edges genereted.
+1.677722e+07 edge(s) generated in 1.961288s (8.554183 Medges/s on 9 processor(s))
+Global matrix redistribution done!
+Check matrix values (lower than 2^32)... done!
+Check matrix values (positive)... done!
+Adjacency Matrix setup.
+1.078342e+06 edge(s) removed, because they are duplicates or self loops.
+3.139775e+07 unique edge(s) processed in 5.528943s (5.678797 Medges/s on 9 processor(s))
+BFS Iteration 0: Finished in 0.131793s
+max. local exp.:     0.006906s(5.239878%)
+max. queue handling: 0.014077s(10.681284%)
+est. rest:           0.110810s(84.078838%)
+max. row com.:       0.020010s(15.182894%)
+max. col com.:       0.043169s(32.755165%)
+max. pred. list. red:0.070142s(53.221354%)
+Validation of iteration 0 finished in 0.822259s
+Result: Valid 16777010 Edge(s) processed, 127.298166 MTeps
+BFS Iteration 1: Finished in 0.117727s
+max. local exp.:     0.006791s(5.768740%)
+max. queue handling: 0.009286s(7.887691%)
+est. rest:           0.101650s(86.343569%)
+max. row com.:       0.018036s(15.320526%)
+max. col com.:       0.037811s(32.117615%)
+max. pred. list. red:0.069787s(59.278791%)
+Validation of iteration 1 finished in 0.812200s
+Result: Valid 16777010 Edge(s) processed, 142.507990 MTeps
+BFS Iteration 2: Finished in 0.119445s
+max. local exp.:     0.006947s(5.816295%)
+max. queue handling: 0.009919s(8.304174%)
+est. rest:           0.102579s(85.879530%)
+max. row com.:       0.017693s(14.812501%)
+max. col com.:       0.039593s(33.147434%)
+max. pred. list. red:0.073019s(61.131881%)
+Validation of iteration 2 finished in 0.838436s
+Result: Valid 16777010 Edge(s) processed, 140.457935 MTeps
+BFS Iteration 3: Finished in 0.121504s
+max. local exp.:     0.007299s(6.007162%)
+max. queue handling: 0.009736s(8.013147%)
+est. rest:           0.104469s(85.979691%)
+max. row com.:       0.017715s(14.579740%)
+max. col com.:       0.040821s(33.596468%)
+max. pred. list. red:0.070625s(58.125681%)
+Validation of iteration 3 finished in 0.719891s
+Result: Valid 16777010 Edge(s) processed, 138.077763 MTeps
+BFS Iteration 4: Finished in 0.122343s
+max. local exp.:     0.007286s(5.955455%)
+max. queue handling: 0.009882s(8.077086%)
+est. rest:           0.105175s(85.967459%)
+max. row com.:       0.018739s(15.316783%)
+max. col com.:       0.040861s(33.398877%)
+max. pred. list. red:0.075484s(61.698786%)
+Validation of iteration 4 finished in 0.819383s
+Result: Valid 16777010 Edge(s) processed, 137.131131 MTeps
+BFS Iteration 5: Finished in 0.119567s
+max. local exp.:     0.006775s(5.665991%)
+max. queue handling: 0.009668s(8.085727%)
+est. rest:           0.103125s(86.248283%)
+max. row com.:       0.015837s(13.245038%)
+max. col com.:       0.040285s(33.692455%)
+max. pred. list. red:0.071375s(59.694597%)
+Validation of iteration 5 finished in 0.817923s
+Result: Valid 16777010 Edge(s) processed, 140.314536 MTeps
+BFS Iteration 6: Finished in 0.121922s
+max. local exp.:     0.006821s(5.594492%)
+max. queue handling: 0.009322s(7.646203%)
+est. rest:           0.105779s(86.759305%)
+max. row com.:       0.018313s(15.020200%)
+max. col com.:       0.038679s(31.724478%)
+max. pred. list. red:0.076300s(62.580909%)
+Validation of iteration 6 finished in 0.821546s
+Result: Valid 16777010 Edge(s) processed, 137.604434 MTeps

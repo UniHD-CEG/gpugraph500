@@ -1,0 +1,721 @@
+
+ ========================   JOB MAP   ========================
+
+ Data for node: octane001	Num procs: 1
+ 	Process OMPI jobid: [51495,1] Process rank: 0
+
+ Data for node: octane002	Num procs: 1
+ 	Process OMPI jobid: [51495,1] Process rank: 1
+
+ Data for node: octane003	Num procs: 1
+ 	Process OMPI jobid: [51495,1] Process rank: 2
+
+ Data for node: octane004	Num procs: 1
+ 	Process OMPI jobid: [51495,1] Process rank: 3
+
+ =============================================================
+row slices: 2, column slices: 2
+graph_generation:               0.025698 s
+Input list of edges genereted.
+1.310720e+05 edge(s) generated in 0.037355s (3.508826 Medges/s on 4 processor(s))
+Global matrix redistribution done!
+Adjacency Matrix setup.
+2.885100e+04 edge(s) removed, because they are duplicates or self loops.
+2.044420e+05 unique edge(s) processed in 0.704866s (0.290044 Medges/s on 4 processor(s))
+BFS Iteration 0: Finished in 0.009278s
+max. local exp.:     0.000632s(6.814853%)
+max. queue handling: 0.005475s(59.005525%)
+est. rest:           0.003171s(34.179622%)
+max. row com.:       0.000858s(9.245792%)
+max. col com.:       0.004964s(53.501221%)
+max. pred. list. red:0.000792s(8.536554%)
+Validation of iteration 0 finished in 0.097410s
+Result: Valid 131070 Edge(s) processed, 14.126877 MTeps
+BFS Iteration 1: Finished in 0.006698s
+max. local exp.:     0.000654s(9.763998%)
+max. queue handling: 0.003201s(47.787705%)
+est. rest:           0.002843s(42.448297%)
+max. row com.:       0.001100s(16.416901%)
+max. col com.:       0.004123s(61.552700%)
+max. pred. list. red:0.000529s(7.895205%)
+Validation of iteration 1 finished in 0.017187s
+Result: Valid 131070 Edge(s) processed, 19.568840 MTeps
+BFS Iteration 2: Finished in 0.007047s
+max. local exp.:     0.000588s(8.339536%)
+max. queue handling: 0.002906s(41.237567%)
+est. rest:           0.003553s(50.422897%)
+max. row com.:       0.001496s(21.229447%)
+max. col com.:       0.004996s(70.894512%)
+max. pred. list. red:0.000537s(7.622302%)
+Validation of iteration 2 finished in 0.008906s
+Result: Valid 131070 Edge(s) processed, 18.598939 MTeps
+BFS Iteration 3: Finished in 0.007335s
+max. local exp.:     0.000634s(8.642938%)
+max. queue handling: 0.003775s(51.461076%)
+est. rest:           0.002926s(39.895986%)
+max. row com.:       0.000991s(13.515358%)
+max. col com.:       0.005130s(69.939867%)
+max. pred. list. red:0.000529s(7.209491%)
+Validation of iteration 3 finished in 0.008450s
+Result: Valid 131070 Edge(s) processed, 17.869248 MTeps
+BFS Iteration 4: Finished in 0.006942s
+max. local exp.:     0.000604s(8.699385%)
+max. queue handling: 0.003662s(52.756122%)
+est. rest:           0.002676s(38.544493%)
+max. row com.:       0.000462s(6.652471%)
+max. col com.:       0.005033s(72.500601%)
+max. pred. list. red:0.000504s(7.260363%)
+Validation of iteration 4 finished in 0.009294s
+Result: Valid 131070 Edge(s) processed, 18.880634 MTeps
+BFS Iteration 5: Finished in 0.007028s
+max. local exp.:     0.000668s(9.508786%)
+max. queue handling: 0.003820s(54.352398%)
+est. rest:           0.002540s(36.138815%)
+max. row com.:       0.000858s(12.209105%)
+max. col com.:       0.004799s(68.278038%)
+max. pred. list. red:0.000505s(7.185019%)
+Validation of iteration 5 finished in 0.008297s
+Result: Valid 131070 Edge(s) processed, 18.649414 MTeps
+BFS Iteration 6: Finished in 0.007720s
+max. local exp.:     0.000732s(9.478073%)
+max. queue handling: 0.003834s(49.663372%)
+est. rest:           0.003154s(40.858555%)
+max. row com.:       0.001279s(16.568870%)
+max. col com.:       0.005190s(67.229771%)
+max. pred. list. red:0.000565s(7.316245%)
+Validation of iteration 6 finished in 0.009397s
+Result: Valid 131070 Edge(s) processed, 16.977993 MTeps
+BFS Iteration 7: Finished in 0.006936s
+max. local exp.:     0.000621s(8.950914%)
+max. queue handling: 0.003786s(54.582016%)
+est. rest:           0.002529s(36.467070%)
+max. row com.:       0.000668s(9.628076%)
+max. col com.:       0.004905s(70.720473%)
+max. pred. list. red:0.000546s(7.871580%)
+Validation of iteration 7 finished in 0.008643s
+Result: Valid 131070 Edge(s) processed, 18.896859 MTeps
+BFS Iteration 8: Finished in 0.007312s
+max. local exp.:     0.000729s(9.967720%)
+max. queue handling: 0.003753s(51.328703%)
+est. rest:           0.002830s(38.703577%)
+max. row com.:       0.001450s(19.834360%)
+max. col com.:       0.004680s(64.006000%)
+max. pred. list. red:0.000563s(7.698327%)
+Validation of iteration 8 finished in 0.009580s
+Result: Valid 131070 Edge(s) processed, 17.925183 MTeps
+BFS Iteration 9: Finished in 0.007055s
+max. local exp.:     0.000614s(8.708729%)
+max. queue handling: 0.003783s(53.621033%)
+est. rest:           0.002658s(37.670238%)
+max. row com.:       0.000946s(13.409483%)
+max. col com.:       0.005031s(71.308844%)
+max. pred. list. red:0.000520s(7.370484%)
+Validation of iteration 9 finished in 0.008619s
+Result: Valid 131070 Edge(s) processed, 18.578197 MTeps
+BFS Iteration 10: Finished in 0.007584s
+max. local exp.:     0.000713s(9.396416%)
+max. queue handling: 0.003818s(50.339516%)
+est. rest:           0.003054s(40.264068%)
+max. row com.:       0.001921s(25.328513%)
+max. col com.:       0.005035s(66.384785%)
+max. pred. list. red:0.000510s(6.724301%)
+Validation of iteration 10 finished in 0.009356s
+Result: Valid 131070 Edge(s) processed, 17.282220 MTeps
+BFS Iteration 11: Finished in 0.007343s
+max. local exp.:     0.000653s(8.893146%)
+max. queue handling: 0.003739s(50.920484%)
+est. rest:           0.002951s(40.186370%)
+max. row com.:       0.001196s(16.286243%)
+max. col com.:       0.005146s(70.080197%)
+max. pred. list. red:0.000534s(7.272963%)
+Validation of iteration 11 finished in 0.008537s
+Result: Valid 131070 Edge(s) processed, 17.849522 MTeps
+BFS Iteration 12: Finished in 0.007139s
+max. local exp.:     0.000639s(8.946999%)
+max. queue handling: 0.003661s(51.280767%)
+est. rest:           0.002839s(39.772234%)
+max. row com.:       0.001222s(17.122533%)
+max. col com.:       0.004833s(67.698627%)
+max. pred. list. red:0.000537s(7.520956%)
+Validation of iteration 12 finished in 0.008271s
+Result: Valid 131070 Edge(s) processed, 18.359798 MTeps
+BFS Iteration 13: Finished in 0.007276s
+max. local exp.:     0.000763s(10.488892%)
+max. queue handling: 0.003728s(51.238613%)
+est. rest:           0.002785s(38.272495%)
+max. row com.:       0.001641s(22.550626%)
+max. col com.:       0.004878s(67.042401%)
+max. pred. list. red:0.000524s(7.202307%)
+Validation of iteration 13 finished in 0.009440s
+Result: Valid 131070 Edge(s) processed, 18.013875 MTeps
+BFS Iteration 14: Finished in 0.007401s
+max. local exp.:     0.000647s(8.742993%)
+max. queue handling: 0.003730s(50.402680%)
+est. rest:           0.003024s(40.854326%)
+max. row com.:       0.001100s(14.863733%)
+max. col com.:       0.004897s(66.168417%)
+max. pred. list. red:0.000574s(7.757232%)
+Validation of iteration 14 finished in 0.008382s
+Result: Valid 131070 Edge(s) processed, 17.709794 MTeps
+BFS Iteration 15: Finished in 0.007249s
+max. local exp.:     0.000662s(9.133667%)
+max. queue handling: 0.003790s(52.282594%)
+est. rest:           0.002797s(38.583739%)
+max. row com.:       0.001124s(15.507828%)
+max. col com.:       0.005151s(71.053151%)
+max. pred. list. red:0.000570s(7.864097%)
+Validation of iteration 15 finished in 0.008510s
+Result: Valid 131070 Edge(s) processed, 18.081418 MTeps
+BFS Iteration 16: Finished in 0.006753s
+max. local exp.:     0.000733s(10.852987%)
+max. queue handling: 0.002998s(44.393447%)
+est. rest:           0.003022s(44.753566%)
+max. row com.:       0.001007s(14.916678%)
+max. col com.:       0.004155s(61.530857%)
+max. pred. list. red:0.000568s(8.409829%)
+Validation of iteration 16 finished in 0.009614s
+Result: Valid 131070 Edge(s) processed, 19.409244 MTeps
+BFS Iteration 17: Finished in 0.006409s
+max. local exp.:     0.000612s(9.549496%)
+max. queue handling: 0.002892s(45.132250%)
+est. rest:           0.002904s(45.318255%)
+max. row com.:       0.000686s(10.710167%)
+max. col com.:       0.004150s(64.752055%)
+max. pred. list. red:0.000583s(9.095644%)
+Validation of iteration 17 finished in 0.008469s
+Result: Valid 131070 Edge(s) processed, 20.451152 MTeps
+BFS Iteration 18: Finished in 0.006633s
+max. local exp.:     0.000709s(10.689767%)
+max. queue handling: 0.002988s(45.041515%)
+est. rest:           0.002936s(44.268718%)
+max. row com.:       0.000988s(14.898817%)
+max. col com.:       0.004127s(62.219187%)
+max. pred. list. red:0.000503s(7.584199%)
+Validation of iteration 18 finished in 0.012760s
+Result: Valid 131070 Edge(s) processed, 19.760161 MTeps
+BFS Iteration 19: Finished in 0.007273s
+max. local exp.:     0.000625s(8.591752%)
+max. queue handling: 0.003696s(50.819511%)
+est. rest:           0.002952s(40.588737%)
+max. row com.:       0.001246s(17.134334%)
+max. col com.:       0.004977s(68.432440%)
+max. pred. list. red:0.000552s(7.591949%)
+Validation of iteration 19 finished in 0.008417s
+Result: Valid 131070 Edge(s) processed, 18.020961 MTeps
+BFS Iteration 20: Finished in 0.007069s
+max. local exp.:     0.000612s(8.661338%)
+max. queue handling: 0.003737s(52.871935%)
+est. rest:           0.002719s(38.466727%)
+max. row com.:       0.000602s(8.516307%)
+max. col com.:       0.005046s(71.385207%)
+max. pred. list. red:0.000535s(7.568552%)
+Validation of iteration 20 finished in 0.008868s
+Result: Valid 131070 Edge(s) processed, 18.541854 MTeps
+BFS Iteration 21: Finished in 0.007052s
+max. local exp.:     0.000649s(9.209548%)
+max. queue handling: 0.003722s(52.782473%)
+est. rest:           0.002680s(38.007979%)
+max. row com.:       0.000658s(9.331260%)
+max. col com.:       0.004802s(68.094530%)
+max. pred. list. red:0.000545s(7.728717%)
+Validation of iteration 21 finished in 0.008990s
+Result: Valid 131070 Edge(s) processed, 18.586362 MTeps
+BFS Iteration 22: Finished in 0.007077s
+max. local exp.:     0.000655s(9.257824%)
+max. queue handling: 0.003727s(52.666509%)
+est. rest:           0.002695s(38.075666%)
+max. row com.:       0.001523s(21.524105%)
+max. col com.:       0.004755s(67.189974%)
+max. pred. list. red:0.000495s(6.993902%)
+Validation of iteration 22 finished in 0.008446s
+Result: Valid 131070 Edge(s) processed, 18.520615 MTeps
+BFS Iteration 23: Finished in 0.007548s
+max. local exp.:     0.000722s(9.561262%)
+max. queue handling: 0.003752s(49.707824%)
+est. rest:           0.003074s(40.730914%)
+max. row com.:       0.001007s(13.339019%)
+max. col com.:       0.004981s(65.993872%)
+max. pred. list. red:0.000532s(7.050128%)
+Validation of iteration 23 finished in 0.009668s
+Result: Valid 131070 Edge(s) processed, 17.364649 MTeps
+BFS Iteration 24: Finished in 0.007512s
+max. local exp.:     0.000717s(9.543608%)
+max. queue handling: 0.003760s(50.053955%)
+est. rest:           0.003035s(40.402437%)
+max. row com.:       0.001017s(13.536245%)
+max. col com.:       0.004907s(65.323093%)
+max. pred. list. red:0.000545s(7.255300%)
+Validation of iteration 24 finished in 0.009536s
+Result: Valid 131070 Edge(s) processed, 17.447868 MTeps
+BFS Iteration 25: Finished in 0.007067s
+max. local exp.:     0.000635s(8.984177%)
+max. queue handling: 0.003937s(55.706623%)
+est. rest:           0.002495s(35.309200%)
+max. row com.:       0.000608s(8.599575%)
+max. col com.:       0.005187s(73.398333%)
+max. pred. list. red:0.000544s(7.695422%)
+Validation of iteration 25 finished in 0.008081s
+Result: Valid 131070 Edge(s) processed, 18.546858 MTeps
+BFS Iteration 26: Finished in 0.008275s
+max. local exp.:     0.000780s(9.430103%)
+max. queue handling: 0.003654s(44.151204%)
+est. rest:           0.003841s(46.418693%)
+max. row com.:       0.001796s(21.703930%)
+max. col com.:       0.004942s(59.723983%)
+max. pred. list. red:0.000567s(6.851446%)
+Validation of iteration 26 finished in 0.011256s
+Result: Valid 131070 Edge(s) processed, 15.839214 MTeps
+BFS Iteration 27: Finished in 0.007286s
+max. local exp.:     0.000636s(8.730366%)
+max. queue handling: 0.002966s(40.710079%)
+est. rest:           0.003684s(50.559555%)
+max. row com.:       0.001567s(21.508508%)
+max. col com.:       0.004730s(64.924738%)
+max. pred. list. red:0.000551s(7.562173%)
+Validation of iteration 27 finished in 0.010174s
+Result: Valid 131070 Edge(s) processed, 17.989117 MTeps
+BFS Iteration 28: Finished in 0.007412s
+max. local exp.:     0.000742s(10.013510%)
+max. queue handling: 0.003826s(51.614771%)
+est. rest:           0.002844s(38.371719%)
+max. row com.:       0.000927s(12.506433%)
+max. col com.:       0.004999s(67.440813%)
+max. pred. list. red:0.000518s(6.989835%)
+Validation of iteration 28 finished in 0.009575s
+Result: Valid 131070 Edge(s) processed, 17.683589 MTeps
+BFS Iteration 29: Finished in 0.006696s
+max. local exp.:     0.000727s(10.863450%)
+max. queue handling: 0.002985s(44.575396%)
+est. rest:           0.002984s(44.561154%)
+max. row com.:       0.000880s(13.135126%)
+max. col com.:       0.004131s(61.698416%)
+max. pred. list. red:0.000528s(7.886772%)
+Validation of iteration 29 finished in 0.009394s
+Result: Valid 131070 Edge(s) processed, 19.574414 MTeps
+BFS Iteration 30: Finished in 0.007028s
+max. local exp.:     0.000612s(8.711877%)
+max. queue handling: 0.003669s(52.206805%)
+est. rest:           0.002747s(39.081318%)
+max. row com.:       0.000826s(11.754928%)
+max. col com.:       0.004886s(69.525393%)
+max. pred. list. red:0.000532s(7.568613%)
+Validation of iteration 30 finished in 0.008471s
+Result: Valid 131070 Edge(s) processed, 18.650047 MTeps
+BFS Iteration 31: Finished in 0.007154s
+max. local exp.:     0.000624s(8.728254%)
+max. queue handling: 0.003772s(52.726121%)
+est. rest:           0.002758s(38.545624%)
+max. row com.:       0.000590s(8.245018%)
+max. col com.:       0.005106s(71.375725%)
+max. pred. list. red:0.000532s(7.438512%)
+Validation of iteration 31 finished in 0.009105s
+Result: Valid 131070 Edge(s) processed, 18.321250 MTeps
+BFS Iteration 32: Finished in 0.007557s
+max. local exp.:     0.000754s(9.982332%)
+max. queue handling: 0.003854s(50.993816%)
+est. rest:           0.002949s(39.023852%)
+max. row com.:       0.001599s(21.157244%)
+max. col com.:       0.004931s(65.247981%)
+max. pred. list. red:0.000541s(7.158632%)
+Validation of iteration 32 finished in 0.009738s
+Result: Valid 131070 Edge(s) processed, 17.344379 MTeps
+BFS Iteration 33: Finished in 0.006939s
+max. local exp.:     0.000606s(8.737631%)
+max. queue handling: 0.003652s(52.635377%)
+est. rest:           0.002680s(38.626993%)
+max. row com.:       0.000616s(8.878505%)
+max. col com.:       0.004948s(71.306350%)
+max. pred. list. red:0.000504s(7.263606%)
+Validation of iteration 33 finished in 0.008846s
+Result: Valid 131070 Edge(s) processed, 18.889068 MTeps
+BFS Iteration 34: Finished in 0.006525s
+max. local exp.:     0.000614s(9.412452%)
+max. queue handling: 0.003021s(46.305905%)
+est. rest:           0.002889s(44.281643%)
+max. row com.:       0.000867s(13.289243%)
+max. col com.:       0.004351s(66.680064%)
+max. pred. list. red:0.000580s(8.889944%)
+Validation of iteration 34 finished in 0.008445s
+Result: Valid 131070 Edge(s) processed, 20.087234 MTeps
+BFS Iteration 35: Finished in 0.007075s
+max. local exp.:     0.000662s(9.358361%)
+max. queue handling: 0.003656s(51.681607%)
+est. rest:           0.002756s(38.960032%)
+max. row com.:       0.000853s(12.061064%)
+max. col com.:       0.004742s(67.031745%)
+max. pred. list. red:0.000618s(8.734919%)
+Validation of iteration 35 finished in 0.008393s
+Result: Valid 131070 Edge(s) processed, 18.526233 MTeps
+BFS Iteration 36: Finished in 0.006986s
+max. local exp.:     0.000624s(8.928023%)
+max. queue handling: 0.003765s(53.892359%)
+est. rest:           0.002597s(37.179618%)
+max. row com.:       0.000741s(10.607147%)
+max. col com.:       0.004837s(69.239958%)
+max. pred. list. red:0.000572s(8.187434%)
+Validation of iteration 36 finished in 0.010139s
+Result: Valid 131070 Edge(s) processed, 18.762070 MTeps
+BFS Iteration 37: Finished in 0.007586s
+max. local exp.:     0.000660s(8.699478%)
+max. queue handling: 0.003787s(49.921428%)
+est. rest:           0.003139s(41.379094%)
+max. row com.:       0.000852s(11.235778%)
+max. col com.:       0.005337s(70.356402%)
+max. pred. list. red:0.000529s(6.974040%)
+Validation of iteration 37 finished in 0.008167s
+Result: Valid 131070 Edge(s) processed, 17.277875 MTeps
+BFS Iteration 38: Finished in 0.007292s
+max. local exp.:     0.000653s(8.958640%)
+max. queue handling: 0.003772s(51.734510%)
+est. rest:           0.002866s(39.306850%)
+max. row com.:       0.001017s(13.951283%)
+max. col com.:       0.004877s(66.885728%)
+max. pred. list. red:0.000572s(7.846984%)
+Validation of iteration 38 finished in 0.008786s
+Result: Valid 131070 Edge(s) processed, 17.974413 MTeps
+BFS Iteration 39: Finished in 0.006911s
+max. local exp.:     0.000719s(10.408114%)
+max. queue handling: 0.003009s(43.533308%)
+est. rest:           0.003183s(46.058578%)
+max. row com.:       0.001103s(15.955428%)
+max. col com.:       0.004322s(62.534929%)
+max. pred. list. red:0.000548s(7.931142%)
+Validation of iteration 39 finished in 0.009606s
+Result: Valid 131070 Edge(s) processed, 18.965309 MTeps
+BFS Iteration 40: Finished in 0.007081s
+max. local exp.:     0.000655s(9.252525%)
+max. queue handling: 0.003775s(53.306397%)
+est. rest:           0.002651s(37.441077%)
+max. row com.:       0.000848s(11.976431%)
+max. col com.:       0.004861s(68.649832%)
+max. pred. list. red:0.000522s(7.373737%)
+Validation of iteration 40 finished in 0.008351s
+Result: Valid 131070 Edge(s) processed, 18.510014 MTeps
+BFS Iteration 41: Finished in 0.007209s
+max. local exp.:     0.000608s(8.433376%)
+max. queue handling: 0.003718s(51.572577%)
+est. rest:           0.002883s(39.994047%)
+max. row com.:       0.001077s(14.938651%)
+max. col com.:       0.005008s(69.467870%)
+max. pred. list. red:0.000509s(7.060886%)
+Validation of iteration 41 finished in 0.008485s
+Result: Valid 131070 Edge(s) processed, 18.181282 MTeps
+BFS Iteration 42: Finished in 0.007227s
+max. local exp.:     0.000622s(8.607152%)
+max. queue handling: 0.003710s(51.339404%)
+est. rest:           0.002895s(40.053444%)
+max. row com.:       0.000799s(11.058327%)
+max. col com.:       0.004920s(68.078649%)
+max. pred. list. red:0.000546s(7.554764%)
+Validation of iteration 42 finished in 0.008554s
+Result: Valid 131070 Edge(s) processed, 18.136297 MTeps
+BFS Iteration 43: Finished in 0.007451s
+max. local exp.:     0.000737s(9.893767%)
+max. queue handling: 0.003006s(40.346218%)
+est. rest:           0.003708s(49.760015%)
+max. row com.:       0.001544s(20.721874%)
+max. col com.:       0.004920s(66.034174%)
+max. pred. list. red:0.000509s(6.831563%)
+Validation of iteration 43 finished in 0.011623s
+Result: Valid 131070 Edge(s) processed, 17.590792 MTeps
+BFS Iteration 44: Finished in 0.007001s
+max. local exp.:     0.000631s(9.010727%)
+max. queue handling: 0.003742s(53.447982%)
+est. rest:           0.002628s(37.541291%)
+max. row com.:       0.000738s(10.543164%)
+max. col com.:       0.004879s(69.691810%)
+max. pred. list. red:0.000514s(7.342074%)
+Validation of iteration 44 finished in 0.008532s
+Result: Valid 131070 Edge(s) processed, 18.721179 MTeps
+BFS Iteration 45: Finished in 0.007080s
+max. local exp.:     0.000657s(9.274289%)
+max. queue handling: 0.003683s(52.018858%)
+est. rest:           0.002740s(38.706853%)
+max. row com.:       0.000913s(12.897794%)
+max. col com.:       0.004952s(69.947803%)
+max. pred. list. red:0.000515s(7.273952%)
+Validation of iteration 45 finished in 0.008646s
+Result: Valid 131070 Edge(s) processed, 18.513131 MTeps
+BFS Iteration 46: Finished in 0.007488s
+max. local exp.:     0.000738s(9.854491%)
+max. queue handling: 0.003008s(40.175757%)
+est. rest:           0.003742s(49.969752%)
+max. row com.:       0.001620s(21.635304%)
+max. col com.:       0.004928s(65.813354%)
+max. pred. list. red:0.000562s(7.504696%)
+Validation of iteration 46 finished in 0.009442s
+Result: Valid 131070 Edge(s) processed, 17.503978 MTeps
+BFS Iteration 47: Finished in 0.007170s
+max. local exp.:     0.000671s(9.360556%)
+max. queue handling: 0.003771s(52.588701%)
+est. rest:           0.002728s(38.050743%)
+max. row com.:       0.000844s(11.774682%)
+max. col com.:       0.004885s(68.134207%)
+max. pred. list. red:0.000513s(7.155921%)
+Validation of iteration 47 finished in 0.008403s
+Result: Valid 131070 Edge(s) processed, 18.280432 MTeps
+BFS Iteration 48: Finished in 0.007113s
+max. local exp.:     0.000667s(9.378561%)
+max. queue handling: 0.003725s(52.369779%)
+est. rest:           0.002721s(38.251659%)
+max. row com.:       0.000978s(13.749413%)
+max. col com.:       0.005012s(70.466582%)
+max. pred. list. red:0.000530s(7.451230%)
+Validation of iteration 48 finished in 0.008258s
+Result: Valid 131070 Edge(s) processed, 18.426876 MTeps
+BFS Iteration 49: Finished in 0.006942s
+max. local exp.:     0.000612s(8.813024%)
+max. queue handling: 0.003717s(53.547877%)
+est. rest:           0.002613s(37.639099%)
+max. row com.:       0.000762s(10.976783%)
+max. col com.:       0.005093s(73.368595%)
+max. pred. list. red:0.000552s(7.950955%)
+Validation of iteration 49 finished in 0.008697s
+Result: Valid 131070 Edge(s) processed, 18.881283 MTeps
+BFS Iteration 50: Finished in 0.006851s
+max. local exp.:     0.000585s(8.536628%)
+max. queue handling: 0.003672s(53.596659%)
+est. rest:           0.002594s(37.866713%)
+max. row com.:       0.000549s(8.014616%)
+max. col com.:       0.004818s(70.328867%)
+max. pred. list. red:0.000513s(7.489125%)
+Validation of iteration 50 finished in 0.009395s
+Result: Valid 131070 Edge(s) processed, 19.131631 MTeps
+BFS Iteration 51: Finished in 0.007144s
+max. local exp.:     0.000663s(9.274463%)
+max. queue handling: 0.003689s(51.635296%)
+est. rest:           0.002793s(39.090242%)
+max. row com.:       0.000769s(10.759578%)
+max. col com.:       0.004777s(66.866907%)
+max. pred. list. red:0.000548s(7.672540%)
+Validation of iteration 51 finished in 0.008580s
+Result: Valid 131070 Edge(s) processed, 18.346930 MTeps
+BFS Iteration 52: Finished in 0.007056s
+max. local exp.:     0.000627s(8.890015%)
+max. queue handling: 0.003783s(53.617165%)
+est. rest:           0.002645s(37.492820%)
+max. row com.:       0.000659s(9.342794%)
+max. col com.:       0.004806s(68.112857%)
+max. pred. list. red:0.000643s(9.113026%)
+Validation of iteration 52 finished in 0.009078s
+Result: Valid 131070 Edge(s) processed, 18.575686 MTeps
+BFS Iteration 53: Finished in 0.006991s
+max. local exp.:     0.000661s(9.453330%)
+max. queue handling: 0.003716s(53.156225%)
+est. rest:           0.002614s(37.390444%)
+max. row com.:       0.000726s(10.380930%)
+max. col com.:       0.004751s(67.960304%)
+max. pred. list. red:0.000539s(7.710671%)
+Validation of iteration 53 finished in 0.008540s
+Result: Valid 131070 Edge(s) processed, 18.747994 MTeps
+BFS Iteration 54: Finished in 0.007465s
+max. local exp.:     0.000712s(9.542972%)
+max. queue handling: 0.003809s(51.023602%)
+est. rest:           0.002944s(39.433426%)
+max. row com.:       0.001703s(22.806681%)
+max. col com.:       0.005149s(68.975759%)
+max. pred. list. red:0.000512s(6.857015%)
+Validation of iteration 54 finished in 0.009675s
+Result: Valid 131070 Edge(s) processed, 17.557645 MTeps
+BFS Iteration 55: Finished in 0.007022s
+max. local exp.:     0.000618s(8.800761%)
+max. queue handling: 0.003649s(51.965911%)
+est. rest:           0.002755s(39.233329%)
+max. row com.:       0.000771s(10.980579%)
+max. col com.:       0.004827s(68.742360%)
+max. pred. list. red:0.000544s(7.748200%)
+Validation of iteration 55 finished in 0.008217s
+Result: Valid 131070 Edge(s) processed, 18.665878 MTeps
+BFS Iteration 56: Finished in 0.007278s
+max. local exp.:     0.000606s(8.324052%)
+max. queue handling: 0.003581s(49.203957%)
+est. rest:           0.003091s(42.471991%)
+max. row com.:       0.001581s(21.719190%)
+max. col com.:       0.004763s(65.449125%)
+max. pred. list. red:0.000557s(7.652493%)
+Validation of iteration 56 finished in 0.008527s
+Result: Valid 131070 Edge(s) processed, 18.009154 MTeps
+BFS Iteration 57: Finished in 0.008563s
+max. local exp.:     0.000759s(8.865130%)
+max. queue handling: 0.004545s(53.076623%)
+est. rest:           0.003259s(38.058247%)
+max. row com.:       0.001316s(15.369195%)
+max. col com.:       0.005946s(69.434235%)
+max. pred. list. red:0.000525s(6.130972%)
+Validation of iteration 57 finished in 0.009361s
+Result: Valid 131070 Edge(s) processed, 15.306477 MTeps
+BFS Iteration 58: Finished in 0.007124s
+max. local exp.:     0.000646s(9.069612%)
+max. queue handling: 0.003658s(51.345382%)
+est. rest:           0.002820s(39.585007%)
+max. row com.:       0.000825s(11.582999%)
+max. col com.:       0.004791s(67.252343%)
+max. pred. list. red:0.000525s(7.369478%)
+Validation of iteration 58 finished in 0.008351s
+Result: Valid 131070 Edge(s) processed, 18.398508 MTeps
+BFS Iteration 59: Finished in 0.007438s
+max. local exp.:     0.000742s(9.978524%)
+max. queue handling: 0.003736s(50.235600%)
+est. rest:           0.002959s(39.785877%)
+max. row com.:       0.001563s(21.014841%)
+max. col com.:       0.004894s(65.797993%)
+max. pred. list. red:0.000565s(7.596884%)
+Validation of iteration 59 finished in 0.009478s
+Result: Valid 131070 Edge(s) processed, 17.621804 MTeps
+BFS Iteration 60: Finished in 0.007001s
+max. local exp.:     0.000697s(9.960838%)
+max. queue handling: 0.003736s(53.356036%)
+est. rest:           0.002568s(36.683126%)
+max. row com.:       0.000871s(12.436574%)
+max. col com.:       0.004828s(68.959646%)
+max. pred. list. red:0.000507s(7.243317%)
+Validation of iteration 60 finished in 0.008734s
+Result: Valid 131070 Edge(s) processed, 18.721179 MTeps
+BFS Iteration 61: Finished in 0.007734s
+max. local exp.:     0.000708s(9.149481%)
+max. queue handling: 0.003816s(49.335676%)
+est. rest:           0.003211s(41.514843%)
+max. row com.:       0.001207s(15.610839%)
+max. col com.:       0.005353s(69.212984%)
+max. pred. list. red:0.000579s(7.487900%)
+Validation of iteration 61 finished in 0.009620s
+Result: Valid 131070 Edge(s) processed, 16.947114 MTeps
+BFS Iteration 62: Finished in 0.007131s
+max. local exp.:     0.000654s(9.171152%)
+max. queue handling: 0.003755s(52.656391%)
+est. rest:           0.002722s(38.172456%)
+max. row com.:       0.001690s(23.701896%)
+max. col com.:       0.004819s(67.578321%)
+max. pred. list. red:0.000506s(7.094854%)
+Validation of iteration 62 finished in 0.009863s
+Result: Valid 131070 Edge(s) processed, 18.380669 MTeps
+BFS Iteration 63: Finished in 0.007131s
+max. local exp.:     0.000651s(9.127687%)
+max. queue handling: 0.003718s(52.141496%)
+est. rest:           0.002762s(38.730817%)
+max. row com.:       0.001996s(27.988231%)
+max. col com.:       0.004771s(66.906282%)
+max. pred. list. red:0.000506s(7.094854%)
+Validation of iteration 63 finished in 0.008440s
+Result: Valid 131070 Edge(s) processed, 18.380669 MTeps
+Validation: passed
+SCALE: 13
+edgefactor: 16
+NBFS: 64
+graph_generation: 3.735e-02
+num_mpi_processes: 4
+gpus_per_process: 1
+total_gpus: 4
+construction_time: 7.049e-01
+min_time: 6.409e-03
+firstquartile_time: 7.012e-03
+median_time: 7.131e-03
+thirdquartile_time: 7.372e-03
+max_time: 9.278e-03
+mean_time: 7.221e-03
+stddev_time: 4.365e-04
+min_nedge: 1.311e+05
+firstquartile_nedge: 1.311e+05
+median_nedge: 1.311e+05
+thirdquartile_nedge: 1.311e+05
+max_nedge: 1.311e+05
+mean_nedge: 1.311e+05
+stddev_nedge: 0.000e+00
+min_TEPS: 1.413e+07
+firstquartile_TEPS: 1.778e+07
+median_TEPS: 1.838e+07
+thirdquartile_TEPS: 1.869e+07
+max_TEPS: 2.045e+07
+harmonic_mean_TEPS: 1.815e+07
+harmonic_stddev_TEPS: 1.382e+05
+min_validation_time: 8.081e-03
+firstquartile_validation_time: 8.460e-03
+median_validation_time: 8.816e-03
+thirdquartile_validation_time: 9.555e-03
+max_validation_time: 9.741e-02
+mean_validation_time: 1.056e-02
+stddev_validation_time: 1.111e-02
+min_local_bfs_time: 5.848e-04
+firstquartile_local_bfs_time: 6.241e-04
+median_local_bfs_time: 6.540e-04
+thirdquartile_local_bfs_time: 7.125e-04
+max_local_bfs_time: 7.803e-04
+mean_local_bfs_time: 6.651e-04
+stddev_local_bfs_time: 5.042e-05
+min_bfs_local_share: 6.815e-02
+firstquartile_bfs_local_share: 8.740e-02
+median_bfs_local_share: 9.160e-02
+thirdquartile_bfs_local_share: 9.543e-02
+max_bfs_local_share: 1.086e-01
+harmonic_mean_bfs_local_share: 9.175e-02
+harmonic_stddev_bfs_local_share: 8.728e-04
+min_local_queue_time: 2.892e-03
+firstquartile_local_queue_time: 3.657e-03
+median_local_queue_time: 3.728e-03
+thirdquartile_local_queue_time: 3.775e-03
+max_local_queue_time: 5.475e-03
+mean_local_queue_time: 3.653e-03
+stddev_local_queue_time: 3.881e-04
+min_queue_local_share: 4.018e-01
+firstquartile_queue_local_share: 4.981e-01
+median_queue_local_share: 5.159e-01
+thirdquartile_queue_local_share: 5.277e-01
+max_queue_local_share: 5.901e-01
+harmonic_mean_queue_local_share: 5.023e-01
+harmonic_stddev_queue_local_share: 5.359e-03
+min_rest_time: 2.495e-03
+firstquartile_rest_time: 2.707e-03
+median_rest_time: 2.841e-03
+thirdquartile_rest_time: 3.023e-03
+max_rest_time: 3.841e-03
+mean_rest_time: 2.903e-03
+stddev_rest_time: 2.982e-04
+min_rest_share: 3.418e-01
+firstquartile_rest_share: 3.807e-01
+median_rest_share: 3.909e-01
+thirdquartile_rest_share: 4.086e-01
+max_rest_share: 5.056e-01
+harmonic_mean_rest_share: 3.994e-01
+harmonic_stddev_rest_share: 4.049e-03
+min_row_com_time: 4.618e-04
+firstquartile_row_com_time: 7.851e-04
+median_row_com_time: 9.831e-04
+thirdquartile_row_com_time: 1.298e-03
+max_row_com_time: 1.996e-03
+mean_row_com_time: 1.066e-03
+stddev_row_com_time: 3.773e-04
+min_row_com_share: 6.652e-02
+firstquartile_row_com_share: 1.098e-01
+median_row_com_share: 1.346e-01
+thirdquartile_row_com_share: 1.713e-01
+max_row_com_share: 2.799e-01
+harmonic_mean_row_com_share: 1.322e-01
+harmonic_stddev_row_com_share: 5.413e-03
+min_column_com_time: 4.123e-03
+firstquartile_column_com_time: 4.795e-03
+median_column_com_time: 4.896e-03
+thirdquartile_column_com_time: 5.010e-03
+max_column_com_time: 5.946e-03
+mean_column_com_time: 4.871e-03
+stddev_column_com_time: 3.056e-04
+min_column_com_share: 5.350e-01
+firstquartile_column_com_share: 6.601e-01
+median_column_com_share: 6.802e-01
+thirdquartile_column_com_share: 6.982e-01
+max_column_com_share: 7.340e-01
+harmonic_mean_column_com_share: 6.735e-01
+harmonic_stddev_column_com_share: 4.663e-03
+min_predecessor_list_reduction_time: 4.950e-04
+firstquartile_predecessor_list_reduction_time: 5.165e-04
+median_predecessor_list_reduction_time: 5.360e-04
+thirdquartile_predecessor_list_reduction_time: 5.594e-04
+max_predecessor_list_reduction_time: 7.920e-04
+mean_predecessor_list_reduction_time: 5.434e-04
+stddev_predecessor_list_reduction_time: 4.237e-05
+min_predecessor_list_reduction_share: 6.131e-02
+firstquartile_predecessor_list_reduction_share: 7.206e-02
+median_predecessor_list_reduction_share: 7.497e-02
+thirdquartile_predecessor_list_reduction_share: 7.738e-02
+max_predecessor_list_reduction_share: 9.113e-02
+harmonic_mean_predecessor_list_reduction_share: 7.499e-02
+harmonic_stddev_predecessor_list_reduction_share: 6.563e-04
