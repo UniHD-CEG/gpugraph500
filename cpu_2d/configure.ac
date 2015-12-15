@@ -211,14 +211,23 @@ AC_ARG_ENABLE([cuda],
     [enable_cuda=yes])
 
 #   Values: yes | no
-#   Default value: no
+#   Default value: yes
 AC_ARG_ENABLE([ptxa-optimizations],
     AS_HELP_STRING([--enable-ptxa-optimizations],
       [It is related with optimizations. Selects whether CUDA assembly (PTXAS) will be optimized or not.
       This option will only be used if --enable-cuda is present (default).
       The default PTXAS optimization is -O3.
-      (Disabled by default)]),,
-    [enable_ptxa_optimizations=no])
+      (Enabled by default)]),,
+    [enable_ptxa_optimizations=yes])
+
+#   Values: yes | no
+#   Default value: yes
+AC_ARG_ENABLE([cuda-math-optimizations],
+    AS_HELP_STRING([--enable-cuda-math-optimizations],
+      [It is related with optimizations. Selects whether CUDA will make use of the fast math library.
+      The default math optimizations are -ftz=true -prec-div=false -prec-sqrt=false -fmad=true.
+      (Enabled by default)]),,
+    [enable_cuda_math_optimizations=yes])
 
 #   Values: fermi | kepler | all | detect
 #   Default value: detect
@@ -285,6 +294,7 @@ AM_CONDITIONAL([VECTOR_OPTIMIZATIONS], [test x"$enable_vector_optimizations" = x
 AM_CONDITIONAL([SIMD_PLUS], [test x"$enable_simdplus" = xyes])
 AM_CONDITIONAL([SIMD], [test x"$enable_simd" = xyes])
 AM_CONDITIONAL([SIMT], [test x"$enable_simt" = xyes])
+AM_CONDITIONAL([CUDA_MATH_OTIMIZATIONS], [test x"$enable_cuda_math_optimizations" = xyes])
 AM_CONDITIONAL([PTXAS_OTIMIZATION], [test x"$enable_ptxa_optimizations" = xyes])
 AM_CONDITIONAL([NVIDIA_ARCHITECTURE_FERMI], [test x"$enable_nvidia_architecture" = xfermi])
 AM_CONDITIONAL([NVIDIA_ARCHITECTURE_KEPLER], [test x"$enable_nvidia_architecture" = xkepler])
@@ -300,6 +310,11 @@ AM_CONDITIONAL([DEBUG_COMPRESSION], [test x"$enable_debug_compression" = xyes])
 AM_CONDITIONAL([VERIFY_COMPRESSION], [test x"$enable_verify_compression" = xyes])
 AM_CONDITIONAL([CUDA], [test x"$enable_cuda" = xyes])
 AM_CONDITIONAL([QUIET_OUTPUT], [test x"$enable_quiet" = xyes])
+
+NVFLAGS_MATH_FERMI="-ftz=true -prec-div=false -prec-sqrt=false"
+NVFLAGS_MATH="-ftz=true -prec-div=false -prec-sqrt=false -fmad=true"
+AC_SUBST([NVFLAGS_MATH_FERMI])
+AC_SUBST([NVFLAGS_MATH])
 
 ### Checks for header files.
 #
@@ -430,6 +445,9 @@ if test "x$enable_cuda" = xyes; then
        CUDA_AUTOFLAGS="$GENCODE_SM20 $GENCODE_SM30 $GENCODE_SM35 $GENCODE_SM37 $GENCODE_SM50"
     else
        CUDA_AUTOFLAGS="-arch=sm_${mx_cv_cuda_major}${mx_cv_cuda_minor}"
+       if test x"$mx_cv_cuda_major" = x2 ; then
+          AM_CONDITIONAL([NVIDIA_ARCHITECTURE_FERMI], [test "1" = "1"])
+       fi
     fi
   else
     CUDA_AUTOFLAGS="$GENCODE_SM20 $GENCODE_SM30 $GENCODE_SM35 $GENCODE_SM37 $GENCODE_SM50"

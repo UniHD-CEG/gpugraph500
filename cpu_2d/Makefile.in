@@ -99,31 +99,33 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@OMP_CUDA_TRUE@am__append_1 = $(OPENMP_FLAG),-D_CUDA_OPENMP,
-@OMP_CUDA_TRUE@am__append_2 = -D_CUDA_OPENMP
-@OMP_GENERAL_TRUE@am__append_3 = $(OPENMP_FLAG)
-@BASIC_PROFING_BFS_TRUE@am__append_4 = -DINSTRUMENTED,
-@BASIC_PROFING_OTHER_TRUE@am__append_5 = -DINSTRUMENTED
-@DEBUG_TRUE@am__append_6 = -D_DEBUG
-@DEBUG_TRUE@am__append_7 = -D_DEBUG,
+@CUDA_MATH_OTIMIZATIONS_TRUE@@NVIDIA_ARCHITECTURE_FERMI_TRUE@am__append_1 = @NVFLAGS_MATH_FERMI@
+@CUDA_MATH_OTIMIZATIONS_TRUE@@NVIDIA_ARCHITECTURE_FERMI_FALSE@am__append_2 = @NVFLAGS_MATH@
+@OMP_CUDA_TRUE@am__append_3 = $(OPENMP_FLAG),-D_CUDA_OPENMP,
+@OMP_CUDA_TRUE@am__append_4 = -D_CUDA_OPENMP
+@OMP_GENERAL_TRUE@am__append_5 = $(OPENMP_FLAG)
+@BASIC_PROFING_BFS_TRUE@am__append_6 = -DINSTRUMENTED,
+@BASIC_PROFING_OTHER_TRUE@am__append_7 = -DINSTRUMENTED
+@DEBUG_TRUE@am__append_8 = -D_DEBUG
+@DEBUG_TRUE@am__append_9 = -D_DEBUG,
 
 ### Compression
 #
-@COMPRESSION_TRUE@am__append_8 = -D_COMPRESSION
-@COMPRESSION_TRUE@am__append_9 = -D_COMPRESSION,
-@COMPRESSION_TRUE@@DEBUG_COMPRESSION_TRUE@am__append_10 = -D_COMPRESSIONDEBUG
-@COMPRESSION_TRUE@@VERIFY_COMPRESSION_TRUE@am__append_11 = -D_COMPRESSIONVERIFY
-@COMPRESSION_TRUE@@SIMD_TRUE@am__append_12 = -D_SIMD
-@COMPRESSION_TRUE@@SIMD_TRUE@am__append_13 = -D_SIMD,
-@COMPRESSION_TRUE@@SIMD_TRUE@am__append_14 = -I. -Icompression/cpusimd/include
-@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_TRUE@am__append_15 = -D_SIMD_PLUS
-@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_TRUE@am__append_16 = -D_SIMD_PLUS,
-@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_TRUE@am__append_17 = -I. -Icompression/simdplus
+@COMPRESSION_TRUE@am__append_10 = -D_COMPRESSION
+@COMPRESSION_TRUE@am__append_11 = -D_COMPRESSION,
+@COMPRESSION_TRUE@@DEBUG_COMPRESSION_TRUE@am__append_12 = -D_COMPRESSIONDEBUG
+@COMPRESSION_TRUE@@VERIFY_COMPRESSION_TRUE@am__append_13 = -D_COMPRESSIONVERIFY
+@COMPRESSION_TRUE@@SIMD_TRUE@am__append_14 = -D_SIMD
+@COMPRESSION_TRUE@@SIMD_TRUE@am__append_15 = -D_SIMD,
+@COMPRESSION_TRUE@@SIMD_TRUE@am__append_16 = -I. -Icompression/cpusimd/include
+@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_TRUE@am__append_17 = -D_SIMD_PLUS
+@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_TRUE@am__append_18 = -D_SIMD_PLUS,
+@COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_TRUE@am__append_19 = -I. -Icompression/simdplus
 
 # Other. e.g SIMT
-@CUDA_TRUE@am__append_18 = -D_CUDA,
-@CUDA_TRUE@am__append_19 = -D_CUDA
-@DEBUGGING_TRUE@am__append_20 = $(D_FLAG) \
+@CUDA_TRUE@am__append_20 = -D_CUDA,
+@CUDA_TRUE@am__append_21 = -D_CUDA
+@DEBUGGING_TRUE@am__append_22 = $(D_FLAG) \
 @DEBUGGING_TRUE@	-fopt-info-all=@PACKAGE_NAME@.vectorization.out
 subdir = .
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
@@ -320,6 +322,8 @@ MPI_CXXFLAGS = @MPI_CXXFLAGS@
 MPI_CXXLDFLAGS = @MPI_CXXLDFLAGS@
 NVCC = @NVCC@
 NVCC_PROG = @NVCC_PROG@
+NVFLAGS_MATH = @NVFLAGS_MATH@
+NVFLAGS_MATH_FERMI = @NVFLAGS_MATH_FERMI@
 OBJEXT = @OBJEXT@
 OPENMP_CFLAGS = @OPENMP_CFLAGS@
 OPENMP_CXXFLAGS = @OPENMP_CXXFLAGS@
@@ -409,22 +413,23 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign subdir-objects
 ACLOCAL_AMFLAGS = -I m4
-DEFINES = $(am__append_2) $(am__append_3) $(am__append_5) \
-	$(am__append_6) $(am__append_8) $(am__append_10) \
-	$(am__append_11) $(am__append_12) $(am__append_15) \
-	$(am__append_19) $(am__append_20)
-DEFINES_CUDA = $(am__append_1) $(am__append_4) $(am__append_7) \
-	$(am__append_9) $(am__append_13) $(am__append_16) \
-	$(am__append_18)
+DEFINES = $(am__append_4) $(am__append_5) $(am__append_7) \
+	$(am__append_8) $(am__append_10) $(am__append_12) \
+	$(am__append_13) $(am__append_14) $(am__append_17) \
+	$(am__append_21) $(am__append_22)
+DEFINES_CUDA = $(am__append_3) $(am__append_6) $(am__append_9) \
+	$(am__append_11) $(am__append_15) $(am__append_18) \
+	$(am__append_20)
 @COMPRESSION_TRUE@@SIMD_FALSE@@SIMD_PLUS_FALSE@INCPATH = -I.
-INCPATH = $(am__append_14) $(am__append_17)
+INCPATH = $(am__append_16) $(am__append_19)
+NVFLAGS = $(am__append_1) $(am__append_2)
 
 ### Dynamic variables
 #
 @PTXAS_OTIMIZATION_TRUE@PTXAS = --ptxas-options="-O3"
-@NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_FALSE@NV_ARCHITECTURE = $(PTXAS) @CUDA_AUTOFLAGS@
-@NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_TRUE@NV_ARCHITECTURE = $(PTXAS) -arch=sm_35
-@NVIDIA_ARCHITECTURE_FERMI_TRUE@NV_ARCHITECTURE = $(PTXAS) -fmad=true -arch=sm_20 -ftz=true -prec-div=false -prec-sqrt=false
+@NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_FALSE@NV_ARCHITECTURE = $(PTXAS) @CUDA_AUTOFLAGS@ $(NVFLAGS)
+@NVIDIA_ARCHITECTURE_FERMI_FALSE@@NVIDIA_ARCHITECTURE_KEPLER_TRUE@NV_ARCHITECTURE = $(PTXAS) -arch=sm_35 $(NVFLAGS)
+@NVIDIA_ARCHITECTURE_FERMI_TRUE@NV_ARCHITECTURE = $(PTXAS) -arch=sm_20 $(NVFLAGS) 
 @OMP_CUDA_FALSE@@OMP_GENERAL_FALSE@@SCOREP_TRUE@THREADS = none
 @OMP_CUDA_FALSE@@OMP_GENERAL_TRUE@@SCOREP_TRUE@THREADS = omp
 

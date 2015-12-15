@@ -757,6 +757,8 @@ SIMD_OBJECTS
 LIBOBJS
 EGREP
 GREP
+NVFLAGS_MATH
+NVFLAGS_MATH_FERMI
 QUIET_OUTPUT_FALSE
 QUIET_OUTPUT_TRUE
 CUDA_FALSE
@@ -787,6 +789,8 @@ NVIDIA_ARCHITECTURE_FERMI_FALSE
 NVIDIA_ARCHITECTURE_FERMI_TRUE
 PTXAS_OTIMIZATION_FALSE
 PTXAS_OTIMIZATION_TRUE
+CUDA_MATH_OTIMIZATIONS_FALSE
+CUDA_MATH_OTIMIZATIONS_TRUE
 SIMT_FALSE
 SIMT_TRUE
 SIMD_FALSE
@@ -915,6 +919,7 @@ enable_cuda_openmp
 enable_general_openmp
 enable_cuda
 enable_ptxa_optimizations
+enable_cuda_math_optimizations
 enable_nvidia_architecture
 enable_debug
 enable_debugging
@@ -1647,7 +1652,13 @@ Optional Features:
                           CUDA assembly (PTXAS) will be optimized or not. This
                           option will only be used if --enable-cuda is present
                           (default). The default PTXAS optimization is -O3.
-                          (Disabled by default)
+                          (Enabled by default)
+  --enable-cuda-math-optimizations
+                          It is related with optimizations. Selects whether
+                          CUDA will make use of the fast math library. The
+                          default math optimizations are -ftz=true
+                          -prec-div=false -prec-sqrt=false -fmad=true.
+                          (Enabled by default)
   --enable-nvidia-architecture=<fermi|kepler|auto|detect>
                           It is related with optimizations.. Selects the
                           NVIDIA target architecture. Requires --enable-cuda
@@ -6055,12 +6066,22 @@ fi
 
 
 #   Values: yes | no
-#   Default value: no
+#   Default value: yes
 # Check whether --enable-ptxa-optimizations was given.
 if test "${enable_ptxa_optimizations+set}" = set; then :
   enableval=$enable_ptxa_optimizations;
 else
-  enable_ptxa_optimizations=no
+  enable_ptxa_optimizations=yes
+fi
+
+
+#   Values: yes | no
+#   Default value: yes
+# Check whether --enable-cuda-math-optimizations was given.
+if test "${enable_cuda_math_optimizations+set}" = set; then :
+  enableval=$enable_cuda_math_optimizations;
+else
+  enable_cuda_math_optimizations=yes
 fi
 
 
@@ -6171,6 +6192,14 @@ fi
 else
   SIMT_TRUE='#'
   SIMT_FALSE=
+fi
+
+ if test x"$enable_cuda_math_optimizations" = xyes; then
+  CUDA_MATH_OTIMIZATIONS_TRUE=
+  CUDA_MATH_OTIMIZATIONS_FALSE='#'
+else
+  CUDA_MATH_OTIMIZATIONS_TRUE='#'
+  CUDA_MATH_OTIMIZATIONS_FALSE=
 fi
 
  if test x"$enable_ptxa_optimizations" = xyes; then
@@ -6292,6 +6321,11 @@ else
   QUIET_OUTPUT_TRUE='#'
   QUIET_OUTPUT_FALSE=
 fi
+
+
+NVFLAGS_MATH_FERMI="-ftz=true -prec-div=false -prec-sqrt=false"
+NVFLAGS_MATH="-ftz=true -prec-div=false -prec-sqrt=false -fmad=true"
+
 
 
 ### Checks for header files.
@@ -9337,6 +9371,16 @@ LIBS="${LIBS_save}"
        CUDA_AUTOFLAGS="$GENCODE_SM20 $GENCODE_SM30 $GENCODE_SM35 $GENCODE_SM37 $GENCODE_SM50"
     else
        CUDA_AUTOFLAGS="-arch=sm_${mx_cv_cuda_major}${mx_cv_cuda_minor}"
+       if test x"$mx_cv_cuda_major" = x2 ; then
+           if test "1" = "1"; then
+  NVIDIA_ARCHITECTURE_FERMI_TRUE=
+  NVIDIA_ARCHITECTURE_FERMI_FALSE='#'
+else
+  NVIDIA_ARCHITECTURE_FERMI_TRUE='#'
+  NVIDIA_ARCHITECTURE_FERMI_FALSE=
+fi
+
+       fi
     fi
   else
     CUDA_AUTOFLAGS="$GENCODE_SM20 $GENCODE_SM30 $GENCODE_SM35 $GENCODE_SM37 $GENCODE_SM50"
@@ -18376,6 +18420,10 @@ if test -z "${SIMT_TRUE}" && test -z "${SIMT_FALSE}"; then
   as_fn_error $? "conditional \"SIMT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${CUDA_MATH_OTIMIZATIONS_TRUE}" && test -z "${CUDA_MATH_OTIMIZATIONS_FALSE}"; then
+  as_fn_error $? "conditional \"CUDA_MATH_OTIMIZATIONS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${PTXAS_OTIMIZATION_TRUE}" && test -z "${PTXAS_OTIMIZATION_FALSE}"; then
   as_fn_error $? "conditional \"PTXAS_OTIMIZATION\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -18434,6 +18482,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${QUIET_OUTPUT_TRUE}" && test -z "${QUIET_OUTPUT_FALSE}"; then
   as_fn_error $? "conditional \"QUIET_OUTPUT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${NVIDIA_ARCHITECTURE_FERMI_TRUE}" && test -z "${NVIDIA_ARCHITECTURE_FERMI_FALSE}"; then
+  as_fn_error $? "conditional \"NVIDIA_ARCHITECTURE_FERMI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILDOPENCL_TRUE}" && test -z "${BUILDOPENCL_FALSE}"; then
