@@ -7,6 +7,10 @@
 #include <algorithm>
 #include <functional>
 
+#ifdef _COMPRESSION
+#include "compression/types_compression.h"
+#endif
+
 #if defined( __PMODE__)
 #include <parallel/algorithm>
 #endif
@@ -41,7 +45,8 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing,
     }
     predecessor = new vertexType[store.getLocColLength()];
 
-    fq_tp_type = MPI_INT64_T;
+    //fq_tp_type = MPI_INT64_T;
+    fq_tp_type = MPI_compressed;
     bm_type = MPI_UNSIGNED_CHAR;
     fq_64_length = static_cast<vertexType>(std::max(store.getLocRowLength(), store.getLocColLength()) * queue_sizing);
     //fq_64 = new vertexType[fq_64_length];
