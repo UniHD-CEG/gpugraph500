@@ -545,7 +545,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
     size_t uncompressedsize, compressedsize;
-    int err;	
+    int err;
 #endif
 
     // moved anonymous functions outside loop
@@ -731,7 +731,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 uncompressedsize = static_cast<size_t>(originalsize);
                 isCompressed = schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
-std::cout << "x1: origsize: " << uncompressedsize << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
+// //std::cout << "x1: origsize: " << uncompressedsize << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
 		if (isCompressed) {
@@ -748,7 +748,7 @@ std::cout << "x1: origsize: " << uncompressedsize << " compsize: " << compressed
                 vectorizedsize[1] = compressedsize;
 		isCompressed = schema.isCompressed(originalsize, compressedsize);
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
-std::cout << "x1a: isCompressed: " << isCompressed << std::endl;
+//std::cout << "x1a: isCompressed: " << isCompressed << std::endl;
 #if defined(_COMPRESSIONVERIFY)
 		if (isCompressed)
 		{
@@ -775,7 +775,7 @@ std::cout << "x1a: isCompressed: " << isCompressed << std::endl;
                 {
                     uncompressedsize = static_cast<size_t>(originalsize);
                     isCompressed = schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq,  uncompressedsize);
-std::cout << "x1b: isCompressed: " << isCompressed << std::endl;
+//std::cout << "x1b: isCompressed: " << isCompressed << std::endl;
                 }
 
 #if defined(_COMPRESSIONVERIFY)
@@ -806,7 +806,7 @@ std::cout << "x1b: isCompressed: " << isCompressed << std::endl;
 
 #ifdef _COMPRESSION
 ////////
-                if (communicatorRank != root_rank) 
+                if (communicatorRank != root_rank)
 		{
 ///////
 assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
@@ -859,7 +859,7 @@ assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                       abort();
                 }
 
-std::cout << "y1a: isCompressed: " << isCompressed << std::endl;
+//std::cout << "y1a: isCompressed: " << isCompressed << std::endl;
 #if defined(_COMPRESSIONVERIFY)
                 FQ_T *startaddr = NULL;
 		if (isCompressed)
@@ -881,14 +881,14 @@ std::cout << "y1a: isCompressed: " << isCompressed << std::endl;
                 // (this)->bfsMemCpy() call below.
                 //MPI_Bcast(fq_64, compressedsize, fq_tp_typeC, root_rank, row_comm);
 		// compressed_fq is sized: fq_tp_typeC
-		
+
 		MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
-std::cout << "y1: origsize: " << originalsize << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
+//std::cout << "y1: origsize: " << originalsize << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 
                 //memcpy(compressed_fq, fq_64, compressedsize * sizeof(compressionType));
                 uncompressedsize = static_cast<size_t>(originalsize);
                 isCompressed = schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
-std::cout << "y1b: isCompressed: " << isCompressed << std::endl;
+//std::cout << "y1b: isCompressed: " << isCompressed << std::endl;
 
                 //if (isCompressed)
                 //{
