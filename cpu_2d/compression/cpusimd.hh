@@ -124,7 +124,7 @@ inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
     {
 	int err1, err2;
         T_C *fq_32; //= (T_C *)malloc(size * sizeof(T_C));
-	err1 = posix_memalign((void **)&fq_32, 16, size * sizeof(T_C)); 
+	err1 = posix_memalign((void **)&fq_32, 16, size * sizeof(T_C));
         //*compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
 	err2 = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
         if (err1 || err2)
@@ -140,12 +140,12 @@ inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
         }
         codec.encodeArray(fq_32, size, *compressed_fq_32, compressedsize);
 
-	std::cout << "-- compressed buffer (" << compressedsize << ")--" << std::endl;
+	//std::cout << "-- compressed buffer (" << compressedsize << ")--" << std::endl;
         for (int i=0; i< compressedsize; ++i){
-	std::cout << (*compressed_fq_32)[i];
+	//std::cout << (*compressed_fq_32)[i];
 	//printf("%ui", fq_64[i]);
 	}
-	std::cout << std::endl;
+	//std::cout << std::endl;
 
         // if this condition is met it can not be known whether or not there has been a compression.
         // Todo: find solution
@@ -165,8 +165,8 @@ inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
 	*/
         free(fq_32);
         // free(compressed_fq_32);
-       
-        //std::cout << "[c]-->origsize: " << size << " compressedsize:" << compressedsize << std::endl;
+
+        ////std::cout << "[c]-->origsize: " << size << " compressedsize:" << compressedsize << std::endl;
 	compressed = true;
     }
     else
@@ -209,7 +209,7 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
 	}
         /*
         uint32_t *compressed_fq_32 = (uint32_t *) malloc(size * sizeof(uint32_t));
-        
+
 	if (compressed_fq_32 == NULL || uncompressed_fq_32 == NULL)
         {
             printf("\nERROR: Memory allocation error!");
@@ -224,12 +224,12 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
 	//memcpy(compressed_fq_32, compressed_fq, size * sizeof(uint32_t));
         //*compressed_fq_32 = reinterpret_cast<uint32_t *>(compressed_fq);
 
-        std::cout << "-- compressed buffer, prior to decompress ("<< size <<")--" << std::endl;
+        //std::cout << "-- compressed buffer, prior to decompress ("<< size <<")--" << std::endl;
         for (int i=0; i< size; ++i){
-        std::cout << compressed_fq_32[i];
+        //std::cout << compressed_fq_32[i];
         //printf("%ui", compressed_fq_32[i]);
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
 
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
 	err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
@@ -246,7 +246,7 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
         }
         //free(compressed_fq_32);
         free(uncompressed_fq_32);
-        //std::cout << "[d]-->origsize: " << uncompressedsize << " compressedsize:" << size << std::endl;
+        ////std::cout << "[d]-->origsize: " << uncompressedsize << " compressedsize:" << size << std::endl;
 	compressed = true;
     }
     else
@@ -286,7 +286,7 @@ void CpuSimd<T, T_C>::verifyCompression(const T *fq, const T *uncompressed_fq_64
 template <typename T, typename T_C>
 inline bool CpuSimd<T, T_C>::isCompressed(const size_t originalsize, const size_t compressedsize) const
 {
-    
+
     return (isCompressible(originalsize) && originalsize != compressedsize);
 }
 
