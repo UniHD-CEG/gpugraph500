@@ -1,0 +1,678 @@
+--------------------------------------------------------------------------
+The following command line options and corresponding MCA parameter have
+been deprecated and replaced as follows:
+
+  Command line options:
+    Deprecated:  --bynode, -bynode
+    Replacement: --map-by node
+
+  Equivalent MCA parameter:
+    Deprecated:  rmaps_base_bynode
+    Replacement: rmaps_base_mapping_policy=node
+
+The deprecated forms *will* disappear in a future version of Open MPI.
+Please update to the new syntax.
+--------------------------------------------------------------------------
+--> Entering Creek(creek04).  Thu Dec 17 07:42:55 CET 2015
+--> Entering Creek(creek06).  Thu Dec 17 07:42:56 CET 2015
+ Data for JOB [56983,1] offset 0
+
+ ========================   JOB MAP   ========================
+
+ Data for node: creek03	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [56983,1] App: 0 Process rank: 0
+
+ Data for node: creek04	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [56983,1] App: 0 Process rank: 1
+
+ Data for node: creek05	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [56983,1] App: 0 Process rank: 2
+
+ Data for node: creek06	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [56983,1] App: 0 Process rank: 3
+
+ =============================================================
+row slices: 2, column slices: 2
+graph_generation:               0.010148 s
+Input list of edges genereted.
+1.310720e+05 edge(s) generated in 0.011588s (11.310917 Medges/s on 4 processor(s))
+Global matrix redistribution done!
+Check matrix values (lower than 2^32)... done!
+Check matrix values (positive)... done!
+Adjacency Matrix setup.
+2.885100e+04 edge(s) removed, because they are duplicates or self loops.
+2.044420e+05 unique edge(s) processed in 0.519825s (0.393290 Medges/s on 4 processor(s))
+a1: origsize: 0 compsize: 3 isCompressed: 0
+a2: isCompressed: 0
+a3: isCompressed: 0
+a4: isCompressed: 0
+a5: isCompressed: 0
+a6: isCompressed: 0
+c1: isCompressed: 0
+b1: origsize: 3 compsize: 0 isCompressed: 0
+b2: isCompressed: 0
+b3: isCompressed: 0
+b4: isCompressed: 0
+b5: isCompressed: 0
+c1: isCompressed: 0
+a1: origsize: 271 compsize: 327 isCompressed: 0
+a2: isCompressed: 0
+a3: isCompressed: 0
+a4: isCompressed: 0
+a5: isCompressed: 0
+a6: isCompressed: 0
+c1: isCompressed: 0
+b1: origsize: 327 compsize: 271 isCompressed: 0
+g500: cuda/../vreduce.hpp:614: void vreduce(const std::function<void(T, long int, T*, int)>&, const std::function<void(T, long int, T*&, int&)>&, Compression<T, T_C>&, MPI_Datatype, T*, int&, int, MPI_Datatype, MPI_Comm, double&) [with T = long long int; T_C = unsigned int; MPI_Datatype = ompi_datatype_t*; MPI_Comm = ompi_communicator_t*]: Assertion `std::is_sorted(recv_buff, recv_buff + total_uncompressedsize)' failed.
+[creek03:25878] *** Process received signal ***
+[creek03:25878] Signal: Aborted (6)
+[creek03:25878] Signal code:  (-6)
+b2: isCompressed: 0
+b3: isCompressed: 0
+b4: isCompressed: 0
+b5: isCompressed: 0
+c1: isCompressed: 0
+[creek03:25878] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0xfcb0)[0x7fcac83cccb0]
+[creek03:25878] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x35)[0x7fcac80340d5]
+[creek03:25878] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x17b)[0x7fcac803783b]
+[creek03:25878] [ 3] /lib/x86_64-linux-gnu/libc.so.6(+0x2ed9e)[0x7fcac802cd9e]
+[creek03:25878] [ 4] /lib/x86_64-linux-gnu/libc.so.6(+0x2ee42)[0x7fcac802ce42]
+[creek03:25878] [ 5] ../cpu_2d/g500[0x563482]
+[creek03:25878] [ 6] ../cpu_2d/g500[0x563d98]
+[creek03:25878] [ 7] ../cpu_2d/g500[0x40f25a]
+[creek03:25878] [ 8] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7fcac801f76d]
+[creek03:25878] [ 9] ../cpu_2d/g500[0x4106d5]
+[creek03:25878] *** End of error message ***
+g500: cuda/../vreduce.hpp:614: void vreduce(const std::function<void(T, long int, T*, int)>&, const std::function<void(T, long int, T*&, int&)>&, Compression<T, T_C>&, MPI_Datatype, T*, int&, int, MPI_Datatype, MPI_Comm, double&) [with T = long long int; T_C = unsigned int; MPI_Datatype = ompi_datatype_t*; MPI_Comm = ompi_communicator_t*]: Assertion `std::is_sorted(recv_buff, recv_buff + total_uncompressedsize)' failed.
+[creek05:16963] *** Process received signal ***
+[creek05:16963] Signal: Aborted (6)
+[creek05:16963] Signal code:  (-6)
+a1: origsize: 0 compsize: 0 isCompressed: 0
+[creek05:16963] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0xfcb0)[0x7fe17e8c9cb0]
+[creek05:16963] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x35)[0x7fe17e5310d5]
+[creek05:16963] [ 2] a2: isCompressed: 0
+a3: isCompressed: 0
+a4: isCompressed: 0
+a5: isCompressed: 0
+a6: isCompressed: 0
+c1: isCompressed: 0
+/lib/x86_64-linux-gnu/libc.so.6(abort+0x17b)[0x7fe17e53483b]
+[creek05:16963] [ 3] a1: origsize: 261 compsize: 322 isCompressed: 0
+/lib/x86_64-linux-gnu/libc.so.6(+0x2ed9e)[0x7fe17e529d9e]
+[creek05:16963] [ 4] /lib/x86_64-linux-gnu/libc.so.6(+0x2ee42)[0x7fe17e529e42]
+[creek05:16963] [ 5] ../cpu_2d/g500[0x563482]
+[creek05:16963] [ 6] ../cpu_2d/g500[0x563d98]
+[creek05:16963] [ 7] a2: isCompressed: 0
+a3: isCompressed: 0
+a4: isCompressed: 0
+a5: isCompressed: 0
+../cpu_2d/g500[0x40f845]
+[creek05:16963] [ 8] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7fe17e51c76d]
+[creek05:16963] [ 9] ../cpu_2d/g500[0x4106d5]
+[creek05:16963] *** End of error message ***
+a6: isCompressed: 0
+c1: isCompressed: 0
+*** glibc detected *** ../cpu_2d/g500: double free or corruption (!prev): 0x0000000002a25f20 ***
+======= Backtrace: =========
+/lib/x86_64-linux-gnu/libc.so.6(+0x7de16)[0x7ff1b53eee16]
+../cpu_2d/g500[0x562b5c]
+../cpu_2d/g500[0x563d98]
+../cpu_2d/g500[0x40f845]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7ff1b539276d]
+../cpu_2d/g500[0x4106d5]
+======= Memory map: ========
+00400000-00666000 r-xp 00000000 00:15 2175561619                         /home/jromera/ClionProjects/bfs_multinode.creek/cpu_2d/g500
+00865000-00866000 r--p 00265000 00:15 2175561619                         /home/jromera/ClionProjects/bfs_multinode.creek/cpu_2d/g500
+00866000-0086a000 rw-p 00266000 00:15 2175561619                         /home/jromera/ClionProjects/bfs_multinode.creek/cpu_2d/g500
+0086a000-00872000 rw-p 00000000 00:00 0 
+02315000-02a41000 rw-p 00000000 00:00 0                                  [heap]
+200000000-200100000 rw-s 5ba57000 00:05 14971                            /dev/nvidiactl
+200100000-200900000 ---p 00000000 00:00 0 
+200900000-200a00000 rw-s 2d3eb000 00:05 14971                            /dev/nvidiactl
+200a00000-200b00000 ---p 00000000 00:00 0 
+200b00000-200c00000 rw-s 319aa000 00:05 14971                            /dev/nvidiactl
+200c00000-200d00000 ---p 00000000 00:00 0 
+200d00000-200e00000 rw-s 00000000 00:04 2665300                          /dev/zero (deleted)
+200e00000-200f00000 rw-s 00000000 00:04 2665301                          /dev/zero (deleted)
+200f00000-600000000 ---p 00000000 00:00 0 
+7ff1a4000000-7ff1a4021000 rw-p 00000000 00:00 0 
+7ff1a4021000-7ff1a8000000 ---p 00000000 00:00 0 
+7ff1a94df000-7ff1a98df000 rw-s 3b223000 00:05 14971                      /dev/nvidiactl
+7ff1a98df000-7ff1a98e0000 ---p 00000000 00:00 0 
+7ff1a98e0000-7ff1aa0e0000 rw-p 00000000 00:00 0                          [stack:27764]
+7ff1aa0e0000-7ff1aaba4000 r-xp 00000000 08:02 15992336                   /usr/lib/x86_64-linux-gnu/libcuda.so.346.46
+7ff1aaba4000-7ff1aada3000 ---p 00ac4000 08:02 15992336                   /usr/lib/x86_64-linux-gnu/libcuda.so.346.46
+7ff1aada3000-7ff1aaf55000 rw-p 00ac3000 08:02 15992336                   /usr/lib/x86_64-linux-gnu/libcuda.so.346.46
+7ff1aaf55000-7ff1aaf6a000 rw-p 00000000 00:00 0 
+7ff1aaf6a000-7ff1aaf6f000 r-xp 00000000 00:15 1740984887                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_sm.so
+7ff1aaf6f000-7ff1ab16e000 ---p 00005000 00:15 1740984887                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_sm.so
+7ff1ab16e000-7ff1ab16f000 r--p 00004000 00:15 1740984887                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_sm.so
+7ff1ab16f000-7ff1ab171000 rw-p 00005000 00:15 1740984887                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_sm.so
+7ff1ab171000-7ff1ab18f000 r-xp 00000000 00:15 1740970298                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_tuned.so
+7ff1ab18f000-7ff1ab38f000 ---p 0001e000 00:15 1740970298                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_tuned.so
+7ff1ab38f000-7ff1ab390000 r--p 0001e000 00:15 1740970298                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_tuned.so
+7ff1ab390000-7ff1ab391000 rw-p 0001f000 00:15 1740970298                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_tuned.so
+7ff1ab598000-7ff1ab59a000 r-xp 00000000 00:15 1740975624                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_self.so
+7ff1ab59a000-7ff1ab79a000 ---p 00002000 00:15 1740975624                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_self.so
+7ff1ab79a000-7ff1ab79b000 r--p 00002000 00:15 1740975624                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_self.so
+7ff1ab79b000-7ff1ab79c000 rw-p 00003000 00:15 1740975624                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_self.so
+7ff1ab7be000-7ff1ab7d1000 r-xp 00000000 00:15 1740984889                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_rdma.so
+7ff1ab7d1000-7ff1ab9d1000 ---p 00013000 00:15 1740984889                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_rdma.so
+7ff1ab9d1000-7ff1ab9d2000 r--p 00013000 00:15 1740984889                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_rdma.so
+7ff1ab9d2000-7ff1ab9d3000 rw-p 00014000 00:15 1740984889                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_rdma.so
+7ff1ab9d3000-7ff1ab9ec000 r-xp 00000000 00:15 1740970302                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_libnbc.so
+7ff1ab9ec000-7ff1abbeb000 ---p 00019000 00:15 1740970302                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_libnbc.so
+7ff1abbeb000-7ff1abbec000 r--p 00018000 00:15 1740970302                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_libnbc.so
+7ff1abbec000-7ff1abbed000 rw-p 00019000 00:15 1740970302                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_libnbc.so
+7ff1abbed000-7ff1abbf1000 r-xp 00000000 00:15 1740984837                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_inter.so
+7ff1abbf1000-7ff1abdf0000 ---p 00004000 00:15 1740984837                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_inter.so
+7ff1abdf0000-7ff1abdf1000 r--p 00003000 00:15 1740984837                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_inter.so
+7ff1abdf1000-7ff1abdf2000 rw-p 00004000 00:15 1740984837                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_inter.so
+7ff1abdf2000-7ff1abdff000 r-xp 00000000 00:15 1740984833                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_basic.so
+7ff1abdff000-7ff1abffe000 ---p 0000d000 00:15 1740984833                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_basic.so
+7ff1abffe000-7ff1abfff000 r--p 0000c000 00:15 1740984833                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_basic.so
+7ff1abfff000-7ff1ac000000 rw-p 0000d000 00:15 1740984833                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_basic.so
+7ff1ac000000-7ff1ac021000 rw-p 00000000 00:00 0 
+7ff1ac021000-7ff1b0000000 ---p 00000000 00:00 0 
+7ff1b0061000-7ff1b00ad000 rw-s 2280c000 00:05 14971                      /dev/nvidiactl
+7ff1b00ad000-7ff1b01ad000 rw-s 31ac9000 00:05 14971                      /dev/nvidiactl
+7ff1b01ad000-7ff1b02ad000 rw-s 44e0f000 00:05 14971                      /dev/nvidiactl
+7ff1b02ad000-7ff1b02c7000 r-xp 00000000 00:15 1740985123                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pml_ob1.so
+7ff1b02c7000-7ff1b04c6000 ---p 0001a000 00:15 1740985123                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pml_ob1.so
+7ff1b04c6000-7ff1b04c7000 r--p 00019000 00:15 1740985123                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pml_ob1.so
+7ff1b04c7000-7ff1b04c8000 rw-p 0001a000 00:15 1740985123                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pml_ob1.so
+7ff1b04c9000-7ff1b04cf000 r-xp 00000000 00:15 1740984839                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_hierarch.so
+7ff1b04cf000-7ff1b06ce000 ---p 00006000 00:15 1740984839                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_hierarch.so
+7ff1b06ce000-7ff1b06cf000 r--p 00005000 00:15 1740984839                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_hierarch.so
+7ff1b06cf000-7ff1b06d0000 rw-p 00006000 00:15 1740984839                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_hierarch.so
+7ff1b06f8000-7ff1b0af8000 rw-s 44256000 00:05 14971                      /dev/nvidiactl
+7ff1b0af8000-7ff1b0b04000 r-xp 00000000 00:15 1740970268                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_tcp.so
+7ff1b0b04000-7ff1b0d03000 ---p 0000c000 00:15 1740970268                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_tcp.so
+7ff1b0d03000-7ff1b0d04000 r--p 0000b000 00:15 1740970268                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_tcp.so
+7ff1b0d04000-7ff1b0d05000 rw-p 0000c000 00:15 1740970268                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_tcp.so
+7ff1b0d05000-7ff1b0d85000 rw-p 00000000 00:00 0 
+7ff1b0d8b000-7ff1b0d91000 r-xp 00000000 00:15 1740984847                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_dpm_orte.so
+7ff1b0d91000-7ff1b0f90000 ---p 00006000 00:15 1740984847                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_dpm_orte.so
+7ff1b0f90000-7ff1b0f91000 r--p 00005000 00:15 1740984847                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_dpm_orte.so
+7ff1b0f91000-7ff1b0f92000 rw-p 00006000 00:15 1740984847                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_dpm_orte.so
+7ff1b0f92000-7ff1b0f95000 r-xp 00000000 00:15 1740995584                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pubsub_orte.so
+7ff1b0f95000-7ff1b1194000 ---p 00003000 00:15 1740995584                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pubsub_orte.so
+7ff1b1194000-7ff1b1195000 r--p 00002000 00:15 1740995584                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pubsub_orte.so
+7ff1b1195000-7ff1b1196000 rw-p 00003000 00:15 1740995584                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pubsub_orte.so
+7ff1b1196000-7ff1b1199000 r-xp 00000000 00:15 1740970256                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_self.so
+7ff1b1199000-7ff1b1398000 ---p 00003000 00:15 1740970256                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_self.so
+7ff1b1398000-7ff1b1399000 r--p 00002000 00:15 1740970256                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_self.so
+7ff1b1399000-7ff1b139a000 rw-p 00003000 00:15 1740970256                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_self.so
+7ff1b139a000-7ff1b139d000 r-xp 00000000 00:15 1740970254                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_bml_r2.so
+7ff1b139d000-7ff1b159d000 ---p 00003000 00:15 1740970254                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_bml_r2.so
+7ff1b159d000-7ff1b159e000 r--p 00003000 00:15 1740970254                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_bml_r2.so
+7ff1b159e000-7ff1b159f000 rw-p 00004000 00:15 1740970254                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_bml_r2.so
+7ff1b159f000-7ff1b15a1000 r-xp 00000000 00:15 2853228046                 /home/mhauck/distlibs/openmpi/lib/libmca_common_sm.so.4.0.4
+7ff1b15a1000-7ff1b17a1000 ---p 00002000 00:15 2853228046                 /home/mhauck/distlibs/openmpi/lib/libmca_common_sm.so.4.0.4
+7ff1b17a1000-7ff1b17a2000 r--p 00002000 00:15 2853228046                 /home/mhauck/distlibs/openmpi/lib/libmca_common_sm.so.4.0.4
+7ff1b17a2000-7ff1b17a3000 rw-p 00003000 00:15 2853228046                 /home/mhauck/distlibs/openmpi/lib/libmca_common_sm.so.4.0.4
+7ff1b17a3000-7ff1b17a5000 r-xp 00000000 00:15 1740984878                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_sm.so
+7ff1b17a5000-7ff1b19a4000 ---p 00002000 00:15 1740984878                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_sm.so
+7ff1b19a4000-7ff1b19a5000 r--p 00001000 00:15 1740984878                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_sm.so
+7ff1b19a5000-7ff1b19a6000 rw-p 00002000 00:15 1740984878                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_sm.so
+7ff1b19a6000-7ff1b19a9000 r-xp 00000000 00:15 1740984880                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_rgpusm.so
+7ff1b19a9000-7ff1b1ba8000 ---p 00003000 00:15 1740984880                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_rgpusm.so
+7ff1b1ba8000-7ff1b1ba9000 r--p 00002000 00:15 1740984880                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_rgpusm.so
+7ff1b1ba9000-7ff1b1baa000 rw-p 00003000 00:15 1740984880b1: origsize: 0 compsize: 0 isCompressed: 0
+b2: isCompressed: 0
+b3: isCompressed: 0
+b4: isCompressed: 0
+b5: isCompressed: 0
+c1: isCompressed: 0
+                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_rgpusm.so
+7ff1b1baa000-7ff1b1bae000 r-xp 00000000 00:15 1740984874                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_grdma.so
+7ff1b1bae000-7ff1b1dad000 ---p 00004000 00:15 1740984874                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_grdma.so
+7ff1b1dad000-7ff1b1dae000 r--p 00003000 00:15 1740984874                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_grdma.so
+7ff1b1dae000-7ff1b1daf000 rw-p 00004000 00:15 1740984874                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_grdma.so
+7ff1b1daf000-7ff1b1db6000 r-xp 00000000 00:15 2853228052                 /home/mhauck/distlibs/openmpi/lib/libmca_common_cuda.so.1.0.7
+7ff1b1db6000-7ff1b1fb5000 ---p 00007000 00:15 2853228052                 /home/mhauck/distlibs/openmpi/lib/libmca_common_cuda.so.1.0.7
+7ff1b1fb5000-7ff1b1fb6000 r--p 00006000 00:15 2853228052                 /home/mhauck/distlibs/openmpi/lib/libmca_common_cuda.so.1.0.7
+7ff1b1: origsize: 322 compsize: 261 isCompressed: 0
+b1fb6000-7ff1b1fb7000 rw-p 00007000 00:15 2853228052                 /home/mhauck/distlibs/openmpi/lib/libmca_common_cuda.so.1.0.7
+7ff1b1fb7000-7ff1b1fb9000 r-xp 00000000 00:15 1740984884                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_gpusm.so
+7ff1b1fb9000-7ff1b21b8000 ---p 00002000 00:15 1740984884                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_gpusm.so
+7ff1b21b8000-7ff1b21b9000 r--p 00001000 00:15 1740984884                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_gpusm.so
+7ff1b21b9000-7ff1b21ba000 rw-p 00002000 00:15 1740984884                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_gpusm.so
+7ff1b21ba000-7ff1b21be000 r-xp 00000000 00:15 1740995586                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rcache_vma.so
+7ff1b21be000-7ff1b23bd000 ---p 00004000 00:15 1740995586                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rcache_vma.so
+7ff1b23bd000-7ff1b23be000 r--p 00003000 00:15 1740995586                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rcache_vma.so
+7ff1b23be000-7ff1b23bf000 rw-p 00004000 00:15 1740995586                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rcache_vma.so
+7ff1b23bf000-7ff1b23c1000 r-xp 00000000 00:15 1739918364                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_bucket.so
+7ff1b23c1000-7ff1b25c0000 ---p 00002000 00:15 1739918364                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_bucket.so
+7ff1b25c0000-7ff1b25c1000 r--p 00001000 00:15 1739918364                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_bucket.so
+7ff1b25c1000-7ff1b25c2000 rw-p 00002000 00:15 1739918364                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_bucket.so
+7ff1b25c2000-7ff1b25c4000 r-xp 00000000 00:15 1740970243                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_basic.so
+7ff1b25c4000-7ff1b27c3000 ---p 00002000 00:15 1740970243                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_basic.so
+7ff1b27c3000-7ff1b27c4000 r--p 00001000 00:15 1740970243                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_basic.so
+7ff1b27c4000-7ff1b27c5000 rw-p 00002000 00:15 1740970243                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_basic.so
+7ff1b27c5000-7ff1b27c6000 ---p 00000000 00:00 0 
+7ff1b27c6000-7ff1b2fc6000 rw-p 00000000 00:00 0                          [stack:27763]
+7ff1b2fc6000-7ff1b2fc8000 r-xp 00000000 00:15 1740809261                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_grpcomm_bad.so
+7ff1b2fc8000-7ff1b31c7000 ---p 00002000 00:15 1740809261                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_grpcomm_bad.so
+7ff1b31c7000-7ff1b31c8000 r--p 00001000 00:15 1740809261                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_grpcomm_bad.so
+7ff1b31c8000-7ff1b31c9000 rw-p 00002000 00:15 1740809261                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_grpcomm_bad.so
+7ff1b31c9000-7ff1b31cc000 r-xp 00000000 00:15 1740962059                 /home/mhauck/distlibb2: isCompressed: 0
+b3: isCompressed: 0
+b4: isCompressed: 0
+b5: isCompressed: 0
+c1: isCompressed: 0
+*** glibc detected *** ../cpu_2d/g500: double free or corruption (!prev): 0x000000000129e420 ***
+s/openmpi/lib/openmpi/mca_rml_oob.so
+7ff1b31cc000-7ff1b33cb000 ---p 00003000 00:15 1740962059                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rml_oob.so
+7ff1b33cb000-7ff1b33cc000 r--p 00002000 00:15 1740962059                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rml_oob.so
+7ff1b33cc000-7ff1b33cd000 rw-p 00003000 00:15 1740962059                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rml_oob.so
+7ff1b33cd000-7ff1b33df000 r-xp 00000000 00:15 1740934223                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_oob_tcp.so
+7ff1b33df000-7ff1b35df000 ---p 00012000 00:15 1740934223                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_oob_tcp.so
+7ff1b35df000-7ff1b35e0000 r--p 00012000 00:15 1740934223                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_oob_tcp.so
+7ff1b35e0000-7ff1b35e1000 rw-p 00013000 00:15 1740934223                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_oob_tcp.so
+7ff1b35e1000-7ff1b35e3000 r-xp 00000000 00:15 1740746251                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_print.so
+7ff1b35e3000-7ff1b37e2000 ---p 00002000 00:15 1740746251                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_print.so
+7ff1b37e2000-7ff1b37e3000 r--p 00001000 00:15 1740746251                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_print.so
+7ff1b37e3000-7ff1b37e4000 rw-p 00002000 00:15 1740746251                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_print.so
+7ff1b37e4000-7ff1b37e7000 r-xp 00000000 00:15 1740746253                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_hash.so
+7ff1b37e7000-7ff1b39e6000 ---p 00003000 00:15 1740746253                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_hash.so
+7ff1b39e6000-7ff1b39e7000 r--p 00002000 00:15 1740746253                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_hash.so
+7ff1b39e7000-7ff1b39e8000 rw-p 00003000 00:15 1740746253                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_hash.so
+7ff1b39e8000-7ff1b39eb000 r-xp 00000000 00:15 1740962073                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_routed_binomial.so
+7ff1b39eb000-7ff1b3beb000 ---p 00003000 00:15 1740962073                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_routed_binomial.so
+7ff1b3beb000-7ff1b3bec000 r--p 00003000 00:15 1740962073                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_routed_binomial.so
+7ff1b3bec000-7ff1b3bed000 rw-p 00004000 00:15 1740962073                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_routed_binomial.so
+7ff1b3bed000-7ff1b3bef000 r-xp 00000000 00:15 1740746296                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_errmgr_default_app.so
+7ff1b3bef000-7ff1b3dee000 ---p 00002000 00:15 1740746296                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_errmgr_default_app.so
+7ff1b3dee000-7ff1b3def000 r--p 00001000 00:15 1740746296                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_errmgr_default_app.so
+7ff1b3def000-7ff1b3df0000 rw-p 00002000 00:15 1740746296                 /home/mhauck/distlibs/openmpi/lib======= Backtrace: =========
+/lib/x86_64-linux-gnu/libc.so.6(+0x7de16)[0x7fc3788bde16]
+../cpu_2d/g500[0x562b5c]
+../cpu_2d/g500[0x563d98]
+../cpu_2d/g500[0x40f845]
+/openmpi/mca_errmgr_default_app.so
+7ff1b3df0000-7ff1b3df2000 r-xp 00000000 00:15 1740962075                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_state_app.so
+7ff1b3df2000-7ff1b3ff1000 ---p 00002000 00:15 1740962075                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_state_app.so
+7ff1b3ff1000-7ff1b3ff2000 r--p 00001000 00:15 1740962075                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_state_app.so
+7ff1b3ff2000-7ff1b3ff3000 rw-p 00002000 00:15 1740962075                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_state_app.so
+7ff1b3ff3000-7ff1b3ff5000 r-xp 00000000 00:15 1740809018                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_ess_env.so
+7ff1b3ff5000-7ff1b41f4000 ---p 00002000 00:15 1740809018                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_ess_env.so
+7ff1b41f4000-7ff1b41f5000 r--p 00001000 00:15 1740809018                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_ess_env.so
+7ff1b41f5000-7ff1b41f6000 rw-p 00002000 00:15 1740809018                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_ess_env.so
+7ff1b41f6000-7ff1b41f7000 r-xp 00000000 00:15 1740746257                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_sec_basic.so
+7ff1b41f7000-7ff1b43f6000 ---p 00001000 00:15 1740746257                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_sec_basic.so
+7ff1b43f6000-7ff1b43f7000 r--p 00000000 00:15 1740746257                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_sec_basic.so
+7ff1b43f7000-7ff1b43f8000 rw-p 00001000 00:15 1740746257                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_sec_basic.so
+7ff1b43f8000-7ff1b43fb000 r-xp 00000000 00:15 1740746259                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_shmem_mmap.so
+7ff1b43fb000-7ff1b45fa000 ---p 00003000 00:15 1740746259                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_shmem_mmap.so
+7ff1b45fa000-7ff1b45fb000 r--p 00002000 00:15 1740746259                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_shmem_mmap.so
+7ff1b45fb000-7ff1b45fc000 rw-p 00003000 00:15 1740746259                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_shmem_mmap.so
+7ff1b45fc000-7ff1b45fe000 r-xp 00000000 08:02 13893894                   /lib/x86_64-linux-gnu/libutil-2.15.so
+7ff1b45fe000-7ff1b47fd000 ---p 00002000 08:02 13893894                   /lib/x86_64-linux-gnu/libutil-2.15.so
+7ff1b47fd000-7ff1b47fe000 r--p 00001000 08:02 13893894                   /lib/x86_64-linux-gnu/libutil-2.15.so
+7ff1b47fe000-7ff1b47ff000 rw-p 00002000 08:02 13893894                   /lib/x86_64-linux-gnu/libutil-2.15.so
+7ff1b47ff000-7ff1b4808000 r-xp 00000000 08:02 15999013                   /usr/lib/libnuma.so.1
+7ff1b4808000-7ff1b4a08000 ---p 00009000 08:02 15999013                   /usr/lib/libnuma.so.1
+7ff1b4a08000-7ff1b4a09000 r--p 00009000 08:02 15999013                   /usr/lib/libnuma.so.1
+7ff1b4a09000-7ff1b4a0a000 rw-p 0000a000 08:02 15999013                   /usr/lib/libnuma.so.1
+7ff1b4a0a000-7ff1b4a11000 r-xp 00000000 08:02 13893890                   /lib/x86_64-linux-gnu/librt-2.15/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7fc37886176d]
+../cpu_2d/g500[0x4106d5]
+======= Memory map: ========
+.so
+7ff1b4a11000-7ff1b4c10000 ---p 00007000 08:02 13893890                   /lib/x86_64-linux-gnu/librt-2.15.so
+7ff1b4c10000-7ff1b4c11000 r--p 00006000 08:02 13893890                   /lib/x86_64-linux-gnu/librt-2.15.so
+7ff1b4c11000-7ff1b4c12000 rw-p 00007000 08:02 13893890                   /lib/x86_64-linux-gnu/librt-2.15.so
+7ff1b4c12000-7ff1b4c14000 r-xp 00000000 08:02 13893907                   /lib/x86_64-linux-gnu/libdl-2.15.so
+7ff1b4c14000-7ff1b4e14000 ---p 00002000 08:02 13893907                   /lib/x86_64-linux-gnu/libdl-2.15.so
+7ff1b4e14000-7ff1b4e15000 r--p 00002000 08:02 13893907                   /lib/x86_64-linux-gnu/libdl-2.15.so
+7ff1b4e15000-7ff1b4e16000 rw-p 00003000 08:02 13893907                   /lib/x86_64-linux-gnu/libdl-2.15.so
+7ff1b4e16000-7ff1b4e8c000 r-xp 00000000 00:15 2853228121                 /home/mhauck/distlibs/openmpi/lib/libopen-rte.so.7.0.5
+7ff1b4e8c000-7ff1b508c000 ---p 00076000 00:15 2853228121                 /home/mhauck/distlibs/openmpi/lib/libopen-rte.so.7.0.5
+7ff1b508c000-7ff1b508d000 r--p 00076000 00:15 2853228121                 /home/mhauck/distlibs/openmpi/lib/libopen-rte.so.7.0.5
+7ff1b508d000-7ff1b5090000 rw-p 00077000 00:15 2853228121                 /home/mhauck/distlibs/openmpi/lib/libopen-rte.so.7.0.5
+7ff1b5090000-7ff1b5092000 rw-p 00000000 00:00 0 
+7ff1b5092000-7ff1b5162000 r-xp 00000000 00:15 2853228114                 /home/mhauck/distlibs/openmpi/lib/libopen-pal.so.6.2.1
+7ff1b5162000-7ff1b5362000 ---p 000d0000 00:15 2853228114                 /home/mhauck/distlibs/openmpi/lib/libopen-pal.so.6.2.1
+7ff1b5362000-7ff1b5366000 r--p 000d0000 00:15 2853228114                 /home/mhauck/distlibs/openmpi/lib/libopen-pal.so.6.2.1
+7ff1b5366000-7ff1b536b000 rw-p 000d4000 00:15 2853228114                 /home/mhauck/distlibs/openmpi/lib/libopen-pal.so.6.2.1
+7ff1b536b000-7ff1b5371000 rw-p 00000000 00:00 0 
+7ff1b5371000-7ff1b5525000 r-xp 00000000 08:02 13893896                   /lib/x86_64-linux-gnu/libc-2.15.so
+7ff1b5525000-7ff1b5725000 ---p 001b4000 08:02 1389300400000-00666000 r-xp 00000000 00:15 2175561619                         /home/jromera/ClionProjects/bfs_multinode.creek/cpu_2d/g500
+00865000-00866000 r--p 00265000 00:15 2175561619                         /home/jromera/ClionProjects/bfs_multinode.creek/cpu_2d/g500
+00866000-0086a000 rw-p 00266000 00:15 2175561619                         /home/jromera/ClionProjects/bfs_multinode.creek/cpu_2d/g500
+0086a000-00872000 rw-p 00000000 00:00 0 
+00b92000-012bb000 rw-p 00000000 00:00 0                                  [heap]
+200000000-200100000 rw-s 155f88000 00:05 8024                            /dev/nvidiactl
+200100000-200900000 ---p 00000000 00:00 0 
+200900000-200a00000 rw-s 14c364000 00:05 8024                            /dev/nvidiactl
+200a00000-200b00000 ---p 00000000 00:00 0 
+200b00000-200c00000 rw-s 13df3d000 00:05 8024                            /dev/nvidiactl
+200c00000-200d00000 ---p 00000000 00:00 0 
+200d00000-200e00000 rw-s 00000000 00:04 2680049                          /dev/zero (deleted)
+200e00000-200f00000 rw-s 00000000 00:04 2680050                          /dev/zero (deleted)
+200f00000-600000000 ---p 00000000 00:00 0 
+7fc368000000-7fc368021000 rw-p 00000000 00:00 0 
+7fc368021000-7fc36c000000 ---p 00000000 00:00 0 
+7fc36c606000-7fc36ca06000 rw-s 1540aa000 00:05 8024                      /dev/nvidiactl
+7fc36ca06000-7fc36ce06000 rw-s 15870c000 00:05 8024                      /dev/nvidiactl
+7fc36ce06000-7fc36ce07000 ---p 00000000 00:00 0 
+7fc36ce07000-7fc36d607000 rw-p 00000000 00:00 0                          [stack:31711]
+7fc36d607000-7fc36e0cb000 r-xp 00000000 08:02 15992720                   /usr/lib/x86_64-linux-gnu/libcuda.so.346.46
+7fc36e0cb000-7fc36e2ca000 ---p 00ac4000 08:02 15992720                   /usr/lib/x86_64-linux-gnu/libcuda.so.346.46
+7fc36e2ca000-7fc36e47c000 rw-p 00ac3000 08:02 15992720                   /usr/lib/x86_64-linux-gnu/libcuda.so.346.46
+7fc36e47c000-7fc36e491000 rw-p 00000000 00:00 0 
+7fc36e491000-7fc36e496000 r-xp 00000000 00:15 1740984887                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_sm.so
+7fc36e496000-7fc36e695000 ---p 00005000 00:15 1740984887                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_sm.so
+7fc36e695000-7fc36e696000 r--p 00004000 00:15 1740984887                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_sm.so
+7fc36e696000-7fc36e698000 rw-p 00005000 00:15 1740984887                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_sm.so
+7fc36e698000-7fc36e6b6000 r-xp 00000000 00:15 1740970298                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_tuned.so
+7fc36e6b6000-7fc36e8b6000 ---p 0001e000 00:15 1740970298                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_tuned.so
+7fc36e8b6000-7fc36e8b7000 r--p 0001e000 00:15 1740970298                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_tuned.so
+7fc36e8b7000-7fc36e8b8000 rw-p 0001f000 00:15 1740970298                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_tuned.so
+7fc36eabf000-7fc36eac1000 r-xp 00000000 00:15 1740975624                896                   /lib/x86_64-linux-gnu/libc-2.15.so
+7ff1b5725000-7ff1b5729000 r--p 001b4000 08:02 13893896                   /lib/x86_64-linux-gnu/libc-2.15.so
+7ff1b5729000-7ff1b572b000 rw-p 001b8000 08:02 13893896                   /lib/x86_64-linux-gnu/libc-2.15.so
+7ff1b572b000-7ff1b5730000 rw-p 00000000 00:00 0 
+7ff1b5730000-7ff1b5748000 r-xp 00000000 08:02 13893897                   /lib/x86_64-linux-gnu/libpthread-2.15.so
+7ff1b5748000-7ff1b5947000 ---p 00018000 08:02 13893897                   /lib/x86_64-linux-gnu/libpthread-2.15.so
+7ff1b5947000-7ff1b5948000 r--p 00017000 08:02 13893897                   /lib/x86_64-linux-gnu/libpthread-2.15.so
+7ff1b5948000-7ff1b5949000 rw-p 00018000 08:02 13893897                   /lib/x86_64-linux-gnu/libpthread-2.15.so
+7ff1b5949000-7ff1b594d000 rw-p 00000000 00:00 0 
+7ff1b594d000-7ff1b5963000 r-xp 00000000 08:02 13898536                   /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ff1b5963000-7ff1b5b62000 ---p 00016000 08:02 13898536                   /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ff1b5b62000-7ff1b5b63000 r--p 00015000 08:02 13898536                   /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ff1b5b63000-7ff1b5b64000 rw-p 00016000 08:02 13898536                   /lib/x86_64-linux-gnu/libgcc_s.so.1
+7ff1b5b64000-7ff1b5c5f000 r-xp 00000000 08:02 13893906                   /lib/x86_64-linux-gnu/libm-2.15.so
+7ff1b5c5f000-7ff1b5e5e000 ---p 000fb000 08:02 13893906                   /lib/x86_64-linux-gnu/libm-2.15.so
+7ff1b5e5e000-7ff1b5e5f000 r--p 000fa000 08:02 13893906                   /lib/x86_64-linux-gnu/libm-2.15.so
+7ff1b5e5f000-7ff1b5e60000 rw-p 000fb000 08:02 13893906                   /lib/x86_64-linux-gnu/libm-2.15.so
+7ff1b5e60000-7ff1b5fcd000 r-xp 00000000 08:02 15999405                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7ff1b5fcd000-7ff1b61cd000 ---p 0016d000 08:02 15999405                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7ff1b61cd000-7ff1b61d7000 r--p 0016d000 08:02 15999405                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_self.so
+7fc36eac1000-7fc36ecc1000 ---p 00002000 00:15 1740975624                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_self.so
+7fc36ecc1000-7fc36ecc2000 r--p 00002000 00:15 1740975624                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_self.so
+7fc36ecc2000-7fc36ecc3000 rw-p 00003000 00:15 1740975624                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_self.so
+7fc36ece5000-7fc36ecf8000 r-xp 00000000 00:15 1740984889                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_rdma.so
+7fc36ecf8000-7fc36eef8000 ---p 00013000 00:15 1740984889                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_rdma.so
+7fc36eef8000-7fc36eef9000 r--p 00013000 00:15 1740984889                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_rdma.so
+7fc36eef9000-7fc36eefa000 rw-p 00014000 00:15 1740984889                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_osc_rdma.so
+7fc36eefa000-7fc36ef13000 r-xp 00000000 00:15 1740970302                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_libnbc.so
+7fc36ef13000-7fc36f112000 ---p 00019000 00:15 1740970302                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_libnbc.so
+7fc36f112000-7fc36f113000 r--p 00018000 00:15 1740970302                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_libnbc.so
+7fc36f113000-7fc36f114000 rw-p 00019000 00:15 1740970302                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_libnbc.so
+7fc36f114000-7fc36f118000 r-xp 00000000 00:15 1740984837                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_inter.so
+7fc36f118000-7fc36f317000 ---p 00004000 00:15 1740984837                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_inter.so
+7fc36f317000-7fc36f318000 r--p 00003000 00:15 1740984837                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_inter.so
+7fc36f318000-7fc36f319000 rw-p 00004000 00:15 1740984837                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_inter.so
+7fc36f319000-7fc36f326000 r-xp 00000000 00:15 1740984833                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_basic.so
+7fc36f326000-7fc36f525000 ---p 0000d000 00:15 1740984833                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_basic.so
+7fc36f525000-7fc36f526000 r--p 0000c000 00:15 1740984833                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_basic.so
+7fc36f526000-7fc36f527000 rw-p 0000d000 00:15 1740984833                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_basic.so
+7fc36f72f000-7fc36f749000 r-xp 00000000 00:15 1740985123                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pml_ob1.so
+7fc36f749000-7fc36f948000 ---p 0001a000 00:15 1740985123                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pml_ob1.so
+7fc36f948000-7fc36f949000 r--p 00019000 00:15 1740985123                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pml_ob1.so
+7fc36f949000-7fc36f94a000 rw-p 0001a000 00:15 1740985123                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pml_ob1.so
+7fc36f94b000-7fc36f951000 r-xp 00000000 00:15 1740984839                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_hierarch.so
+7fc36f951000-7fc36fb50000 ---p 00006000 00:15 1740984839                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_hierarch.so
+7fc36fb50000-7fc36fb51000 r--p 00005000 00:15 1740984839                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_hierarch.so
+7fc36fb51000-7fc36fb52000 rw-p 00006000 00:15 1740984839                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_coll_hierarch.so
+7fc36fd73000-7fc36fd7f000 r-xp 00000000 00:15 1740970268                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_tcp.so
+7fc36fd7f000-7fc36ff7e000 ---p 0000c000 00:15 1740970268                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_tcp.so
+7fc36ff7e000-7fc36ff7f000 r--p 0000b000 00:15 1740970268                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_tcp.so
+7fc36ff7f000-7fc36ff80000 rw-p 0000c000 00:15 1740970268      .21
+7ff1b61d7000-7ff1b61d9000 rw-p 00177000 08:02 15999405                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7ff1b61d9000-7ff1b61dd000 rw-p 00000000 00:00 0 
+7ff1b61dd000-7ff1b6236000 r-xp 00000000 08:02 20188111                   /usr/local/cuda-7.0/targets/x86_64-linux/lib/libcudart.so.7.0.28
+7ff1b6236000-7ff1b6436000 ---p 00059000 08:02 20188111                   /usr/local/cuda-7.0/targets/x86_64-linux/lib/libcudart.so.7.0.28
+7ff1b6436000-7ff1b6439000 rw-p 00059000 08:02 20188111                   /usr/local/cuda-7.0/targets/x86_64-linux/lib/libcudart.so.7.0.28
+7ff1b6439000-7ff1b643a000 rw-p 00000000 00:00 0 
+7ff1b643a000-7ff1b64f1000 r-xp 00000000 00:15 2853228138                 /home/mhauck/distlibs/openmpi/lib/libmpi.so.1.6.0
+7ff1b64f1000-7ff1b66f0000 ---p 000b7000 00:15 2853228138                 /home/mhauck/distlibs/openmpi/lib/libmpi.so.1.6.0
+7ff1b66f0000-7ff1b66f2000 r--p 000b6000 00:15 2853228138                 /home/mhauck/distlibs/openmpi/lib/libmpi.so.1.6.0
+7ff1b66f2000-7ff1b6702000 rw-p 000b8000 00:15 2853228138                 /home/mhauck/distlibs/openmpi/lib/libmpi.so.1.6.0
+7ff1b6702000-7ff1b6715000 rw-p 00000000 00:00 0 
+7ff1b6715000-7ff1b672c000 r-xp 00000000 00:15 2853228144                 /home/mhauck/distlibs/openmpi/lib/libmpi_cxx.so.1.1.3
+7ff1b672c000-7ff1b692c000 ---p 00017000 00:15 2853228144                 /home/mhauck/distlibs/openmpi/lib/libmpi_cxx.so.1.1.3
+7ff1b692c000-7ff1b692e000 r--p 00017000 00:15 2853228144                 /home/mhauck/distlibs/openmpi/lib/libmpi_cxx.so.1.1.3
+7ff1b692e000-7ff1b692f000 rw-p 00019000 00:15 2853228144                 /home/mhauck/distlibs/openmpi/lib/libmpi_cxx.so.1.1.3
+7ff1b692f000-7ff1b6951000 r-xp 00000000 08:02 13893905                   /lib/x86_64-linux-gnu/ld-2.15.so
+7ff1b6988000-7ff1b6a88000 rw-s 24de5000 00:05 14971                      /dev/nvidiactl
+7ff1b6a88000-7ff1b6aa8000 rw-s e0020000 00:05 15742                      /dev/nvidia0
+7ff1b6aa8000-7ff1b6ac8000 rw-s e0000000 00:05 15742                      /dev/nvidia           /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_tcp.so
+7fc36ff80000-7fc370000000 rw-p 00000000 00:00 0 
+7fc370000000-7fc370021000 rw-p 00000000 00:00 0 
+7fc370021000-7fc374000000 ---p 00000000 00:00 0 
+7fc37400e000-7fc37405a000 rw-s 150fd4000 00:05 8024                      /dev/nvidiactl
+7fc37405a000-7fc37415a000 rw-s 15011f000 00:05 8024                      /dev/nvidiactl
+7fc37415a000-7fc37425a000 rw-s 135b60000 00:05 8024                      /dev/nvidiactl
+7fc37425a000-7fc374260000 r-xp 00000000 00:15 1740984847                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_dpm_orte.so
+7fc374260000-7fc37445f000 ---p 00006000 00:15 1740984847                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_dpm_orte.so
+7fc37445f000-7fc374460000 r--p 00005000 00:15 1740984847                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_dpm_orte.so
+7fc374460000-7fc374461000 rw-p 00006000 00:15 1740984847                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_dpm_orte.so
+7fc374461000-7fc374464000 r-xp 00000000 00:15 1740995584                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pubsub_orte.so
+7fc374464000-7fc374663000 ---p 00003000 00:15 1740995584                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pubsub_orte.so
+7fc374663000-7fc374664000 r--p 00002000 00:15 1740995584                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pubsub_orte.so
+7fc374664000-7fc374665000 rw-p 00003000 00:15 1740995584                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_pubsub_orte.so
+7fc374665000-7fc374668000 r-xp 00000000 00:15 1740970256                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_self.so
+7fc374668000-7fc374867000 ---p 00003000 00:15 1740970256                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_self.so
+7fc374867000-7fc374868000 r--p 00002000 00:15 1740970256                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_self.so
+7fc374868000-7fc374869000 rw-p 00003000 00:15 1740970256                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_btl_self.so
+7fc374869000-7fc37486c000 r-xp 00000000 00:15 1740970254                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_bml_r2.so
+7fc37486c000-7fc374a6c000 ---p 00003000 00:15 1740970254                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_bml_r2.so
+7fc374a6c000-7fc374a6d000 r--p 00003000 00:15 1740970254                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_bml_r2.so
+7fc374a6d000-7fc374a6e000 rw-p 00004000 00:15 1740970254                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_bml_r2.so
+7fc374a6e000-7fc374a70000 r-xp 00000000 00:15 2853228046                 /home/mhauck/distlibs/openmpi/lib/libmca_common_sm.so.4.0.4
+7fc374a70000-7fc374c70000 ---p 00002000 00:15 2853228046                 /home/mhauck/distlibs/openmpi/lib/libmca_common_sm.so.4.0.4
+7fc374c70000-7fc374c71000 r--p 00002000 00:15 2853228046                 /home/mhauck/distlibs/openmpi/lib/libmca_common_sm.so.4.0.4
+7fc374c71000-7fc374c72000 rw-p 00003000 00:15 2853228046                 /home/mhauck/distlibs0
+7ff1b6ac8000-7ff1b6afd000 r--s 00000000 08:02 2628933                    /var/cache/nscd/passwd
+7ff1b6afd000-7ff1b6b28000 rw-p 00000000 00:00 0 
+7ff1b6b28000-7ff1b6b29000 rw-p 00000000 00:00 0 
+7ff1b6b29000-7ff1b6b2a000 rw-s e7ee2000 00:05 15742                      /dev/nvidia0
+7ff1b6b2a000-7ff1b6b2b000 rw-s 2d3e6000 00:05 14971                      /dev/nvidiactl
+7ff1b6b2b000-7ff1b6b2c000 rw-s e7ee1000 00:05 15742                      /dev/nvidia0
+7ff1b6b2c000-7ff1b6b2d000 rw-s 6224f000 00:05 14971                      /dev/nvidiactl
+7ff1b6b2d000-7ff1b6b51000 rw-p 00000000 00:00 0 
+7ff1b6b51000-7ff1b6b52000 r--p 00022000 08:02 13893905                   /lib/x86_64-linux-gnu/ld-2.15.so
+7ff1b6b52000-7ff1b6b54000 rw-p 00023000 08:02 13893905                   /lib/x86_64-linux-gnu/ld-2.15.so
+7fff382c7000-7fff382e8000 rw-p 00000000 00:00 0                          [stack]
+7fff383fe000-7fff38400000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+[creek04:27762] *** Process received signal ***
+[creek04:27762] Signal: Aborted (6)
+[creek04:27762] Signal code:  (-6)
+[creek04:27762] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0xfcb0)[0x7ff1b573fcb0]
+[creek04:27762] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x35)[0x7ff1b53a70d5]
+[creek04:27762] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x17b)[0x7ff1b53aa83b]
+[creek04:27762] [ 3] /lib/x86_64-linux-gnu/libc.so.6(+0x7361e)[0x7ff1b53e461e]
+[creek04:27762] [ 4] /lib/x86_64-linux-gnu/libc.so.6(+0x7de16)[0x7ff1b53eee16]
+[creek04:27762] [ 5] ../cpu_2d/g500[0x562b5c]
+[creek04:27762] [ 6] /openmpi/lib/libmca_common_sm.so.4.0.4
+7fc374c72000-7fc374c74000 r-xp 00000000 00:15 1740984878                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_sm.so
+7fc374c74000-7fc374e73000 ---p 00002000 00:15 1740984878                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_sm.so
+7fc374e73000-7fc374e74000 r--p 00001000 00:15 1740984878                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_sm.so
+7fc374e74000-7fc374e75000 rw-p 00002000 00:15 1740984878                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_sm.so
+7fc374e75000-7fc374e78000 r-xp 00000000 00:15 1740984880                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_rgpusm.so
+7fc374e78000-7fc375077000 ---p 00003000 00:15 1740984880                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_rgpusm.so
+7fc375077000-7fc375078000 r--p 00002000 00:15 1740984880                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_rgpusm.so
+7fc375078000-7fc375079000 rw-p 00003000 00:15 1740984880                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_rgpusm.so
+7fc375079000-7fc37507d000 r-xp 00000000 00:15 1740984874                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_grdma.so
+7fc37507d000-7fc37527c000 ---p 00004000 00:15 1740984874                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_grdma.so
+7fc37527c000-7fc37527d000 r--p 00003000 00:15 1740984874                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_grdma.so
+7fc37527d000-7fc37527e000 rw-p 00004000 00:15 1740984874                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_grdma.so
+7fc37527e000-7fc375285000 r-xp 00000000 00:15 2853228052                 /home/mhauck/distlibs/openmpi/lib/libmca_common_cuda.so.1.0.7
+7fc375285000-7fc375484000 ---p 00007000 00:15 2853228052                 /home/mhauck/distlibs/openmpi/lib/libmca_common_cuda.so.1.0.7
+7fc375484000-7fc375485000 r--p 00006000 00:15 2853228052                 /home/mhauck/distlibs/openmpi/lib/libmca_common_cuda.so.1.0.7
+7fc3../cpu_2d/g500[0x563d98]
+[creek04:27762] [ 7] ../cpu_2d/g500[0x40f845]
+[creek04:27762] [ 8] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7ff1b539276d]
+[creek04:27762] [ 9] ../cpu_2d/g500[0x4106d5]
+[creek04:27762] *** End of error message ***
+75485000-7fc375486000 rw-p 00007000 00:15 2853228052                 /home/mhauck/distlibs/openmpi/lib/libmca_common_cuda.so.1.0.7
+7fc375486000-7fc375488000 r-xp 00000000 00:15 1740984884                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_gpusm.so
+7fc375488000-7fc375687000 ---p 00002000 00:15 1740984884                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_gpusm.so
+7fc375687000-7fc375688000 r--p 00001000 00:15 1740984884                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_gpusm.so
+7fc375688000-7fc375689000 rw-p 00002000 00:15 1740984884                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_mpool_gpusm.so
+7fc375689000-7fc37568d000 r-xp 00000000 00:15 1740995586                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rcache_vma.so
+7fc37568d000-7fc37588c000 ---p 00004000 00:15 1740995586                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rcache_vma.so
+7fc37588c000-7fc37588d000 r--p 00003000 00:15 1740995586                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rcache_vma.so
+7fc37588d000-7fc37588e000 rw-p 00004000 00:15 1740995586                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rcache_vma.so
+7fc37588e000-7fc375890000 r-xp 00000000 00:15 1739918364                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_bucket.so
+7fc375890000-7fc375a8f000 ---p 00002000 00:15 1739918364                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_bucket.so
+7fc375a8f000-7fc375a90000 r--p 00001000 00:15 1739918364                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_bucket.so
+7fc375a90000-7fc375a91000 rw-p 00002000 00:15 1739918364                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_bucket.so
+7fc375a91000-7fc375a93000 r-xp 00000000 00:15 1740970243                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_basic.so
+7fc375a93000-7fc375c92000 ---p 00002000 00:15 1740970243                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_basic.so
+7fc375c92000-7fc375c93000 r--p 00001000 00:15 1740970243                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_basic.so
+7fc375c93000-7fc375c94000 rw-p 00002000 00:15 1740970243                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_allocator_basic.so
+7fc375c94000-7fc375c95000 ---p 00000000 00:00 0 
+7fc375c95000-7fc376495000 rw-p 00000000 00:00 0                          [stack:31710]
+7fc376495000-7fc376497000 r-xp 00000000 00:15 1740809261                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_grpcomm_bad.so
+7fc376497000-7fc376696000 ---p 00002000 00:15 1740809261                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_grpcomm_bad.so
+7fc376696000-7fc376697000 r--p 00001000 00:15 1740809261                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_grpcomm_bad.so
+7fc376697000-7fc376698000 rw-p 00002000 00:15 1740809261                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_grpcomm_bad.so
+7fc376698000-7fc37669b000 r-xp 00000000 00:15 1740962059                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rml_oob.so
+7fc37669b000-7fc37689a000 ---p 00003000 00:15 1740962059                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rml_oob.so
+7fc37689a000-7fc37689b000 r--p 00002000 00:15 1740962059                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rml_oob.so
+7fc37689b000-7fc37689c000 rw-p 00003000 00:15 1740962059                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_rml_oob.so
+7fc37689c000-7fc3768ae000 r-xp 00000000 00:15 1740934223                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_oob_tcp.so
+7fc3768ae000-7fc376aae000 ---p 00012000 00:15 1740934223                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_oob_tcp.so
+7fc376aae000-7fc376aaf000 r--p 00012000 00:15 1740934223                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_oob_tcp.so
+7fc376aaf000-7fc376ab0000 rw-p 00013000 00:15 1740934223                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_oob_tcp.so
+7fc376ab0000-7fc376ab2000 r-xp 00000000 00:15 1740746251                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_print.so
+7fc376ab2000-7fc376cb1000 ---p 00002000 00:15 1740746251                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_print.so
+7fc376cb1000-7fc376cb2000 r--p 00001000 00:15 1740746251                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_print.so
+7fc376cb2000-7fc376cb3000 rw-p 00002000 00:15 1740746251                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_print.so
+7fc376cb3000-7fc376cb6000 r-xp 00000000 00:15 1740746253                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_hash.so
+7fc376cb6000-7fc376eb5000 ---p 00003000 00:15 1740746253                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_hash.so
+7fc376eb5000-7fc376eb6000 r--p 00002000 00:15 1740746253                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_hash.so
+7fc376eb6000-7fc376eb7000 rw-p 00003000 00:15 1740746253                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_db_hash.so
+7fc376eb7000-7fc376eba000 r-xp 00000000 00:15 1740962073                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_routed_binomial.so
+7fc376eba000-7fc3770ba000 ---p 00003000 00:15 1740962073                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_routed_binomial.so
+7fc3770ba000-7fc3770bb000 r--p 00003000 00:15 1740962073                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_routed_binomial.so
+7fc3770bb000-7fc3770bc000 rw-p 00004000 00:15 1740962073                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_routed_binomial.so
+7fc3770bc000-7fc3770be000 r-xp 00000000 00:15 1740746296                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_errmgr_default_app.so
+7fc3770be000-7fc3772bd000 ---p 00002000 00:15 1740746296                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_errmgr_default_app.so
+7fc3772bd000-7fc3772be000 r--p 00001000 00:15 1740746296                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_errmgr_default_app.so
+7fc3772be000-7fc3772bf000 rw-p 00002000 00:15 1740746296                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_errmgr_default_app.so
+7fc3772bf000-7fc3772c1000 r-xp 00000000 00:15 1740962075                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_state_app.so
+7fc3772c1000-7fc3774c0000 ---p 00002000 00:15 1740962075                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_state_app.so
+7fc3774c0000-7fc3774c1000 r--p 00001000 00:15 1740962075                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_state_app.so
+7fc3774c1000-7fc3774c2000 rw-p 00002000 00:15 1740962075                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_state_app.so
+7fc3774c2000-7fc3774c4000 r-xp 00000000 00:15 1740809018                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_ess_env.so
+7fc3774c4000-7fc3776c3000 ---p 00002000 00:15 1740809018                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_ess_env.so
+7fc3776c3000-7fc3776c4000 r--p 00001000 00:15 1740809018                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_ess_env.so
+7fc3776c4000-7fc3776c5000 rw-p 00002000 00:15 1740809018                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_ess_env.so
+7fc3776c5000-7fc3776c6000 r-xp 00000000 00:15 1740746257                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_sec_basic.so
+7fc3776c6000-7fc3778c5000 ---p 00001000 00:15 1740746257                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_sec_basic.so
+7fc3778c5000-7fc3778c6000 r--p 00000000 00:15 1740746257                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_sec_basic.so
+7fc3778c6000-7fc3778c7000 rw-p 00001000 00:15 1740746257                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_sec_basic.so
+7fc3778c7000-7fc3778ca000 r-xp 00000000 00:15 1740746259                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_shmem_mmap.so
+7fc3778ca000-7fc377ac9000 ---p 00003000 00:15 1740746259                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_shmem_mmap.so
+7fc377ac9000-7fc377aca000 r--p 00002000 00:15 1740746259                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_shmem_mmap.so
+7fc377aca000-7fc377acb000 rw-p 00003000 00:15 1740746259                 /home/mhauck/distlibs/openmpi/lib/openmpi/mca_shmem_mmap.so
+7fc377acb000-7fc377acd000 r-xp 00000000 08:02 13893854                   /lib/x86_64-linux-gnu/libutil-2.15.so
+7fc377acd000-7fc377ccc000 ---p 00002000 08:02 13893854                   /lib/x86_64-linux-gnu/libutil-2.15.so
+7fc377ccc000-7fc377ccd000 r--p 00001000 08:02 13893854                   /lib/x86_64-linux-gnu/libutil-2.15.so
+7fc377ccd000-7fc377cce000 rw-p 00002000 08:02 13893854                   /lib/x86_64-linux-gnu/libutil-2.15.so
+7fc377cce000-7fc377cd7000 r-xp 00000000 08:02 15999013                   /usr/lib/libnuma.so.1
+7fc377cd7000-7fc377ed7000 ---p 00009000 08:02 15999013                   /usr/lib/libnuma.so.1
+7fc377ed7000-7fc377ed8000 r--p 00009000 08:02 15999013                   /usr/lib/libnuma.so.1
+7fc377ed8000-7fc377ed9000 rw-p 0000a000 08:02 15999013                   /usr/lib/libnuma.so.1
+7fc377ed9000-7fc377ee0000 r-xp 00000000 08:02 13893850                   /lib/x86_64-linux-gnu/librt-2.15.so
+7fc377ee0000-7fc3780df000 ---p 00007000 08:02 13893850                   /lib/x86_64-linux-gnu/librt-2.15.so
+7fc3780df000-7fc3780e0000 r--p 00006000 08:02 13893850                   /lib/x86_64-linux-gnu/librt-2.15.so
+7fc3780e0000-7fc3780e1000 rw-p 00007000 08:02 13893850                   /lib/x86_64-linux-gnu/librt-2.15.so
+7fc3780e1000-7fc3780e3000 r-xp 00000000 08:02 13893867                   /lib/x86_64-linux-gnu/libdl-2.15.so
+7fc3780e3000-7fc3782e3000 ---p 00002000 08:02 13893867                   /lib/x86_64-linux-gnu/libdl-2.15.so
+7fc3782e3000-7fc3782e4000 r--p 00002000 08:02 13893867                   /lib/x86_64-linux-gnu/libdl-2.15.so
+7fc3782e4000-7fc3782e5000 rw-p 00003000 08:02 13893867                   /lib/x86_64-linux-gnu/libdl-2.15.so
+7fc3782e5000-7fc37835b000 r-xp 00000000 00:15 2853228121                 /home/mhauck/distlibs/openmpi/lib/libopen-rte.so.7.0.5
+7fc37835b000-7fc37855b000 ---p 00076000 00:15 2853228121                 /home/mhauck/distlibs/openmpi/lib/libopen-rte.so.7.0.5
+7fc37855b000-7fc37855c000 r--p 00076000 00:15 2853228121                 /home/mhauck/distlibs/openmpi/lib/libopen-rte.so.7.0.5
+7fc37855c000-7fc37855f000 rw-p 00077000 00:15 2853228121                 /home/mhauck/distlibs/openmpi/lib/libopen-rte.so.7.0.5
+7fc37855f000-7fc378561000 rw-p 00000000 00:00 0 
+7fc378561000-7fc378631000 r-xp 00000000 00:15 2853228114                 /home/mhauck/distlibs/openmpi/lib/libopen-pal.so.6.2.1
+7fc378631000-7fc378831000 ---p 000d0000 00:15 2853228114                 /home/mhauck/distlibs/openmpi/lib/libopen-pal.so.6.2.1
+7fc378831000-7fc378835000 r--p 000d0000 00:15 2853228114                 /home/mhauck/distlibs/openmpi/lib/libopen-pal.so.6.2.1
+7fc378835000-7fc37883a000 rw-p 000d4000 00:15 2853228114                 /home/mhauck/distlibs/openmpi/lib/libopen-pal.so.6.2.1
+7fc37883a000-7fc378840000 rw-p 00000000 00:00 0 
+7fc378840000-7fc3789f4000 r-xp 00000000 08:02 13893856                   /lib/x86_64-linux-gnu/libc-2.15.so
+7fc3789f4000-7fc378bf4000 ---p 001b4000 08:02 13893856                   /lib/x86_64-linux-gnu/libc-2.15.so
+7fc378bf4000-7fc378bf8000 r--p 001b4000 08:02 13893856                   /lib/x86_64-linux-gnu/libc-2.15.so
+7fc378bf8000-7fc378bfa000 rw-p 001b8000 08:02 13893856                   /lib/x86_64-linux-gnu/libc-2.15.so
+7fc378bfa000-7fc378bff000 rw-p 00000000 00:00 0 
+7fc378bff000-7fc378c17000 r-xp 00000000 08:02 13893857                   /lib/x86_64-linux-gnu/libpthread-2.15.so
+7fc378c17000-7fc378e16000 ---p 00018000 08:02 13893857                   /lib/x86_64-linux-gnu/libpthread-2.15.so
+7fc378e16000-7fc378e17000 r--p 00017000 08:02 13893857                   /lib/x86_64-linux-gnu/libpthread-2.15.so
+7fc378e17000-7fc378e18000 rw-p 00018000 08:02 13893857                   /lib/x86_64-linux-gnu/libpthread-2.15.so
+7fc378e18000-7fc378e1c000 rw-p 00000000 00:00 0 
+7fc378e1c000-7fc378e32000 r-xp 00000000 08:02 13897789                   /lib/x86_64-linux-gnu/libgcc_s.so.1
+7fc378e32000-7fc379031000 ---p 00016000 08:02 13897789                   /lib/x86_64-linux-gnu/libgcc_s.so.1
+7fc379031000-7fc379032000 r--p 00015000 08:02 13897789                   /lib/x86_64-linux-gnu/libgcc_s.so.1
+7fc379032000-7fc379033000 rw-p 00016000 08:02 13897789                   /lib/x86_64-linux-gnu/libgcc_s.so.1
+7fc379033000-7fc37912e000 r-xp 00000000 08:02 13893866                   /lib/x86_64-linux-gnu/libm-2.15.so
+7fc37912e000-7fc37932d000 ---p 000fb000 08:02 13893866                   /lib/x86_64-linux-gnu/libm-2.15.so
+7fc37932d000-7fc37932e000 r--p 000fa000 08:02 13893866                   /lib/x86_64-linux-gnu/libm-2.15.so
+7fc37932e000-7fc37932f000 rw-p 000fb000 08:02 13893866                   /lib/x86_64-linux-gnu/libm-2.15.so
+7fc37932f000-7fc37949c000 r-xp 00000000 08:02 15999397                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7fc37949c000-7fc37969c000 ---p 0016d000 08:02 15999397                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7fc37969c000-7fc3796a6000 r--p 0016d000 08:02 15999397                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7fc3796a6000-7fc3796a8000 rw-p 00177000 08:02 15999397                   /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
+7fc3796a8000-7fc3796ac000 rw-p 00000000 00:00 0 
+7fc3796ac000-7fc379705000 r-xp 00000000 08:02 21497891                   /usr/local/cuda-7.0/targets/x86_64-linux/lib/libcudart.so.7.0.28
+7fc379705000-7fc379905000 ---p 00059000 08:02 21497891                   /usr/local/cuda-7.0/targets/x86_64-linux/lib/libcudart.so.7.0.28
+7fc379905000-7fc379908000 rw-p 00059000 08:02 21497891                   /usr/local/cuda-7.0/targets/x86_64-linux/lib/libcudart.so.7.0.28
+7fc379908000-7fc379909000 rw-p 00000000 00:00 0 
+7fc379909000-7fc3799c0000 r-xp 00000000 00:15 2853228138                 /home/mhauck/distlibs/openmpi/lib/libmpi.so.1.6.0
+7fc3799c0000-7fc379bbf000 ---p 000b7000 00:15 2853228138                 /home/mhauck/distlibs/openmpi/lib/libmpi.so.1.6.0
+7fc379bbf000-7fc379bc1000 r--p 000b6000 00:15 2853228138                 /home/mhauck/distlibs/openmpi/lib/libmpi.so.1.6.0
+7fc379bc1000-7fc379bd1000 rw-p 000b8000 00:15 2853228138                 /home/mhauck/distlibs/openmpi/lib/libmpi.so.1.6.0
+7fc379bd1000-7fc379be4000 rw-p 00000000 00:00 0 
+7fc379be4000-7fc379bfb000 r-xp 00000000 00:15 2853228144                 /home/mhauck/distlibs/openmpi/lib/libmpi_cxx.so.1.1.3
+7fc379bfb000-7fc379dfb000 ---p 00017000 00:15 2853228144                 /home/mhauck/distlibs/openmpi/lib/libmpi_cxx.so.1.1.3
+7fc379dfb000-7fc379dfd000 r--p 00017000 00:15 2853228144                 /home/mhauck/distlibs/openmpi/lib/libmpi_cxx.so.1.1.3
+7fc379dfd000-7fc379dfe000 rw-p 00019000 00:15 2853228144                 /home/mhauck/distlibs/openmpi/lib/libmpi_cxx.so.1.1.3
+7fc379dfe000-7fc379e20000 r-xp 00000000 08:02 13893865                   /lib/x86_64-linux-gnu/ld-2.15.so
+7fc379e57000-7fc379f57000 rw-s 124aa1000 00:05 8024                      /dev/nvidiactl
+7fc379f57000-7fc379f77000 rw-s e0020000 00:05 15612                      /dev/nvidia0
+7fc379f77000-7fc379f97000 rw-s e0000000 00:05 15612                      /dev/nvidia0
+7fc379f97000-7fc379fcc000 r--s 00000000 08:02 2628931                    /var/cache/nscd/passwd
+7fc379fcc000-7fc379ff7000 rw-p 00000000 00:00 0 
+7fc379ff7000-7fc379ff8000 rw-p 00000000 00:00 0 
+7fc379ff8000-7fc379ff9000 rw-s e7ee2000 00:05 15612                      /dev/nvidia0
+7fc379ff9000-7fc379ffa000 rw-s 13a98f000 00:05 8024                      /dev/nvidiactl
+7fc379ffa000-7fc379ffb000 rw-s e7ee1000 00:05 15612                      /dev/nvidia0
+7fc379ffb000-7fc379ffc000 rw-s 155d99000 00:05 8024                      /dev/nvidiactl
+7fc379ffc000-7fc37a020000 rw-p 00000000 00:00 0 
+7fc37a020000-7fc37a021000 r--p 00022000 08:02 13893865                   /lib/x86_64-linux-gnu/ld-2.15.so
+7fc37a021000-7fc37a023000 rw-p 00023000 08:02 13893865                   /lib/x86_64-linux-gnu/ld-2.15.so
+7fffb5023000-7fffb5044000 rw-p 00000000 00:00 0                          [stack]
+7fffb51fe000-7fffb5200000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+[creek06:31709] *** Process received signal ***
+[creek06:31709] Signal: Aborted (6)
+[creek06:31709] Signal code:  (-6)
+[creek06:31709] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0xfcb0)[0x7fc378c0ecb0]
+[creek06:31709] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x35)[0x7fc3788760d5]
+[creek06:31709] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x17b)[0x7fc37887983b]
+[creek06:31709] [ 3] /lib/x86_64-linux-gnu/libc.so.6(+0x7361e)[0x7fc3788b361e]
+[creek06:31709] [ 4] /lib/x86_64-linux-gnu/libc.so.6(+0x7de16)[0x7fc3788bde16]
+[creek06:31709] [ 5] ../cpu_2d/g500[0x562b5c]
+[creek06:31709] [ 6] ../cpu_2d/g500[0x563d98]
+[creek06:31709] [ 7] ../cpu_2d/g500[0x40f845]
+[creek06:31709] [ 8] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7fc37886176d]
+[creek06:31709] [ 9] ../cpu_2d/g500[0x4106d5]
+[creek06:31709] *** End of error message ***
+./test.sh: line 9: 27762 Aborted                 (core dumped) ../cpu_2d/g500 -s $1 -C 2 -gpus 1 -qs 2 -be "frameofreference" -btr 64 -btc 64
+-------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code.. Per user-direction, the job has been aborted.
+-------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[56983,1],1]
+  Exit code:    134
+--------------------------------------------------------------------------

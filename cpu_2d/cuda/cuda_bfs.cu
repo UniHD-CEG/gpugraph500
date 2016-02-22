@@ -8,7 +8,7 @@
 #include <functional>
 
 #ifdef _COMPRESSION
-#include "compression/types_compression.h"
+#include "../types_bfs.h"
 #endif
 
 #if defined( __PMODE__)
@@ -45,8 +45,13 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing,
     }
     predecessor = new vertexType[store.getLocColLength()];
 
-    //fq_tp_type = MPI_INT64_T;
-    fq_tp_type = MPI_compressed;
+#ifdef _COMPRESSION
+    fq_tp_typeC = MPI_compressed;
+    fq_tp_type = MPI_INT64_T;
+#else
+    fq_tp_type = MPI_INT64_T;
+#endif
+
     bm_type = MPI_UNSIGNED_CHAR;
     fq_64_length = static_cast<vertexType>(std::max(store.getLocRowLength(), store.getLocColLength()) * queue_sizing);
     //fq_64 = new vertexType[fq_64_length];

@@ -28,6 +28,7 @@ using namespace std::chrono;
 #include "compression/types_compression.h"
 #endif
 
+
 using std::function;
 using std::min;
 using std::bind;
@@ -56,11 +57,14 @@ protected:
     const STORE &store;
     typename STORE::vertexType *predecessor;
     MPI_Datatype fq_tp_type; //Frontier Queue Type
+#ifdef _COMPRESSION
+    MPI_Datatype fq_tp_typeC; //Compressed FQ
+#endif
     MPI_Datatype bm_type;    // Bitmap Type
     // FQ_T*  __restrict__ fq_64; - conflicts with void* ref
     FQ_T *fq_64;
     // FQ_T *fq_64_slice;
-    //, *compressed_fq; // uncompressed and compressed column-buffers
+    // compressionType *c_fq; // uncompressed and compressed column-buffers
     long fq_64_length;
     MType *owenmask;
     MType *tmpmask;
@@ -541,6 +545,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
     size_t uncompressedsize, compressedsize;
+    int err;	
 #endif
 
     // moved anonymous functions outside loop
@@ -652,6 +657,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         vreduce(reduce, get,
 #ifdef _COMPRESSION
                 schema,
+                fq_tp_typeC,
 #endif
                 fq_64,
                 _outsize,
@@ -663,7 +669,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 , lqueue
 #endif
                );
-
+/*
+#ifdef _COMPRESSION
+        mm = 0xffffff;
+        str = "frameofreference";
+        schema.reconfigure(mm, str);
+#endif
+*/
         static_cast<Derived *>(this)->setModOutgoingFQ(fq_64, _outsize);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
@@ -719,10 +731,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 uncompressedsize = static_cast<size_t>(originalsize);
                 isCompressed = schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
+std::cout << "x1: origsize: " << uncompressedsize << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
 		if (isCompressed) {
-                	schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                	schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
                 	schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
 		}
 #endif
@@ -733,24 +746,24 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 int *vectorizedsize = (int *)malloc(2 * sizeof(int));
                 vectorizedsize[0] = originalsize;
                 vectorizedsize[1] = compressedsize;
-
+		isCompressed = schema.isCompressed(originalsize, compressedsize);
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
-
+std::cout << "x1a: isCompressed: " << isCompressed << std::endl;
 #if defined(_COMPRESSIONVERIFY)
-		if (schema.isCompressed(originalsize, compressedsize))
+		if (isCompressed)
 		{
                 	MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 		}
 #endif
 
-		if (isCompressed)
-		{
-                	MPI_Bcast(compressed_fq, compressedsize, fq_tp_type, root_rank, row_comm);
-		}
-		else
+		//if (isCompressed)
+		//{
+                	MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
+		//}
+		/*else
 		{
 			MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
-		}
+		}*/
 #else
                 MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
@@ -761,10 +774,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 if (communicatorRank != root_rank)
                 {
                     uncompressedsize = static_cast<size_t>(originalsize);
-                    isCompressed = schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                    isCompressed = schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq,  uncompressedsize);
+std::cout << "x1b: isCompressed: " << isCompressed << std::endl;
                 }
 
 #if defined(_COMPRESSIONVERIFY)
+/*
                 if (communicatorRank != root_rank)
                 {
                     if (isCompressed)
@@ -778,6 +793,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 {
                     assert(is_sorted(startaddr, startaddr + originalsize));
                 }
+*/
 #endif
 
 
@@ -789,8 +805,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 
 #ifdef _COMPRESSION
-                if (isCompressed) 
+////////
+                if (communicatorRank != root_rank) 
 		{
+///////
+assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
 			static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq, originalsize);
 		}
 		else
@@ -802,14 +821,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
 #ifdef _COMPRESSION
-                if (isCompressed)
-                {
+                //if (isCompressed)
+                //{
                     if (communicatorRank != root_rank)
                     {
                         free(uncompressed_fq);
                     }
                     free(compressed_fq);
-                }
+                //}
                 free(vectorizedsize);
 #endif
 
@@ -823,7 +842,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
             {
 
 #ifdef _COMPRESSION
-
                 compressionType *compressed_fq = NULL;
 		FQ_T *uncompressed_fq = NULL;
 		bool isCompressed = false;
@@ -833,13 +851,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
                 originalsize = vectorizedsize[0];
                 compressedsize = vectorizedsize[1];
-                compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
+		isCompressed = schema.isCompressed(originalsize, compressedsize);
+		//compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
+		err = posix_memalign((void **)&compressed_fq, 16, compressedsize * sizeof(compressionType));
+                if (err) {
+                      printf("memory error!\n");
+                      abort();
+                }
 
+std::cout << "y1a: isCompressed: " << isCompressed << std::endl;
 #if defined(_COMPRESSIONVERIFY)
-		if (schema.isCompressed(originalsize, compressedsize))
+                FQ_T *startaddr = NULL;
+		if (isCompressed)
 		{
                 	assert(originalsize <= fq_64_length);
-                	FQ_T *startaddr = NULL;
                 	startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
                 	if (startaddr == NULL)
                 	{
@@ -854,33 +879,31 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 // it would be pinned memory and therefore can not be modified using
                 // normal C/C++ memory functions. Further info on the
                 // (this)->bfsMemCpy() call below.
-                MPI_Bcast(fq_64, compressedsize, fq_tp_type, root_rank, row_comm);
+                //MPI_Bcast(fq_64, compressedsize, fq_tp_typeC, root_rank, row_comm);
+		// compressed_fq is sized: fq_tp_typeC
+		
+		MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
+std::cout << "y1: origsize: " << originalsize << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 
-                memcpy(compressed_fq, fq_64, compressedsize * sizeof(FQ_T));
+                //memcpy(compressed_fq, fq_64, compressedsize * sizeof(compressionType));
                 uncompressedsize = static_cast<size_t>(originalsize);
                 isCompressed = schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
-                if (isCompressed)
-                {
+std::cout << "y1b: isCompressed: " << isCompressed << std::endl;
+
+                //if (isCompressed)
+                //{
                     static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq, originalsize);
-                }
+                //}
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
-		if (isCompressed)
-		{
-                	assert(is_sorted(fq_64, fq_64 + originalsize));
-                	schema.verifyCompression(startaddr, fq_64, originalsize);
-		}
+		assert(is_sorted(fq_64, fq_64 + originalsize));
+                //schema.verifyCompression(startaddr, fq_64, originalsize);
 #endif
+
 
 #else
                 int originalsize;
                 MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
-#if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
-		if (isCompressed)
-		{
-                	assert(originalsize <= fq_64_length);
-		}
-#endif
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
@@ -897,21 +920,24 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
                 free(vectorizedsize);
-                if (isCompressed)
-                {
+                //if (isCompressed)
+                //{
                     free(uncompressed_fq);
                     free(compressed_fq);
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
+		if (isCompressed)
+		{
                     free(startaddr);
+		}
 #endif
-                }
-                else
-                {
-                    free(compressed_fq);
+                //}
+                //else
+                //{
+                //    free(compressed_fq);
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
                     free(startaddr);
 #endif
-                }
+                //}
 #endif
             }
         }
