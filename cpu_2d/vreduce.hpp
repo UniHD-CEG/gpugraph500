@@ -209,12 +209,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 */
 			T_C *temporal_recv_buff = NULL;
-			//temporal_recv_buff = (T_C *)malloc (lowerId * sizeof(T_C));
-        		err = posix_memalign((void **)&temporal_recv_buff, 16, lowerId * sizeof(T_C));
+			temporal_recv_buff = (T_C *)malloc (lowerId * sizeof(T_C));
+        		/*err = posix_memalign((void **)&temporal_recv_buff, 16, lowerId * sizeof(T_C));
         		if (err) {
                 		printf("memory error!\n");
                 		abort();
-        		}
+        		}*/
                 	MPI_Sendrecv(compressed_fq, compressedsize, typeC,
                              previousRank, it + 2,
                              temporal_recv_buff, lowerId, typeC,
@@ -354,12 +354,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 		//if (isCompressed)
 		//{
 			T_C *temporal_recv_buff = NULL;
-			//temporal_recv_buff = (T_C *)malloc (upperId * sizeof(T_C));
-                        err = posix_memalign((void **)&temporal_recv_buff, 16, upperId * sizeof(T_C));
+			temporal_recv_buff = (T_C *)malloc (upperId * sizeof(T_C));
+                        /*err = posix_memalign((void **)&temporal_recv_buff, 16, upperId * sizeof(T_C));
                         if (err) {
                                 printf("memory error!\n");
                                 abort();
-                        }
+                        }*/
 
                 	MPI_Sendrecv(compressed_fq, compressedsize, typeC,
                              previousRank, it + 2,
@@ -571,12 +571,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
-    //compressed_recv_buff = (T_C *)malloc(csize * sizeof(T_C));
-    err = posix_memalign((void **)&compressed_recv_buff, 16, csize * sizeof(T_C));
+    compressed_recv_buff = (T_C *)malloc(csize * sizeof(T_C));
+    /*err = posix_memalign((void **)&compressed_recv_buff, 16, csize * sizeof(T_C));
     if (err) {
         printf("memory error!\n");
         abort();
-    }
+    }*/
 #else
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
