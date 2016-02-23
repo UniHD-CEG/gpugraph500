@@ -426,10 +426,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
                 isCompressed = schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 //std::cout << "b2: to this: ( " << uncompressedsize<<  ")"<< std::endl;
+/*
    for (int i =0; i< uncompressedsize; ++i)
    {
         std::cout << uncompressed_fq[i] << ", ";
    }
+*/
    //std::cout << "-- end --" << std::endl;
 
 		//}
