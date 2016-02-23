@@ -263,10 +263,10 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
         T_C *uncompressed_fq_32 = (T_C *) malloc(uncompressedsize * sizeof(T_C));
         *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
-        for (int i = 0; i < size; ++i)
+        for (int i = 0; i < uncompressedsize; ++i)
         {
             // (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
-            (*uncompressed_fq_64)[i] = static_cast<int64_t>(uncompressed_fq_32[i]);
+            (*uncompressed_fq_64)[i] = static_cast<T>(uncompressed_fq_32[i]);
         }
 
         free(uncompressed_fq_32);
