@@ -169,14 +169,17 @@ inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
        */
         ////std::cout << "[c]-->origsize: " << size << " compressedsize:" << compressedsize << std::endl;
         ///
+        T_C *fq_32 = (T_C *)malloc(size * sizeof(T_C));
         *compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
         for (int i = 0; i < size; ++i)
         {
-            (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]);
+            // (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]);
+            fq_32[i] = static_cast<T_C>(fq_64[i]);
         }
         compressedsize = size;
-
-	compressed = true;
+        codec.encodeArray(fq_32, size, *compressed_fq_32, compressedsize);
+	   compressed = true;
+        free(fq_32);
     }
     else
     {
@@ -189,14 +192,14 @@ inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
 		printf("memory error!\n");
 		abort();
 	}*/
-	*compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
+	   *compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
         for (int i = 0; i < size; ++i)
         {
             (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]);
         }
         compressedsize = size;
         // *compressed_fq_64 = reinterpret_cast<T_C *>(fq_64);
-	compressed = false;
+	    compressed = false;
     }
     return compressed;
 }
@@ -205,7 +208,6 @@ template <typename T, typename T_C>
 inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
                                  /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
-
     bool compressed;
     if (isCompressed(uncompressedsize, size))
     //if (size > 0)
@@ -258,13 +260,17 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
         free(uncompressed_fq_32);
         ////std::cout << "[d]-->origsize: " << uncompressedsize << " compressedsize:" << size << std::endl;
         */
-    *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
+        T_C *uncompressed_fq_32 = (T_C *) malloc(uncompressedsize * sizeof(T_C));
+        *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
+        codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         for (int i = 0; i < size; ++i)
         {
-        (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
+            // (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
+            (*uncompressed_fq_64)[i] = static_cast<int64_t>(uncompressed_fq_32[i]);
         }
 
-	compressed = true;
+        free(uncompressed_fq_32);
+	    compressed = true;
     }
     else
     {
@@ -273,17 +279,17 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
          */
 	//int err;
         uncompressedsize = size;
-	compressed = false;
+	    compressed = false;
         //*uncompressed_fq_64 = reinterpret_cast<T *>(compressed_fq_64);
 	/*err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
 	if (err) {
 		printf("memory error!\n");
 		abort();
 	}*/
-	*uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
+	    *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
         for (int i = 0; i < size; ++i)
         {
-	    (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
+	       (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
         }
     }
 	return compressed;
