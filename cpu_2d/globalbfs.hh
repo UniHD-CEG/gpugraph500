@@ -852,12 +852,12 @@ assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                 originalsize = vectorizedsize[0];
                 compressedsize = vectorizedsize[1];
 		isCompressed = schema.isCompressed(originalsize, compressedsize);
-		//compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
-		err = posix_memalign((void **)&compressed_fq, 16, compressedsize * sizeof(compressionType));
+		compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
+		/*err = posix_memalign((void **)&compressed_fq, 16, compressedsize * sizeof(compressionType));
                 if (err) {
                       printf("memory error!\n");
                       abort();
-                }
+                }*/
 
 //std::cout << "y1a: isCompressed: " << isCompressed << std::endl;
 #if defined(_COMPRESSIONVERIFY)
