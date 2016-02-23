@@ -416,10 +416,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 		//if (isCompressed)
 		//{
 //std::cout << "b2: decompressing from this: ( " << psizeFrom <<  "/"<<uncompressedsize <<")"<< std::endl;
+/*
    for (int i =0; i< psizeFrom; ++i)
    {
         std::cout << temporal_recv_buff[i] << ", ";
    }
+*/
    //std::cout << "-- end --" << std::endl;
 
                 isCompressed = schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
@@ -661,12 +663,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     }
 
 #ifdef _COMPRESSIONVERIFY
-   std::cout << "-- start reensabled buffer --" << std::endl;
+   /*std::cout << "-- start reensabled buffer --" << std::endl;
    for (int i =0; i< total_uncompressedsize; ++i)
    {
 	std::cout << recv_buff[i] << ", ";
    }
-   std::cout << "-- end reensabled buffer --" << std::endl;
+   std::cout << "-- end reensabled buffer --" << std::endl;*/
     assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
 #endif
 #endif
