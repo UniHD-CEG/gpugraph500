@@ -169,16 +169,17 @@ inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
        */
         ////std::cout << "[c]-->origsize: " << size << " compressedsize:" << compressedsize << std::endl;
         ///
-        //T_C *fq_32 = (T_C *)malloc(size * sizeof(T_C));
+        compressedsize = size;
+
+        T_C *fq_32 = (T_C *)malloc(size * sizeof(T_C));
         *compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
         for (int i = 0; i < size; ++i)
         {
             // (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]);
-            (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]); // 1: fq_32
+            fq_32[i] = static_cast<T_C>(fq_64[i]); // 1: fq_32
         }
-        compressedsize = size;
-        //codec.encodeArray(fq_32, size, compressed_fq_32, compressedsize);
-	   compressed = true;
+        codec.encodeArray(fq_32, size, &compressed_fq_32, compressedsize);
+	    compressed = true;
         //free(fq_32);
     }
     else
@@ -260,16 +261,16 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
         free(uncompressed_fq_32);
         ////std::cout << "[d]-->origsize: " << uncompressedsize << " compressedsize:" << size << std::endl;
         */
-        //T_C *uncompressed_fq_32 = (T_C *) malloc(uncompressedsize * sizeof(T_C));
+        T_C *uncompressed_fq_32 = (T_C *) malloc(uncompressedsize * sizeof(T_C));
         *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
-        //codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
+        codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         for (int i = 0; i < uncompressedsize; ++i)
         {
             // (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
-            (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]); // 2: uncomp
+            (*uncompressed_fq_64)[i] = static_cast<T>(uncompressed_fq_32[i]); // 2: uncomp
         }
 
-        //free(uncompressed_fq_32);
+        free(uncompressed_fq_32);
 	    compressed = true;
     }
     else
