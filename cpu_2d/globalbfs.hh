@@ -734,11 +734,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
 // //std::cout << "x1: origsize: " << uncompressedsize << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 
+        /* DEBUG */
+        isCompressed = schema.isCompressed(originalsize, compressedsize);
+        if (isCompressed) {
+                assert(is_sorted(startaddr, startaddr + originalsize));
+                schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
+                assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
+        }
+        /**/
+
 #if defined(_COMPRESSIONVERIFY)
         isCompressed = schema.isCompressed(originalsize, compressedsize);
 		if (isCompressed) {
-                	schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
-                	schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
+                schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
+                //schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
 		}
 #endif
 
@@ -754,7 +763,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #if defined(_COMPRESSIONVERIFY)
 		if (isCompressed)
 		{
-                	MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 		}
 #endif
 

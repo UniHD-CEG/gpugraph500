@@ -165,7 +165,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 int psizeFrom;
 #ifdef _COMPRESSION
                 int originalsize;
-		bool isCompressed = false;
+                bool isCompressed = false;
 #endif
 
 #ifdef INSTRUMENTED
@@ -179,7 +179,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                isCompressed = schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+                assert(is_sorted(send, send + psizeTo));
+                schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+                isCompressed = schema.isCompressed(psizeTo, compressedsize);
 //std::cout << "a1: origsize: " << psizeTo << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 
 #endif
@@ -261,7 +263,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 uncompressedsize = originalsize;
 		//if (isCompressed)
 		//{
-		isCompressed = schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
 		//}
 		//isCompressed =  schema.decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 //std::cout << "a3: isCompressed: " << isCompressed << std::endl;
@@ -330,7 +333,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                isCompressed = schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+                assert(is_sorted(send, send + psizeTo));
+                schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+                isCompressed = schema.isCompressed(psizeTo, compressedsize);
 //std::cout << "b1: origsize: " << psizeTo << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 #endif
 
@@ -424,7 +429,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 */
    //std::cout << "-- end --" << std::endl;
 
-                isCompressed = schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
 //std::cout << "b2: to this: ( " << uncompressedsize<<  ")"<< std::endl;
 /*
    for (int i =0; i< uncompressedsize; ++i)
@@ -440,11 +446,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
 //std::cout << "b3: isCompressed: " << isCompressed << std::endl;
-		if (isCompressed)
-		{
-                	assert(uncompressedsize == originalsize);
-                	assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
-		}
+        if (isCompressed)
+        {
+                    assert(uncompressedsize == originalsize);
+                    assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
+        }
 #endif
 
 
@@ -522,7 +528,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     size_t csize = 0;
     bool isCompressed = false;
 
-    isCompressed = schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+    assert(is_sorted(send, send + psizeTo));
+    schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+    isCompressed = schema.isCompressed(psizeTo, compressedsize);
 //std::cout << "c1: isCompressed: " << isCompressed << std::endl;
 
     //MPI_Datatype MPI_3INT;
@@ -641,7 +649,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         {
             uncompressedsize = sizes[i];
             //isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
-            isCompressed = schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+            schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+            isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
+
 #ifdef _COMPRESSIONVERIFY
             if (isCompressed)
             {
@@ -654,8 +664,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 	    //if (isCompressed)
 	    //{
 
-            	memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
-		free(uncompressed_fq);
+            memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
+            free(uncompressed_fq);
 	    /*}
 	    else
 	    {
