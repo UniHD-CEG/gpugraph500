@@ -657,18 +657,18 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
             schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
             isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
 
-#ifdef _COMPRESSIONVERIFY
-            if (isCompressed)
-            {
+//#ifdef _COMPRESSIONVERIFY
+//            if (isCompressed)
+//            {
             	assert(uncompressedsize == sizes[i]);
             	assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-	    }
+//	       }
             total_uncompressedsize += uncompressedsize;
-#endif
+//#endif
 
 	    //if (isCompressed)
 	    //{
-
+            std::cout<< "disps_i: " << disps[i] << std::endl;
             memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
             free(uncompressed_fq);
 	    /*}
@@ -679,15 +679,16 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         }
     }
     std::cout<< "exit 2 ..." << std::endl;
-#ifdef _COMPRESSIONVERIFY
+//#ifdef _COMPRESSIONVERIFY
    /*std::cout << "-- start reensabled buffer --" << std::endl;
    for (int i =0; i< total_uncompressedsize; ++i)
    {
 	std::cout << recv_buff[i] << ", ";
    }
    std::cout << "-- end reensabled buffer --" << std::endl;*/
+    assert(uncompressedsize == total_uncompressedsize);
     assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
-#endif
+//#endif
 #endif
 
     free(sizes);
