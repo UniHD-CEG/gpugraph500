@@ -641,6 +641,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     int total_uncompressedsize = 0;
 #endif
 
+    std:cout<< "enter 2 ..." << std::endl;
     // reensamble uncompressed chunks
     for (int i = 0; i < communicatorSize; ++i)
     {
@@ -673,7 +674,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 	    }*/
         }
     }
-
+    std:cout<< "exit 2 ..." << std::endl;
 #ifdef _COMPRESSIONVERIFY
    /*std::cout << "-- start reensabled buffer --" << std::endl;
    for (int i =0; i< total_uncompressedsize; ++i)
