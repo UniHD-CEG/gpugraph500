@@ -263,8 +263,10 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 uncompressedsize = originalsize;
 		//if (isCompressed)
 		//{
+                std:cout<< "enter 4 ..." << std::endl;
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
                 isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
+                std:cout<< "exit 4 ..." << std::endl;
 		//}
 		//isCompressed =  schema.decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 //std::cout << "a3: isCompressed: " << isCompressed << std::endl;
@@ -429,8 +431,10 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 */
    //std::cout << "-- end --" << std::endl;
 
+                std:cout<< "enter 3 ..." << std::endl;
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
                 isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
+                std:cout<< "exit 3 ..." << std::endl;
 //std::cout << "b2: to this: ( " << uncompressedsize<<  ")"<< std::endl;
 /*
    for (int i =0; i< uncompressedsize; ++i)
