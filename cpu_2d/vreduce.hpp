@@ -650,8 +650,12 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
 //#ifdef _COMPRESSIONVERIFY
     int total_uncompressedsize = 0;
 //#endif
-
     std::cout<< "enter 2 ..." << std::endl;
+
+    if (communicatorSize > 1) {
+        int64_t newsize = disps[communicatorSize - 2]  + sizes[communicatorSize-1 ];
+std::cout << "inside 2... newsize: " << newsize << std::endl;
+	}
     // reensamble uncompressed chunks
     for (int i = 0; i < communicatorSize; ++i)
     {
@@ -663,8 +667,11 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
             //uncompressedsize = sizes[i];
 	    uncompressedsize = sizes[i];
             //isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
+	  isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
+	  std::cout << "inside 2... pre-decompress - will be decompressed? " << isCompressed << std::endl;
             schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
-            isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
+       		std::cout << "inside 2... post-decompress" << std::endl;
+	     isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
 
 //#ifdef _COMPRESSIONVERIFY
 //            if (isCompressed)
@@ -697,11 +704,11 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
 
    std::cout << "-- end reensabled buffer --" << std::endl;*/
     if (communicatorSize > 1) {
-        int64_t newsize = disps[communicatorSize - 1]  + sizes[communicatorSize];
+        int64_t newsize = disps[communicatorSize - 2]  + sizes[communicatorSize-1 ];
 std::cout << "pre: " << uncompressedsize << " post: " << total_uncompressedsize << " new: " << newsize << std::endl;
-        assert(newsize == total_uncompressedsize);
-        assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
-        assert(std::is_sorted(recv_buff, recv_buff + uncompressedsize));
+        assert(newsize == uncompressedsize);
+        assert(std::is_sorted(recv_buff, recv_buff + newsize));
+        //assert(std::is_sorted(recv_buff, recv_buff + uncompressedsize));
     }
 //#endif
 #endif
