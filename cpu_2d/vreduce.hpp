@@ -696,9 +696,10 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
    }
 
    std::cout << "-- end reensabled buffer --" << std::endl;*/
-    std::cout << "pre: " << uncompressedsize << " post: " << total_uncompressedsize << std::endl;
     if (communicatorSize > 1) {
-        assert(disps[communicatorSize - 1]  + sizes[communicatorSize] == total_uncompressedsize);
+        int64_t newsize = disps[communicatorSize - 1]  + sizes[communicatorSize];
+std::cout << "pre: " << uncompressedsize << " post: " << total_uncompressedsize << " new: " << newsize << std::endl;
+        assert(newsize == total_uncompressedsize);
         assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
         assert(std::is_sorted(recv_buff, recv_buff + uncompressedsize));
     }
