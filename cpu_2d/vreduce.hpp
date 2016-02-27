@@ -656,12 +656,12 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
     for (int i = 0; i < communicatorSize; ++i)
     {
 	std::cout << "point2 - orig: " << sizes[i] << " comp: " << compressed_sizes[i] << std::endl;
- 
+
         compressedsize = compressed_sizes[i];
         //if (compressedsize != 0)
         //{
             //uncompressedsize = sizes[i];
-	    uncompressedsize = sizes[i]; 	
+	    uncompressedsize = sizes[i];
             //isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
             schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
             isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
@@ -696,9 +696,12 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
    }
 
    std::cout << "-- end reensabled buffer --" << std::endl;*/
-    std::cout << "pre: " << uncompressedsize << " post: " << total_uncompressedsize << std::endl; 
-    assert(uncompressedsize == total_uncompressedsize);
-    assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
+    std::cout << "pre: " << uncompressedsize << " post: " << total_uncompressedsize << std::endl;
+    if (communicatorSize > 1) {
+        assert(disps[communicatorSize - 1]  + sizes[communicatorSize] == total_uncompressedsize);
+        assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
+        assert(std::is_sorted(recv_buff, recv_buff + uncompressedsize));
+    }
 //#endif
 #endif
 
