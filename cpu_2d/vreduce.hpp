@@ -560,6 +560,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         {
             sizes[j] = composed_sizes[i];
             compressed_sizes[j] = composed_sizes[i + 1];
+std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] << std::endl;
             ++j;
         }
     }
@@ -593,6 +594,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         printf("memory error!\n");
         abort();
     }*/
+    std::cout << "disp: ";
+    for (int a=0; a < communicatorSize; ++a) {
+	std::cout << disps[a] << " ";
+    }
+    std::cout << std::endl;
 #else
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
@@ -641,18 +647,21 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
 
-#ifdef _COMPRESSIONVERIFY
+//#ifdef _COMPRESSIONVERIFY
     int total_uncompressedsize = 0;
-#endif
+//#endif
 
     std::cout<< "enter 2 ..." << std::endl;
     // reensamble uncompressed chunks
     for (int i = 0; i < communicatorSize; ++i)
     {
+	std::cout << "point2 - orig: " << sizes[i] << " comp: " << compressed_sizes[i] << std::endl;
+ 
         compressedsize = compressed_sizes[i];
-        if (compressedsize != 0)
-        {
-            uncompressedsize = sizes[i];
+        //if (compressedsize != 0)
+        //{
+            //uncompressedsize = sizes[i];
+	    uncompressedsize = sizes[i]; 	
             //isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
             schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
             isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
@@ -660,7 +669,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 //#ifdef _COMPRESSIONVERIFY
 //            if (isCompressed)
 //            {
-            	assert(uncompressedsize == sizes[i]);
+            	assert(uncompressedsize == sizes[i]); // sizes_i
             	assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
 //	       }
             total_uncompressedsize += uncompressedsize;
@@ -676,7 +685,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 	    {
                 memcpy(&recv_buff[disps[i]], &compressed_recv_buff[compressed_disps[i]], uncompressedsize * sizeof(T_C));
 	    }*/
-        }
+        //}
     }
     std::cout<< "exit 2 ..." << std::endl;
 //#ifdef _COMPRESSIONVERIFY
@@ -685,7 +694,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
    {
 	std::cout << recv_buff[i] << ", ";
    }
+
    std::cout << "-- end reensabled buffer --" << std::endl;*/
+    std::cout << "pre: " << uncompressedsize << " post: " << total_uncompressedsize << std::endl; 
     assert(uncompressedsize == total_uncompressedsize);
     assert(std::is_sorted(recv_buff, recv_buff + total_uncompressedsize));
 //#endif
