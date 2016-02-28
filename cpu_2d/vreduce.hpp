@@ -452,7 +452,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 } catch (...) {
                         std::cout << "-----> exception 4";
                         exit(1);
-                }		
+                }
                 isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
                 std::cout<< "exit 3 ..." << std::endl;
 //std::cout << "b2: to this: ( " << uncompressedsize<<  ")"<< std::endl;
@@ -585,8 +585,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         {
             sizes[j] = composed_recv[i];
             compressed_sizes[j] = composed_recv[i + 1];
-	    compressed_flags[j] = composed_recv[i + 2];	
-	    
+	    compressed_flags[j] = composed_recv[i + 2];
+
 std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] << std::endl;
             ++j;
         }
@@ -621,11 +621,32 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
         printf("memory error!\n");
         throw "Error allocating memory.";
     }
-    std::cout << "disp: ";
+    std::cout << "disps: ";
     for (int a=0; a < communicatorSize; ++a) {
-	std::cout << disps[a] << " ";
+    std::cout << "("<< communicatorRank <<") " <<disps[a] << " ";
     }
     std::cout << std::endl;
+
+    std::cout << "sizes: ";
+    for (int a=0; a < communicatorSize; ++a) {
+    std::cout << "("<< communicatorRank <<") " <<sizes[a] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "compressed_disps: ";
+    for (int a=0; a < communicatorSize; ++a) {
+    std::cout << "("<< communicatorRank <<") " <<compressed_disps[a] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "compressed_sizes: ";
+    for (int a=0; a < communicatorSize; ++a) {
+    std::cout << "("<< communicatorRank <<") " <<compressed_sizes[a] << " ";
+    }
+    std::cout << std::endl;
+
+
+
 #else
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
@@ -680,10 +701,10 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
 //#endif
     std::cout<< "enter 2 ..." << std::endl;
 
-    if (communicatorSize > 1) {
+    //if (communicatorSize > 1) {
         int64_t newsize = disps[communicatorSize - 2]  + sizes[communicatorSize-1 ];
 std::cout << "inside 2... newsize: " << newsize << std::endl;
-	}
+	//}
     // reensamble uncompressed chunks
     for (int i = 0; i < communicatorSize; ++i)
     {
@@ -693,12 +714,12 @@ std::cout << "inside 2... newsize: " << newsize << std::endl;
         //if (compressedsize != 0)
         //{
             //uncompressedsize = sizes[i];
-	    uncompressedsize = sizes[i];
+	    //uncompressedsize = sizes[i];
             //isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
-	  isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
-	  std::cout << "checking iscompressed... isCompressed_method: " << isCompressed << " isCompressedNetwork: " << compressed_flags[i]  << std::endl;
+	  const isCompressed = compressed_flags[i];
 	  std::cout << "inside 2... pre-decompress - will be decompressed? " << isCompressed << std::endl;
-	try {	
+/*
+	try {
             schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
                 } catch (...) {
                         std::cout << "-----> exception 6";
@@ -721,13 +742,23 @@ std::cout << "inside 2... newsize: " << newsize << std::endl;
             std::cout<< "disps_i: " << disps[i] << std::endl;
             memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
             free(uncompressed_fq);
-	    /*}
-	    else
-	    {
-                memcpy(&recv_buff[disps[i]], &compressed_recv_buff[compressed_disps[i]], uncompressedsize * sizeof(T_C));
-	    }*/
+
+	    //else
+	    //{
+        //        memcpy(&recv_buff[disps[i]], &compressed_recv_buff[compressed_disps[i]], uncompressedsize * sizeof(T_C));
+	    //}
         //}
     }
+*/
+    uncompressedsize = sizes[i];
+    try {
+        schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+    } catch (...) {
+        std::cout << "-----> exception 6";
+        throw "Error decompressing.";
+    }
+    memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
+    free(uncompressed_fq);
     std::cout<< "exit 2 ..." << std::endl;
 //#ifdef _COMPRESSIONVERIFY
    /*std::cout << "-- start reensabled buffer --" << std::endl;
