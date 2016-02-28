@@ -718,12 +718,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
 
-/*
+
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
                    disps, type, comm);
     std::cout << "allgather comm_rank: " << communicatorRank << std::endl;
-*/
+
 /*
     T *recv_buff_tmp=NULL;
     err = posix_memalign((void **)&recv_buff_tmp, 16, rsize * sizeof(T));
@@ -736,11 +736,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                    type, recv_buff_tmp, sizes,
                    disps, type, comm);
 */
-
+/*
     MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
                    typeC, compressed_recv_buff, compressed_sizes,
                    compressed_disps, typeC, comm);
-
+*/
 #else
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
@@ -749,12 +749,13 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 
 
+    free(sizes);
+    free(disps);
 
+/*
 
 #ifdef _COMPRESSION
 
-
-    //T *uncompressed_fq_64;
 
 
 //#ifdef _COMPRESSIONVERIFY
@@ -804,6 +805,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     free(compressed_disps);
     free(compressed_recv_buff);
 #endif
-
+*/
 }
 #endif // VREDUCE_HPP
