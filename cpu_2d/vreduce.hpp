@@ -711,6 +711,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
 
+    MPI_Allgatherv(send, sizes[communicatorRank],
+                   type, recv_buff, sizes,
+                   disps, type, comm);
+
+/*
     T *recv_buff_tmp=NULL;
     err = posix_memalign((void **)&recv_buff_tmp, 16, rsize * sizeof(T));
     if (err) {
@@ -723,28 +728,26 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                    disps, type, comm);
 
 
-    //if(isCompressed)
-    //{
         MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
                    typeC, compressed_recv_buff, compressed_sizes,
                    compressed_disps, typeC, comm);
-    /*}
-    else
-    {
-        MPI_Allgatherv(send, compressed_sizes[communicatorRank],
-                   type, compressed_recv_buff, compressed_sizes,
-                   compressed_disps, type, comm);
-    }*/
+*/
 #else
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
                    disps, type, comm);
 #endif
-T *uncompressed_fq_64;
 
+
+    free(sizes);
+    free(disps);
+
+
+/*
 #ifdef _COMPRESSION
 
 
+    //T *uncompressed_fq_64;
     std::cout << "(2)compressed_disps: ";
     for (int a=0; a < communicatorSize; ++a) {
     std::cout << "("<< communicatorRank <<") " <<compressed_disps[a] << " ";
@@ -763,45 +766,18 @@ T *uncompressed_fq_64;
 
     //if (communicatorSize > 1) {
 std::cout << "enter 2... "  << std::endl;
-	//}
     // reensamble uncompressed chunks
     for (int i = 0; i < communicatorSize; ++i)
     {
-
         compressedsize = compressed_sizes[i]+1;
         //if (compressedsize != 0)
         //{
     //MPI_Barrier(comm);
     uncompressedsize = sizes[i]+1;
-    //const bool isCompressed = schema.isCompressed(uncompressed_size, compressedsize);;
     try {
-                /*std::cout << "---> suspicious buffer(cs:"<<compressedsize <<",ncs:"<< uncompressed_size <<") ... ";
-                for(int j=0; j < rsize; ++j) {
-                        std::cout << compressed_recv_buff[compressed_disps[i]+j]<< ",";
-                }
-                std::cout << std::endl;*/
-        //if (isCompressed) {
-             schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
-	/*}
- 
-	else {
-        int bufferSize = compressedsize+1;
-    	int err;
-        err = posix_memalign((void **)uncompressed_fq_64, 16, bufferSize * sizeof(T));
-        if (err)
-        {
-            printf("\nERROR: Memory allocation error!");
-            throw "Memory error.";
-        }
 
-        std::cout << "---> (size:"<< bufferSize -1 << ")decompressed values ... ";
-        for (int j = 0; j < bufferSize; ++j)
-        {
-               uncompressed_fq_64[j] = static_cast<T>(compressed_recv_buff[compressed_disps[i]+j]);
-        }
-        std::cout << std::endl;
-        uncompressedsize = bufferSize;
-	}*/
+             schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+
     } catch (...) {
         std::cout << "-----> exception 6";
         exit(1);
@@ -818,7 +794,7 @@ std::cout << "enter 2... "  << std::endl;
  std::cout<< "exit 2 ..." << std::endl;
 
  if (memcmp(recv_buff, recv_buff_tmp, rsize * sizeof(T)) != 0) {
-  
+
                 std::cout << "---> original recv_buff buffer (quitting...): ";
                 for(int j=0; j < rsize; ++j) {
                         std::cout << recv_buff_tmp[j]<< ",";
@@ -829,42 +805,29 @@ std::cout << "enter 2... "  << std::endl;
                         std::cout << recv_buff[j]<< ",";
                 }
                 std::cout << std::endl;
-                
                 exit(1);
 
  }
-    
-   //#ifdef _COMPRESSIONVERIFY
-   /*std::cout << "-- start reensabled buffer --" << std::endl;
-   for (int i =0; i< total_uncompressedsize; ++i)
-   {
-	std::cout << recv_buff[i] << ", ";
-   }
+//#ifdef _COMPRESSIONVERIFY
 
-   std::cout << "-- end reensabled buffer --" << std::endl;*/
-/*
-std::cout << "pre: " << " decomp: "<< uncompressedsize <<" rsize: " << rsize << std::endl;
-        assert(newsize == uncompressedsize );
-*/
 
         if (!std::is_sorted(recv_buff, recv_buff + rsize)) {
 		std::cout << "---> wrong buffer (quitting...): ";
-		/*for(int j=0; j < rsize; ++j) {
-			std::cout << recv_buff[j]<< ",";	
-		}*/
+		//for(int j=0; j < rsize; ++j) {
+		//	std::cout << recv_buff[j]<< ",";
+		//}
 		std::cout << std::endl;
                 exit(1);
 	} else {
                 std::cout << "---> buffer (correct): ";
-                /*for(int j=0; j < rsize; ++j) {
-                        std::cout << recv_buff[j]<< ",";
-                }*/
+                //for(int j=0; j < rsize; ++j) {
+                //        std::cout << recv_buff[j]<< ",";
+                //}
                 std::cout << std::endl;
 	}
-
-    //}
     free(recv_buff_tmp);
 //#endif
+
 #endif
 
 
@@ -872,12 +835,12 @@ std::cout << "pre: " << " decomp: "<< uncompressedsize <<" rsize: " << rsize << 
     free(disps);
 
 #ifdef _COMPRESSION
-    //MPI_Type_free(&MPI_3INT);
+    // MPI_Type_free(&MPI_3INT);
     free(compressed_sizes);
     free(compressed_disps);
-    //free(temporal_recv_buff);
+    // free(temporal_recv_buff);
     free(compressed_recv_buff);
 #endif
-
+*/
 }
 #endif // VREDUCE_HPP
