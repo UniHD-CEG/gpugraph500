@@ -588,19 +588,19 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     try {
     	schema.compress(send, psizeTo, &compressed_fq, compressedsize);
     } catch (...) {
-                        std::cout << "-----> exception 5";
-                        exit(1);
+        std::cout << "-----> exception 5";
+        exit(1);
     }
     size_t uncompressedsize_temp = psizeTo;
     T *uncompressed_buffer_temp = NULL;
     try {
         schema.decompress(compressed_fq, compressedsize, &uncompressed_buffer_temp, uncompressedsize_temp);
         assert(psizeTo == uncompressedsize_temp);
-    	assert(is_sorted(uncompressed_buffer_temp, uncompressed_buffer_temp + uncompressedsize_temp));
         assert(memcmp(send, uncompressed_buffer_temp, psizeTo * sizeof(T)) == 0);
+    	assert(is_sorted(uncompressed_buffer_temp, uncompressed_buffer_temp + uncompressedsize_temp));
     } catch (...) {
-                        std::cout << "-----> exception 5b";
-                        exit(1);
+        std::cout << "-----> exception 5b";
+        exit(1);
     }
     isCompressed = schema.isCompressed(psizeTo, compressedsize);
 //std::cout << "c1: isCompressed: " << isCompressed << std::endl;
@@ -661,6 +661,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         printf("memory error!\n");
         throw "Error allocating memory.";
     }
+
     std::cout << "disps: ";
     for (int a=0; a < communicatorSize; ++a) {
     std::cout << "("<< communicatorRank <<") " <<disps[a] << " ";
@@ -672,6 +673,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     std::cout << "("<< communicatorRank <<") " <<sizes[a] << " ";
     }
     std::cout << std::endl;
+    std::cout << "rsize: " << rsize << std::endl;
 
     std::cout << "compressed_disps: ";
     for (int a=0; a < communicatorSize; ++a) {
@@ -684,8 +686,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     std::cout << "("<< communicatorRank <<") " <<compressed_sizes[a] << " ";
     }
     std::cout << std::endl;
-    std::cout << "rsize: " << rsize << std::endl;
-
+    std::cout << "csize: " << csize << std::endl;
 
 #else
     // Transmission of the subslice sizes
@@ -716,9 +717,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
 
+
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
                    disps, type, comm);
+    std::cout << "allgather comm_rank: " << communicatorRank << std::endl;
 
 /*
     T *recv_buff_tmp=NULL;
