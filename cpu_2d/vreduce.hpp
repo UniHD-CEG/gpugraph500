@@ -216,12 +216,13 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 */
 			T_C *temporal_recv_buff = NULL;
-			temporal_recv_buff = (T_C *)malloc (lowerId * sizeof(T_C));
-        		/*err = posix_memalign((void **)&temporal_recv_buff, 16, lowerId * sizeof(T_C));
-        		if (err) {
-                		printf("memory error!\n");
-                		abort();
-        		}*/
+			//temporal_recv_buff = (T_C *)malloc (lowerId * sizeof(T_C));
+    		err = posix_memalign((void **)&temporal_recv_buff, 16, lowerId * sizeof(T_C));
+    		if (err) {
+            		printf("memory error!\n");
+            		abort();
+    		}
+
                 	MPI_Sendrecv(compressed_fq, compressedsize, typeC,
                              previousRank, it + 2,
                              temporal_recv_buff, lowerId, typeC,
@@ -231,12 +232,14 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 	MPI_Get_count(&status, typeC, &psizeFrom);
 
 		/*debug*/
+                    /*
                 MPI_Sendrecv(send, psizeTo, type,
                              previousRank, it + 2,
                              recv_buff, lowerId, type,
                              previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
+                */
 
 /*
 		}
@@ -279,10 +282,10 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 //std::cout<< "enter 4 ..." << std::endl;
 		try {
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
-		 if (memcmp(recv_buff, uncompressed_fq, uncompressedsize * sizeof(T)) != 0) {
+		 /*if (memcmp(recv_buff, uncompressed_fq, uncompressedsize * sizeof(T)) != 0) {
 			std::cout << "error in execption 2 check" << std::endl;
 			exit(1);
-		}
+		}*/
 
                 } catch (...) {
                         std::cout << "-----> exception 2";
@@ -389,12 +392,13 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 		//if (isCompressed)
 		//{
 			T_C *temporal_recv_buff = NULL;
-			temporal_recv_buff = (T_C *)malloc (upperId * sizeof(T_C));
-                        /*err = posix_memalign((void **)&temporal_recv_buff, 16, upperId * sizeof(T_C));
-                        if (err) {
-                                printf("memory error!\n");
-                                abort();
-                        }*/
+			//temporal_recv_buff = (T_C *)malloc (upperId * sizeof(T_C));
+            err = posix_memalign((void **)&temporal_recv_buff, 16, upperId * sizeof(T_C));
+            if (err) {
+                    printf("memory error!\n");
+                    throw "Memory error.";
+                    exit(1);
+            }
 
                 	MPI_Sendrecv(compressed_fq, compressedsize, typeC,
                              previousRank, it + 2,
@@ -405,13 +409,14 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 	MPI_Get_count(&status, typeC, &psizeFrom);
 
 		/*debug*/
+                    /*
                 MPI_Sendrecv(send, psizeTo, type,
                              previousRank, it + 2,
                              recv_buff, upperId, type,
                              previousRank, it + 2,
                              comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
-
+*/
 /*
    std::cout << "-- b1 sent buffer32-rcv -- (" << psizeFrom <<")" << std::endl;
    for (int i =0; i< psizeFrom; ++i)
@@ -471,10 +476,10 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 //std::cout<< "enter 3 ..." << std::endl;
 		try {
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
-                if (memcmp(recv_buff, uncompressed_fq, uncompressedsize * sizeof(T)) != 0) {
+                /*if (memcmp(recv_buff, uncompressed_fq, uncompressedsize * sizeof(T)) != 0) {
                         std::cout << "error in execption 4 check" << std::endl;
 			exit(1);
-                }
+                }*/
                 } catch (...) {
                         std::cout << "-----> exception 4";
                         exit(1);
