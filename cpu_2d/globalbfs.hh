@@ -746,11 +746,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 assert(is_sorted(startaddr, startaddr + originalsize));
 		try {
                 schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
+                 if (memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) != 0) {
+                        std::cout << "error in execption 11 check" << std::endl;
+                        exit(1);
+                }
                 } catch (...) {
                         std::cout << "-----> exception 11";
                         exit(1);
                 }
-                assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
+                //assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                 std::cout<< "exit 1 ..." << std::endl;
         /**/
 
@@ -759,6 +763,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 		if (isCompressed) {
 		try {
                 schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
+                 if (memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) != 0) {
+                        std::cout << "error in execption 12 check" << std::endl;
+                        exit(1);
+                }
                 } catch (...) {
                         std::cout << "-----> exception 12";
                         exit(1);
@@ -782,6 +790,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 		}
 #endif
+
+                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 
 		//if (isCompressed)
 		//{
@@ -892,6 +902,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 }*/
 
 //std::cout << "y1a: isCompressed: " << isCompressed << std::endl;
+
+                FQ_T *startaddr = NULL;
+                
+                        assert(originalsize <= fq_64_length);
+                        startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
+                        if (startaddr == NULL)
+                        {
+                                printf("\nERROR: Memory allocation error!");
+                                abort();
+                        }
+                        MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+                
+
 #if defined(_COMPRESSIONVERIFY)
                 FQ_T *startaddr = NULL;
                 if (isCompressed)
@@ -922,6 +945,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 uncompressedsize = static_cast<size_t>(originalsize);
 		try {
                 schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                 if (memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) != 0) {
+                        std::cout << "error in execption 14 check" << std::endl;
+                        exit(1);
+                }
+
                 } catch (...) {
                         std::cout << "-----> exception 14";
                         exit(1);

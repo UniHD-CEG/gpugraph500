@@ -230,6 +230,14 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                              comm, &status);
                 	MPI_Get_count(&status, typeC, &psizeFrom);
 
+		/*debug*/
+                MPI_Sendrecv(send, psizeTo, type,
+                             previousRank, it + 2,
+                             recv_buff, lowerId, type,
+                             previousRank, it + 2,
+                             comm, &status);
+                MPI_Get_count(&status, type, &psizeFrom);
+
 /*
 		}
 		else
@@ -268,15 +276,20 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 uncompressedsize = originalsize;
 		//if (isCompressed)
 		//{
-                std::cout<< "enter 4 ..." << std::endl;
+                //std::cout<< "enter 4 ..." << std::endl;
 		try {
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+		 if (memcmp(recv_buff, uncompressed_fq, uncompressedsize * sizeof(T)) != 0) {
+			std::cout << "error in execption 2 check" << std::endl;
+			exit(1);
+		}
+
                 } catch (...) {
                         std::cout << "-----> exception 2";
                         exit(1);
                 }
                 isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
-                std::cout<< "exit 4 ..." << std::endl;
+                //std::cout<< "exit 4 ..." << std::endl;
 		//}
 		//isCompressed =  schema.decompress(recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 //std::cout << "a3: isCompressed: " << isCompressed << std::endl;
@@ -390,6 +403,15 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                              previousRank, it + 2,
                              comm, &status);
                 	MPI_Get_count(&status, typeC, &psizeFrom);
+
+		/*debug*/
+                MPI_Sendrecv(send, psizeTo, type,
+                             previousRank, it + 2,
+                             recv_buff, upperId, type,
+                             previousRank, it + 2,
+                             comm, &status);
+                MPI_Get_count(&status, type, &psizeFrom);
+
 /*
    std::cout << "-- b1 sent buffer32-rcv -- (" << psizeFrom <<")" << std::endl;
    for (int i =0; i< psizeFrom; ++i)
@@ -446,15 +468,19 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 */
    //std::cout << "-- end --" << std::endl;
 
-                std::cout<< "enter 3 ..." << std::endl;
+                //std::cout<< "enter 3 ..." << std::endl;
 		try {
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                if (memcmp(recv_buff, uncompressed_fq, uncompressedsize * sizeof(T)) != 0) {
+                        std::cout << "error in execption 4 check" << std::endl;
+			exit(1);
+                }
                 } catch (...) {
                         std::cout << "-----> exception 4";
                         exit(1);
                 }
                 isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
-                std::cout<< "exit 3 ..." << std::endl;
+                //std::cout<< "exit 3 ..." << std::endl;
 //std::cout << "b2: to this: ( " << uncompressedsize<<  ")"<< std::endl;
 /*
    for (int i =0; i< uncompressedsize; ++i)
@@ -545,7 +571,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
     int *compressed_sizes = (int *)malloc(communicatorSize * sizeof(int));
     int *compressed_disps = (int *)malloc(communicatorSize * sizeof(int));
-    int *compressed_flags = (int *)malloc(communicatorSize * sizeof(int));
+    //int *compressed_flags = (int *)malloc(communicatorSize * sizeof(int));
 
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -560,34 +586,43 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                         std::cout << "-----> exception 5";
                         exit(1);
     }
+    size_t uncompressedsize_temp = psizeTo;
+    T *uncompressed_buffer_temp = NULL;
+    try {
+        schema.decompress(compressed_fq, compressedsize, &uncompressed_buffer_temp, uncompressedsize_temp);
+        assert(psizeTo == uncompressedsize_temp);
+    	assert(is_sorted(uncompressed_buffer_temp, uncompressed_buffer_temp + uncompressedsize_temp));
+        assert(memcmp(send, uncompressed_buffer_temp, psizeTo * sizeof(T)) == 0);
+    } catch (...) {
+                        std::cout << "-----> exception 5b";
+                        exit(1);
+    }
     isCompressed = schema.isCompressed(psizeTo, compressedsize);
 //std::cout << "c1: isCompressed: " << isCompressed << std::endl;
 
-    MPI_Datatype MPI_3INT;
+    //MPI_Datatype MPI_3INT;
 
-    int *composed_recv = (int *)malloc(3 * communicatorSize * sizeof(int));
-    int *composed_send = (int *)malloc(3 * sizeof(int));
+    int *composed_recv = (int *)malloc(2 * communicatorSize * sizeof(int));
+    int *composed_send = (int *)malloc(2 * sizeof(int));
 
     composed_send[0] = psizeTo;
     composed_send[1] = compressedsize;
-    composed_send[2] = (isCompressed) ? 1 : 0;
+    //composed_send[2] = (isCompressed) ? 1 : 0;
 
-    MPI_Type_contiguous(3, MPI_INT, &MPI_3INT);
-    MPI_Type_commit(&MPI_3INT);
+    //MPI_Type_contiguous(3, MPI_INT, &MPI_3INT);
+    //MPI_Type_commit(&MPI_3INT);
 
-    MPI_Allgather(composed_send, 1, MPI_3INT, composed_recv, 1, MPI_3INT, comm);
+    MPI_Allgather(composed_send, 1, MPI_2INT, composed_recv, 1, MPI_2INT, comm);
 
-    const int totalsize = 3 * communicatorSize;
+    const int totalsize = 2 * communicatorSize;
 
     for (int i = 0, j = 0; i < totalsize; ++i)
     {
-        if (i % 3 == 0)
+        if (i % 2 == 0)
         {
             sizes[j] = composed_recv[i];
             compressed_sizes[j] = composed_recv[i + 1];
-	    compressed_flags[j] = composed_recv[i + 2];
-
-std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] << std::endl;
+	    //compressed_flags[j] = composed_recv[i + 2];
             ++j;
         }
     }
@@ -644,7 +679,7 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
     std::cout << "("<< communicatorRank <<") " <<compressed_sizes[a] << " ";
     }
     std::cout << std::endl;
-
+    std::cout << "rsize: " << rsize << std::endl;
 
 
 #else
@@ -675,7 +710,19 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
 #endif
 
 #ifdef _COMPRESSION
-    MPI_Barrier(comm);
+
+    T *recv_buff_tmp=NULL;
+    err = posix_memalign((void **)&recv_buff_tmp, 16, rsize * sizeof(T));
+    if (err) {
+        printf("memory error!\n");
+        throw "Error allocating memory.";
+    }
+
+    MPI_Allgatherv(send, sizes[communicatorRank],
+                   type, recv_buff_tmp, sizes,
+                   disps, type, comm);
+
+
     //if(isCompressed)
     //{
         MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
@@ -693,74 +740,101 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
                    type, recv_buff, sizes,
                    disps, type, comm);
 #endif
+T *uncompressed_fq_64;
 
 #ifdef _COMPRESSION
+
+
+    std::cout << "(2)compressed_disps: ";
+    for (int a=0; a < communicatorSize; ++a) {
+    std::cout << "("<< communicatorRank <<") " <<compressed_disps[a] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "(2)compressed_sizes: ";
+    for (int a=0; a < communicatorSize; ++a) {
+    std::cout << "("<< communicatorRank <<") " <<compressed_sizes[a] << " ";
+    }
+
 
 //#ifdef _COMPRESSIONVERIFY
     int total_uncompressedsize = 0;
 //#endif
-    std::cout<< "enter 2 ..." << std::endl;
 
     //if (communicatorSize > 1) {
-        int64_t newsize = disps[communicatorSize - 2]  + sizes[communicatorSize-1 ];
-std::cout << "inside 2... newsize: " << newsize << std::endl;
+std::cout << "enter 2... "  << std::endl;
 	//}
     // reensamble uncompressed chunks
     for (int i = 0; i < communicatorSize; ++i)
     {
-	std::cout << "point2 - orig: " << sizes[i] << " comp: " << compressed_sizes[i] << std::endl;
 
-        compressedsize = compressed_sizes[i];
+        compressedsize = compressed_sizes[i]+1;
         //if (compressedsize != 0)
         //{
-            //uncompressedsize = sizes[i];
-	    //uncompressedsize = sizes[i];
-            //isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
-	  const isCompressed = compressed_flags[i];
-	  std::cout << "inside 2... pre-decompress - will be decompressed? " << isCompressed << std::endl;
-/*
-	try {
-            schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
-                } catch (...) {
-                        std::cout << "-----> exception 6";
-                        exit(1);
-                }
-       		std::cout << "inside 2... post-decompress" << std::endl;
-	     isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
-
-//#ifdef _COMPRESSIONVERIFY
-//            if (isCompressed)
-//            {
-            	assert(uncompressedsize == sizes[i]); // sizes_i
-            	assert(std::is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-//	       }
-            total_uncompressedsize += uncompressedsize;
-//#endif
-
-	    //if (isCompressed)
-	    //{
-            std::cout<< "disps_i: " << disps[i] << std::endl;
-            memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
-            free(uncompressed_fq);
-
-	    //else
-	    //{
-        //        memcpy(&recv_buff[disps[i]], &compressed_recv_buff[compressed_disps[i]], uncompressedsize * sizeof(T_C));
-	    //}
-        //}
-    }
-*/
-    uncompressedsize = sizes[i];
+    //MPI_Barrier(comm);
+    uncompressedsize = sizes[i]+1;
+    //const bool isCompressed = schema.isCompressed(uncompressed_size, compressedsize);;
     try {
-        schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+                /*std::cout << "---> suspicious buffer(cs:"<<compressedsize <<",ncs:"<< uncompressed_size <<") ... ";
+                for(int j=0; j < rsize; ++j) {
+                        std::cout << compressed_recv_buff[compressed_disps[i]+j]<< ",";
+                }
+                std::cout << std::endl;*/
+        //if (isCompressed) {
+             schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+	/*}
+ 
+	else {
+        int bufferSize = compressedsize+1;
+    	int err;
+        err = posix_memalign((void **)uncompressed_fq_64, 16, bufferSize * sizeof(T));
+        if (err)
+        {
+            printf("\nERROR: Memory allocation error!");
+            throw "Memory error.";
+        }
+
+        std::cout << "---> (size:"<< bufferSize -1 << ")decompressed values ... ";
+        for (int j = 0; j < bufferSize; ++j)
+        {
+               uncompressed_fq_64[j] = static_cast<T>(compressed_recv_buff[compressed_disps[i]+j]);
+        }
+        std::cout << std::endl;
+        uncompressedsize = bufferSize;
+	}*/
     } catch (...) {
         std::cout << "-----> exception 6";
-        throw "Error decompressing.";
+        exit(1);
     }
+    std::cout<< "u_size: " << uncompressedsize << " sizes[i]+1 " << sizes[i]+1 << std::endl;
+    assert(uncompressedsize == sizes[i]+1);
+    total_uncompressedsize += uncompressedsize;
+    //MPI_Barrier(comm);
     memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
     free(uncompressed_fq);
-    std::cout<< "exit 2 ..." << std::endl;
-//#ifdef _COMPRESSIONVERIFY
+    }
+ std::cout<< "rsize: " << rsize<< " total_size: " << total_uncompressedsize<< std::endl;
+ //assert(rsize == total_uncompressedsize);
+ std::cout<< "exit 2 ..." << std::endl;
+
+ if (memcmp(recv_buff, recv_buff_tmp, rsize * sizeof(T)) != 0) {
+  
+                std::cout << "---> original recv_buff buffer (quitting...): ";
+                for(int j=0; j < rsize; ++j) {
+                        std::cout << recv_buff_tmp[j]<< ",";
+                }
+                std::cout << std::endl;
+                std::cout << "---> wrong decompressed buffer (quitting...): ";
+                for(int j=0; j < rsize; ++j) {
+                        std::cout << recv_buff[j]<< ",";
+                }
+                std::cout << std::endl;
+                
+                exit(1);
+
+ }
+    
+   //#ifdef _COMPRESSIONVERIFY
    /*std::cout << "-- start reensabled buffer --" << std::endl;
    for (int i =0; i< total_uncompressedsize; ++i)
    {
@@ -768,21 +842,37 @@ std::cout << "inside 2... newsize: " << newsize << std::endl;
    }
 
    std::cout << "-- end reensabled buffer --" << std::endl;*/
-    if (communicatorSize > 1) {
-        int64_t newsize = disps[communicatorSize - 2]  + sizes[communicatorSize-1 ];
-std::cout << "pre: " << uncompressedsize << " post: " << total_uncompressedsize << " new: " << newsize << std::endl;
-        assert(newsize == uncompressedsize);
-        assert(std::is_sorted(recv_buff, recv_buff + newsize));
-        //assert(std::is_sorted(recv_buff, recv_buff + uncompressedsize));
-    }
+/*
+std::cout << "pre: " << " decomp: "<< uncompressedsize <<" rsize: " << rsize << std::endl;
+        assert(newsize == uncompressedsize );
+*/
+
+        if (!std::is_sorted(recv_buff, recv_buff + rsize)) {
+		std::cout << "---> wrong buffer (quitting...): ";
+		/*for(int j=0; j < rsize; ++j) {
+			std::cout << recv_buff[j]<< ",";	
+		}*/
+		std::cout << std::endl;
+                exit(1);
+	} else {
+                std::cout << "---> buffer (correct): ";
+                /*for(int j=0; j < rsize; ++j) {
+                        std::cout << recv_buff[j]<< ",";
+                }*/
+                std::cout << std::endl;
+	}
+
+    //}
+    free(recv_buff_tmp);
 //#endif
 #endif
+
 
     free(sizes);
     free(disps);
 
 #ifdef _COMPRESSION
-    MPI_Type_free(&MPI_3INT);
+    //MPI_Type_free(&MPI_3INT);
     free(compressed_sizes);
     free(compressed_disps);
     //free(temporal_recv_buff);

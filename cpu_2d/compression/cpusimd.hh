@@ -295,7 +295,9 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
             (*uncompressed_fq_64)[i] = static_cast<T>(uncompressed_fq_32[i]); // 2: uncomp
         }
 
-       std::cout << "decompressiong - size: "<< size << " to "<< uncompressedsize << " ..." << std::endl;free(uncompressed_fq_32);
+       std::cout << "decompressiong - size: "<< size << " to "<< uncompressedsize << " ..." << std::endl;
+
+	    free(uncompressed_fq_32);
 	    compressed = true;
     }
     else
@@ -304,7 +306,6 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
          * Buffer was not compressed (Small size. Not worthed)
          */
 	//int err;
-        uncompressedsize = size;
 	compressed = false;
         //*uncompressed_fq_64 = reinterpret_cast<T *>(compressed_fq_64);
 	/*err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
@@ -313,10 +314,17 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
 		abort();
 	}*/
 	//   *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
-        for (int i = 0; i < size; ++i)
+        
+        int bufferSize = (uncompressedsize != 0)? uncompressedsize : size;
+	std::cout << "---> (size:"<< size << ")decompressed values ... ";
+        for (int i = 0; i < bufferSize; ++i)
         {
 	       (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
+		//std::cout << (*uncompressed_fq_64)[i] << ",";
         }
+	std::cout << std::endl;
+        uncompressedsize = bufferSize;
+	//uncompressedsize = size;
     }
 	return compressed;
 }
