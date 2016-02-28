@@ -55,7 +55,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     T *uncompressed_fq = NULL;
     T_C *compressed_fq = NULL;
     T_C *compressed_recv_buff = NULL;
-    T_C *temporal_recv_buff = NULL;
     int err;
 #endif
 
@@ -215,7 +214,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 		{
 
 */
-			//T_C *temporal_recv_buff = NULL;
+			T_C *temporal_recv_buff = NULL;
 			//temporal_recv_buff = (T_C *)malloc (lowerId * sizeof(T_C));
     		err = posix_memalign((void **)&temporal_recv_buff, 16, lowerId * sizeof(T_C));
     		if (err) {
@@ -282,7 +281,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 //std::cout<< "enter 4 ..." << std::endl;
 		try {
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
-                free(temporal_recv_buff);
 		 /*if (memcmp(recv_buff, uncompressed_fq, uncompressedsize * sizeof(T)) != 0) {
 			std::cout << "error in execption 2 check" << std::endl;
 			exit(1);
@@ -331,8 +329,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 //}
 
                 //// free(compressed_fq);
-		free(uncompressed_fq);
-		//free(temporal_recv_buff);
+                free(uncompressed_fq);
+                free(temporal_recv_buff);
 #endif
 
 #ifdef INSTRUMENTED
@@ -392,7 +390,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                              comm, MPI_STATUS_IGNORE);
 		//if (isCompressed)
 		//{
-			//T_C *temporal_recv_buff = NULL;
+			T_C *temporal_recv_buff = NULL;
 			//temporal_recv_buff = (T_C *)malloc (upperId * sizeof(T_C));
             err = posix_memalign((void **)&temporal_recv_buff, 16, upperId * sizeof(T_C));
             if (err) {
@@ -477,7 +475,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 //std::cout<< "enter 3 ..." << std::endl;
 		try {
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
-                free(temporal_recv_buff);
+
                 /*if (memcmp(recv_buff, uncompressed_fq, uncompressedsize * sizeof(T)) != 0) {
                         std::cout << "error in execption 4 check" << std::endl;
 			exit(1);
@@ -514,7 +512,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 //std::cout << "b4: isCompressed: " << isCompressed << std::endl;
 		//if (isCompressed)
 		//{
-                	reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
+                    reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
 		/*}
 		else
 		{
@@ -522,7 +520,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 			reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
 		}*/
 #else
-                reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
+                    reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
 #endif
 
 #ifdef _COMPRESSION
@@ -531,8 +529,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 {
                     free(uncompressed_fq);
                 }*/
-		free(uncompressed_fq);
-		free(temporal_recv_buff);
+            		free(uncompressed_fq);
+            		free(temporal_recv_buff);
 #endif
 
 #ifdef INSTRUMENTED
@@ -718,12 +716,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
 
-
+/*
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
                    disps, type, comm);
     std::cout << "allgather comm_rank: " << communicatorRank << std::endl;
-
+*/
 /*
     T *recv_buff_tmp=NULL;
     err = posix_memalign((void **)&recv_buff_tmp, 16, rsize * sizeof(T));
@@ -736,11 +734,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                    type, recv_buff_tmp, sizes,
                    disps, type, comm);
 */
-/*
+
     MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
                    typeC, compressed_recv_buff, compressed_sizes,
                    compressed_disps, typeC, comm);
-*/
+
 #else
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
@@ -749,10 +747,10 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 
 
-    free(sizes);
-    free(disps);
+    //free(sizes);
+    //free(disps);
 
-/*
+
 
 #ifdef _COMPRESSION
 
@@ -805,6 +803,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     free(compressed_disps);
     free(compressed_recv_buff);
 #endif
-*/
+
 }
 #endif // VREDUCE_HPP
