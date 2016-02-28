@@ -180,7 +180,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
                 assert(is_sorted(send, send + psizeTo));
-                schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+                try {
+		schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+		} catch (...) {
+			std::cout << "-----> exception 1";
+			exit(1);
+		}
                 isCompressed = schema.isCompressed(psizeTo, compressedsize);
 //std::cout << "a1: origsize: " << psizeTo << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 
@@ -264,7 +269,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 		//if (isCompressed)
 		//{
                 std::cout<< "enter 4 ..." << std::endl;
+		try {
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                } catch (...) {
+                        std::cout << "-----> exception 2";
+                        exit(1);
+                }
                 isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
                 std::cout<< "exit 4 ..." << std::endl;
 		//}
@@ -336,7 +346,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
                 assert(is_sorted(send, send + psizeTo));
+		try {
                 schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+		} catch (...) {
+                        std::cout << "-----> exception 3";
+                        exit(1);
+                }
                 isCompressed = schema.isCompressed(psizeTo, compressedsize);
 //std::cout << "b1: origsize: " << psizeTo << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 #endif
@@ -432,7 +447,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
    //std::cout << "-- end --" << std::endl;
 
                 std::cout<< "enter 3 ..." << std::endl;
+		try {
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
+                } catch (...) {
+                        std::cout << "-----> exception 4";
+                        exit(1);
+                }		
                 isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
                 std::cout<< "exit 3 ..." << std::endl;
 //std::cout << "b2: to this: ( " << uncompressedsize<<  ")"<< std::endl;
@@ -522,10 +542,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     int *sizes = (int *)malloc(communicatorSize * sizeof(int));
     int *disps = (int *)malloc(communicatorSize * sizeof(int));
 
-
 #ifdef _COMPRESSION
     int *compressed_sizes = (int *)malloc(communicatorSize * sizeof(int));
     int *compressed_disps = (int *)malloc(communicatorSize * sizeof(int));
+    int *compressed_flags = (int *)malloc(communicatorSize * sizeof(int));
+
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
     unsigned int reversedSliceIDs, targetNode;
@@ -533,40 +554,46 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     bool isCompressed = false;
 
     assert(is_sorted(send, send + psizeTo));
-    schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+    try {
+    	schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+    } catch (...) {
+                        std::cout << "-----> exception 5";
+                        exit(1);
+    }
     isCompressed = schema.isCompressed(psizeTo, compressedsize);
 //std::cout << "c1: isCompressed: " << isCompressed << std::endl;
 
-    //MPI_Datatype MPI_3INT;
+    MPI_Datatype MPI_3INT;
 
-    int *composed_sizes = (int *)malloc(2 * communicatorSize * sizeof(int));
-    int *composed_ints = (int *)malloc(2 * sizeof(int));
+    int *composed_recv = (int *)malloc(3 * communicatorSize * sizeof(int));
+    int *composed_send = (int *)malloc(3 * sizeof(int));
 
-    composed_ints[0] = psizeTo;
-    composed_ints[1] = compressedsize;
-    //composed_ints[2] = (isCompressed) ? 1 : 0;
+    composed_send[0] = psizeTo;
+    composed_send[1] = compressedsize;
+    composed_send[2] = (isCompressed) ? 1 : 0;
 
-    //MPI_Type_contiguous(3, MPI_INT, &MPI_3INT);
-    //MPI_Type_commit(&MPI_3INT);
+    MPI_Type_contiguous(3, MPI_INT, &MPI_3INT);
+    MPI_Type_commit(&MPI_3INT);
 
-    MPI_Allgather(composed_ints, 1, MPI_2INT, composed_sizes, 1, MPI_2INT, comm);
+    MPI_Allgather(composed_send, 1, MPI_3INT, composed_recv, 1, MPI_3INT, comm);
 
-
-    const int totalsize = 2 * communicatorSize;
+    const int totalsize = 3 * communicatorSize;
 
     for (int i = 0, j = 0; i < totalsize; ++i)
     {
-        if (i % 2 == 0)
+        if (i % 3 == 0)
         {
-            sizes[j] = composed_sizes[i];
-            compressed_sizes[j] = composed_sizes[i + 1];
+            sizes[j] = composed_recv[i];
+            compressed_sizes[j] = composed_recv[i + 1];
+	    compressed_flags[j] = composed_recv[i + 2];	
+	    
 std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] << std::endl;
             ++j;
         }
     }
 
-    free(composed_ints);
-    free(composed_sizes);
+    free(composed_send);
+    free(composed_recv);
 
     disps[lastTargetNode] = 0;
     compressed_disps[lastTargetNode] = 0;
@@ -588,12 +615,12 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
     csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
-    compressed_recv_buff = (T_C *)malloc(csize * sizeof(T_C));
-    /*err = posix_memalign((void **)&compressed_recv_buff, 16, csize * sizeof(T_C));
+    //compressed_recv_buff = (T_C *)malloc(csize * sizeof(T_C));
+    err = posix_memalign((void **)&compressed_recv_buff, 16, csize * sizeof(T_C));
     if (err) {
         printf("memory error!\n");
-        abort();
-    }*/
+        throw "Error allocating memory.";
+    }
     std::cout << "disp: ";
     for (int a=0; a < communicatorSize; ++a) {
 	std::cout << disps[a] << " ";
@@ -627,6 +654,7 @@ std::cout << "point1 - orig: " << sizes[j] << " comp: " << compressed_sizes[j] <
 #endif
 
 #ifdef _COMPRESSION
+    MPI_Barrier(comm);
     //if(isCompressed)
     //{
         MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
@@ -668,8 +696,14 @@ std::cout << "inside 2... newsize: " << newsize << std::endl;
 	    uncompressedsize = sizes[i];
             //isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
 	  isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
+	  std::cout << "checking iscompressed... isCompressed_method: " << isCompressed << " isCompressedNetwork: " << compressed_flags[i]  << std::endl;
 	  std::cout << "inside 2... pre-decompress - will be decompressed? " << isCompressed << std::endl;
+	try {	
             schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+                } catch (...) {
+                        std::cout << "-----> exception 6";
+                        exit(1);
+                }
        		std::cout << "inside 2... post-decompress" << std::endl;
 	     isCompressed = schema.isCompressed(uncompressedsize, compressedsize);
 
@@ -717,7 +751,7 @@ std::cout << "pre: " << uncompressedsize << " post: " << total_uncompressedsize 
     free(disps);
 
 #ifdef _COMPRESSION
-    // MPI_Type_free(&MPI_3INT);
+    MPI_Type_free(&MPI_3INT);
     free(compressed_sizes);
     free(compressed_disps);
     //free(temporal_recv_buff);

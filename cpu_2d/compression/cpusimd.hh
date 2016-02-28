@@ -120,6 +120,12 @@ inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
                                size_t &compressedsize) const
 {
     bool compressed;
+    int err;
+    err = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
+    if (err) {
+          printf("memory error!\n");
+          throw "Memory error.";
+    }
     if (isCompressible(size))
     //if (size > 0)
     {
@@ -176,13 +182,18 @@ std::cout << "compression ..." << std::endl;
         compressedsize = size;
 
         T_C *fq_32 = (T_C *)malloc(size * sizeof(T_C));
-        *compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
+        //*compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
         for (int i = 0; i < size; ++i)
         {
             // (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]);
             fq_32[i] = static_cast<T_C>(fq_64[i]); // 1: fq_32
         }
         codec.encodeArray(fq_32, size, *compressed_fq_32, compressedsize);
+        for (int i = 0; i < compressedsize; ++i)
+        {
+            (*compressed_fq_32)[i] = static_cast<T_C>((*compressed_fq_32)[i]);
+            // fq_32[i] = static_cast<T_C>(fq_64[i]); // 1: fq_32
+        }
 	    compressed = true;
         //free(fq_32);
     }
@@ -191,13 +202,14 @@ std::cout << "compression ..." << std::endl;
         /**
          * Buffer will not be compressed (Small size. Not worthed)
          */
-	/*int err;
+        /*
+	int err;
 	err = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
 	if (err) {
 		printf("memory error!\n");
-		abort();
+		throw "Memory error.";
 	}*/
-	   *compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
+	//   *compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
         for (int i = 0; i < size; ++i)
         {
             (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]);
@@ -214,11 +226,18 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
                                  /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
     bool compressed;
-    if (isCompressed(uncompressedsize, size))
+    int err;
+        err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
+        // *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
+        if (err)
+        {
+            printf("\nERROR: Memory allocation error!");
+            throw "Memory error.";
+        } 
+   if (isCompressed(uncompressedsize, size))
     //if (size > 0)
     {
-
-std::cout << "decompressiong ..." << std::endl;
+       std::cout << "decompressiong - size: "<< size << " ..." << std::endl;
 	/*int err;
         T_C *uncompressed_fq_32; // = (T_C *) malloc(uncompressedsize * sizeof(T_C));
 	err = posix_memalign((void **)&uncompressed_fq_32, 16, uncompressedsize * sizeof(T_C));
@@ -241,7 +260,7 @@ std::cout << "decompressiong ..." << std::endl;
         }
         *-/
 	//memcpy(compressed_fq_32, compressed_fq, size * sizeof(uint32_t));
-        //*compressed_fq_32 = reinterpret_cast<uint32_t *>(compressed_fq);
+        // *compressed_fq_32 = reinterpret_cast<uint32_t *>(compressed_fq);
 
         //std::cout << "-- compressed buffer, prior to decompress ("<< size <<")--" << std::endl;
         for (int i=0; i< size; ++i){
@@ -268,7 +287,7 @@ std::cout << "decompressiong ..." << std::endl;
         ////std::cout << "[d]-->origsize: " << uncompressedsize << " compressedsize:" << size << std::endl;
         */
         T_C *uncompressed_fq_32 = (T_C *) malloc(uncompressedsize * sizeof(T_C));
-        *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
+        //*uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
         codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
         for (int i = 0; i < uncompressedsize; ++i)
         {
@@ -276,7 +295,7 @@ std::cout << "decompressiong ..." << std::endl;
             (*uncompressed_fq_64)[i] = static_cast<T>(uncompressed_fq_32[i]); // 2: uncomp
         }
 
-        free(uncompressed_fq_32);
+       std::cout << "decompressiong - size: "<< size << " to "<< uncompressedsize << " ..." << std::endl;free(uncompressed_fq_32);
 	    compressed = true;
     }
     else
@@ -286,14 +305,14 @@ std::cout << "decompressiong ..." << std::endl;
          */
 	//int err;
         uncompressedsize = size;
-	    compressed = false;
+	compressed = false;
         //*uncompressed_fq_64 = reinterpret_cast<T *>(compressed_fq_64);
 	/*err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
 	if (err) {
 		printf("memory error!\n");
 		abort();
 	}*/
-	    *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
+	//   *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
         for (int i = 0; i < size; ++i)
         {
 	       (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);

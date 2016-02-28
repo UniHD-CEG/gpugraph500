@@ -46,7 +46,7 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing,
     predecessor = new vertexType[store.getLocColLength()];
 
 #ifdef _COMPRESSION
-    fq_tp_typeC = MPI_compressed;
+    fq_tp_typeC = MPIcompressed;
     fq_tp_type = MPI_INT64_T;
 #else
     fq_tp_type = MPI_INT64_T;

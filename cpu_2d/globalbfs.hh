@@ -731,7 +731,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 assert(is_sorted(startaddr, startaddr + originalsize));
                 uncompressedsize = static_cast<size_t>(originalsize);
+		try {
                 schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
+		} catch (...) {
+                        std::cout << "-----> exception 10";
+                        exit(1);
+                }
 // //std::cout << "x1: origsize: " << uncompressedsize << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 
         /* DEBUG */
@@ -739,7 +744,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 isCompressed = schema.isCompressed(originalsize, compressedsize);
 
                 assert(is_sorted(startaddr, startaddr + originalsize));
+		try {
                 schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
+                } catch (...) {
+                        std::cout << "-----> exception 11";
+                        exit(1);
+                }
                 assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                 std::cout<< "exit 1 ..." << std::endl;
         /**/
@@ -747,7 +757,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #if defined(_COMPRESSIONVERIFY)
         isCompressed = schema.isCompressed(originalsize, compressedsize);
 		if (isCompressed) {
+		try {
                 schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
+                } catch (...) {
+                        std::cout << "-----> exception 12";
+                        exit(1);
+                }
                 //schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
 		}
 #endif
@@ -786,7 +801,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 if (communicatorRank != root_rank)
                 {
                     uncompressedsize = static_cast<size_t>(originalsize);
+			try {
                     schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq,  uncompressedsize);
+                } catch (...) {
+                        std::cout << "-----> exception 13";
+                        exit(1);
+                }
                     assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                     assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
 //std::cout << "x1b: isCompressed: " << isCompressed << std::endl;
@@ -900,7 +920,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 isCompressed = schema.isCompressed(originalsize, compressedsize);
                 //memcpy(compressed_fq, fq_64, compressedsize * sizeof(compressionType));
                 uncompressedsize = static_cast<size_t>(originalsize);
+		try {
                 schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
+                } catch (...) {
+                        std::cout << "-----> exception 14";
+                        exit(1);
+                }
                 assert(uncompressedsize == originalsize);
                 assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
 //std::cout << "y1b: isCompressed: " << isCompressed << std::endl;
