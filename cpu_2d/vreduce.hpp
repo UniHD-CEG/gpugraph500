@@ -660,26 +660,26 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         printf("memory error!\n");
         throw "Error allocating memory.";
     }
-
+/*
     std::cout << "disps: ";
     for (int a=0; a < communicatorSize; ++a) {
     std::cout << "("<< communicatorRank <<") " <<disps[a] << " ";
     }
     std::cout << std::endl;
-
+*/
     std::cout << "sizes: ";
     for (int a=0; a < communicatorSize; ++a) {
     std::cout << "("<< communicatorRank <<") " <<sizes[a] << " ";
     }
     std::cout << std::endl;
     std::cout << "rsize: " << rsize << std::endl;
-
+/*
     std::cout << "compressed_disps: ";
     for (int a=0; a < communicatorSize; ++a) {
     std::cout << "("<< communicatorRank <<") " <<compressed_disps[a] << " ";
     }
     std::cout << std::endl;
-
+*/
     std::cout << "compressed_sizes: ";
     for (int a=0; a < communicatorSize; ++a) {
     std::cout << "("<< communicatorRank <<") " <<compressed_sizes[a] << " ";
@@ -722,18 +722,17 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                    disps, type, comm);
     std::cout << "allgather comm_rank: " << communicatorRank << std::endl;
 */
-/*
+
     T *recv_buff_tmp=NULL;
     err = posix_memalign((void **)&recv_buff_tmp, 16, rsize * sizeof(T));
     if (err) {
         printf("memory error!\n");
         throw "Error allocating memory.";
     }
-
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff_tmp, sizes,
                    disps, type, comm);
-*/
+
 
     MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
                    typeC, compressed_recv_buff, compressed_sizes,
@@ -763,25 +762,37 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     // reensamble uncompressed chunks
     for (int i = 0; i < communicatorSize; ++i)
     {
-        compressedsize = compressed_sizes[i]+1;
-        uncompressedsize = sizes[i]+1;
+        compressedsize = compressed_sizes[i];
+        uncompressedsize = sizes[i];
 
         if (compressedsize != 0)
         {
             try {
 
+                std::cout << "====> ok-decomp("<<compressedsize<<","<<uncompressedsize<< ") fq["<< recv_buff_tmp[disps[i]] <<".."<< recv_buff_tmp[disps[i]+ sizes[i]] <<"]" << std::endl;
+
                 schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
 
+                std::cout << "====> post-decomp("<<compressedsize<<","<<uncompressedsize<< ") fq["<< uncompressed_fq[0] <<".."<< uncompressed_fq[uncompressedsize] <<"]" << std::endl;
+
+                std::cout << "====> post-decomp+1("<<compressedsize<<","<<uncompressedsize<< ") fq["<< uncompressed_fq[0] <<".."<< uncompressed_fq[uncompressedsize+1] <<"]" << std::endl;
+
             } catch (...) {
-                std::cout << "-----> exception 6" << std::endl;
+                std::cout << "-----> exception 6 decomp("<<compressedsize <<","<<uncompressedsize <<")" << std::endl;
                 exit(1);
             }
+	    assert(sizes[i] == uncompressedsize);	
             total_uncompressedsize += uncompressedsize;
             memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
             free(uncompressed_fq);
         }
     }
     std::cout<< "rsize: " << rsize<< " total_size: " << total_uncompressedsize<< std::endl;
+
+
+                std::cout << "====> ok fq["<< recv_buff_tmp[0] <<".."<< recv_buff_tmp[rsize] <<"]" << std::endl;
+
+                std::cout << "====> ?? fq["<< recv_buff[0] <<".."<< recv_buff[rsize] <<"]" << std::endl;
 
 //#ifdef _COMPRESSIONVERIFY
     if (!std::is_sorted(recv_buff, recv_buff + rsize)) {

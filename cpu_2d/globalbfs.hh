@@ -740,7 +740,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 // //std::cout << "x1: origsize: " << uncompressedsize << " compsize: " << compressedsize << " isCompressed: " << isCompressed << std::endl;
 
         /* DEBUG */
-                std::cout<< "enter 1 ..." << std::endl;
+                //std::cout<< "enter 1 ..." << std::endl;
                 isCompressed = schema.isCompressed(originalsize, compressedsize);
 
                 assert(is_sorted(startaddr, startaddr + originalsize));
@@ -755,7 +755,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                         exit(1);
                 }
                 //assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
-                std::cout<< "exit 1 ..." << std::endl;
+                //std::cout<< "exit 1 ..." << std::endl;
         /**/
 
 #if defined(_COMPRESSIONVERIFY)

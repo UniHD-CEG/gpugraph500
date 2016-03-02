@@ -7,6 +7,9 @@
 #include "codecfactory.h"
 #include <chrono>
 
+#include <iostream>
+#include <fstream>
+
 using namespace std::chrono;
 using namespace SIMDCompressionLib;
 
@@ -120,23 +123,15 @@ inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
                                size_t &compressedsize) const
 {
     bool compressed;
-    int err;
-    err = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
-    if (err) {
-          printf("memory error!\n");
-          throw "Memory error.";
-    }
     if (isCompressible(size))
     //if (size > 0)
     {
-std::cout << "compression ..." << std::endl;
-//std::cout << "decompressiong ..." << std::endl;
 
         /*
 	int err1, err2;
         T_C *fq_32; //= (T_C *)malloc(size * sizeof(T_C));
 	err1 = posix_memalign((void **)&fq_32, 16, size * sizeof(T_C));
-        //*compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
+        // *compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
 	err2 = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
         if (err1 || err2)
         {
@@ -180,8 +175,18 @@ std::cout << "compression ..." << std::endl;
         ////std::cout << "[c]-->origsize: " << size << " compressedsize:" << compressedsize << std::endl;
         ///
         compressedsize = size;
+        int err1, err2;
+	T_C *fq_32;
+        
+        err1 = posix_memalign((void **)&fq_32, 16, size * sizeof(T_C));
+    	err2 = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
+    	if (err1 || err2) {
+          printf("Memory error.\n");
+          throw "Memory error.";
+	  exit(1);
+    	}
 
-        T_C *fq_32 = (T_C *)malloc(size * sizeof(T_C));
+        //T_C *fq_32 = (T_C *)malloc(size * sizeof(T_C));
         //*compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
         for (int i = 0; i < size; ++i)
         {
@@ -189,26 +194,43 @@ std::cout << "compression ..." << std::endl;
             fq_32[i] = static_cast<T_C>(fq_64[i]); // 1: fq_32
         }
         codec.encodeArray(fq_32, size, *compressed_fq_32, compressedsize);
+	//assert(compressedsize < size);
+        /*for (int i = 0; i < size; ++i)
+        {
+            (*compressed_fq_32)[i] = static_cast<T_C>(fq_32[i]); // 1: fq_32
+        }*/
+	std::cout<< "==> origsize: " << size << " csize: " << compressedsize << std::endl;
+/*
+	ofstream myfile;
+	myfile.open ("justcompressed.txt", ios::out);
+	if (compressedsize == 1331) {	
         for (int i = 0; i < compressedsize; ++i)
         {
-            (*compressed_fq_32)[i] = static_cast<T_C>((*compressed_fq_32)[i]);
+            //(*compressed_fq_32)[i] = static_cast<T_C>((*compressed_fq_32)[i]);
             // fq_32[i] = static_cast<T_C>(fq_64[i]); // 1: fq_32
+	    myfile << static_cast<T_C>((*compressed_fq_32)[i]) << std::endl;		
         }
+	}
+	myfile.close();
+*/
+	
+
 	    compressed = true;
-        //free(fq_32);
+        free(fq_32);
     }
     else
     {
         /**
          * Buffer will not be compressed (Small size. Not worthed)
          */
-        /*
+        
 	int err;
 	err = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
 	if (err) {
-		printf("memory error!\n");
+		printf("Memory error.\n");
 		throw "Memory error.";
-	}*/
+		exit(1);
+	}
 	//   *compressed_fq_32 = (T_C *)malloc(size * sizeof(T_C));
         for (int i = 0; i < size; ++i)
         {
@@ -227,17 +249,10 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
 {
     bool compressed;
     int err;
-        err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
-        // *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
-        if (err)
-        {
-            printf("\nERROR: Memory allocation error!");
-            throw "Memory error.";
-        } 
    if (isCompressed(uncompressedsize, size))
     //if (size > 0)
     {
-       std::cout << "decompressiong - size: "<< size << " ..." << std::endl;
+       std::cout << "decompress("<<size <<"," << uncompressedsize <<") [comp] ..." << std::endl;
 	/*int err;
         T_C *uncompressed_fq_32; // = (T_C *) malloc(uncompressedsize * sizeof(T_C));
 	err = posix_memalign((void **)&uncompressed_fq_32, 16, uncompressedsize * sizeof(T_C));
@@ -286,22 +301,70 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
         free(uncompressed_fq_32);
         ////std::cout << "[d]-->origsize: " << uncompressedsize << " compressedsize:" << size << std::endl;
         */
-        T_C *uncompressed_fq_32 = (T_C *) malloc(uncompressedsize * sizeof(T_C));
+        //T_C *uncompressed_fq_32 = (T_C *) malloc(uncompressedsize * sizeof(T_C));
+	//uncompressedsize = size;
+        ofstream myfile;
+        myfile.open ("predecompressed.txt");
+        if (size == 1331) {
+        for (int i = 0; i < size; ++i)
+        {
+            //(*compressed_fq_32)[i] = static_cast<T_C>((*compressed_fq_32)[i]);
+            // fq_32[i] = static_cast<T_C>(fq_64[i]); // 1: fq_32
+            myfile << compressed_fq_32[i] << std::endl;
+        }
+        }
+	myfile.close();
+
+	//T_C *uncompressed_fq_32;
+        T_C *compressed_fq_32b = (T_C *) malloc(size * sizeof(T_C));
+	memcpy(compressed_fq_32b, compressed_fq_32, size * sizeof(T_C));
+	T_C *uncompressed_fq_32 = (T_C *) malloc(uncompressedsize * sizeof(T_C));
+        //err = posix_memalign((void **)&uncompressed_fq_32, 16, uncompressedsize * sizeof(T_C));
+        // *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
+        /*if (err)
+        {
+            printf("\nMemory allocation error");
+	    throw "Memory error."; 	
+            exit(1);
+        }*/
         //*uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
-        codec.decodeArray(compressed_fq_32, size, uncompressed_fq_32, uncompressedsize);
+        codec.decodeArray(compressed_fq_32b, size, uncompressed_fq_32, uncompressedsize);
+
+        /*for (int i = 0; i < size; ++i)
+        {
+            uncompressed_fq_32[i] = static_cast<T_C>(compressed_fq_32[i]); // 1: fq_32
+        }*/
+
+        err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
+        // *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
+        if (err)
+        {
+            printf("\nERROR: Memory allocation error!");
+            throw "Memory error.";
+        }
+
         for (int i = 0; i < uncompressedsize; ++i)
         {
             // (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
             (*uncompressed_fq_64)[i] = static_cast<T>(uncompressed_fq_32[i]); // 2: uncomp
         }
 
-       std::cout << "decompressiong - size: "<< size << " to "<< uncompressedsize << " ..." << std::endl;
+       //std::cout << "decompressiong - size: "<< size << " to "<< uncompressedsize << " ..." << std::endl;
 
 	    free(uncompressed_fq_32);
 	    compressed = true;
     }
     else
     {
+        uncompressedsize = size;
+        err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
+        // *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
+        if (err)
+        {
+            printf("\nERROR: Memory allocation error!");
+            throw "Memory error.";
+        }
+	//std::cout << "decompressing (no comp)"<< std::endl;
         /**
          * Buffer was not compressed (Small size. Not worthed)
          */
@@ -315,16 +378,13 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
 	}*/
 	//   *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
         
-        int bufferSize = (uncompressedsize != 0)? uncompressedsize : size;
-	std::cout << "---> (size:"<< size << ")decompressed values ... ";
-        for (int i = 0; i < bufferSize; ++i)
+        //int bufferSize = (uncompressedsize != 0)? uncompressedsize : size;
+        for (int i = 0; i < uncompressedsize; ++i)
         {
 	       (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
 		//std::cout << (*uncompressed_fq_64)[i] << ",";
         }
 	std::cout << std::endl;
-        uncompressedsize = bufferSize;
-	//uncompressedsize = size;
     }
 	return compressed;
 }
