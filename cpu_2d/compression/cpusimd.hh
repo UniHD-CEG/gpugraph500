@@ -8,6 +8,8 @@
 #include <chrono>
 #include <iostream>
 #include <fstream>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using namespace std::chrono;
 using namespace SIMDCompressionLib;
@@ -26,8 +28,8 @@ private:
 public:
     CpuSimd();
     void debugCompression(T *fq, const size_t size) const;
-    inline bool compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const ;
-    inline bool decompress(T_C *compressed_fq_64, const int size,
+    inline void compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const ;
+    inline void decompress(T_C *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
@@ -61,10 +63,9 @@ void CpuSimd<T, T_C>::debugCompression(T *fq, const size_t size) const
 }
 
 template <typename T, typename T_C>
-inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_32,
+inline void CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_32,
                                size_t &compressedsize) const
 {
-    bool compressed;
     if (isCompressible(size))
     {
         compressedsize = size;
@@ -83,9 +84,39 @@ inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
         {
             fq_32[i] = static_cast<T_C>(fq_64[i]);
         }
+
         codec.encodeArray(fq_32, size, *compressed_fq_32, compressedsize);
 
-        compressed = true;
+
+	  if (size > 20000) {
+          struct stat buffer; 
+          if (stat("fq.r", &buffer) != 0) {
+
+		
+         ofstream myfile;
+         int j=0;
+         myfile.open ("fq.r", ios::out);
+         myfile << "vector"<< j <<" <- ( ";
+          for (int i = 0; i < size; ++i)
+          {
+	    	
+            if (i % 300 == 0) {
+		++j;
+                myfile << "); " << std::endl << "vector" << j << " <- ( "; 
+            } else {
+            	myfile << fq_32[i] << ", ";
+	   }
+          }
+	myfile << ");";
+	myfile << "fq <- (";
+	for (int i=0; i <= j; ++i) {
+		myfile << "vector"<< i << ", ";
+	}
+        myfile << ");";
+        myfile.close();
+	 }
+        }
+
         free(fq_32);
     }
     else
@@ -106,16 +137,13 @@ inline bool CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
             (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]);
         }
         compressedsize = size;
-        compressed = false;
     }
-    return compressed;
 }
 
 template <typename T, typename T_C>
-inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
+inline void CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
                                  /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
-    bool compressed;
     int err;
    if (isCompressed(uncompressedsize, size))
     {
@@ -139,7 +167,6 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
         }
 
         free(uncompressed_fq_32);
-        compressed = true;
     }
     else
     {
@@ -152,14 +179,12 @@ inline bool CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
             throw "Memory error.";
         }
 
-        compressed = false;
 
         for (int i = 0; i < uncompressedsize; ++i)
         {
            (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
         }
     }
-    return compressed;
 }
 
 template <typename T, typename T_C>

@@ -545,7 +545,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
     size_t uncompressedsize, compressedsize;
-    int err;
 #endif
 
     // moved anonymous functions outside loop

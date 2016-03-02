@@ -163,7 +163,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 int psizeFrom;
 #ifdef _COMPRESSION
                 int originalsize;
-                bool isCompressed = false;
 #endif
 
 #ifdef INSTRUMENTED
@@ -178,7 +177,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
                 schema.compress(send, psizeTo, &compressed_fq, compressedsize);
-                isCompressed = schema.isCompressed(psizeTo, compressedsize);
 
 #endif
 
@@ -238,15 +236,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
                 uncompressedsize = originalsize;
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
-                isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
-        if (isCompressed)
-        {
                     assert(uncompressedsize == originalsize);
                     assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
-        }
 #endif
 
 #ifdef _COMPRESSION
@@ -273,7 +267,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                 int psizeFrom;
 #ifdef _COMPRESSION
                 int originalsize;
-        bool isCompressed = false;
 #endif
 
 #ifdef INSTRUMENTED
@@ -288,7 +281,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
                 schema.compress(send, psizeTo, &compressed_fq, compressedsize);
-                isCompressed = schema.isCompressed(psizeTo, compressedsize);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONDEBUG)
@@ -312,8 +304,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
             err = posix_memalign((void **)&temporal_recv_buff, 16, upperId * sizeof(T_C));
             if (err) {
                     printf("memory error!\n");
-                    throw "Memory error.";
-                    exit(1);
             }
                 MPI_Sendrecv(compressed_fq, compressedsize, typeC,
                          previousRank, it + 2,
@@ -346,15 +336,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #ifdef _COMPRESSION
                 uncompressedsize = originalsize;
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
-                isCompressed = schema.isCompressed(uncompressedsize, psizeFrom);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
-        if (isCompressed)
-        {
                     assert(uncompressedsize == originalsize);
                     assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
-        }
 #endif
 
 
@@ -416,10 +402,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
     unsigned int reversedSliceIDs, targetNode;
     size_t csize = 0;
-    bool isCompressed = false;
 
     schema.compress(send, psizeTo, &compressed_fq, compressedsize);
-    size_t uncompressedsize_temp = psizeTo;
 
     int *composed_recv = (int *)malloc(2 * communicatorSize * sizeof(int));
     int *composed_send = (int *)malloc(2 * sizeof(int));
