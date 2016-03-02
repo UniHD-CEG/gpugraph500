@@ -84,38 +84,7 @@ inline void CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
         {
             fq_32[i] = static_cast<T_C>(fq_64[i]);
         }
-
         codec.encodeArray(fq_32, size, *compressed_fq_32, compressedsize);
-
-
-	  if (size > 20000) {
-          struct stat buffer; 
-          if (stat("fq.r", &buffer) != 0) {
-
-		
-         ofstream myfile;
-         int j=0;
-         myfile.open ("fq.r", ios::out);
-         myfile << "vector"<< j <<" <- ( ";
-          for (int i = 0; i < size; ++i)
-          {
-	    	
-            if (i % 300 == 0) {
-		++j;
-                myfile << "); " << std::endl << "vector" << j << " <- ( "; 
-            } else {
-            	myfile << fq_32[i] << ", ";
-	   }
-          }
-	myfile << ");";
-	myfile << "fq <- (";
-	for (int i=0; i <= j; ++i) {
-		myfile << "vector"<< i << ", ";
-	}
-        myfile << ");";
-        myfile.close();
-	 }
-        }
 
         free(fq_32);
     }

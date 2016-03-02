@@ -709,7 +709,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #ifdef _COMPRESSION
                 compressionType *compressed_fq;
                 FQ_T *uncompressed_fq;
-                bool isCompressed = false;
 #endif
 
 #ifdef INSTRUMENTED
@@ -730,13 +729,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 uncompressedsize = static_cast<size_t>(originalsize);
                 schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
-                isCompressed = schema.isCompressed(originalsize, compressedsize);
 
 #if defined(_COMPRESSIONVERIFY)
-        isCompressed = schema.isCompressed(originalsize, compressedsize);
-		if (isCompressed) {
                 schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
-		}
 #endif
 
 #endif
@@ -745,9 +740,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 int *vectorizedsize = (int *)malloc(2 * sizeof(int));
                 vectorizedsize[0] = originalsize;
                 vectorizedsize[1] = compressedsize;
-                isCompressed = schema.isCompressed(originalsize, compressedsize);
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
 #if defined(_COMPRESSIONVERIFY)
+		bool isCompressed = schema.isCompressed(originalsize, compressedsize);
 		if (isCompressed)
 		{
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
@@ -770,15 +765,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 }
 
 #if defined(_COMPRESSIONVERIFY)
-                isCompressed = schema.isCompressed(originalsize, compressedsize);
                 if (communicatorRank != root_rank)
                 {
-                    if (isCompressed)
-                    {
                         assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                     	assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
                     	schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
-                    }
                 }
                 else
                 {
@@ -828,18 +819,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #ifdef _COMPRESSION
                 compressionType *compressed_fq = NULL;
                 FQ_T *uncompressed_fq = NULL;
-                bool isCompressed = false;
                 int originalsize, compressedsize;
                 int *vectorizedsize = (int *)malloc(2 * sizeof(int));
 
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
                 originalsize = vectorizedsize[0];
                 compressedsize = vectorizedsize[1];
-                isCompressed = schema.isCompressed(originalsize, compressedsize);
        	        compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
 
 
 #if defined(_COMPRESSIONVERIFY)
+		bool isCompressed = schema.isCompressed(originalsize, compressedsize);
                 FQ_T *startaddr = NULL;
                 if (isCompressed)
                 {
@@ -862,7 +852,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
 
-                isCompressed = schema.isCompressed(originalsize, compressedsize);
                 uncompressedsize = static_cast<size_t>(originalsize);
                 schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
 
