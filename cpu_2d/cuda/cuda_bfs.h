@@ -1,6 +1,7 @@
 #ifndef CUDA_BFS_H
 #define CUDA_BFS_H
 
+#define __restrict__
 #ifdef __CUDACC__
 #include "cuda_support.hh" //for enactor_base.cuh
 #include "b40c/graph/bfs/csr_problem_2d.cuh"

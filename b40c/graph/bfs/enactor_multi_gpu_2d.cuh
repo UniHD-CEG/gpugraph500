@@ -317,9 +317,9 @@ protected:
         int partition_grid_size;        // Partition/contract grid size
         int copy_grid_size;             // Copy grid size
 
-        long long iteration;            // BFS iteration
-        long long queue_index;          // Queuing index
-        long long steal_index;          // Work stealing index
+        int64_t iteration;            // BFS iteration
+        int64_t queue_index;          // Queuing index
+        int64_t steal_index;          // Work stealing index
         typename Csr::SizeT queue_length;           // Current queue size
 
         // Kernel duty stats
@@ -346,10 +346,10 @@ protected:
             expand_grid_size(0),
             partition_grid_size(0),
             copy_grid_size(0),
-            iteration(0),
-            steal_index(0),
-            queue_index(0),
-            queue_length(0)
+            iteration(0LL),
+            steal_index(0LL),
+            queue_index(0LL),
+            queue_length(0U)
         {}
 
 
@@ -398,6 +398,7 @@ protected:
                 spine_elements = (partition_grid_size * PartitionPolicy::Upsweep::BINS) + 1;
                 if (retval = spine.template Setup<typename PartitionPolicy::SizeT>(spine_elements)) break;
 
+                /*
                 if (DEBUG) printf("Gpu %d contract  min occupancy %d, grid size %d\n",
                     gpu, contract_min_occupancy, contract_grid_size);
                 if (DEBUG) printf("Gpu %d expand min occupancy %d, grid size %d\n",
@@ -406,6 +407,7 @@ protected:
                     gpu, partition_min_occupancy, partition_grid_size, spine_elements);
                 if (DEBUG) printf("Gpu %d copy min occupancy %d, grid size %d\n",
                     gpu, copy_min_occupancy, copy_grid_size);
+                */
 
                 // Setup work progress
                 if (retval = work_progress.Setup()) break;
@@ -413,10 +415,10 @@ protected:
             } while (0);
 
             // Reset statistics
-            iteration = 0;
-            queue_index = 0;
-            steal_index = 0;
-            queue_length = 0;
+            iteration = 0LL;
+            queue_index = 0LL;
+            steal_index = 0LL;
+            queue_length = 0U;
 
             return retval;
         }
@@ -456,7 +458,7 @@ protected:
     // Vector of GpuControlBlocks (one for each GPU)
     std::vector <GpuControlBlock *> control_blocks;
 
-    bool DEBUG2;
+    //bool DEBUG2;
 
     //---------------------------------------------------------------------
     // Utility Methods
@@ -469,12 +471,12 @@ public:
      * Constructor
      */
     EnactorMultiGpu(bool DEBUG = false) :
-        EnactorBase<Csr>(MULTI_GPU_FRONTIERS, DEBUG),
-        DEBUG2(false)
+        EnactorBase<Csr>(MULTI_GPU_FRONTIERS, DEBUG)
+        //,DEBUG2(false)
     {
 #ifdef _DEBUG
         this->DEBUG=true;
-        DEBUG2=true;
+        //DEBUG2=true;
 #endif
 
     }
@@ -511,7 +513,7 @@ public:
      */
     template <typename VertexId>
     void GetStatistics(
-        long long &total_queued,
+        int64_t &total_queued,
         VertexId &search_depth,
         double &avg_live)
     {
@@ -620,7 +622,7 @@ public:
         int bins_per_gpu = (csr_problem.num_gpus == 1) ?
             PartitionPolicy::Upsweep::BINS :
             1;
-        if(this->DEBUG) printf("Partition bins per GPU: %d\n", bins_per_gpu);
+        // if(this->DEBUG) printf("Partition bins per GPU: %d\n", bins_per_gpu);
 
         // Search setup / lazy initialization
         if (retval = Setup<ContractPolicy, ExpandPolicy, PartitionPolicy, CopyPolicy>(
@@ -648,9 +650,9 @@ public:
                     "EnactorMultiGpu cudaSetDevice failed", __FILE__, __LINE__)) break;
 
                 bool owns_source = (control->gpu == src_owner);
-                if (owns_source) {
-                    if(this->DEBUG)printf("GPU %d owns source 0x%llX\n", control->gpu, (long long) src);
-                }
+                /*if (owns_source) {
+                    if(this->DEBUG)printf("GPU %d owns source 0x%llX\n", control->gpu, (int64_t) src);
+                }*/
 
                 // Contraction
                 two_phase::contract_atomic::Kernel<ContractPolicy>
@@ -675,15 +677,17 @@ public:
                 control->queue_index++;
                 control->steal_index++;
 
+                /*
                 if (this->DEBUG){
                     if (retval = util::B40CPerror(cudaDeviceSynchronize(),
                         "EnactorMultiGpu contract_atomic::Kernel failed", __FILE__, __LINE__)) break;
 
                     // Get contraction queue length
                     if (retval = control->UpdateQueueLength()) break;
-                    printf("Gpu %d contracted queue length: %lld\n", i, (long long) control->queue_length);
+                    printf("Gpu %d contracted queue length: %lld\n", i, (int64_t) control->queue_length);
                     fflush(stdout);
                 }
+                */
         }
         if (retval){
             cudaError_t retval2 = cudaSuccess;
@@ -752,12 +756,13 @@ public:
             PartitionPolicy::Upsweep::BINS :
             1;
 
+        /*
         if (this->DEBUG) {
             for(int i = 0; i < csr_problem.num_gpus; i++){
             printf("Iteration %lld new current queue on gpu %d (%lld elements)\n",
-                (long long) control_blocks[i]->iteration,
+                (int64_t) control_blocks[i]->iteration,
                 control_blocks[i]->gpu,
-                (long long) control_blocks[i]->queue_length);
+                (int64_t) control_blocks[i]->queue_length);
 
                 if (DEBUG2) {
                     this->DisplayDeviceResults(
@@ -766,6 +771,7 @@ public:
                 }
             }
         }
+        */
 
         //---------------------------------------------------------------------
         // Expand work queues
@@ -800,15 +806,17 @@ public:
             control->steal_index++;
             control->iteration++;
 
+            /*
             if (this->DEBUG) {
                 if (retval = util::B40CPerror(cudaDeviceSynchronize(),
                     "EnactorMultiGpu expand_atomic::Kernel failed", __FILE__, __LINE__)) break;
 
                 // Get expansion queue length
                 if (retval = control->UpdateQueueLength()) break;
-                printf("Gpu %d expansion queue length: %lld\n", i, (long long) control->queue_length);
+                printf("Gpu %d expansion queue length: %lld\n", i, (int64_t) control->queue_length);
                 fflush(stdout);
             }
+            */
         }
         if (retval){
             cudaError_t retval2 = cudaSuccess;
@@ -844,15 +852,17 @@ public:
                 slice->frontier_elements[1],                    // max local edge frontier vertices
                 control->partition_kernel_stats);
 
+            /*
             if (this->DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
                 "EnactorMultiGpu partition_contract::upsweep::Kernel failed", __FILE__, __LINE__))) break;
 
             if (DEBUG2) {
                 printf("Presorted spine on gpu %d (%lld elements)\n",
                     control->gpu,
-                    (long long) control->spine_elements);
+                    (int64_t) control->spine_elements);
                 this->DisplayDeviceResults((SizeT *) control->spine.d_spine, control->spine_elements);
             }
+            */
 
             // Spine
             PartitionPolicy::SpineKernel()<<<1, PartitionSpine::THREADS, 0, slice->stream>>>(
@@ -860,16 +870,18 @@ public:
                 (SizeT*) control->spine.d_spine,
                 control->spine_elements);
 
+            /*
             if (this->DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
                 "EnactorMultiGpu SpineKernel failed", __FILE__, __LINE__))) break;
 
             if (DEBUG2) {
                 printf("Postsorted spine on gpu %d (%lld elements)\n",
                     control->gpu,
-                    (long long) control->spine_elements);
+                    (int64_t) control->spine_elements);
 
                 this->DisplayDeviceResults((SizeT *) control->spine.d_spine, control->spine_elements);
             }
+            */
 
             // Downsweep
             partition_contract::downsweep::Kernel<PartitionDownsweep>
@@ -886,8 +898,10 @@ public:
                 slice->frontier_elements[1],                    // max local edge frontier vertices
                 control->partition_kernel_stats);
 
+            /*
             if (this->DEBUG && (retval = util::B40CPerror(cudaDeviceSynchronize(),
                 "EnactorMultiGpu DownsweepKernel failed", __FILE__, __LINE__))) break;
+            */
 
             control->queue_index++;
         }
@@ -917,11 +931,12 @@ public:
             SizeT *spine = (SizeT *) control->spine.h_spine;
             if (spine[control->spine_elements - 1]) done = false;
 
+            /*
             if (this->DEBUG) {
                 printf("Iteration %lld sort-contracted queue on gpu %d (%lld elements)\n",
-                    (long long) control->iteration,
+                    (int64_t) control->iteration,
                     control->gpu,
-                    (long long) spine[control->spine_elements - 1]);
+                    (int64_t) spine[control->spine_elements - 1]);
 
                 if (DEBUG2) {
                     this->DisplayDeviceResults(slice->frontier_queues.d_keys[2], spine[control->spine_elements - 1]);
@@ -929,6 +944,7 @@ public:
                     this->DisplayDeviceResults(slice->d_labels, slice->nodes);
                 }
             }
+            */
         }
         if (retval){
             cudaError_t retval2 = cudaSuccess;
@@ -940,12 +956,13 @@ public:
         // Check if all done in all GPUs
         if (done) return retval;
 
-        if (DEBUG2) printf("---------------------------------------------------------\n");
+        // if (DEBUG2) printf("---------------------------------------------------------\n");
 
 
         //---------------------------------------------------------------------
         // Stream-contract work queues
         //---------------------------------------------------------------------
+        MPI_Barrier(MPI_COMM_WORLD);
 
         for (int i = 0; i < csr_problem.num_gpus; i++) {
 
@@ -970,6 +987,7 @@ public:
                 SizeT queue_oob     = peer_spine[bins_per_gpu * (i + 1) * peer_control->partition_grid_size];
                 SizeT num_elements  = queue_oob - queue_offset;
 
+                /*
                 if (DEBUG2) {
                     printf("Gpu %d getting %d from gpu %d selector %d, queue_offset: %d @ %d, queue_oob: %d @ %d\n",
                         i,
@@ -982,6 +1000,7 @@ public:
                         bins_per_gpu * (i + 1) * peer_control->partition_grid_size);
                     fflush(stdout);
                 }
+                */
 
                 // Copy / copy+contract from peer
                 if (slice->gpu == peer_slice->gpu) {
@@ -1011,8 +1030,10 @@ public:
                             control->work_progress,
                             control->copy_kernel_stats);
 
+                    /*
                     if (this->DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
                         "EnactorMultiGpu copy::Kernel failed ", __FILE__, __LINE__))) break;
+                    */
 
                 } else {
 
@@ -1035,8 +1056,10 @@ public:
                             slice->frontier_elements[2],                                // max edge frontier vertices
                             slice->frontier_elements[0],                                // max vertex frontier vertices
                             control->expand_kernel_stats);
+                    /*
                     if (this->DEBUG && (retval = util::B40CPerror(cudaThreadSynchronize(),
                         "EnactorMultiGpu contract_atomic::Kernel failed ", __FILE__, __LINE__))) break;
+                    */
 
                 }
 
@@ -1045,22 +1068,26 @@ public:
 
             control->queue_index++;
 
+            /*
             if (this->DEBUG) {
                 if (retval = control->UpdateQueueLength()) break;
                 printf("Iteration %lld(%d) queue on gpu %d (%lld elements)\n",
-                       static_cast<long long>(control->iteration), i,
+                       static_cast<int64_t>(control->iteration), i,
                        control->gpu,
-                       static_cast<long long>(control->queue_length)
+                       static_cast<int64_t>(control->queue_length)
                     );
                 this->DisplayDeviceResults(slice->frontier_queues.d_keys[0], control->queue_length);
             }
+            */
 
+            /*
             if (this->DEBUG){
                 // Get contraction queue length
                 if (retval = control->UpdateQueueLength()) break;
-                printf("Gpu %d contracted queue length: %lld\n", i, (long long) control->queue_length);
+                printf("Gpu %d contracted queue length: %lld\n", i, (int64_t) control->queue_length);
                 fflush(stdout);
             }
+            */
         }
         if (retval){
             cudaError_t retval2 = cudaSuccess;
