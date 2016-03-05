@@ -1,12 +1,10 @@
 #ifndef CUDA_BFS_H
 #define CUDA_BFS_H
 
-#define __restrict__
 #ifdef __CUDACC__
 #include "cuda_support.hh" //for enactor_base.cuh
 #include "b40c/graph/bfs/csr_problem_2d.cuh"
 #include "b40c/graph/bfs/enactor_multi_gpu_2d.cuh"
-#include "../config.h"
 
 #else
 namespace b40c
@@ -34,7 +32,7 @@ using std::string;
 using namespace b40c::graph::bfs;
 
 //cuda types have to be chosen, what might be a problem
-typedef long long vertexType;
+typedef int64_t vertexType;
 typedef unsigned int rowtyp;
 
 class CUDA_BFS : public GlobalBFS <CUDA_BFS, vertexType, unsigned char,
@@ -47,9 +45,9 @@ private:
     int64_t verbosity;
     double queue_sizing;
     uint64_t qb_length, rb_length;
-    vertexType * restrict queuebuff;
-    vertexType * restrict redbuff;
-    MType * restrict vmask;
+    vertexType * __restrict__ queuebuff;
+    vertexType * __restrict__ redbuff;
+    MType * __restrict__ vmask;
     bool done;
     Csr *csr_problem;
 
