@@ -5,14 +5,16 @@
 
 #include "compression.hh"
 #include "codecfactory.h"
+#include "../config.h"
 #include <chrono>
 
-#if defined(__AVX__)
+
+#ifndef ALIGNMENT
+#if HAVE_AVX
 #define ALIGNMENT 32UL
-#elif defined(__SSE__)
-#define ALIGNMENT 16UL
 #else
 #define ALIGNMENT 16UL
+#endif
 #endif
 
 using namespace std::chrono;

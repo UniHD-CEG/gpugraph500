@@ -16,6 +16,8 @@
 #ifdef _SCOREP_USER_INSTRUMENTATION
 #include "scorep/SCOREP_User.h"
 #endif
+#include "config.h"
+
 
 #ifdef INSTRUMENTED
 #include <unistd.h>
@@ -28,12 +30,12 @@ using namespace std::chrono;
 #include "compression/types_compression.h"
 #endif
 
-#if defined(__AVX__)
+#ifndef ALIGNMENT 
+#if HAVE_AVX
 #define ALIGNMENT 32UL
-#elif defined(__SSE__)
-#define ALIGNMENT 16UL
 #else
 #define ALIGNMENT 16UL
+#endif
 #endif
 
 using std::function;
@@ -264,7 +266,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
     if ((((communicatorRank & 1) == 0) && (communicatorRank < twoTimesResiduum)) || (communicatorRank >= twoTimesResiduum))
     {
-        int ssize, offset, size, index;
+        int ssize, offset, index;
 
         ssize = psize;
         const int vrank = newRank(communicatorRank);
@@ -275,10 +277,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             int orankEven, orankOdd, iterator2, iterator3;
             const int lowers = (int) ssize * 0.5f; //lower slice size
             const int uppers = ssize - lowers; //upper slice size
-            size = lowers * mtypesize;
+            int size = lowers * mtypesize;
             orankEven = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
             orankOdd = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
-             const twoTimesIterator = it << 1;
+            const int twoTimesIterator = it << 1;
             iterator2 = twoTimesIterator + 2;
             iterator3 = twoTimesIterator + 3;
 
@@ -405,7 +407,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
     //int *sizes = (int *)malloc(communicatorSize * sizeof(int));
     //int *disps = (int *)malloc(communicatorSize * sizeof(int));
-    const int err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int));
+
+   int * restrict sizes; 
+   int * restrict disps; 
+   const int err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int));
     const int err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int));
     if (err1 || err2) {
         throw "Memory error.";
@@ -756,6 +761,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
 
+		int * restrict vectorizedsize = NULL;
                 //int *vectorizedsize = (int *)malloc(2 * sizeof(int));
                 err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
                 if (err) {
@@ -845,6 +851,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 FQ_T *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
                 // int *vectorizedsize = (int *)malloc(2 * sizeof(int));
+		int * restrict vectorizedsize = NULL;
                 err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
                 if (err) {
                     throw "Memory error.";

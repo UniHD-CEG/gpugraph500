@@ -18,6 +18,7 @@
 #include <functional>
 #include <sstream>
 #include "bitlevelfunctions.h"
+#include "config.h"
 
 #ifdef _COMPRESSION
 #include "compression/compression.hh"
@@ -26,16 +27,14 @@
 using std::function;
 using std::is_sorted;
 
-#if defined(__AVX__)
+#ifndef ALIGNMENT
+#if HAVE_AVX
 #define ALIGNMENT 32UL
-std::cout << "----> 32!!" << std::endl;
-#elif defined(__SSE__)
-#define ALIGNMENT 16UL
-std::cout << "----> 16!!" << std::endl;
 #else
 #define ALIGNMENT 16UL
-std::cout << "----> 16e!!" << std::endl;
 #endif
+#endif
+
 
 #ifdef _COMPRESSION
 template <typename T, typename T_C>
@@ -66,7 +65,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     T *uncompressed_fq = NULL;
     T_C *compressed_fq = NULL;
     T_C *compressed_recv_buff = NULL;
-    int err;
+    int err, err1, err2;
 #endif
 
     //time mesurement
@@ -405,6 +404,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     // Transmission of the final results
     // int *sizes = (int *)malloc(communicatorSize * sizeof(int));
     // int *disps = (int *)malloc(communicatorSize * sizeof(int));
+    int * restrict sizes;
+    int * restrict disps;
+	
 
     err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int));
     err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int));
@@ -413,6 +415,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     }
 
 #ifdef _COMPRESSION
+    int * restrict compressed_sizes;
+    int * restrict compressed_disps;
     // int *compressed_sizes = (int *)malloc(communicatorSize * sizeof(int));
     // int *compressed_disps = (int *)malloc(communicatorSize * sizeof(int));
     err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, communicatorSize * sizeof(int));
@@ -428,6 +432,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     size_t csize = 0;
 
     schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+
+    int * restrict composed_recv;
+    int * restrict composed_send;
 
     err1 = posix_memalign((void **)&composed_recv, ALIGNMENT, 2* communicatorSize * sizeof(int));
     err2 = posix_memalign((void **)&composed_send, ALIGNMENT, 2 * sizeof(int));
