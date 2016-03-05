@@ -30,7 +30,7 @@ using namespace std::chrono;
 #include "compression/types_compression.h"
 #endif
 
-#ifndef ALIGNMENT 
+#ifndef ALIGNMENT
 #if HAVE_AVX
 #define ALIGNMENT 32UL
 #else
@@ -408,25 +408,25 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     //int *sizes = (int *)malloc(communicatorSize * sizeof(int));
     //int *disps = (int *)malloc(communicatorSize * sizeof(int));
 
-   int * restrict sizes; 
-   int * restrict disps; 
+   int * restrict sizes;
+   int * restrict disps;
    const int err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int));
     const int err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int));
     if (err1 || err2) {
         throw "Memory error.";
     }
 
-    const unsigned int maskLengthRes = psize % (1 << intLdSize);
-    unsigned int lastReversedSliceIDs = 0;
-    unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
+    const int maskLengthRes = psize % (1 << intLdSize);
+    int lastReversedSliceIDs = 0;
+    int lastTargetNode = oldRank(lastReversedSliceIDs);
 
     sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
     disps[lastTargetNode] = 0;
 
-    for (unsigned int slice = 1; slice < power2intLdSize; ++slice)
+    for (int slice = 1; slice < power2intLdSize; ++slice)
     {
-        const unsigned int reversedSliceIDs = reverse(slice, intLdSize);
-        const unsigned int targetNode = oldRank(reversedSliceIDs);
+        const int reversedSliceIDs = reverse(slice, intLdSize);
+        const int targetNode = oldRank(reversedSliceIDs);
         sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
                             mtypesize;
         disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
@@ -761,8 +761,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
 
-		int * restrict vectorizedsize = NULL;
-                //int *vectorizedsize = (int *)malloc(2 * sizeof(int));
+                int * restrict vectorizedsize = NULL;
                 err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
                 if (err) {
                     throw "Memory error.";
@@ -850,7 +849,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 compressionType *compressed_fq = NULL;
                 FQ_T *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
-                // int *vectorizedsize = (int *)malloc(2 * sizeof(int));
 		int * restrict vectorizedsize = NULL;
                 err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
                 if (err) {
@@ -860,7 +858,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
                 originalsize = vectorizedsize[0];
                 compressedsize = vectorizedsize[1];
-                // compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
                 err = posix_memalign((void **)&compressed_fq, ALIGNMENT, compressedsize * sizeof(compressionType));
                 if (err) {
                     throw "Memory error.";
@@ -871,7 +868,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 FQ_T *startaddr = NULL;
                 if (isCompressed)
                 {
-                    //startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
                     err = posix_memalign((void **)&startaddr, ALIGNMENT, originalsize * sizeof(FQ_T));
                     if (err) {
                         throw "Memory error.";
