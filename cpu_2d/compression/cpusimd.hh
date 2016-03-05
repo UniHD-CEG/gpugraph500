@@ -7,6 +7,8 @@
 #include "codecfactory.h"
 #include <chrono>
 
+#define ALIGNMENT 32L
+
 using namespace std::chrono;
 using namespace SIMDCompressionLib;
 using std::string;
@@ -17,7 +19,7 @@ template <typename T, typename T_C>
 class CpuSimd: public Compression<T, T_C>
 {
 private:
-    uint32_t SIMDCOMPRESSION_THRESHOLD;
+    int SIMDCOMPRESSION_THRESHOLD;
     string codecName;
     IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
     inline bool isCompressible(int size) const { return (size > SIMDCOMPRESSION_THRESHOLD); };
@@ -48,38 +50,36 @@ void CpuSimd<T, T_C>::reconfigure(int compressionThreshold, string compressionCo
     assert(compressionCodec.length() > 0);
     codecName = compressionCodec;
     codec = *CODECFactory::getFromName(codecName);
-    SIMDCOMPRESSION_THRESHOLD = static_cast<uint32_t>(compressionThreshold);
+    SIMDCOMPRESSION_THRESHOLD = static_cast<int>(compressionThreshold);
 }
 
 template <typename T, typename T_C>
 void CpuSimd<T, T_C>::debugCompression(T *fq, const size_t size) const
 {
     assert(fq != NULL);
-    assert(size >= 0);
+    assert(size >= 0L);
 }
 
 template <typename T, typename T_C>
-inline void CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_32,
+inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t &size, T_C ** restrict compressed_fq_32,
                                size_t &compressedsize) const
 {
     if (isCompressible(size))
     {
         compressedsize = size;
-        T_C *fq_32 = NULL;
+        T_C * restrict fq_32 = NULL;
 
-        const int err1 = posix_memalign((void **)&fq_32, 16, size * sizeof(T_C));
-        const int err2 = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
+        const int err1 = posix_memalign((void **)&fq_32, ALIGNMENT, size * sizeof(T_C));
+        const int err2 = posix_memalign((void **)compressed_fq_32, ALIGNMENT, size * sizeof(T_C));
         if (err1 || err2) {
             throw "Memory error.";
         }
 
-        memcpy((T_C *)fq_32, (T *)fq_64, size * sizeof(T_C));
-        /*
-        for (int i = 0; i < size; ++i)
+        for (size_t i = 0L; i < size; ++i)
         {
             fq_32[i] = static_cast<T_C>(fq_64[i]);
         }
-        */
+        
         codec.encodeArray(fq_32, size, *compressed_fq_32, compressedsize);
 
         free(fq_32);
@@ -90,56 +90,49 @@ inline void CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
          * Buffer will not be compressed (Small size. Not worthed)
          */
 
-        const int err = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
+        const int err = posix_memalign((void **)compressed_fq_32, ALIGNMENT, size * sizeof(T_C));
         if (err) {
             throw "Memory error.";
         }
-
-        memcpy((T_C *)compressed_fq_32, (T *)fq_64, uncompressedsize * sizeof(T_C));
-        /*
-        for (int i = 0; i < size; ++i)
+        
+        for (size_t i = 0L; i < size; ++i)
         {
             (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]);
         }
-        */
+        
         compressedsize = size;
     }
 }
 
 template <typename T, typename T_C>
-inline void CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
-                                 /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
+inline void CpuSimd<T, T_C>::decompress(T_C * restrict compressed_fq_32, const int size,
+                                 /*Out*/ T ** restrict uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
    if (isCompressed(uncompressedsize, size))
     {
-        T_C *compressed_fq_32_tmp = NULL;
-        T_C *uncompressed_fq_32 = NULL;
+        T_C * restrict compressed_fq_32_tmp = NULL;
+        T_C * restrict uncompressed_fq_32 = NULL;
 
-        const int err1 = posix_memalign((void **)&compressed_fq_32_tmp, 16, size * sizeof(T_C));
-        const int err2 = posix_memalign((void **)&uncompressed_fq_32, 16, uncompressedsize * sizeof(T_C));
+        const int err1 = posix_memalign((void **)&compressed_fq_32_tmp, ALIGNMENT, size * sizeof(T_C));
+        const int err2 = posix_memalign((void **)&uncompressed_fq_32, ALIGNMENT, uncompressedsize * sizeof(T_C));
         if (err1 || err2)
         {
             throw "Memory error.";
         }
-
-        //(T_C *) malloc(size * sizeof(T_C));
-        // (T_C *) malloc(uncompressedsize * sizeof(T_C));
-        memcpy((T_C *)compressed_fq_32_tmp, (T_C *)compressed_fq_32, size * sizeof(T_C));
+        memcpy(compressed_fq_32_tmp, compressed_fq_32, size * sizeof(T_C));
 
         codec.decodeArray(compressed_fq_32_tmp, size, uncompressed_fq_32, uncompressedsize);
 
-        const int err3 = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
+        const int err3 = posix_memalign((void **)uncompressed_fq_64, ALIGNMENT, uncompressedsize * sizeof(T));
         if (err3)
         {
             throw "Memory error.";
         }
-
-        memcpy((T *)uncompressed_fq_64, (T_C *)uncompressed_fq_32, uncompressedsize * sizeof(T));
-        /*
-        for (int i = 0; i < uncompressedsize; ++i)
+        
+        for (size_t i = 0L; i < uncompressedsize; ++i)
         {
             (*uncompressed_fq_64)[i] = static_cast<T>(uncompressed_fq_32[i]);
-        }*/
+        }
 
         free(compressed_fq_32_tmp);
         free(uncompressed_fq_32);
@@ -147,17 +140,16 @@ inline void CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
     else
     {
         uncompressedsize = size;
-        const int err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
+        const int err = posix_memalign((void **)uncompressed_fq_64, ALIGNMENT, uncompressedsize * sizeof(T));
         if (err)
         {
             throw "Memory error.";
         }
 
-        memcpy((T *)uncompressed_fq_64, (T_C *)compressed_fq_32, uncompressedsize * sizeof(T));
-        /*for (int i = 0; i < uncompressedsize; ++i)
+        for (size_t i = 0L; i < uncompressedsize; ++i)
         {
            (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
-        }*/
+        }
     }
 }
 
