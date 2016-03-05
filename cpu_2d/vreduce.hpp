@@ -47,7 +47,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
              const Compression<T, T_C> &schema,
              MPI_Datatype typeC,
 #endif
-             T * restrict recv_buff, /* Out */
+             T * recv_buff, /* Out */
              int &rsize, /* Out */ // size of the final result
              int ssize,  // size of the slice
              MPI_Datatype type,
@@ -62,9 +62,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
-    T * restrict uncompressed_fq = NULL;
-    T_C * restrict compressed_fq = NULL;
-    T_C * restrict compressed_recv_buff = NULL;
+    T *uncompressed_fq = NULL;
+    T_C *compressed_fq = NULL;
+    T_C *compressed_recv_buff = NULL;
     int err, err1, err2;
 #endif
 
@@ -312,7 +312,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                              previousRank, it + 2,
                              comm, MPI_STATUS_IGNORE);
 
-                T_C * restrict temporal_recv_buff = NULL;
+                T_C *temporal_recv_buff = NULL;
                 err = posix_memalign((void **)&temporal_recv_buff, ALIGNMENT, upperId * sizeof(T_C));
                 if (err) {
                         throw "memory error.";
@@ -423,9 +423,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         throw "Memory error.";
     }
 
-    int lastReversedSliceIDs = 0;
-    int lastTargetNode = oldRank(lastReversedSliceIDs);
-    int reversedSliceIDs, targetNode;
+    unsigned int lastReversedSliceIDs = 0U;
+    unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
+    unsigned int reversedSliceIDs, targetNode;
     size_t csize = 0UL;
 
     schema.compress(send, psizeTo, &compressed_fq, compressedsize);
@@ -457,7 +457,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
     disps[lastTargetNode] = 0;
     compressed_disps[lastTargetNode] = 0;
-    for (int slice = 1; slice < power2intLdSize; ++slice)
+    for (unsigned int slice = 1U; slice < power2intLdSize; ++slice)
     {
         reversedSliceIDs = reverse(slice, intLdSize);
         targetNode = oldRank(reversedSliceIDs);
@@ -484,9 +484,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
 
-    int lastReversedSliceIDs = 0;
-    int lastTargetNode = oldRank(lastReversedSliceIDs);
-    int reversedSliceIDs, targetNode;
+    unsigned int lastReversedSliceIDs = 0U;
+    unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
+    unsigned int reversedSliceIDs, targetNode;
 
     int disps_lastTargetNode = 0;
     disps[lastTargetNode] = 0;

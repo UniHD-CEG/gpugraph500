@@ -416,17 +416,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         throw "Memory error.";
     }
 
-    const int maskLengthRes = psize % (1 << intLdSize);
-    int lastReversedSliceIDs = 0;
-    int lastTargetNode = oldRank(lastReversedSliceIDs);
+    const unsigned int maskLengthRes = psize % (1 << intLdSize);
+    unsigned int lastReversedSliceIDs = 0U;
+    unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
 
     sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
     disps[lastTargetNode] = 0;
 
-    for (int slice = 1; slice < power2intLdSize; ++slice)
+    for (unsigned int slice = 1U; slice < power2intLdSize; ++slice)
     {
-        const int reversedSliceIDs = reverse(slice, intLdSize);
-        const int targetNode = oldRank(reversedSliceIDs);
+        const unsigned int reversedSliceIDs = reverse(slice, intLdSize);
+        const unsigned int targetNode = oldRank(reversedSliceIDs);
         sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
                             mtypesize;
         disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
