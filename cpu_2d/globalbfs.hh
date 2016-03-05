@@ -473,14 +473,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
         #pragma omp for schedule (guided, OMP_CHUNK)
 #endif
 
-        for (long i = 0L; i < mask_size; ++i)
+        for (int64_t i = 0L; i < mask_size; ++i)
         {
             MType tmp = 0;
-            const long iindex = i * mtypesize;
-            const long mask_word_end = std::min(mtypesize, store_col_length - iindex);
-            for (long j = 0L; j < mask_word_end; ++j)
+            const int64_t iindex = i * mtypesize;
+            const int64_t mask_word_end = std::min(mtypesize, store_col_length - iindex);
+            for (int64_t j = 0L; j < mask_word_end; ++j)
             {
-                const long jindex = iindex + j;
+                const int64_t jindex = iindex + j;
                 if (predecessor[jindex] != -1)
                 {
                     tmp |= 1L << j;

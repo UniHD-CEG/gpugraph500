@@ -135,7 +135,7 @@ int DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::computeOwner(int64_t 
     int64_t rowSlice, columnSlice;
     int64_t r_residuum, c_residuum;
     int64_t rSliceSize, cSliceSize;
-    int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1 : 0);
+    int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0L) ? 1L : 0L);
 
     r_residuum = numAlg % R;
     rSliceSize = numAlg / R;
@@ -241,7 +241,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     int64_t buf;
     int64_t buf2[2];
     int64_t send_buf[2];
-    vertexType maxVertex = -1;
+    vertexType maxVertex = -1L;
     const int outstanding_sends = 40;
     int count_elementssend, freeRqBuf, flag;
     int gunfinished, someting_unfinshed;
@@ -258,24 +258,24 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     #endif
     */
     //get max vtx
-    for (vertexType i = 0; i < numberOfEdges; ++i)
+    for (vertexType i = 0L; i < numberOfEdges; ++i)
     {
         const packed_edge read = input[i];
         maxVertex = (maxVertex > read.v0) ? maxVertex : read.v0;
         maxVertex = (maxVertex > read.v1) ? maxVertex : read.v1;
     }
 
-    MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_LONG, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&maxVertex, &globalNumberOfVertex, 1, MPI_INT64_T, MPI_MAX, MPI_COMM_WORLD);
     // because start at 0
-    globalNumberOfVertex += 1;
+    globalNumberOfVertex += 1L;
     // row slice padding
     if (PAD)
     {
         globalNumberOfVertex +=
-            (globalNumberOfVertex % R > 0) ? R - globalNumberOfVertex % R : 0;
+            (globalNumberOfVertex % R > 0L) ? R - globalNumberOfVertex % R : 0L;
     }
 
-    numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1 : 0);
+    numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1L : 0L);
     row_start = (r * (numAlg / R) + ((r < numAlg % R) ? r : numAlg % R)) * ALG;
     row_length = (numAlg / R + ((r < numAlg % R) ? 1 : 0)) * ALG;
     column_start = (c * (numAlg / C) + ((c < numAlg % C) ? c : numAlg % C)) * ALG;
@@ -286,7 +286,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     MPI_Request iqueue[outstanding_sends];
 
     // row_elem is in the first part a counter of nz columns per row
-    for (vertexType i = 0; i < row_length; ++i)
+    for (vertexType i = 0L; i < row_length; ++i)
     {
         row_elem[i] = 0;
     }
@@ -317,10 +317,8 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
             // Send an element
             if (freeRqBuf > -1)
             {
-                //if(input[count_elementssend].v0 != input[count_elementssend].v1){
                 int64_t dest = computeOwner(input[count_elementssend].v0, input[count_elementssend].v1);
-                MPI_Issend(&(input[count_elementssend].v0), 1, MPI_LONG, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
-                //}
+                MPI_Issend(&(input[count_elementssend].v0), 1, MPI_INT64_T, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
                 ++count_elementssend;
             }
             else
@@ -342,7 +340,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
                 break;
             }
 
-            MPI_Recv(&buf, 1, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&buf, 1, MPI_INT64_T, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
             ++row_elem[buf - row_start];
         }
     }
@@ -369,11 +367,9 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
                 // Send an element
                 if (freeRqBuf > -1)
                 {
-                    //if(input[count_elementssend].v0 != input[count_elementssend].v1){
                     int64_t dest = computeOwner(input[count_elementssend].v1, input[count_elementssend].v0);
-                    MPI_Issend(&(input[count_elementssend].v1), 1, MPI_LONG, dest, 0, MPI_COMM_WORLD,
+                    MPI_Issend(&(input[count_elementssend].v1), 1, MPI_INT64_T, dest, 0, MPI_COMM_WORLD,
                                &(iqueue[freeRqBuf]));
-                    //}
                     ++count_elementssend;
                 }
                 else
@@ -394,7 +390,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
                     break;
                 }
 
-                MPI_Recv(&buf, 1, MPI_LONG, MPI_ANY_SOURCE, 0,
+                MPI_Recv(&buf, 1, MPI_INT64_T, MPI_ANY_SOURCE, 0,
                          MPI_COMM_WORLD, &status);
                 ++row_elem[buf - row_start];
             }
@@ -433,7 +429,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
                 break;
             }
 
-            MPI_Recv(&buf, 1, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(&buf, 1, MPI_INT64_T, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
             ++row_elem[buf - row_start];
         }
     };
@@ -483,7 +479,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
                 //if(send_buf[0]!=send_buf[1]){
                 dest = computeOwner(input[count_elementssend].v0, input[count_elementssend].v1);
 
-                MPI_Issend(send_buf, 2, MPI_LONG, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
+                MPI_Issend(send_buf, 2, MPI_INT64_T, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
                 //}
                 ++count_elementssend;
             }
@@ -506,7 +502,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
             }
 
 
-            MPI_Recv(buf2, 2, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(buf2, 2, MPI_INT64_T, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
             int rstart = buf2[0] - row_start;
             column_index[row_pointer[rstart] + row_elem[rstart]] = buf2[1];
             ++row_elem[rstart];
@@ -539,7 +535,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
                     send_buf[1] = input[count_elementssend].v0;
                     //if(send_buf[0]!=send_buf[1]){
                     int64_t dest = computeOwner(input[count_elementssend].v1, input[count_elementssend].v0);
-                    MPI_Issend(send_buf, 2, MPI_LONG, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
+                    MPI_Issend(send_buf, 2, MPI_INT64_T, dest, 0, MPI_COMM_WORLD, &(iqueue[freeRqBuf]));
                     //}
                     ++count_elementssend;
                 }
@@ -559,7 +555,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
                     break;
                 }
 
-                MPI_Recv(buf2, 2, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+                MPI_Recv(buf2, 2, MPI_INT64_T, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
                 int rstart = buf2[0] - row_start;
                 column_index[row_pointer[rstart] + row_elem[rstart]] = buf2[1];
                 ++row_elem[rstart];
@@ -598,7 +594,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
                 break;
             }
 
-            MPI_Recv(buf2, 2, MPI_LONG, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(buf2, 2, MPI_INT64_T, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
             int rstart = buf2[0] - row_start;
             column_index[row_pointer[rstart] + row_elem[rstart]] = buf2[1];
             ++row_elem[rstart];
@@ -641,7 +637,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
     #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
-    for (vertexType i = 0; i < row_length; ++i)
+    for (vertexType i = 0L; i < row_length; ++i)
     {
         rowtyp tmp_row_num = row_elem[i];
         //Search for duplicates in every row
@@ -1179,7 +1175,7 @@ DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getFoldProperties() const
     // compute the properties of global folding
     struct fold_prop newprop;
     std::vector<struct fold_prop> fold_fq_props;
-    int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1 : 0);
+    int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1L : 0L);
 
     // first fractions of first fq
     vertexType ua_col_size = numAlg / C; // non adjusted coumn size
@@ -1276,7 +1272,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getVertexDistributio
         int *owner_p,
         size_t *local_p) const
 {
-    int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1 : 0);
+    int64_t numAlg = globalNumberOfVertex / ALG + ((globalNumberOfVertex % ALG > 0) ? 1L : 0L);
     int64_t c_residuum = numAlg % C;
     int64_t c_SliceSize = numAlg / C;
     ptrdiff_t maxCount = (ptrdiff_t) count;

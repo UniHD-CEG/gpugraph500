@@ -6,6 +6,8 @@
 #include "cuda_support.hh" //for enactor_base.cuh
 #include "b40c/graph/bfs/csr_problem_2d.cuh"
 #include "b40c/graph/bfs/enactor_multi_gpu_2d.cuh"
+#include "../config.h"
+
 #else
 namespace b40c
 {
@@ -45,10 +47,9 @@ private:
     int64_t verbosity;
     double queue_sizing;
     uint64_t qb_length, rb_length;
-    vertexType *__restrict__ queuebuff;
-    vertexType *__restrict__ redbuff;
-    //Csr::VisitedMask** __restrict__ vmask;
-    MType *__restrict__ vmask;
+    vertexType * restrict queuebuff;
+    vertexType * restrict redbuff;
+    MType * restrict vmask;
     bool done;
     Csr *csr_problem;
 
