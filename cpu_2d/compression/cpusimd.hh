@@ -6,10 +6,6 @@
 #include "compression.hh"
 #include "codecfactory.h"
 #include <chrono>
-#include <iostream>
-#include <fstream>
-#include <sys/stat.h>
-#include <unistd.h>
 
 using namespace std::chrono;
 using namespace SIMDCompressionLib;
@@ -58,8 +54,8 @@ void CpuSimd<T, T_C>::reconfigure(int compressionThreshold, string compressionCo
 template <typename T, typename T_C>
 void CpuSimd<T, T_C>::debugCompression(T *fq, const size_t size) const
 {
-        assert(fq != NULL);
-        assert(size >= 0);
+    assert(fq != NULL);
+    assert(size >= 0);
 }
 
 template <typename T, typename T_C>
@@ -69,21 +65,21 @@ inline void CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
     if (isCompressible(size))
     {
         compressedsize = size;
-        int err1, err2;
-        T_C *fq_32;
+        T_C *fq_32 = NULL;
 
-        err1 = posix_memalign((void **)&fq_32, 16, size * sizeof(T_C));
-        err2 = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
+        const int err1 = posix_memalign((void **)&fq_32, 16, size * sizeof(T_C));
+        const int err2 = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
         if (err1 || err2) {
-          printf("Memory error.\n");
-          throw "Memory error.";
-      exit(1);
+            throw "Memory error.";
         }
 
+        memcpy((T_C *)fq_32, (T *)fq_64, size * sizeof(T_C));
+        /*
         for (int i = 0; i < size; ++i)
         {
             fq_32[i] = static_cast<T_C>(fq_64[i]);
         }
+        */
         codec.encodeArray(fq_32, size, *compressed_fq_32, compressedsize);
 
         free(fq_32);
@@ -94,17 +90,18 @@ inline void CpuSimd<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compre
          * Buffer will not be compressed (Small size. Not worthed)
          */
 
-    int err;
-    err = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
-    if (err) {
-        printf("Memory error.\n");
-        throw "Memory error.";
-        exit(1);
-    }
+        const int err = posix_memalign((void **)compressed_fq_32, 16, size * sizeof(T_C));
+        if (err) {
+            throw "Memory error.";
+        }
+
+        memcpy((T_C *)compressed_fq_32, (T *)fq_64, uncompressedsize * sizeof(T_C));
+        /*
         for (int i = 0; i < size; ++i)
         {
             (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]);
         }
+        */
         compressedsize = size;
     }
 }
@@ -113,46 +110,54 @@ template <typename T, typename T_C>
 inline void CpuSimd<T, T_C>::decompress(T_C *compressed_fq_32, const int size,
                                  /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
-    int err;
    if (isCompressed(uncompressedsize, size))
     {
-        T_C *compressed_fq_32b = (T_C *) malloc(size * sizeof(T_C));
-        memcpy(compressed_fq_32b, compressed_fq_32, size * sizeof(T_C));
-        T_C *uncompressed_fq_32 = (T_C *) malloc(uncompressedsize * sizeof(T_C));
+        T_C *compressed_fq_32_tmp = NULL;
+        T_C *uncompressed_fq_32 = NULL;
 
-        codec.decodeArray(compressed_fq_32b, size, uncompressed_fq_32, uncompressedsize);
-
-        err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
-        // *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
-        if (err)
+        const int err1 = posix_memalign((void **)&compressed_fq_32_tmp, 16, size * sizeof(T_C));
+        const int err2 = posix_memalign((void **)&uncompressed_fq_32, 16, uncompressedsize * sizeof(T_C));
+        if (err1 || err2)
         {
-            printf("\nERROR: Memory allocation error!");
             throw "Memory error.";
         }
 
+        //(T_C *) malloc(size * sizeof(T_C));
+        // (T_C *) malloc(uncompressedsize * sizeof(T_C));
+        memcpy((T_C *)compressed_fq_32_tmp, (T_C *)compressed_fq_32, size * sizeof(T_C));
+
+        codec.decodeArray(compressed_fq_32_tmp, size, uncompressed_fq_32, uncompressedsize);
+
+        const int err3 = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
+        if (err3)
+        {
+            throw "Memory error.";
+        }
+
+        memcpy((T *)uncompressed_fq_64, (T_C *)uncompressed_fq_32, uncompressedsize * sizeof(T));
+        /*
         for (int i = 0; i < uncompressedsize; ++i)
         {
             (*uncompressed_fq_64)[i] = static_cast<T>(uncompressed_fq_32[i]);
-        }
+        }*/
 
+        free(compressed_fq_32_tmp);
         free(uncompressed_fq_32);
     }
     else
     {
         uncompressedsize = size;
-        err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
-        // *uncompressed_fq_64 = (T *)malloc(uncompressedsize * sizeof(T));
+        const int err = posix_memalign((void **)uncompressed_fq_64, 16, uncompressedsize * sizeof(T));
         if (err)
         {
-            printf("\nERROR: Memory allocation error!");
             throw "Memory error.";
         }
 
-
-        for (int i = 0; i < uncompressedsize; ++i)
+        memcpy((T *)uncompressed_fq_64, (T_C *)compressed_fq_32, uncompressedsize * sizeof(T));
+        /*for (int i = 0; i < uncompressedsize; ++i)
         {
            (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
-        }
+        }*/
     }
 }
 
@@ -177,7 +182,6 @@ inline string CpuSimd<T, T_C>::name() const
 {
     return "cpusimd";
 }
-
 
 #endif // _SIMD
 #endif // BFS_MULTINODE_CPUSIMD_COMPRESSION_H

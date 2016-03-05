@@ -154,7 +154,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
         for (int it = 0; it < intLdSize; ++it)
         {
-            lowerId = currentSliceSize / 2;
+            lowerId = currentSliceSize >> 1;
             upperId = currentSliceSize - lowerId;
 
             if (((vrank >> it) & 1) == 0)   // even
@@ -300,6 +300,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                              &originalsize, 1, MPI_INT,
                              previousRank, it + 2,
                              comm, MPI_STATUS_IGNORE);
+
             T_C *temporal_recv_buff = NULL;
             err = posix_memalign((void **)&temporal_recv_buff, 16, upperId * sizeof(T_C));
             if (err) {
@@ -339,20 +340,20 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONVERIFY)
-                    assert(uncompressedsize == originalsize);
-                    assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
+                assert(uncompressedsize == originalsize);
+                assert(is_sorted(uncompressed_fq, uncompressed_fq + originalsize));
 #endif
 
 
 #ifdef _COMPRESSION
-                    reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
+                reduce(offset + lowerId, upperId, uncompressed_fq, uncompressedsize);
 #else
-                    reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
+                reduce(offset + lowerId, upperId, recv_buff, psizeFrom);
 #endif
 
 #ifdef _COMPRESSION
-                    free(uncompressed_fq);
-                    free(temporal_recv_buff);
+                free(uncompressed_fq);
+                free(temporal_recv_buff);
 #endif
 
 #ifdef INSTRUMENTED

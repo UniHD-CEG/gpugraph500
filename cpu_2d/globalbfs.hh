@@ -271,7 +271,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
             if (((vrank >> it) & 1) == 0)  // even
             {
-
                 //Transmission of the the bitmap
                 MPI_Sendrecv(owenmap + offset, ssize, bm_type, orankEven, iterator2,
                              tmpmap + offset, ssize, bm_type, orankEven, iterator2,
@@ -381,8 +380,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     // Computation of displacements
     // It is based on the slice selection in the iterative part above.
     // It tries to do it iterative insted of recursive.
-    //vector<int> sizes(communicatorSize);
-    //vector<int> disps(communicatorSize);
     int *sizes = (int *)malloc(communicatorSize * sizeof(int));
     int *disps = (int *)malloc(communicatorSize * sizeof(int));
 
@@ -668,13 +665,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 , lqueue
 #endif
                );
-/*
-#ifdef _COMPRESSION
-        mm = 0xffffff;
-        str = "frameofreference";
-        schema.reconfigure(mm, str);
-#endif
-*/
+
         static_cast<Derived *>(this)->setModOutgoingFQ(fq_64, _outsize);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
@@ -742,11 +733,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 vectorizedsize[1] = compressedsize;
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
 #if defined(_COMPRESSIONVERIFY)
-		bool isCompressed = schema.isCompressed(originalsize, compressedsize);
-		if (isCompressed)
-		{
+        bool isCompressed = schema.isCompressed(originalsize, compressedsize);
+        if (isCompressed)
+        {
                 MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
-		}
+        }
 #endif
 
                 MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
@@ -767,9 +758,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #if defined(_COMPRESSIONVERIFY)
                 if (communicatorRank != root_rank)
                 {
-                        assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
-                    	assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
-                    	schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
+                    assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
+                    assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
+                    schema.verifyCompression(startaddr, uncompressed_fq, originalsize);
                 }
                 else
                 {
@@ -787,13 +778,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
                 if (communicatorRank != root_rank)
-        		{
-        			static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq, originalsize);
-        		}
-        		else
-        		{
-        			static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
-        		}
+                {
+                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq, originalsize);
+                }
+                else
+                {
+                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
+                }
 #else
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #endif
@@ -825,21 +816,21 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
                 originalsize = vectorizedsize[0];
                 compressedsize = vectorizedsize[1];
-       	        compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
+                compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
 
 
 #if defined(_COMPRESSIONVERIFY)
-		bool isCompressed = schema.isCompressed(originalsize, compressedsize);
+        bool isCompressed = schema.isCompressed(originalsize, compressedsize);
                 FQ_T *startaddr = NULL;
                 if (isCompressed)
                 {
-                	startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
-                	if (startaddr == NULL)
-                	{
-                    		printf("\nERROR: Memory allocation error!");
-                    		abort();
-                	}
-                	MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+                    startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
+                    if (startaddr == NULL)
+                    {
+                            printf("\nERROR: Memory allocation error!");
+                            abort();
+                    }
+                    MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
                 }
 #endif
                 // Please Note: fq_64 buffer has been alloceted in the children class.
