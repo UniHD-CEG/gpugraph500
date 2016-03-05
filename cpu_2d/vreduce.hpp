@@ -26,6 +26,17 @@
 using std::function;
 using std::is_sorted;
 
+#if defined(__AVX__)
+#define ALIGNMENT 32UL
+std::cout << "----> 32!!" << std::endl;
+#elif defined(__SSE__)
+#define ALIGNMENT 16UL
+std::cout << "----> 16!!" << std::endl;
+#else
+#define ALIGNMENT 16UL
+std::cout << "----> 16e!!" << std::endl;
+#endif
+
 #ifdef _COMPRESSION
 template <typename T, typename T_C>
 #else
@@ -392,12 +403,24 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     }
 
     // Transmission of the final results
-    int *sizes = (int *)malloc(communicatorSize * sizeof(int));
-    int *disps = (int *)malloc(communicatorSize * sizeof(int));
+    // int *sizes = (int *)malloc(communicatorSize * sizeof(int));
+    // int *disps = (int *)malloc(communicatorSize * sizeof(int));
+
+    err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int));
+    err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int));
+    if (err1 || err2) {
+        throw "Memory error.";
+    }
 
 #ifdef _COMPRESSION
-    int *compressed_sizes = (int *)malloc(communicatorSize * sizeof(int));
-    int *compressed_disps = (int *)malloc(communicatorSize * sizeof(int));
+    // int *compressed_sizes = (int *)malloc(communicatorSize * sizeof(int));
+    // int *compressed_disps = (int *)malloc(communicatorSize * sizeof(int));
+    err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, communicatorSize * sizeof(int));
+    err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, communicatorSize * sizeof(int));
+    if (err1 || err2) {
+        throw "Memory error.";
+    }
+
 
     unsigned int lastReversedSliceIDs = 0;
     unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -406,8 +429,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
     schema.compress(send, psizeTo, &compressed_fq, compressedsize);
 
-    int *composed_recv = (int *)malloc(2 * communicatorSize * sizeof(int));
-    int *composed_send = (int *)malloc(2 * sizeof(int));
+    err1 = posix_memalign((void **)&composed_recv, ALIGNMENT, 2* communicatorSize * sizeof(int));
+    err2 = posix_memalign((void **)&composed_send, ALIGNMENT, 2 * sizeof(int));
+
+    // int *composed_recv = (int *)malloc(2 * communicatorSize * sizeof(int));
+    // int *composed_send = (int *)malloc(2 * sizeof(int));
 
     composed_send[0] = psizeTo;
     composed_send[1] = compressedsize;
@@ -415,7 +441,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     MPI_Allgather(composed_send, 1, MPI_2INT, composed_recv, 1, MPI_2INT, comm);
 
     const int totalsize = 2 * communicatorSize;
-
     for (int i = 0, j = 0; i < totalsize; ++i)
     {
         if (i % 2 == 0)
@@ -439,17 +464,20 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
         lastTargetNode = targetNode;
     }
-    int index;
-    for (unsigned int node = 0; node < residuum; ++node)
+
+    for (int node = 0; node < residuum; ++node)
     {
-        index = 2 * node + 1;
+        const int index = 2 * node + 1;
         disps[index] = 0;
         compressed_disps[index] = 0;
     }
     csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
-    err = posix_memalign((void **)&compressed_recv_buff, 16, csize * sizeof(T_C));
+    err = posix_memalign((void **)&compressed_recv_buff, ALIGNMENT, csize * sizeof(T_C));
+    if (err) {
+        throw "Memory error.";
+    }
 
 #else
     // Transmission of the subslice sizes
@@ -479,7 +507,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-
 
     MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
                    typeC, compressed_recv_buff, compressed_sizes,

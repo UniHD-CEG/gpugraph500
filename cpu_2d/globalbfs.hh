@@ -28,6 +28,13 @@ using namespace std::chrono;
 #include "compression/types_compression.h"
 #endif
 
+#if defined(__AVX__)
+#define ALIGNMENT 32UL
+#elif defined(__SSE__)
+#define ALIGNMENT 16UL
+#else
+#define ALIGNMENT 16UL
+#endif
 
 using std::function;
 using std::min;
@@ -48,6 +55,7 @@ class GlobalBFS
 {
 private:
     MPI_Comm row_comm, col_comm;
+    int err;
     // sending node column slice, startvtx, size
     vector <typename STORE::fold_prop> fold_fq_props;
     void allReduceBitCompressed(typename STORE::vertexType *&owen, typename STORE::vertexType *&tmp,
@@ -186,10 +194,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     const int intLdSize = ilogb(static_cast<double>(communicatorSize)); //integer log_2 of size
     const int power2intLdSize = 1 << intLdSize; // 2^n
     const int residuum = communicatorSize - power2intLdSize;
+    const int twoTimesResiduum = residuum << 1;
 
 
     //step 2
-    if (communicatorRank < 2 * residuum)
+    if (communicatorRank < twoTimesResiduum)
     {
         if ((communicatorRank & 1) == 0)   // even
         {
@@ -221,6 +230,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         {
             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank - 1, 0, tmpmap, psize, bm_type, communicatorRank - 1, 0,
                          col_comm, &status);
+
             for (int i = 0; i < psize; ++i)
             {
                 tmpmap[i] = ~tmpmap[i] & owenmap[i];
@@ -241,16 +251,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             MPI_Send(tmp, p, fq_tp_type, communicatorRank - 1, 1, col_comm);
         }
     }
+
     const function <int(int)> newRank = [&residuum](int oldr)
     {
-        return (oldr < 2 * residuum) ? oldr / 2 : oldr - residuum;
-    };
-    const function <int(int)> oldRank = [&residuum](int newr)
-    {
-        return (newr < residuum) ? newr * 2 : newr + residuum;
+        return (oldr < residuum << 1) ? oldr >> 1 : oldr - residuum;
     };
 
-    if ((((communicatorRank & 1) == 0) && (communicatorRank < 2 * residuum)) || (communicatorRank >= 2 * residuum))
+    const function <int(int)> oldRank = [&residuum](int newr)
+    {
+        return (newr < residuum) ? newr << 1 : newr + residuum;
+    };
+
+    if ((((communicatorRank & 1) == 0) && (communicatorRank < twoTimesResiduum)) || (communicatorRank >= twoTimesResiduum))
     {
         int ssize, offset, size, index;
 
@@ -266,8 +278,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             size = lowers * mtypesize;
             orankEven = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
             orankOdd = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
-            iterator2 = (it << 1) + 2;
-            iterator3 = (it << 1) + 3;
+             const twoTimesIterator = it << 1;
+            iterator2 = twoTimesIterator + 2;
+            iterator3 = twoTimesIterator + 3;
 
             if (((vrank >> it) & 1) == 0)  // even
             {
@@ -278,19 +291,22 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
                 for (int i = 0; i < lowers; ++i)
                 {
-                    tmpmap[i + offset] &= ~owenmap[i + offset];
-                    owenmap[i + offset] |= tmpmap[i + offset];
+                    const int iOffset = i + offset;
+                    tmpmap[iOffset] &= ~owenmap[iOffset];
+                    owenmap[iOffset] |= tmpmap[iOffset];
                 }
                 for (int i = lowers; i < ssize; ++i)
                 {
-                    tmpmap[i + offset] = (~tmpmap[i + offset]) & owenmap[i + offset];
+                    const int iOffset = i + offset;
+                    tmpmap[iOffset] = (~tmpmap[iOffset]) & owenmap[iOffset];
                 }
                 //Generation of foreign updates
                 int p = 0;
                 for (int i = 0; i < uppers; ++i)
                 {
-                    MType tmpm = tmpmap[i + offset + lowers];
-                    index = (i + offset + lowers) * mtypesize;
+                    const int iOffset = i + offset;
+                    MType tmpm = tmpmap[iOffset + lowers];
+                    index = (iOffset + lowers) * mtypesize;
                     while (tmpm != 0)
                     {
                         int last = ffsl(tmpm) - 1;
@@ -309,8 +325,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 p = 0;
                 for (int i = 0; i < lowers; ++i)
                 {
-                    MType tmpm = tmpmap[offset + i];
-                    index = (i + offset) * mtypesize;
+                    const int iOffset = i + offset;
+                    MType tmpm = tmpmap[iOffset];
+                    index = iOffset * mtypesize;
                     while (tmpm != 0)
                     {
                         int last = ffsl(tmpm) - 1;
@@ -329,24 +346,29 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                              tmpmap + offset, ssize, bm_type,
                              orankOdd, iterator2,
                              col_comm, &status);
+
                 for (int i = 0; i < lowers; ++i)
                 {
-                    tmpmap[i + offset] = (~tmpmap[i + offset]) & owenmap[i + offset];
+                    const int iOffset = i + offset;
+                    tmpmap[iOffset] = (~tmpmap[iOffset]) & owenmap[iOffset];
                 }
                 for (int i = lowers; i < ssize; ++i)
                 {
-                    tmpmap[i + offset] &= ~owenmap[i + offset];
-                    owenmap[i + offset] |= tmpmap[i + offset];
+                    const int iOffset = i + offset;
+                    tmpmap[iOffset] &= ~owenmap[iOffset];
+                    owenmap[iOffset] |= tmpmap[iOffset];
                 }
                 //Generation of foreign updates
                 int p = 0;
                 for (int i = 0; i < lowers; ++i)
                 {
-                    MType tmpm = tmpmap[i + offset];
+                    const int iOffset = i + offset;
+                    MType tmpm = tmpmap[iOffset];
                     while (tmpm != 0)
                     {
                         const int last = ffsl(tmpm) - 1;
-                        tmp[p] = owen[(i + offset) * mtypesize + last];
+                        const int index = iOffset * mtypesize + last;
+                        tmp[p] = owen[index];
                         ++p;
                         tmpm ^= (1 << last);
                     }
@@ -380,8 +402,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     // Computation of displacements
     // It is based on the slice selection in the iterative part above.
     // It tries to do it iterative insted of recursive.
-    int *sizes = (int *)malloc(communicatorSize * sizeof(int));
-    int *disps = (int *)malloc(communicatorSize * sizeof(int));
+
+    //int *sizes = (int *)malloc(communicatorSize * sizeof(int));
+    //int *disps = (int *)malloc(communicatorSize * sizeof(int));
+    const int err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int));
+    const int err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int));
+    if (err1 || err2) {
+        throw "Memory error.";
+    }
 
     const unsigned int maskLengthRes = psize % (1 << intLdSize);
     unsigned int lastReversedSliceIDs = 0;
@@ -403,10 +431,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                                      static_cast<int>(store.getLocColLength() - disps[lastTargetNode]));
 
     //nodes without a partial resulty
-    int index;
-    for (unsigned int node = 0; node < residuum; ++node)
+    for (int node = 0; node < residuum; ++node)
     {
-        index = 2 * node + 1;
+        const int index = 2 * node + 1;
         sizes[index] = 0;
         disps[index] = 0;
     }
@@ -728,7 +755,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
 #ifdef _COMPRESSION
-                int *vectorizedsize = (int *)malloc(2 * sizeof(int));
+
+                //int *vectorizedsize = (int *)malloc(2 * sizeof(int));
+                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
+                if (err) {
+                    throw "Memory error.";
+                }
+
                 vectorizedsize[0] = originalsize;
                 vectorizedsize[1] = compressedsize;
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
@@ -811,25 +844,32 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 compressionType *compressed_fq = NULL;
                 FQ_T *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
-                int *vectorizedsize = (int *)malloc(2 * sizeof(int));
+                // int *vectorizedsize = (int *)malloc(2 * sizeof(int));
+                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
+                if (err) {
+                    throw "Memory error.";
+                }
 
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
                 originalsize = vectorizedsize[0];
                 compressedsize = vectorizedsize[1];
-                compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
-
+                // compressed_fq = (compressionType *)malloc(compressedsize * sizeof(compressionType));
+                err = posix_memalign((void **)&compressed_fq, ALIGNMENT, compressedsize * sizeof(compressionType));
+                if (err) {
+                    throw "Memory error.";
+                }
 
 #if defined(_COMPRESSIONVERIFY)
         bool isCompressed = schema.isCompressed(originalsize, compressedsize);
                 FQ_T *startaddr = NULL;
                 if (isCompressed)
                 {
-                    startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
-                    if (startaddr == NULL)
-                    {
-                            printf("\nERROR: Memory allocation error!");
-                            abort();
+                    //startaddr = (FQ_T *)malloc(originalsize * sizeof(FQ_T));
+                    err = posix_memalign((void **)&startaddr, ALIGNMENT, originalsize * sizeof(FQ_T));
+                    if (err) {
+                        throw "Memory error.";
                     }
+
                     MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
                 }
 #endif

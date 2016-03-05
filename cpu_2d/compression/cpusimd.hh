@@ -7,7 +7,13 @@
 #include "codecfactory.h"
 #include <chrono>
 
-#define ALIGNMENT 32L
+#if defined(__AVX__)
+#define ALIGNMENT 32UL
+#elif defined(__SSE__)
+#define ALIGNMENT 16UL
+#else
+#define ALIGNMENT 16UL
+#endif
 
 using namespace std::chrono;
 using namespace SIMDCompressionLib;
@@ -19,10 +25,10 @@ template <typename T, typename T_C>
 class CpuSimd: public Compression<T, T_C>
 {
 private:
-    int SIMDCOMPRESSION_THRESHOLD;
+    size_t SIMDCOMPRESSION_THRESHOLD;
     string codecName;
     IntegerCODEC &codec = *CODECFactory::getFromName("s4-bp128-dm");
-    inline bool isCompressible(int size) const { return (size > SIMDCOMPRESSION_THRESHOLD); };
+    inline bool isCompressible(size_t size) const { return (size > SIMDCOMPRESSION_THRESHOLD); };
 public:
     CpuSimd();
     void debugCompression(T *fq, const size_t size) const;
@@ -38,7 +44,7 @@ public:
 template <typename T, typename T_C>
 CpuSimd<T, T_C>::CpuSimd()
 {
-    SIMDCOMPRESSION_THRESHOLD = 64;
+    SIMDCOMPRESSION_THRESHOLD = 64UL;
     codecName = "s4-bp128-dm";
     codec = *CODECFactory::getFromName(codecName);
 }
@@ -50,14 +56,14 @@ void CpuSimd<T, T_C>::reconfigure(int compressionThreshold, string compressionCo
     assert(compressionCodec.length() > 0);
     codecName = compressionCodec;
     codec = *CODECFactory::getFromName(codecName);
-    SIMDCOMPRESSION_THRESHOLD = static_cast<int>(compressionThreshold);
+    SIMDCOMPRESSION_THRESHOLD = static_cast<size_t>(compressionThreshold);
 }
 
 template <typename T, typename T_C>
 void CpuSimd<T, T_C>::debugCompression(T *fq, const size_t size) const
 {
     assert(fq != NULL);
-    assert(size >= 0L);
+    assert(size >= 0UL);
 }
 
 template <typename T, typename T_C>
@@ -75,11 +81,11 @@ inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t &size, T_
             throw "Memory error.";
         }
 
-        for (size_t i = 0L; i < size; ++i)
+        for (size_t i = 0UL; i < size; ++i)
         {
             fq_32[i] = static_cast<T_C>(fq_64[i]);
         }
-        
+
         codec.encodeArray(fq_32, size, *compressed_fq_32, compressedsize);
 
         free(fq_32);
@@ -94,12 +100,12 @@ inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t &size, T_
         if (err) {
             throw "Memory error.";
         }
-        
-        for (size_t i = 0L; i < size; ++i)
+
+        for (size_t i = 0UL; i < size; ++i)
         {
             (*compressed_fq_32)[i] = static_cast<T_C>(fq_64[i]);
         }
-        
+
         compressedsize = size;
     }
 }
@@ -128,8 +134,8 @@ inline void CpuSimd<T, T_C>::decompress(T_C * restrict compressed_fq_32, const i
         {
             throw "Memory error.";
         }
-        
-        for (size_t i = 0L; i < uncompressedsize; ++i)
+
+        for (size_t i = 0UL; i < uncompressedsize; ++i)
         {
             (*uncompressed_fq_64)[i] = static_cast<T>(uncompressed_fq_32[i]);
         }
@@ -146,7 +152,7 @@ inline void CpuSimd<T, T_C>::decompress(T_C * restrict compressed_fq_32, const i
             throw "Memory error.";
         }
 
-        for (size_t i = 0L; i < uncompressedsize; ++i)
+        for (size_t i = 0UL; i < uncompressedsize; ++i)
         {
            (*uncompressed_fq_64)[i] = static_cast<T>(compressed_fq_32[i]);
         }
