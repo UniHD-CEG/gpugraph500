@@ -619,10 +619,12 @@ public:
 
 
         // Number of partitioning bins per GPU (in case we over-partition)
+        /*
         int bins_per_gpu = (csr_problem.num_gpus == 1) ?
             PartitionPolicy::Upsweep::BINS :
             1;
-        // if(this->DEBUG) printf("Partition bins per GPU: %d\n", bins_per_gpu);
+        if(this->DEBUG) printf("Partition bins per GPU: %d\n", bins_per_gpu);
+        */
 
         // Search setup / lazy initialization
         if (retval = Setup<ContractPolicy, ExpandPolicy, PartitionPolicy, CopyPolicy>(
