@@ -14,7 +14,7 @@ echo "---------------------------------------------------------------"
 echo "-- $string"
 echo "---------------------------------------------------------------"
 echo "Configuring && making ..."
-./configure --enable-aggressive-optimizations --enable-cuda-math-optimizations --enable-ptxa-optimizations --enable-general-openmp && make
+./configure --enable-aggressive-optimizations --enable-cuda-math-optimizations --enable-ptxa-optimizations --enable-openmp && make
 echo "Updating directory ..."
 ls -r >/dev/null ; ls -r > /dev/null
 echo "Running [#1] ..."
@@ -28,7 +28,7 @@ echo "---------------------------------------------------------------"
 echo "-- $string"
 echo "---------------------------------------------------------------"
 echo "Configuring && making ..."
-./configure --enable-aggressive-optimizations --enable-cuda-math-optimizations --enable-ptxa-optimizations --disable-general-openmp && make
+./configure --enable-aggressive-optimizations --enable-cuda-math-optimizations --enable-ptxa-optimizations --disable-openmp && make
 echo "Updating directory ..."
 ls -r >/dev/null ; ls -r > /dev/null
 echo "Running [#1] ..."
@@ -41,7 +41,7 @@ echo "---------------------------------------------------------------"
 echo "-- $string"
 echo "---------------------------------------------------------------"
 echo "Configuring && making ..."
-./configure --disable-aggressive-optimizations --disable-cuda-math-optimizations --disable-ptxa-optimizations --enable-general-openmp && make
+./configure --disable-aggressive-optimizations --disable-cuda-math-optimizations --disable-ptxa-optimizations --enable-openmp && make
 echo "Updating directory ..."
 ls -r >/dev/null ; ls -r > /dev/null
 echo "Running [#1] ..."
@@ -55,7 +55,7 @@ echo "---------------------------------------------------------------"
 echo "-- $string"
 echo "---------------------------------------------------------------"
 echo "Configuring && making ..."
-./configure --disable-aggressive-optimizations --disable-cuda-math-optimizations --disable-ptxa-optimizations --disable-general-openmp && make
+./configure --disable-aggressive-optimizations --disable-cuda-math-optimizations --disable-ptxa-optimizations --disable-openmp && make
 echo "Updating directory ..."
 ls -r >/dev/null ; ls -r > /dev/null
 echo "Running [#1] ..."
@@ -69,7 +69,7 @@ echo "---------------------------------------------------------------"
 echo "-- $string"
 echo "---------------------------------------------------------------"
 echo "Configuring && making ..."
-./configure --enable-aggressive-optimizations --enable-cuda-math-optimizations --enable-ptxa-optimizations --enable-general-openmp --disable-compression && make
+./configure --enable-aggressive-optimizations --enable-cuda-math-optimizations --enable-ptxa-optimizations --enable-openmp --disable-compression && make
 echo "Updating directory ..."
 ls -r >/dev/null ; ls -r > /dev/null
 echo "Running [#1] ..."
@@ -82,7 +82,7 @@ echo "---------------------------------------------------------------"
 echo "-- $string"
 echo "---------------------------------------------------------------"
 echo "Configuring && making ..."
-./configure --enable-aggressive-optimizations --enable-cuda-math-optimizations --enable-ptxa-optimizations --disable-general-openmp --disable-compression && make
+./configure --enable-aggressive-optimizations --enable-cuda-math-optimizations --enable-ptxa-optimizations --disable-openmp --disable-compression && make
 echo "Updating directory ..."
 ls -r >/dev/null ; ls -r > /dev/null
 echo "Running [#1] ..."
@@ -95,7 +95,7 @@ echo "---------------------------------------------------------------"
 echo "-- $string"
 echo "---------------------------------------------------------------"
 echo "Configuring && making ..."
-./configure --disable-aggressive-optimizations --disable-cuda-math-optimizations --disable-ptxa-optimizations --enable-general-openmp --disable-compression && make
+./configure --disable-aggressive-optimizations --disable-cuda-math-optimizations --disable-ptxa-optimizations --enable-openmp --disable-compression && make
 echo "Updating directory ..."
 ls -r >/dev/null ; ls -r > /dev/null
 echo "Running [#1] ..."
@@ -108,7 +108,7 @@ echo "---------------------------------------------------------------"
 echo "-- $string"
 echo "---------------------------------------------------------------"
 echo "Configuring && making ..."
-./configure --disable-aggressive-optimizations --disable-cuda-math-optimizations --disable-ptxa-optimizations --disable-general-openmp --disable-compression && make
+./configure --disable-aggressive-optimizations --disable-cuda-math-optimizations --disable-ptxa-optimizations --disable-openmp --disable-compression && make
 echo "Updating directory ..."
 ls -r >/dev/null ; ls -r > /dev/null
 echo "Running [#1] ..."

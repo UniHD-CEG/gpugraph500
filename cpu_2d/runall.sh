@@ -22,7 +22,7 @@ cluster=`hostname`
 str="$1"
 hostfile=$2
 maxsf=$3
-numNodes="2"
+numNodes="4 2 1"
 sfs=`seq 16 ${maxsf}`
 
 for c in `echo $numNodes`; do

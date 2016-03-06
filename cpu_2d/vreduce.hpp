@@ -65,10 +65,12 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     T *uncompressed_fq = NULL;
     T_C *compressed_fq = NULL;
     T_C *compressed_recv_buff = NULL;
-    int err, err1, err2;
+    int err;
 #endif
 
-    //time mesurement
+    int err1, err2;
+
+//time mesurement
 #ifdef INSTRUMENTED
     double startTimeQueueProcessing;
     double endTimeQueueProcessing;
@@ -506,7 +508,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     //nodes without a partial result
     for (int node = 0; node < residuum; ++node)
     {
-        const index = 2 * node + 1;
+        const int index = 2 * node + 1;
         disps[index] = 0;
     }
     rsize = disps_lastTargetNode + sizes[lastTargetNode];
