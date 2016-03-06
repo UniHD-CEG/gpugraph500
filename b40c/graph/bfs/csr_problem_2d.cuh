@@ -273,7 +273,7 @@ struct CsrProblem
 
         } else {
             // Copy out
-#ifdef _CUDA_OPENMP
+#ifdef _DISABLED_OPENMP
      #pragma omp parallel for
 #endif
             for (int gpu = 0; gpu < num_gpus; ++gpu) {
@@ -453,7 +453,7 @@ struct CsrProblem
                 */
 
                 // Construct data structures for gpus on host
-#ifdef _CUDA_OPENMP
+#ifdef _DISABLED_OPENMP
     #pragma omp parallel for
 #endif
 

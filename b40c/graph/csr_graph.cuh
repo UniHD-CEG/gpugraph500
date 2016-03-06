@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright (c) 2010-2011, Duane Merrill.  All rights reserved.
  * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the NVIDIA CORPORATION nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -52,11 +52,11 @@ struct CsrGraph
 {
 	SizeT nodes;
 	SizeT edges;
-	
+
 	SizeT 		*row_offsets;
 	VertexId	*column_indices;
 	Value		*values;
-	
+
 	bool 		pinned;
 
 	/**
@@ -118,23 +118,27 @@ struct CsrGraph
 		fflush(stdout);
 
 		FromScratch<LOAD_VALUES>(coo_nodes, coo_edges);
-		
+
 		// Sort COO by row
 		if (!ordered_rows) {
-			std::stable_sort(coo, coo + coo_edges, DimacsTupleCompare<Tuple>);
+#ifdef _OPENMP
+        	__gnu_parallel::stable_sort(coo, coo + coo_edges, DimacsTupleCompare<Tuple>);
+#else
+        	std::stable_sort(coo, coo + coo_edges, DimacsTupleCompare<Tuple>);
+#endif
 		}
 
 		VertexId prev_row = -1;
 		for (SizeT edge = 0; edge < edges; edge++) {
-			
+
 			VertexId current_row = coo[edge].row;
-			
+
 			// Fill in rows up to and including the current row
 			for (VertexId row = prev_row + 1; row <= current_row; row++) {
 				row_offsets[row] = edge;
 			}
 			prev_row = current_row;
-			
+
 			column_indices[edge] = coo[edge].col;
 			if (LOAD_VALUES) {
 				coo[edge].Val(values[edge]);
@@ -234,7 +238,7 @@ struct CsrGraph
 		nodes = 0;
 		edges = 0;
 	}
-	
+
 	/**
 	 * Destructor
 	 */

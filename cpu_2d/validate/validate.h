@@ -41,7 +41,7 @@ static inline ptrdiff_t ptrdiff_min(ptrdiff_t a, ptrdiff_t b)
 /* It seams as there is a limit of the number of MPI_Get in an epoche in OpenMPI.
  * An incresed Chunksize can in this way problematic. */
 #define CHUNKSIZE (1U << 20U)
-#define HALF_CHUNKSIZE ((CHUNKSIZE) / 2U)
+#define HALF_CHUNKSIZE ((CHUNKSIZE) >> 1) // div 2
 
 
 /* This code assumes signed shifts are arithmetic, which they are on
@@ -83,7 +83,7 @@ static int check_value_ranges(const MatrixT &store, const int64_t nglobalverts,
             // assert(i_start >= 0 && i_start <= (ptrdiff_t)store.getLocColLength());
             // assert(i_end >= 0 && i_end <= (ptrdiff_t)store.getLocColLength());
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
             #pragma omp parallel for reduction(||:any_range_errors) schedule(guided, OMP_CHUNK)
 #endif
 
@@ -126,7 +126,7 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
     {
         const ptrdiff_t n_localverts = (ptrdiff_t)nlocalverts;
 
-// #ifdef _OPENMP
+// #ifdef _DISABLED_OPENMP
 //         #pragma omp parallel for schedule(guided, 4)
 // #endif
         for (ptrdiff_t i = 0; i < n_localverts; ++i)
@@ -170,7 +170,7 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
                 // commented out jr 2015
                 // assert(i_start >= 0 && i_start <= (ptrdiff_t)nlocalverts);
                 // assert(i_end >= 0 && i_end <= (ptrdiff_t)nlocalverts);
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
                 #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
                 for (ptrdiff_t i = i_start; i < i_end; ++i)
@@ -180,7 +180,7 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
 
                 store.getVertexDistributionForPred(i_end - i_start, pred_vtx, pred_owner, pred_local);
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
                 #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
@@ -197,7 +197,7 @@ static int build_bfs_depth_map(const MatrixT &store, const int64_t nglobalverts,
                 }
                 end_gather(pred_win);
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
                 #pragma omp parallel for reduction(&&:validation_passed) reduction(||:any_changes) schedule(guided, OMP_CHUNK)
 #endif
 
@@ -310,7 +310,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
             // assert(i_start >= 0 && i_start <= (ptrdiff_t)maxlocalverts_ui);
             // assert(i_end >= 0 && i_end <= (ptrdiff_t)maxlocalverts_ui);
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
             #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
@@ -320,7 +320,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
             }
             store.getVertexDistributionForPred(i_end - i_start, pred_vtx, pred_owner, pred_local);
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
             #pragma omp parallel for reduction(&&:validation_passed) schedule(guided, OMP_CHUNK)
 #endif
             for (ptrdiff_t i = i_start; i < i_end; ++i)
@@ -370,7 +370,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
         * predecessor.  Also, count visited edges (including duplicates and
         * self-loops).  */
 
-        size_t pred_visited_size = (size_t)(store.getLocColLength() / 64) + (((maxlocalverts_ui & 63) > 0) ? 1 : 0);
+        size_t pred_visited_size = (size_t)(store.getLocColLength() >> 6) + (((maxlocalverts_ui & 63) > 0) ? 1U : 0U);
         uint64_t *pred_visited = (uint64_t *) malloc(pred_visited_size * sizeof(uint64_t));
         memset(pred_visited, 0, pred_visited_size * sizeof(uint64_t));
         int64_t *rowPred = (int64_t *) malloc(store.getLocRowLength() * sizeof(int64_t));
@@ -394,7 +394,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
             }
         }
         /*4
-        #ifdef _OPENMP
+        #ifdef _DISABLED_OPENMP
                 #pragma omp parallel for reduction(+: edge_visit_count) reduction(&&: valid_level) schedule(guided, OMP_CHUNK)
         #endif
         */
@@ -425,12 +425,12 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
             if (edge.v0 == get_pred_from_pred_entry(p_vertex1))
             {
                 const uint64_t vertex1_loc = store.globaltolocalCol(edge.v1);
-                const uint64_t word_index = vertex1_loc / 64;
+                const uint64_t word_index = vertex1_loc >> 6; // div 64
                 const uint64_t bit_index  = vertex1_loc & 63;
 
                 if ((pred_visited[word_index] & (1 << bit_index)) == 0)
                 {
-                    /*#ifdef _OPENMP
+                    /*#ifdef _DISABLED_OPENMP
                                         #pragma omp atomic
                     #endif*/
                     pred_visited[word_index] |= 1 << bit_index;
@@ -449,7 +449,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
 
         MPI_Allreduce(MPI_IN_PLACE, pred_visited, pred_visited_size, MPI_UINT64_T, MPI_BOR, col_comm);
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
         #pragma omp parallel for reduction(&&: all_visited) schedule(guided, OMP_CHUNK)
 #endif
 
@@ -457,7 +457,7 @@ int validate_bfs_result(const MatrixT &store, packed_edge *edgelist, int64_t num
         {
             // check that there is a mark for each vertex that there is an edge
             // to its claimed predecessor
-            if ((pred_visited[i / 64] & 1 << (i & 63)) == 0)
+            if ((pred_visited[i >> 6] & 1 << (i & 63)) == 0)
             {
                 //execept if there is no predecessor
                 if (get_pred_from_pred_entry(pred[i]) != -1 &&

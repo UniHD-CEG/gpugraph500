@@ -189,7 +189,12 @@ void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *star
     end_local = std::upper_bound(start_local, queuebuff + qb_length, globalstart + size - 1,
     [](vertexType a, vertexType b) { return b > (a & Csr::ProblemType::VERTEX_ID_MASK); });
     //reduction
+#ifdef _OPENMP
+    __gnu_parallel::set_union(start_local, end_local, startaddr, startaddr + insize, redbuff);
+#else
     endofresult = std::set_union(start_local, end_local, startaddr, startaddr + insize, redbuff);
+#endif
+
 
 #ifdef _DEBUG
     //CheckQueue<vertexType>::ErrorCode errorCode;
@@ -235,7 +240,7 @@ void CUDA_BFS::setModOutgoingFQ(vertexType *startaddr, int insize)
 
     const int numGpus = csr_problem->num_gpus;
 
-// #ifdef _CUDA_OPENMP
+// #ifdef _DISABLED_CUDA_OPENMP
 //     #pragma omp parallel for
 // #endif
 
@@ -340,7 +345,7 @@ void CUDA_BFS::getBackPredecessor()
     const int64_t sizeOfMType = 8LL * sizeof(MType);
     const int64_t storeColLength = (int64_t)store.getLocColLength();
 
-#ifdef _CUDA_OPENMP
+#ifdef _DISABLED_CUDA_OPENMP
     #pragma omp parallel
     {
         #pragma omp for schedule (guided, 2)
@@ -371,7 +376,7 @@ void CUDA_BFS::getBackPredecessor()
             owenmask[i] = tmp;
         }
 
-#ifdef _CUDA_OPENMP
+#ifdef _DISABLED_CUDA_OPENMP
     }
 #endif
 }
@@ -386,7 +391,7 @@ void CUDA_BFS::getBackOutqueue()
 #endif
 
     //get length of next queues
-#ifdef _CUDA_OPENMP
+#ifdef _DISABLED_CUDA_OPENMP
     #pragma omp parallel for
 #endif
 
@@ -530,7 +535,7 @@ void CUDA_BFS::setBackInqueue()
     }
 
     //set length of current queue
-#ifdef _CUDA_OPENMP
+#ifdef _DISABLED_CUDA_OPENMP
     #pragma omp parallel for
 #endif
 

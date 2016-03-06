@@ -15,16 +15,24 @@
 #include <algorithm>
 #include <cstddef> // needed by MPICH implem.
 #include <cstdlib> // only for values of packed_edge typ!!!
+#include "config.h"
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
 #include <omp.h>
 #define OMP_CHUNK 4
 #endif
 
-#if defined( __PMODE__)
+#if _OPENMP
 #include <parallel/algorithm>
 #endif
 
+#ifndef ALIGNMENT
+#if HAVE_AVX
+#define ALIGNMENT 32UL
+#else
+#define ALIGNMENT 16UL
+#endif
+#endif
 
 // WOLO: without local offset; ALG: vertex alligment; PAD: pad the row slices, so that they are equal
 template<typename vertextyp, typename rowoffsettyp, bool WOLO = false, int ALG = 1, bool PAD = false>
@@ -253,7 +261,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
      */
 
     /*
-    #ifdef _OPENMP
+    #ifdef _DISABLED_OPENMP
         #pragma omp parallel for schedule(guided, OMP_CHUNK) reduction(max:maxVertex)
     #endif
     */
@@ -604,7 +612,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
 
     //sanity check
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
     #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
@@ -620,20 +628,24 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
 //4. Sort column indices
     //sort edge list
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
     #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
     for (vertexType i = 0; i < row_length; ++i)
     {
+#ifdef _OPENMP
+        __gnu_parallel::sort(column_index + row_pointer[i], column_index + row_pointer[i + 1]);
+#else
         std::sort(column_index + row_pointer[i], column_index + row_pointer[i + 1]);
+#endif
     }
 
 //5. Remove duplicate column indices
     // remove duplicates
     // The next section is very bad, because it use too much memory.
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
     #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
@@ -669,7 +681,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix(packed_e
      * performance increase worthed?
      * race condition on tmp_column_index?
      */
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
     #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 
@@ -731,7 +743,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
          * performance increasement worthed?
          */
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
         #pragma omp parallel for schedule(guided, OMP_CHUNK) reduction(max : maxVertex)
 #endif
 
@@ -756,7 +768,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
          * comment out if experimenting deadlocks with high SF
          * performance increasement worthed?
          */
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
         #pragma omp parallel for schedule(guided, OMP_CHUNK) reduction(max : maxVertex)
 #endif
 
@@ -799,7 +811,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     MPI_Type_commit(&packedEdgeMPI);
 
     //column comunication
-#if  defined(__PMODE__)
+#ifdef _OPENMP
     __gnu_parallel::sort(input, input + numberOfEdges, DistMatrix2d::comparePackedEdgeR);
 #else
     std::sort(input, input + numberOfEdges, DistMatrix2d::comparePackedEdgeR);
@@ -849,7 +861,11 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     numberOfEdges = other_offset[R];
 
     // allocate receive buffer
-    packed_edge *coltransBuf = (packed_edge *) malloc(numberOfEdges * sizeof(packed_edge));
+    // packed_edge *coltransBuf = (packed_edge *) malloc(numberOfEdges * sizeof(packed_edge));
+    const int err = posix_memalign((void **)&coltransBuf, ALIGNMENT, numberOfEdges * sizeof(packed_edge));
+    if (err) {
+        throw "Memory error.";
+    }
 
     // transmit data
     MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, coltransBuf, other_size, other_offset,
@@ -866,7 +882,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 
     //row communication
     //sort
-#if  defined(__PMODE__)
+#ifdef _OPENMP
     __gnu_parallel::sort(input, input + numberOfEdges, DistMatrix2d::comparePackedEdgeC);
 #else
     std::sort(input, input + numberOfEdges, DistMatrix2d::comparePackedEdgeC);
@@ -917,7 +933,11 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     numberOfEdges = other_offset[C];
 
     // allocate receive buffer
-    packed_edge *rowtransBuf = (packed_edge *) malloc(other_offset[C] * sizeof(packed_edge));
+    // packed_edge *rowtransBuf = (packed_edge *) malloc(other_offset[C] * sizeof(packed_edge));
+    const int err = posix_memalign((void **)&rowtransBuf, ALIGNMENT, other_offset[C] * sizeof(packed_edge));
+    if (err) {
+        throw "Memory error.";
+    }
 
     // transmit data
     MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, rowtransBuf, other_size, other_offset,
@@ -936,7 +956,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     MPI_Comm_free(&row_comm);
     MPI_Comm_free(&col_comm);
 
-#if  defined(__PMODE__)
+#ifdef _OPENMP
     __gnu_parallel::sort(input, input + numberOfEdges, DistMatrix2d::comparePackedEdgeR);
 #else
     std::sort(input, input + numberOfEdges, DistMatrix2d::comparePackedEdgeR);
@@ -949,7 +969,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
      * omp worthed?
      */
     /*
-    #ifdef _OPENMP
+    #ifdef _DISABLED_OPENMP
         #pragma omp parallel for schedule(static, OMP_CHUNK)
     #endif
     */
@@ -972,7 +992,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
      * The commented out omp region hangs up the app (OMP 3.1)
      */
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
     /*
         #pragma omp parallel
         {
@@ -1012,7 +1032,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 //    }
 #endif
 
-#ifndef _OPENMP
+#ifndef _DISABLED_OPENMP
     for (vertexType i = 0, j = 0; i < row_length && j < numberOfEdges; ++i)
     {
         vertexType last_valid = -1;
@@ -1056,7 +1076,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
      * This commented out omp region hangs up the app (OMP 3.1)
      */
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
 
     /*
        #pragma omp parallel
@@ -1121,7 +1141,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
 #endif
 
 
-#ifndef _OPENMP
+#ifndef _DISABLED_OPENMP
     for (vertexType i = 0, j = 0; i < row_length && j < numberOfEdges; ++i)
     {
         vertexType last_valid = -1;
@@ -1277,7 +1297,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::getVertexDistributio
     int64_t c_SliceSize = numAlg / C;
     ptrdiff_t maxCount = (ptrdiff_t) count;
 
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
     #pragma omp parallel for schedule(guided, OMP_CHUNK)
 #endif
 

@@ -144,7 +144,7 @@ void CPUBFS_bin::runLocalBFS()
 {
     //assume_aligned(uint64_t*,fq_out,64);
     std::fill_n(fq_out, col64, 0);
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
     #pragma omp parallel for
 #endif
     for (int64_t i = 0; i < row64 ; i++)
@@ -165,7 +165,7 @@ void CPUBFS_bin::runLocalBFS()
                             {
                                 uint64_t &fqn_ext = fq_out[visit_vtx_loc >> 6];
                                 uint64_t  setnext = 1ul << (visit_vtx_loc & 0x3F);
-#ifdef _OPENMP
+#ifdef _DISABLED_OPENMP
                                 #pragma omp atomic
 #endif
                                 fqn_ext |= setnext;

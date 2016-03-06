@@ -141,15 +141,15 @@ public:
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
 {
-    int mtypesize = 8 * sizeof(MType);
-    int local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
+    int64_t mtypesize = sizeof(MType) << 3; // * 2^3
+    int64_t local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
     // Split communicator into row and column communicator
     // Split by row, rank by column
     MPI_Comm_split(MPI_COMM_WORLD, local_row, local_column, &row_comm);
     // Split by column, rank by row
     MPI_Comm_split(MPI_COMM_WORLD, local_column, local_row, &col_comm);
     fold_fq_props = store.getFoldProperties();
-    mask_size = (store.getLocColLength() / mtypesize) + ((store.getLocColLength() % mtypesize > 0) ? 1 : 0);
+    mask_size = (store.getLocColLength() / mtypesize) + ((store.getLocColLength() % mtypesize > 0) ? 1LL : 0LL);
     owenmask = new MType[mask_size];
     tmpmask = new MType[mask_size];
 }
@@ -188,7 +188,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     MPI_Status status;
     int32_t communicatorSize, communicatorRank;
     const int32_t psize = static_cast<int32_t>(mask_size); // may result in overflow 64-bit -> 32-bit
-    const int32_t mtypesize = sizeof(MType) << 3;
+    const int32_t mtypesize = sizeof(MType) << 3; // * 8
     //step 1
     MPI_Comm_size(col_comm, &communicatorSize);
     MPI_Comm_rank(col_comm, &communicatorRank);
