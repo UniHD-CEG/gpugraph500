@@ -1,7 +1,7 @@
 #ifndef BITLEVELFUNCTIONS_H
 #define BITLEVELFUNCTIONS_H
 
-unsigned int reverse(unsigned int value, const int bitSize);
+uint32_t reverse(int value, const int bitSize);
 
 
 #endif // BITLEVELFUNCTIONS_H

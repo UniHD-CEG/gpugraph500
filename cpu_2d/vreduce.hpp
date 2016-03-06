@@ -423,9 +423,10 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         throw "Memory error.";
     }
 
-    unsigned int lastReversedSliceIDs = 0U;
-    unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
-    unsigned int reversedSliceIDs, targetNode;
+    int lastReversedSliceIDs = 0;
+    int lastTargetNode = oldRank(lastReversedSliceIDs);
+    int targetNode;
+    unsigned int reversedSliceIDs;
     size_t csize = 0UL;
 
     schema.compress(send, psizeTo, &compressed_fq, compressedsize);
@@ -457,12 +458,20 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
     disps[lastTargetNode] = 0;
     compressed_disps[lastTargetNode] = 0;
+
+    int disps_lastTargetNode = 0;
+    int sizes_lastTargetNode = 0;
+
     for (unsigned int slice = 1U; slice < power2intLdSize; ++slice)
     {
         reversedSliceIDs = reverse(slice, intLdSize);
         targetNode = oldRank(reversedSliceIDs);
         compressed_disps[targetNode] = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-        disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
+
+        disps_lastTargetNode = disps[lastTargetNode];
+        sizes_lastTargetNode = sizes[lastTargetNode];
+        disps[targetNode] = disps_lastTargetNode + sizes_lastTargetNode;
+
         lastTargetNode = targetNode;
     }
 
@@ -473,7 +482,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         compressed_disps[index] = 0;
     }
     csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-    rsize = disps[lastTargetNode] + sizes[lastTargetNode];
+    rsize = disps_lastTargetNode + sizes_lastTargetNode;
 
     err = posix_memalign((void **)&compressed_recv_buff, ALIGNMENT, csize * sizeof(T_C));
     if (err) {
@@ -484,9 +493,10 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
 
-    unsigned int lastReversedSliceIDs = 0U;
-    unsigned int lastTargetNode = oldRank(lastReversedSliceIDs);
-    unsigned int reversedSliceIDs, targetNode;
+    int lastReversedSliceIDs = 0;
+    int lastTargetNode = oldRank(lastReversedSliceIDs);
+    int targetNode;
+    unsigned int reversedSliceIDs;
 
     int disps_lastTargetNode = 0;
     disps[lastTargetNode] = 0;
