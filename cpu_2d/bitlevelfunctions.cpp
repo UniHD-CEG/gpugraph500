@@ -13,7 +13,7 @@ unsigned int reverse(int value, const int bitSize)
     for (; val; val >>= 1)
     {
         result <<= 1;
-        result |= value & 1;
+        result |= val & 1;
         --bits; // extra shift needed at end
     }
     result <<= bits; // shift when v's highest bits are zero

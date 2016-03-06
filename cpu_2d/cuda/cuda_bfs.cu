@@ -1,18 +1,15 @@
+#undef _GLIBCXX_USE_C99_MATH_TR1
 #include "../comp_opt.h"
 #include "cuda_bfs.h"
 #include "b40c/util/error_utils.cuh"
 #include <thrust/sort.h>
 #include <thrust/device_vector.h>
 #include <cstdlib>
-#include <algorithm>
 #include <functional>
+#include <algorithm>
 
 #ifdef _COMPRESSION
 #include "../types_bfs.h"
-#endif
-
-#if defined( __PMODE__)
-#include <parallel/algorithm>
 #endif
 
 CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing,
@@ -189,12 +186,7 @@ void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *star
     end_local = std::upper_bound(start_local, queuebuff + qb_length, globalstart + size - 1,
     [](vertexType a, vertexType b) { return b > (a & Csr::ProblemType::VERTEX_ID_MASK); });
     //reduction
-#ifdef _OPENMP
-    __gnu_parallel::set_union(start_local, end_local, startaddr, startaddr + insize, redbuff);
-#else
     endofresult = std::set_union(start_local, end_local, startaddr, startaddr + insize, redbuff);
-#endif
-
 
 #ifdef _DEBUG
     //CheckQueue<vertexType>::ErrorCode errorCode;

@@ -40,6 +40,10 @@
 
 #include <b40c/util/error_utils.cuh>
 
+#if _OPENMP
+#include <parallel/algorithm>
+#endif
+
 namespace b40c {
 namespace graph {
 

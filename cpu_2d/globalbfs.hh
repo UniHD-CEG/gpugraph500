@@ -18,6 +18,9 @@
 #endif
 #include "config.h"
 
+#if _OPENMP
+#include <parallel/algorithm>
+#endif
 
 #ifdef INSTRUMENTED
 #include <unistd.h>
@@ -465,7 +468,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
     const long mtypesize = 8 * sizeof(MType);
     const long store_col_length = store.getLocColLength();
 
-#ifdef _CUDA_OPENMP
+#ifdef _DISABLED_CUDA_OPENMP
     #pragma omp parallel
     {
         #pragma omp for schedule (guided, OMP_CHUNK)
@@ -487,7 +490,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
             owenmask[i] = tmp;
         }
 
-#ifdef _CUDA_OPENMP
+#ifdef _DISABLED_CUDA_OPENMP
     }
 #endif
 }
