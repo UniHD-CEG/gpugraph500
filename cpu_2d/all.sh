@@ -1,7 +1,7 @@
 #!/bin/bash
 
 file=hosts
-maxsf=19
+maxsf=23
 runall=./runall.sh
 
 if [ ! -f $runall ] || [ ! -x $runall ]; then
