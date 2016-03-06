@@ -198,12 +198,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     const int32_t residuum = communicatorSize - power2intLdSize;
     const int32_t twoTimesResiduum = residuum << 1;
 
-    const inline function <int32_t(int32_t)> newRank = [&residuum](uint32_t oldr)
+    const function <int32_t(int32_t)> newRank = [&residuum](uint32_t oldr)
     {
         return (oldr < (residuum << 1)) ? (oldr >> 1) : oldr - residuum;
     };
 
-    const inline function <int32_t(int32_t)> oldRank = [&residuum](uint32_t newr)
+    const function <int32_t(int32_t)> oldRank = [&residuum](uint32_t newr)
     {
         return (newr < residuum) ? (newr << 1) : newr + residuum;
     };
@@ -264,7 +264,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     if ((((communicatorRank & 1) == 0) &&
         (communicatorRank < twoTimesResiduum)) || (communicatorRank >= twoTimesResiduum))
     {
-        int32_t ssize, offset, index;
+        int32_t ssize, offset;
         ssize = psize;
         const int32_t vrank = newRank(communicatorRank);
         offset = 0;
@@ -303,7 +303,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 {
                     const int32_t iOffset = i + offset;
                     const int32_t iOffsetLowers = iOffset + lowers;
-                    const index = iOffsetLowers * mtypesize;
+                    const int32_t index = iOffsetLowers * mtypesize;
                     MType tmpm = tmpmap[iOffsetLowers];
                     while (tmpm != 0)
                     {
@@ -324,7 +324,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 for (int32_t i = 0; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
-                    const index = iOffset * mtypesize;
+                    const int32_t index = iOffset * mtypesize;
                     MType tmpm = tmpmap[iOffset];
                     while (tmpm != 0)
                     {
@@ -366,8 +366,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     while (tmpm != 0)
                     {
                         const int32_t last = ffsl(tmpm) - 1;
-                        const int32_t index = iOffsetMtype + last;
-                        tmp[p] = owen[index];
+                        tmp[p] = owen[iOffsetMtype + last];
                         ++p;
                         tmpm ^= (1 << last);
                     }
@@ -383,9 +382,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 p = 0;
                 for (int32_t i = 0; i < uppers; ++i)
                 {
-                    cont int32_t iOffset = offset + lowers + i;
+                    const int32_t iOffset = offset + lowers + i;
+                    const int32_t lindex = iOffset * mtypesize;
                     MType tmpm = tmpmap[iOffset];
-                    int32_t lindex = iOffset * mtypesize;
                     while (tmpm != 0)
                     {
                         const int32_t last = ffsl(tmpm) - 1;
