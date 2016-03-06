@@ -459,19 +459,13 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     disps[lastTargetNode] = 0;
     compressed_disps[lastTargetNode] = 0;
 
-    int disps_lastTargetNode = 0;
-    int sizes_lastTargetNode = 0;
-
-    for (unsigned int slice = 1U; slice < power2intLdSize; ++slice)
+    for (int slice = 1U; slice < power2intLdSize; ++slice)
     {
         reversedSliceIDs = reverse(slice, intLdSize);
         targetNode = oldRank(reversedSliceIDs);
         compressed_disps[targetNode] = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
 
-        disps_lastTargetNode = disps[lastTargetNode];
-        sizes_lastTargetNode = sizes[lastTargetNode];
-        disps[targetNode] = disps_lastTargetNode + sizes_lastTargetNode;
-
+        disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
         lastTargetNode = targetNode;
     }
 
@@ -482,7 +476,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         compressed_disps[index] = 0;
     }
     csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-    rsize = disps_lastTargetNode + sizes_lastTargetNode;
+    rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
     err = posix_memalign((void **)&compressed_recv_buff, ALIGNMENT, csize * sizeof(T_C));
     if (err) {

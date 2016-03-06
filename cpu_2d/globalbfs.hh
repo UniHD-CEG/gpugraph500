@@ -271,7 +271,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         for (int32_t it = 0; it < intLdSize; ++it)
         {
             int32_t orankEven, orankOdd, iterator2, iterator3;
-            const int32_t lowers = ssize >> 2; //lower slice size
+            const int32_t lowers = ssize >> 1; //lower slice size
             const int32_t uppers = ssize - lowers; //upper slice size
             int32_t size = lowers * mtypesize;
             orankEven = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
@@ -417,9 +417,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     uint32_t lastReversedSliceIDs = 0U;
     int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
 
-    int sizes_lastTargetNode = (psize >> intLdSize) * mtypesize;
-    int disps_lastTargetNode = 0;
-    sizes[lastTargetNode] = sizes_lastTargetNode;
+    sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
     disps[lastTargetNode] = 0;
 
     for (int slice = 1; slice < power2intLdSize; ++slice)
@@ -428,13 +426,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         const int32_t targetNode = oldRank(reversedSliceIDs);
         sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
                             mtypesize;
-        disps_lastTargetNode = disps[lastTargetNode];
-        sizes_lastTargetNode = sizes[lastTargetNode];
-        disps[targetNode] = disps_lastTargetNode + sizes_lastTargetNode;
+        disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
         lastTargetNode = targetNode;
     }
-    sizes[lastTargetNode] = std::min(sizes_lastTargetNode,
-                                     static_cast<int>(store.getLocColLength() - disps_lastTargetNode));
+    sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
+                                     static_cast<int>(store.getLocColLength() - disps[lastTargetNode]));
 
     //nodes without a partial resulty
     for (int node = 0; node < residuum; ++node)
