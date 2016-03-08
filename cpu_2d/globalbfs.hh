@@ -218,6 +218,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         {
             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank + 1, 0, tmpmap, psize, bm_type, communicatorRank + 1, 0,
                          col_comm, &status);
+
+std::cout << "allBitmap for-loop size (psize) " << psize << std::endl;
             for (int32_t i = 0; i < psize; ++i)
             {
                 tmpmap[i] &= ~owenmap[i];
@@ -243,6 +245,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         {
             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank - 1, 0, tmpmap, psize, bm_type, communicatorRank - 1, 0,
                          col_comm, &status);
+
+std::cout << "allBitmap for-loop size (psize2) " << psize2 << std::endl;
             for (int32_t i = 0; i < psize; ++i)
             {
                 tmpmap[i] = ~tmpmap[i] & owenmap[i];
@@ -271,6 +275,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         ssize = psize;
         const int32_t vrank = newRank(communicatorRank);
         offset = 0;
+std::cout << "allBitmap for-loop size (intLdSize) " << intLdSize << std::endl;
         for (int32_t it = 0; it < intLdSize; ++it)
         {
             int32_t orankEven, orankOdd, iterator2, iterator3;
@@ -282,6 +287,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             const int32_t twoTimesIterator = it << 1;
             iterator2 = twoTimesIterator + 2;
             iterator3 = twoTimesIterator + 3;
+
             if (((vrank >> it) & 1) == 0)  // even
             {
                 //Transmission of the the bitmap
@@ -289,6 +295,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                              tmpmap + offset, ssize, bm_type, orankEven, iterator2,
                              col_comm, &status);
 
+std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
                 for (int32_t i = 0; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
@@ -300,6 +307,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     const int32_t iOffset = i + offset;
                     tmpmap[iOffset] = (~tmpmap[iOffset]) & owenmap[iOffset];
                 }
+
+std::cout << "allBitmap for-loop size (uppers) " << uppers << std::endl;
                 //Generation of foreign updates
                 int32_t p = 0;
                 for (int32_t i = 0; i < uppers; ++i)
@@ -322,6 +331,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                              tmp, size, fq_tp_type,
                              orankEven, iterator3,
                              col_comm, &status);
+
+std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
                 //Updates for own data
                 p = 0;
                 for (int32_t i = 0; i < lowers; ++i)
@@ -348,11 +359,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                              orankOdd, iterator2,
                              col_comm, &status);
 
+std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
                 for (int32_t i = 0; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
                     tmpmap[iOffset] = (~tmpmap[iOffset]) & owenmap[iOffset];
                 }
+
+std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
                 for (int32_t i = lowers; i < ssize; ++i)
                 {
                     const int32_t iOffset = i + offset;
@@ -374,6 +388,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                         tmpm ^= (1 << last);
                     }
                 }
+std::cout << "allBitmap for-loop size (p O(n^2)) " << p << std::endl;
+
                 //Transmission of updates
                 MPI_Sendrecv(tmp, p, fq_tp_type,
                              orankOdd, iterator3,
@@ -381,6 +397,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                              orankOdd, iterator3,
                              col_comm, &status);
 
+std::cout << "allBitmap for-loop size (uppers) " << uppers << std::endl;
                 //Updates for own data
                 p = 0;
                 for (int32_t i = 0; i < uppers; ++i)
@@ -423,6 +440,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
     disps[lastTargetNode] = 0;
 
+std::cout << "allBitmap for-loop size (power2intLdSize) " << power2intLdSize << std::endl;
     for (int slice = 1; slice < power2intLdSize; ++slice)
     {
         const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
@@ -473,6 +491,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
     {
         #pragma omp for schedule (guided, OMP_CHUNK)
 #endif
+
+std::cout << "allBitmap for-loop size (mask_size) " << mask_size << std::endl;
 
         for (int64_t i = 0L; i < mask_size; ++i)
         {
@@ -822,11 +842,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
 #ifdef _COMPRESSION
-                    if (communicatorRank != root_rank)
-                    {
-                        free(uncompressed_fq);
-                    }
-                    free(compressed_fq);
+                if (communicatorRank != root_rank)
+                {
+                    free(uncompressed_fq);
+                }
+                free(compressed_fq);
                 free(vectorizedsize);
 #endif
 
