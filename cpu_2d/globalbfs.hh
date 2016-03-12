@@ -195,7 +195,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     //step 1
     MPI_Comm_size(col_comm, &communicatorSize);
     MPI_Comm_rank(col_comm, &communicatorRank);
-
     const int32_t intLdSize = ilogbf(static_cast<float>(communicatorSize)); //integer log_2 of size
     const int32_t power2intLdSize = 1 << intLdSize; // 2^n
     const int32_t residuum = communicatorSize - power2intLdSize;
@@ -205,7 +204,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     {
         return (oldr < (residuum << 1)) ? (oldr >> 1) : oldr - residuum;
     };
-
     const function <int32_t(int32_t)> oldRank = [&residuum](uint32_t newr)
     {
         return (newr < residuum) ? (newr << 1) : newr + residuum;
@@ -219,7 +217,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank + 1, 0, tmpmap, psize, bm_type, communicatorRank + 1, 0,
                          col_comm, &status);
 
-std::cout << "allBitmap for-loop size (psize) " << psize << std::endl;
             for (int32_t i = 0; i < psize; ++i)
             {
                 tmpmap[i] &= ~owenmap[i];
@@ -246,7 +243,6 @@ std::cout << "allBitmap for-loop size (psize) " << psize << std::endl;
             MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank - 1, 0, tmpmap, psize, bm_type, communicatorRank - 1, 0,
                          col_comm, &status);
 
-std::cout << "allBitmap for-loop size (psize2) " << psize2 << std::endl;
             for (int32_t i = 0; i < psize; ++i)
             {
                 tmpmap[i] = ~tmpmap[i] & owenmap[i];
@@ -275,7 +271,7 @@ std::cout << "allBitmap for-loop size (psize2) " << psize2 << std::endl;
         ssize = psize;
         const int32_t vrank = newRank(communicatorRank);
         offset = 0;
-std::cout << "allBitmap for-loop size (intLdSize) " << intLdSize << std::endl;
+        // intLdSize: ~2 to 4 iteractions (scale 22, 16 gpus)
         for (int32_t it = 0; it < intLdSize; ++it)
         {
             int32_t orankEven, orankOdd, iterator2, iterator3;
@@ -295,21 +291,29 @@ std::cout << "allBitmap for-loop size (intLdSize) " << intLdSize << std::endl;
                              tmpmap + offset, ssize, bm_type, orankEven, iterator2,
                              col_comm, &status);
 
-std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
+                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
+#ifdef _OPENMP
+                #pragma omp parallel for
+#endif
                 for (int32_t i = 0; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
                     tmpmap[iOffset] &= ~owenmap[iOffset];
                     owenmap[iOffset] |= tmpmap[iOffset];
                 }
+
+                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
+#ifdef _OPENMP
+                #pragma omp parallel for
+#endif
                 for (int32_t i = lowers; i < ssize; ++i)
                 {
                     const int32_t iOffset = i + offset;
                     tmpmap[iOffset] = (~tmpmap[iOffset]) & owenmap[iOffset];
                 }
 
-std::cout << "allBitmap for-loop size (uppers) " << uppers << std::endl;
                 //Generation of foreign updates
+                // uppers: ~65k iteractions per MPI node (scale 22, 16 gpus)
                 int32_t p = 0;
                 for (int32_t i = 0; i < uppers; ++i)
                 {
@@ -332,9 +336,9 @@ std::cout << "allBitmap for-loop size (uppers) " << uppers << std::endl;
                              orankEven, iterator3,
                              col_comm, &status);
 
-std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
                 //Updates for own data
                 p = 0;
+                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
                 for (int32_t i = 0; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
@@ -359,14 +363,20 @@ std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
                              orankOdd, iterator2,
                              col_comm, &status);
 
-std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
+                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
+#ifdef _OPENMP
+                #pragma omp parallel for
+#endif
                 for (int32_t i = 0; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
                     tmpmap[iOffset] = (~tmpmap[iOffset]) & owenmap[iOffset];
                 }
 
-std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
+                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
+#ifdef _OPENMP
+                #pragma omp parallel for
+#endif
                 for (int32_t i = lowers; i < ssize; ++i)
                 {
                     const int32_t iOffset = i + offset;
@@ -374,6 +384,7 @@ std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
                     owenmap[iOffset] |= tmpmap[iOffset];
                 }
                 //Generation of foreign updates
+                // inner p: ~50k iteractions per MPI node (scale 22, 16 gpus)
                 int32_t p = 0;
                 for (int32_t i = 0; i < lowers; ++i)
                 {
@@ -388,7 +399,6 @@ std::cout << "allBitmap for-loop size (lowers) " << lowers << std::endl;
                         tmpm ^= (1 << last);
                     }
                 }
-std::cout << "allBitmap for-loop size (p O(n^2)) " << p << std::endl;
 
                 //Transmission of updates
                 MPI_Sendrecv(tmp, p, fq_tp_type,
@@ -397,8 +407,8 @@ std::cout << "allBitmap for-loop size (p O(n^2)) " << p << std::endl;
                              orankOdd, iterator3,
                              col_comm, &status);
 
-std::cout << "allBitmap for-loop size (uppers) " << uppers << std::endl;
                 //Updates for own data
+                // inner p: ~50k iteractions per MPI node (scale 22, 16 gpus)
                 p = 0;
                 for (int32_t i = 0; i < uppers; ++i)
                 {
@@ -440,7 +450,6 @@ std::cout << "allBitmap for-loop size (uppers) " << uppers << std::endl;
     sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
     disps[lastTargetNode] = 0;
 
-std::cout << "allBitmap for-loop size (power2intLdSize) " << power2intLdSize << std::endl;
     for (int slice = 1; slice < power2intLdSize; ++slice)
     {
         const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
@@ -492,7 +501,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
         #pragma omp for schedule (guided, OMP_CHUNK)
 #endif
 
-std::cout << "allBitmap for-loop size (mask_size) " << mask_size << std::endl;
 
         for (int64_t i = 0L; i < mask_size; ++i)
         {

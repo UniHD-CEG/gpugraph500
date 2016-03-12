@@ -17,7 +17,7 @@
 #include <cstdlib> // only for values of packed_edge typ!!!
 #include "config.h"
 
-#ifdef _DISABLED_OPENMP
+#ifdef _OPENMP
 #include <omp.h>
 #define OMP_CHUNK 4
 #endif

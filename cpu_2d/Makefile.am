@@ -47,7 +47,7 @@ endif
 endif
 
 if NVIDIA_ARCHITECTURE_FERMI
-  NV_ARCHITECTURE=$(PTXAS) -arch=sm_20 $(NVFLAGS) 
+  NV_ARCHITECTURE=$(PTXAS) -arch=sm_20 $(NVFLAGS)
 else
 if NVIDIA_ARCHITECTURE_KEPLER
   NV_ARCHITECTURE=$(PTXAS) -arch=sm_35 $(NVFLAGS)
@@ -70,12 +70,15 @@ else
   THREADS=none
 endif
 endif
-  scorep_instrumentation_flag=--user --cuda --mpp=mpi --thread=$(THREADS) --nopdt --online-access --instrument-filter=\"filter.scorep\"
+  PROFILER=@SCOREP_EXEC@
+  scorep_instrumentation_flag=--user --cuda --mpp=mpi --thread=$(THREADS) --nopdt --online-access
+  # --instrument-filter=\"filter.scorep\"
   SCOREP_INSTRUMENTATION=-D_SCOREP_USER_INSTRUMENTATION -DSCOREP_USER_ENABLE
   LDFLAGS_SCOREP=@SCOREP_LFLAG@
   LLIBS_SCOREP=@SCOREP_LLIBS@
   SCOREP_CXXCPPFLAGS=@SCOREP_CPPFLAG@
 else
+  PROFILER=
   libcudart_static_path=@CUDA_LDFLAGS@
   libcudart_static_flag=@CUDA_LIBS@
 endif
@@ -180,7 +183,7 @@ AM_CFLAGS=@CC_MBITS@ @CFLAGS@ @WARN_CFLAGS@
 #
 
 NVCXX=@NVCC@
-AM_LD=$(PROFILER) @MPICXX@
+AM_LD=$(PROFILER) $(scorep_instrumentation_flag) @MPICXX@
 
 
 ### List of sources to compile
