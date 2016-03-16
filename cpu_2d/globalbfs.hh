@@ -432,25 +432,23 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     // It is based on the slice selection in the iterative part above.
     // It tries to do it iterative insted of recursive.
 
-    //int *sizes = (int *)malloc(communicatorSize * sizeof(int));
-    //int *disps = (int *)malloc(communicatorSize * sizeof(int));
 
-    int * restrict sizes;
-    int * restrict disps;
-    const int err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int));
-    const int err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int));
+    int32_t * restrict sizes;
+    int32_t * restrict disps;
+    const int32_t err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
+    const int32_t err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
     if (err1 || err2) {
         throw "Memory error.";
     }
 
-    const int maskLengthRes = psize % (1 << intLdSize);
+    const int32_t maskLengthRes = psize % (1 << intLdSize);
     uint32_t lastReversedSliceIDs = 0U;
     int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
 
     sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
     disps[lastTargetNode] = 0;
 
-    for (int slice = 1; slice < power2intLdSize; ++slice)
+    for (int32_t slice = 1; slice < power2intLdSize; ++slice)
     {
         const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
         const int32_t targetNode = oldRank(reversedSliceIDs);
@@ -460,19 +458,101 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         lastTargetNode = targetNode;
     }
     sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
-                                     static_cast<int>(store.getLocColLength() - disps[lastTargetNode]));
+                                     static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
 
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
     //nodes without a partial resulty
-    for (int node = 0; node < residuum; ++node)
+    for (int32_t node = 0; node < residuum; ++node)
     {
-        const int index = (node * 2) + 1;
+        const int32_t index = (node << 1) + 1;
+        sizes[index] = 0;
+        disps[index] = 0;
+    }
+#endif
+
+/*
+#ifdef _COMPRESSION
+
+
+#else
+
+    int32_t * restrict sizes;
+    int32_t * restrict disps;
+    const int32_t err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
+    const int32_t err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
+    if (err1 || err2) {
+        throw "Memory error.";
+    }
+
+    const int32_t maskLengthRes = psize % (1 << intLdSize);
+    uint32_t lastReversedSliceIDs = 0U;
+    int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
+
+    sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
+    disps[lastTargetNode] = 0;
+
+    for (int32_t slice = 1; slice < power2intLdSize; ++slice)
+    {
+        const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
+        const int32_t targetNode = oldRank(reversedSliceIDs);
+        sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
+                            mtypesize;
+        disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
+        lastTargetNode = targetNode;
+    }
+    sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
+                                     static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
+
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
+    //nodes without a partial resulty
+    for (int32_t node = 0; node < residuum; ++node)
+    {
+        const int32_t index = (node << 1) + 1;
         sizes[index] = 0;
         disps[index] = 0;
     }
 
+#endif
+
+
+#ifdef _COMPRESSION
+
+    MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
+                   fq_tp_typeC, compressed_recv_buff, compressed_sizes,
+                   compressed_disps, fq_tp_typeC, col_comm);
+
+#else
+
     // Transmission of the final results
     MPI_Allgatherv(MPI_IN_PLACE, sizes[communicatorRank], fq_tp_type,
                     owen, sizes, disps, fq_tp_type, col_comm);
+
+*/
+    MPI_Allgatherv(send, sizes[communicatorRank],
+                   type, recv_buff, sizes,
+                   disps, type, comm);
+
+//#endif
+
+#ifdef _COMPRESSION
+    // reensamble uncompressed chunks
+    for (int i = 0; i < communicatorSize; ++i)
+    {
+        compressedsize = compressed_sizes[i];
+        uncompressedsize = sizes[i];
+        if (compressedsize != 0)
+        {
+            schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
+            memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
+            free(uncompressed_fq);
+        }
+    }
+#endif
+
     free(sizes);
     free(disps);
 }
@@ -492,8 +572,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::setBackInqueue() { }
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
 {
-    const long mtypesize = 8 * sizeof(MType);
-    const long store_col_length = store.getLocColLength();
+    const int64_t mtypesize = sizeof(MType) << 3;
+    const int64_t store_col_length = store.getLocColLength();
 
 #ifdef _DISABLED_CUDA_OPENMP
     #pragma omp parallel
@@ -502,12 +582,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
 #endif
 
 
-        for (int64_t i = 0L; i < mask_size; ++i)
+        for (int64_t i = 0LL; i < mask_size; ++i)
         {
             MType tmp = 0;
             const int64_t iindex = i * mtypesize;
             const int64_t mask_word_end = std::min(mtypesize, store_col_length - iindex);
-            for (int64_t j = 0L; j < mask_word_end; ++j)
+            for (int64_t j = 0LL; j < mask_word_end; ++j)
             {
                 const int64_t jindex = iindex + j;
                 if (predecessor[jindex] != -1)

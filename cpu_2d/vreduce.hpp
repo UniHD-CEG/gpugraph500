@@ -406,46 +406,46 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     }
 
     // Transmission of the final results
-    int * restrict sizes;
-    int * restrict disps;
+    int32_t * restrict sizes;
+    int32_t * restrict disps;
 
-    err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int));
-    err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int));
+    err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
+    err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
     if (err1 || err2) {
         throw "Memory error.";
     }
 
 #ifdef _COMPRESSION
-    int * restrict compressed_sizes;
-    int * restrict compressed_disps;
+    int32_t * restrict compressed_sizes;
+    int32_t * restrict compressed_disps;
 
-    err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, communicatorSize * sizeof(int));
-    err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, communicatorSize * sizeof(int));
+    err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
+    err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
     if (err1 || err2) {
         throw "Memory error.";
     }
 
-    int lastReversedSliceIDs = 0;
-    int lastTargetNode = oldRank(lastReversedSliceIDs);
-    int targetNode;
-    unsigned int reversedSliceIDs;
-    size_t csize = 0UL;
+    int32_t lastReversedSliceIDs = 0;
+    int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
+    int32_t targetNode;
+    unsigned int32_t reversedSliceIDs;
+    size_t csize = 0U;
 
     schema.compress(send, psizeTo, &compressed_fq, compressedsize);
 
-    int * restrict composed_recv;
-    int * restrict composed_send;
+    int32_t * restrict composed_recv;
+    int32_t * restrict composed_send;
 
-    err1 = posix_memalign((void **)&composed_recv, ALIGNMENT, 2 * communicatorSize * sizeof(int));
-    err2 = posix_memalign((void **)&composed_send, ALIGNMENT, 2 * sizeof(int));
+    err1 = posix_memalign((void **)&composed_recv, ALIGNMENT, 2 * communicatorSize * sizeof(int32_t));
+    err2 = posix_memalign((void **)&composed_send, ALIGNMENT, 2 * sizeof(int32_t));
 
     composed_send[0] = psizeTo;
     composed_send[1] = compressedsize;
 
     MPI_Allgather(composed_send, 1, MPI_2INT, composed_recv, 1, MPI_2INT, comm);
 
-    const int totalsize = communicatorSize << 1;
-    for (int i = 0, j = 0; i < totalsize; ++i)
+    const int32_t totalsize = communicatorSize << 1;
+    for (int32_t i = 0, j = 0; i < totalsize; ++i)
     {
         if (i % 2 == 0)
         {
@@ -461,7 +461,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     disps[lastTargetNode] = 0;
     compressed_disps[lastTargetNode] = 0;
 
-    for (int slice = 1U; slice < power2intLdSize; ++slice)
+    for (int32_t slice = 1; slice < power2intLdSize; ++slice)
     {
         reversedSliceIDs = reverse(slice, intLdSize);
         targetNode = oldRank(reversedSliceIDs);
@@ -471,9 +471,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         lastTargetNode = targetNode;
     }
 
-    for (int node = 0; node < residuum; ++node)
+    for (int32_t node = 0; node < residuum; ++node)
     {
-        const int index = 2 * node + 1;
+        const int32_t index = 2 * node + 1;
         disps[index] = 0;
         compressed_disps[index] = 0;
     }
@@ -489,14 +489,14 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     // Transmission of the subslice sizes
     MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
 
-    int lastReversedSliceIDs = 0;
-    int lastTargetNode = oldRank(lastReversedSliceIDs);
-    int targetNode;
-    unsigned int reversedSliceIDs;
+    int32_t lastReversedSliceIDs = 0;
+    int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
+    int32_t targetNode;
+    uint32_t reversedSliceIDs;
 
-    int disps_lastTargetNode = 0;
+    int32_t disps_lastTargetNode = 0;
     disps[lastTargetNode] = 0;
-    for (int slice = 1; slice < power2intLdSize; ++slice)
+    for (int32_t slice = 1; slice < power2intLdSize; ++slice)
     {
         reversedSliceIDs = reverse(slice, intLdSize);
         targetNode = oldRank(reversedSliceIDs);
@@ -506,9 +506,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     }
 
     //nodes without a partial result
-    for (int node = 0; node < residuum; ++node)
+    for (int32_t node = 0; node < residuum; ++node)
     {
-        const int index = 2 * node + 1;
+        const int32_t index = (node * 2) + 1;
         disps[index] = 0;
     }
     rsize = disps_lastTargetNode + sizes[lastTargetNode];
@@ -528,7 +528,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
     // reensamble uncompressed chunks
-    for (int i = 0; i < communicatorSize; ++i)
+    for (int32_t i = 0; i < communicatorSize; ++i)
     {
         compressedsize = compressed_sizes[i];
         uncompressedsize = sizes[i];
