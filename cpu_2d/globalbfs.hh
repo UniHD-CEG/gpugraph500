@@ -460,6 +460,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
                                      static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
 
+
 #ifdef _OPENMP
     #pragma omp parallel for
 #endif
@@ -470,7 +471,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         sizes[index] = 0;
         disps[index] = 0;
     }
-#endif
 
 /*
 #ifdef _COMPRESSION
@@ -526,16 +526,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                    compressed_disps, fq_tp_typeC, col_comm);
 
 #else
-
+*/
     // Transmission of the final results
     MPI_Allgatherv(MPI_IN_PLACE, sizes[communicatorRank], fq_tp_type,
                     owen, sizes, disps, fq_tp_type, col_comm);
 
-*/
+
+/*
     MPI_Allgatherv(send, sizes[communicatorRank],
                    type, recv_buff, sizes,
                    disps, type, comm);
-
+*/
 //#endif
 
 #ifdef _COMPRESSION

@@ -227,7 +227,7 @@ void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, int &outsize)
  * -set the Outgoing queue after the column reduction
  * -recompute the visited mask
  */
-void CUDA_BFS::setModOutgoingFQ(vertexType *startaddr, int insize)
+void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, int insize)
 {
 
     const int numGpus = csr_problem->num_gpus;
@@ -249,7 +249,7 @@ void CUDA_BFS::setModOutgoingFQ(vertexType *startaddr, int insize)
         qb_length = insize;
     }
     //update visited
-    for (uint64_t i = 0; i < qb_length; ++i)
+    for (uint64_t i = 0ULL; i < qb_length; ++i)
     {
         typename Csr::ProblemType::VertexId vtxID = queuebuff[i] & Csr::ProblemType::VERTEX_ID_MASK;
         vmask[vtxID >> 3] |= 1 << (vtxID & 0x7);
@@ -259,7 +259,7 @@ void CUDA_BFS::setModOutgoingFQ(vertexType *startaddr, int insize)
     for (int i = 0; i < numGpus; ++i)
     {
         typename Csr::GraphSlice *gs = csr_problem->graph_slices[i];
-        visited_mask_bytes = ((csr_problem->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) / 8;
+        visited_mask_bytes = ((csr_problem->nodes * sizeof(typename Csr::VisitedMask)) + 7) >> 3;
         b40c::util::B40CPerror(cudaMemcpyAsync(gs->d_visited_mask,
                                                vmask,
                                                visited_mask_bytes,
@@ -334,8 +334,9 @@ void CUDA_BFS::getBackPredecessor()
     b40c::util::B40CPerror(csr_problem->ExtractResults(predecessor, store.localtoglobalRow(0)),
                            "Extraction of result failed", __FILE__, __LINE__);
     bfsGPU->finalize();
-    const int64_t sizeOfMType = 8LL * sizeof(MType);
-    const int64_t storeColLength = (int64_t)store.getLocColLength();
+    const uint64_t sizeOfMType = 8ULL * sizeof(MType));
+    const uint64_t storeColLength = static_cast<uint64_t>store.getLocColLength();
+    const imask_size = static_cast<uint64_t>(mask_size);
 
 #ifdef _DISABLED_CUDA_OPENMP
     #pragma omp parallel
@@ -343,18 +344,18 @@ void CUDA_BFS::getBackPredecessor()
         #pragma omp for schedule (guided, 2)
 #endif
 
-        for (int64_t i = 0LL; i < mask_size; ++i)
+        for (uint64_t i = 0ULL; i < mask_size; ++i)
         {
             MType tmp = 0;
-            const int64_t isize = i * sizeOfMType;
-            for (int64_t j = 0LL; j < sizeOfMType; ++j)
+            const uint64_t isize = i * sizeOfMType;
+            for (uint64_t j = 0ULL; j < sizeOfMType; ++j)
             {
-                const int64_t jsize = isize + j;
+                const uint64_t jsize = isize + j;
                 const vertexType pred = predecessor[jsize];
-                if ((pred != -1) && ((jsize) < storeColLength))
+                if ((pred != -1LL) && (jsize < storeColLength))
                 {
                     tmp |= 1 << j;
-                    if (pred > -2)
+                    if (pred > -2LL)
                     {
                         predecessor[jsize] = store.localtoglobalRow(
                                                  pred & Csr::ProblemType::VERTEX_ID_MASK);
@@ -543,7 +544,7 @@ void CUDA_BFS::setBackInqueue()
 void CUDA_BFS::setStartVertex(vertexType start)
 {
     done = false;
-    vertexType src_owner, rstart, lstart = -1;
+    vertexType src_owner, rstart, lstart = -1LL;
     typename Csr::GraphSlice *gs;
     int cpro_verbosity = 0, visited_mask_bytes;
 
@@ -594,7 +595,7 @@ void CUDA_BFS::setStartVertex(vertexType start)
         src_owner = csr_problem->GpuIndex(rstart);
         rstart |= (src_owner << Csr::ProblemType::GPU_MASK_SHIFT);
 
-        queuebuff[0L] = rstart;
+        queuebuff[0U] = rstart;
         qb_length = 1ULL;
     }
 

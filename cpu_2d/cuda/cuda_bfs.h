@@ -34,7 +34,7 @@ using namespace b40c::graph::bfs;
 
 //cuda types have to be chosen, what might be a problem
 typedef int64_t vertexType;
-typedef unsigned int rowtyp;
+typedef uint32_t rowtyp;
 
 class CUDA_BFS : public GlobalBFS <CUDA_BFS, vertexType, unsigned char,
     DistMatrix2d<vertexType, rowtyp, true, 1, true>  // use local ids
