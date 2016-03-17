@@ -67,14 +67,14 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing,
     bfsGPU = new EnactorMultiGpu<Csr, false>;
 #endif
 
-    cpro_verbosity = 0ULL;
+    cpro_verbosity = 0;
     if (verbosity >= 24ULL)
     {
-        cpro_verbosity = 2ULL;
+        cpro_verbosity = 2;
     }
     else if (verbosity >= 8ULL)
     {
-        cpro_verbosity = 1ULL;
+        cpro_verbosity = 1;
     }
     b40c::util::B40CPerror(csr_problem->FromHostProblem(
                                false,                  //bool          stream_from_host,
@@ -183,7 +183,7 @@ void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *star
     // determine the local range for the reduction
     start_local = std::lower_bound(queuebuff, queuebuff + qb_length, globalstart,
     [](vertexType a, vertexType b) { return a < (b & Csr::ProblemType::VERTEX_ID_MASK); });
-    end_local = std::upper_bound(start_local, queuebuff + qb_length, globalstart + size - 1,
+    end_local = std::upper_bound(start_local, queuebuff + qb_length, globalstart + size - 1LL,
     [](vertexType a, vertexType b) { return b > (a & Csr::ProblemType::VERTEX_ID_MASK); });
     //reduction
     endofresult = std::set_union(start_local, end_local, startaddr, startaddr + insize, redbuff);
@@ -217,7 +217,7 @@ void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *star
     std::swap(queuebuff, redbuff);
 }
 
-void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, int &outsize)
+void CUDA_BFS::getOutgoingFQ(vertexType * restrict &startaddr, int &outsize)
 {
     startaddr = queuebuff;
     outsize = qb_length;
@@ -251,7 +251,7 @@ void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, int insize)
     //update visited
     for (uint64_t i = 0ULL; i < qb_length; ++i)
     {
-        typename Csr::ProblemType::VertexId vtxID = queuebuff[i] & Csr::ProblemType::VERTEX_ID_MASK;
+        const typename Csr::ProblemType::VertexId vtxID = queuebuff[i] & Csr::ProblemType::VERTEX_ID_MASK;
         vmask[vtxID >> 3] |= 1 << (vtxID & 0x7);
     }
 
@@ -334,8 +334,9 @@ void CUDA_BFS::getBackPredecessor()
     b40c::util::B40CPerror(csr_problem->ExtractResults(predecessor, store.localtoglobalRow(0)),
                            "Extraction of result failed", __FILE__, __LINE__);
     bfsGPU->finalize();
-    const uint64_t sizeOfMType = 8ULL * sizeof(MType));
-    const uint64_t storeColLength = static_cast<uint64_t>store.getLocColLength();
+
+    const uint64_t sizeOfMType = 8ULL * sizeof(MType);
+    const uint64_t storeColLength = static_cast<uint64_t>(store.getLocColLength());
     const imask_size = static_cast<uint64_t>(mask_size);
 
 #ifdef _DISABLED_CUDA_OPENMP
@@ -553,11 +554,11 @@ void CUDA_BFS::setStartVertex(vertexType start)
 #ifdef INSTRUMENTED
     if (verbosity >= 24ULL)
     {
-        cpro_verbosity = 2ULL;
+        cpro_verbosity = 2;
     }
     else if (verbosity >= 8ULL)
     {
-        cpro_verbosity = 1ULL;
+        cpro_verbosity = 1;
     }
 #endif
 
@@ -573,7 +574,7 @@ void CUDA_BFS::setStartVertex(vertexType start)
 
     gs = csr_problem->graph_slices[0];
 
-    visited_mask_bytes = ((csr_problem->nodes * sizeof(typename Csr::VisitedMask)) + 8 - 1) >> 3;
+    visited_mask_bytes = ((csr_problem->nodes * sizeof(typename Csr::VisitedMask)) + 7U) >> 3;
     if (vmask == 0)
     {
         cudaHostAlloc(&vmask, visited_mask_bytes, cudaHostAllocDefault);
