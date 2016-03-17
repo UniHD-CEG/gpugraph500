@@ -538,7 +538,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                    disps, type, comm);
 */
 //#endif
-
+/*
 #ifdef _COMPRESSION
     // reensamble uncompressed chunks
     for (int i = 0; i < communicatorSize; ++i)
@@ -553,6 +553,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         }
     }
 #endif
+*/
 
     free(sizes);
     free(disps);

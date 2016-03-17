@@ -345,7 +345,7 @@ void CUDA_BFS::getBackPredecessor()
         #pragma omp for schedule (guided, 2)
 #endif
 
-        for (uint64_t i = 0ULL; i < mask_size; ++i)
+        for (uint64_t i = 0ULL; i < imask_size; ++i)
         {
             MType tmp = 0;
             const uint64_t isize = i * sizeOfMType;
