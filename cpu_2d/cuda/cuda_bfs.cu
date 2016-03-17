@@ -217,7 +217,7 @@ void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *star
     std::swap(queuebuff, redbuff);
 }
 
-void CUDA_BFS::getOutgoingFQ(vertexType * restrict &startaddr, int &outsize)
+void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, int &outsize)
 {
     startaddr = queuebuff;
     outsize = qb_length;
@@ -337,7 +337,7 @@ void CUDA_BFS::getBackPredecessor()
 
     const uint64_t sizeOfMType = 8ULL * sizeof(MType);
     const uint64_t storeColLength = static_cast<uint64_t>(store.getLocColLength());
-    const imask_size = static_cast<uint64_t>(mask_size);
+    const uint64_t imask_size = static_cast<uint64_t>(mask_size);
 
 #ifdef _DISABLED_CUDA_OPENMP
     #pragma omp parallel
