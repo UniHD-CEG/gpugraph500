@@ -1102,7 +1102,7 @@ for (int i=0; i< communicatorSize;++i) {
 #endif
 
                 uncompressedsize = originalsize;
-                schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
+                schema.compress(startaddr, (size_t)uncompressedsize, &compressed_fq, compressedsize);
 
 #if defined(_COMPRESSIONVERIFY)
                 schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);

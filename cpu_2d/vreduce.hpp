@@ -183,7 +183,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+                schema.compress(send, (size_t)psizeTo, &compressed_fq, compressedsize);
 
 #endif
 
@@ -286,7 +286,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+                schema.compress(send, (size_t)psizeTo, &compressed_fq, compressedsize);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONDEBUG)
@@ -425,7 +425,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     uint32_t reversedSliceIDs;
     size_t csize = 0U;
 
-    schema.compress(send, psizeTo, &compressed_fq, compressedsize);
+    schema.compress(send, (size_t)psizeTo, &compressed_fq, compressedsize);
 
     int32_t * restrict composed_recv;
     int32_t * restrict composed_send;
