@@ -936,7 +936,7 @@ std::cout << "---> rank: " << communicatorRank << " size: " << fq_64_length << s
                 disps[index] = 0L;
             }
 
-/*
+
             FQ_T *complete_CQ = NULL;
             err = posix_memalign((void **)&complete_CQ, ALIGNMENT, psize * communicatorSize * sizeof(FQ_T));
             if (err) {
@@ -1081,7 +1081,7 @@ for (int i=0; i< communicatorSize;++i) {
             if (root_rank == store.getLocalColumnID())
             {
 
-                size_t originalsize;
+                int32_t originalsize;
                 FQ_T *startaddr;
 #ifdef _COMPRESSION
                 compressionType *compressed_fq;
@@ -1091,8 +1091,8 @@ for (int i=0; i< communicatorSize;++i) {
 #ifdef INSTRUMENTED
                 tstart = MPI_Wtime();
 #endif
-                int32_t int_originalsize = static_cast<int32_t>(originalsize);
-                static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, int_originalsize);
+
+                static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, originalsize);
 
 #ifdef INSTRUMENTED
                 lqueue += MPI_Wtime() - tstart;
@@ -1108,6 +1108,7 @@ for (int i=0; i< communicatorSize;++i) {
                 schema.compress(startaddr, originalsize, &compressed_fq, compressedsize);
 
 #if defined(_COMPRESSIONVERIFY)
+                uncompressedsize = static_cast<size_t>(originalsize);
                 schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
 #endif
 
@@ -1115,8 +1116,8 @@ for (int i=0; i< communicatorSize;++i) {
 
 #ifdef _COMPRESSION
 
-                size_t * restrict vectorizedsize = NULL;
-                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(size_t));
+                int32_t * restrict vectorizedsize = NULL;
+                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int32_t));
                 if (err) {
                     throw "Memory error.";
                 }
@@ -1125,11 +1126,11 @@ for (int i=0; i< communicatorSize;++i) {
                 vectorizedsize[1] = compressedsize;
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
 #if defined(_COMPRESSIONVERIFY)
-        bool isCompressed = schema.isCompressed(originalsize, compressedsize);
-        if (isCompressed)
-        {
-                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
-        }
+                bool isCompressed = schema.isCompressed(originalsize, compressedsize);
+                if (isCompressed)
+                {
+                     MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+                }
 #endif
 
                 MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
@@ -1143,7 +1144,7 @@ for (int i=0; i< communicatorSize;++i) {
 
                 if (communicatorRank != root_rank)
                 {
-                    uncompressedsize = originalsize;
+                    uncompressedsize = static_cast<size_t>(originalsize);
                     schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq,  uncompressedsize);
                 }
 
@@ -1201,9 +1202,9 @@ for (int i=0; i< communicatorSize;++i) {
 #ifdef _COMPRESSION
                 compressionType *compressed_fq = NULL;
                 FQ_T *uncompressed_fq = NULL;
-                size_t originalsize, compressedsize;
-                size_t * restrict vectorizedsize = NULL;
-                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(size_t));
+                int32_t originalsize, compressedsize;
+                int32_t * restrict vectorizedsize = NULL;
+                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int32_t));
                 if (err) {
                     throw "Memory error.";
                 }
@@ -1239,7 +1240,7 @@ for (int i=0; i< communicatorSize;++i) {
 
                 MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
 
-                uncompressedsize = originalsize;
+                uncompressedsize = static_cast<size_t>(originalsize);
                 schema.decompress(compressed_fq, compressedsize, /*Out*/ &uncompressed_fq, /*In Out*/ uncompressedsize);
 
                 static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq, originalsize);
