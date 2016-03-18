@@ -194,7 +194,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     const int32_t residuum = communicatorSize - power2intLdSize;
     const int32_t twoTimesResiduum = residuum << 1;
 
-    const function <int32_t(int32_t)> newRank = [&residuum](uint32_t oldr)
+    const function <int32_t(int32_t)> newRank = [&residuum](int32_t oldr)
     {
         return (oldr < (residuum << 1)) ? (oldr >> 1) : oldr - residuum;
     };
@@ -749,6 +749,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 #endif
 {
+
+    /**
+     *
+     *
+     * Variable initialization. Seta a random start vertex. Broadcast it.
+     *
+     *
+     *
+     */
+
     //int communicatorRank;
     //MPI_Comm_rank(col_comm, &communicatorRank); // current rank
 
@@ -761,9 +771,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     const int32_t power2intLdSize = 1 << intLdSize; // 2^n
     const int32_t residuum = communicatorSize - power2intLdSize;
     size_t CQ_length = 0;
+    bool finishedBFS = false;
 
 
-    const function <int32_t(int32_t)> newRank = [&residuum](uint32_t oldr)
+    const function <int32_t(int32_t)> newRank = [&residuum](int32_t oldr)
     {
         return (oldr < (residuum << 1)) ? (oldr >> 1) : oldr - residuum;
     };
@@ -811,12 +822,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
     static_cast<Derived *>(this)->setStartVertex(startVertex);
 
+
 #ifdef INSTRUMENTED
     lqueue += MPI_Wtime() - tstart;
 #endif
 
 // 2) Local expansion
-    int iter = 0;
+    int levelBFS = 0;
 
 
 #ifdef _COMPRESSION
@@ -831,11 +843,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
              static_cast<Derived *>(this), _1, _2, _3, _4);
 
-    /**
-     * Todo: refactor-extract
-     *
-     */
-    while (true)
+        /**
+         *
+         *
+         * Start main BFS iteration.
+         *
+         *
+         *
+         */
+
+
+    while (!finishedBFS)
     {
 
 #ifdef INSTRUMENTED
@@ -863,99 +881,102 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         tstart = MPI_Wtime();
 #endif
 
-        anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
-
-#ifdef INSTRUMENTED
-        lqueue += MPI_Wtime() - tstart;
-#endif
-
-        MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
-
-        if (!anynewnodes_global)
+        if (levelBFS > 0)
         {
 
-            /**
-             *
-             *
-             *
-             * End of BFS iteration. Pass predecessors to main() for Verification()
-             *
-             *
-             *
-             *
-             */
-
-
-#ifdef INSTRUMENTED
-            tstart = MPI_Wtime();
-#endif
-
-            static_cast<Derived *>(this)->getBackPredecessor();
+            anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
 
 #ifdef INSTRUMENTED
             lqueue += MPI_Wtime() - tstart;
 #endif
 
-#ifdef _SCOREP_USER_INSTRUMENTATION
-            SCOREP_USER_REGION_BEGIN(allReduceBC_handle, "BFSRUN_region_allReduceBC", SCOREP_USER_REGION_TYPE_COMMON)
+            MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+
+            if (!anynewnodes_global)
+            {
+
+                /**
+                 *
+                 *
+                 *
+                 * End of BFS iteration. Pass predecessors to main() for Verification()
+                 *
+                 *
+                 */
+
+
+#ifdef INSTRUMENTED
+                tstart = MPI_Wtime();
 #endif
 
-            static_cast<Derived *>(this)->generatOwenMask();
+                static_cast<Derived *>(this)->getBackPredecessor();
 
-            allReduceBitCompressed(predecessor,
-                                   fq_64,
-                                   owenmask, tmpmask, communicatorRank, communicatorSize, col_comm);
+#ifdef INSTRUMENTED
+                lqueue += MPI_Wtime() - tstart;
+#endif
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+                SCOREP_USER_REGION_BEGIN(allReduceBC_handle, "BFSRUN_region_allReduceBC", SCOREP_USER_REGION_TYPE_COMMON)
+#endif
+
+                static_cast<Derived *>(this)->generatOwenMask();
+
+                allReduceBitCompressed(predecessor,
+                                       fq_64,
+                                       owenmask, tmpmask, communicatorRank, communicatorSize, col_comm);
 
 
-            int32_t *sizes;
-            int32_t *disps;
-            int32_t err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
-            int32_t err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
-            if (err1 || err2) {
-                throw "Memory error.";
-            }
+                int32_t *sizes;
+                int32_t *disps;
+                int32_t err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
+                int32_t err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
+                if (err1 || err2) {
+                    throw "Memory error.";
+                }
 
-            const int32_t psize = static_cast<int32_t>(mask_size);
-            const int32_t maskLengthRes = psize % (1 << intLdSize);
-            uint32_t lastReversedSliceIDs = 0U;
-            int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
-            sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
-            disps[lastTargetNode] = 0;
-            for (int32_t slice = 1; slice < power2intLdSize; ++slice)
-            {
-                const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
-                const int32_t targetNode = oldRank(reversedSliceIDs);
-                sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
-                                    mtypesize;
-                disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
-                lastTargetNode = targetNode;
-            }
-            sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
-                                             static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
+                const int32_t psize = static_cast<int32_t>(mask_size);
+                const int32_t maskLengthRes = psize % (1 << intLdSize);
+                uint32_t lastReversedSliceIDs = 0U;
+                int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
+                sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
+                disps[lastTargetNode] = 0;
+                for (int32_t slice = 1; slice < power2intLdSize; ++slice)
+                {
+                    const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
+                    const int32_t targetNode = oldRank(reversedSliceIDs);
+                    sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
+                                        mtypesize;
+                    disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
+                    lastTargetNode = targetNode;
+                }
+                sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
+                                                 static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
 
-            for (int32_t node = 0; node < residuum; ++node)
-            {
-                const int32_t index = (node * 2) + 1;
-                sizes[index] = 0;
-                disps[index] = 0;
-            }
+                for (int32_t node = 0; node < residuum; ++node)
+                {
+                    const int32_t index = (node * 2) + 1;
+                    sizes[index] = 0;
+                    disps[index] = 0;
+                }
 
-            MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                            predecessor, sizes, disps, fq_tp_type, col_comm);
-
-            free(sizes);
-            free(disps);
+                MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                                predecessor, sizes, disps, fq_tp_type, col_comm);
 
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
-            SCOREP_USER_REGION_END(allReduceBC_handle)
+                SCOREP_USER_REGION_END(allReduceBC_handle)
 #endif
 
 #ifdef INSTRUMENTED
-            predlistred = MPI_Wtime() - tstart;
+                predlistred = MPI_Wtime() - tstart;
 #endif
 
-            return; // There is nothing to do. Finish iteration.
+                free(sizes);
+                free(disps);
+
+                finishedBFS = true;
+                return; // There is nothing to do. Finish iteration.
+            }
         }
 
 // 4) global expansion
@@ -977,6 +998,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
         int _outsize; //really int, because mpi supports no long message sizes :(
 
+            /**
+             *
+             *
+             * 2D - Column communication. (vreduce())
+             *
+             *
+             */
+
         vreduce(reduce, get,
 #ifdef _COMPRESSION
                 schema,
@@ -992,6 +1021,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 , lqueue
 #endif
                );
+
+            /**
+             *
+             *
+             *
+             * 2D - Rows communication.
+             *
+             *
+             */
+
 
         static_cast<Derived *>(this)->setModOutgoingFQ(fq_64, _outsize);
 
@@ -1243,7 +1282,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #ifdef _SCOREP_USER_INSTRUMENTATION
         SCOREP_USER_REGION_END(rowCommunication_handle)
 #endif
-        ++iter;
+        /**
+         *
+         *
+         *
+         * Deeph of graph "search-tree" increases.
+         *
+         */
+
+        ++levelBFS;
     }
 }
 #endif // GLOBALBFS_HH
