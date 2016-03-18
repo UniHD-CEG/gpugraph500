@@ -61,15 +61,6 @@ private:
     void allReduceBitCompressed(typename STORE::vertexType *&owen, typename STORE::vertexType *tmp,
                                 MType *owenmap, MType *tmpmap, int communicatorRank, int communicatorSize, MPI_Comm col_comm);
 
-    inline int32_t newRank(int32_t residuum, int32_t &oldr)
-    {
-        return (oldr < (residuum << 1)) ? (oldr >> 1) : oldr - residuum;
-    };
-    inline int32_t oldRank(int32_t residuum, uint32_t newr)
-    {
-        return (newr < residuum) ? (newr << 1) : newr + residuum;
-    };
-
 protected:
     const STORE &store;
     typename STORE::vertexType *predecessor;
@@ -195,7 +186,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         MType *tmpmap, int communicatorRank, int communicatorSize, MPI_Comm col_comm)
 {
     MPI_Status status;
-    const int32_t psize = static_cast<int32_t>(mask_size); // may result in overflow 64-bit -> 32-bit
+    const int32_t psize = static_cast<int32_t>(mask_size);
     const int32_t mtypesize = sizeof(MType) << 3; // * 8
     //step 1
     const int32_t intLdSize = ilogbf(static_cast<float>(communicatorSize)); //integer log_2 of size
@@ -203,6 +194,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     const int32_t residuum = communicatorSize - power2intLdSize;
     const int32_t twoTimesResiduum = residuum << 1;
 
+    const function <int32_t(int32_t)> newRank = [&residuum](uint32_t oldr)
+    {
+        return (oldr < (residuum << 1)) ? (oldr >> 1) : oldr - residuum;
+    };
+    const function <int32_t(int32_t)> oldRank = [&residuum](uint32_t newr)
+    {
+        return (newr < residuum) ? (newr << 1) : newr + residuum;
+    };
 
     //step 2
     if (communicatorRank < twoTimesResiduum)
@@ -264,7 +263,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     {
         int32_t ssize, offset;
         ssize = psize;
-        const int32_t vrank = newRank(residuum, communicatorRank);
+        const int32_t vrank = newRank(communicatorRank);
         offset = 0;
         // intLdSize: ~2 to 4 iteractions (scale 22, 16 gpus)
         for (int32_t it = 0; it < intLdSize; ++it)
@@ -273,8 +272,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             const int32_t lowers = ssize >> 1; //lower slice size
             const int32_t uppers = ssize - lowers; //upper slice size
             int32_t size = lowers * mtypesize;
-            orankEven = oldRank(residuum, (vrank + (1 << it)) & (power2intLdSize - 1));
-            orankOdd = oldRank(residuum, (power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
+            orankEven = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
+            orankOdd = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
             const int32_t twoTimesIterator = it << 1;
             iterator2 = twoTimesIterator + 2;
             iterator3 = twoTimesIterator + 3;
@@ -764,7 +763,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     size_t CQ_length = 0;
 
 
+    const function <int32_t(int32_t)> newRank = [&residuum](uint32_t oldr)
+    {
+        return (oldr < (residuum << 1)) ? (oldr >> 1) : oldr - residuum;
+    };
+    const function <int32_t(int32_t)> oldRank = [&residuum](uint32_t newr)
+    {
+        return (newr < residuum) ? (newr << 1) : newr + residuum;
+    };
+
+
     bitmapSchema.init();
+
 
 #ifdef INSTRUMENTED
     double tstart, tend;
@@ -866,17 +876,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
             /**
              *
-             * End of iteration. Predecesor list distribution for Validation in Main()
              *
+             *
+             * End of BFS iteration. Pass predecessors to main() for Verification()
              *
              *
              *
              *
              */
 
+
 #ifdef INSTRUMENTED
             tstart = MPI_Wtime();
 #endif
+
             static_cast<Derived *>(this)->getBackPredecessor();
 
 #ifdef INSTRUMENTED
@@ -889,21 +902,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
             static_cast<Derived *>(this)->generatOwenMask();
 
-//std::cout << "---> rank: " << CQ_length << " size: " << CQ_length << std::endl;
+            allReduceBitCompressed(predecessor,
+                                   fq_64,
+                                   owenmask, tmpmask, communicatorRank, communicatorSize, col_comm);
 
-
-/*
-std::cout << "sizes: (" << communicatorRank << ")";
-for (int i=0; i< communicatorSize;++i) {
-    std::cout << sizes[i] << ", ";
-}
-std::cout << std::endl;
-
-std::cout << "disp: (" << communicatorRank << ")";
-for (int i=0; i< communicatorSize;++i) {
-    std::cout << disps[i] << ", ";
-}
-*/
 
             int32_t *sizes;
             int32_t *disps;
@@ -912,16 +914,17 @@ for (int i=0; i< communicatorSize;++i) {
             if (err1 || err2) {
                 throw "Memory error.";
             }
+
             const int32_t psize = static_cast<int32_t>(mask_size);
             const int32_t maskLengthRes = psize % (1 << intLdSize);
-            uint32_t lastReversedSliceIDs = 0UL;
-            int32_t lastTargetNode = oldRank(residuum, lastReversedSliceIDs);
+            uint32_t lastReversedSliceIDs = 0U;
+            int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
             sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
             disps[lastTargetNode] = 0;
             for (int32_t slice = 1; slice < power2intLdSize; ++slice)
             {
                 const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
-                const int32_t targetNode = oldRank(residuum, reversedSliceIDs);
+                const int32_t targetNode = oldRank(reversedSliceIDs);
                 sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
                                     mtypesize;
                 disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
@@ -936,11 +939,6 @@ for (int i=0; i< communicatorSize;++i) {
                 sizes[index] = 0;
                 disps[index] = 0;
             }
-
-            allReduceBitCompressed(predecessor,
-                                   fq_64,
-                                   owenmask, tmpmask, communicatorRank, communicatorSize, col_comm);
-
 
             MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                             predecessor, sizes, disps, fq_tp_type, col_comm);
@@ -977,7 +975,7 @@ for (int i=0; i< communicatorSize;++i) {
         lqueue +=  MPI_Wtime() - tstart;
 #endif
 
-        int32_t _outsize; //really int, because mpi supports no long message sizes :(
+        int _outsize; //really int, because mpi supports no long message sizes :(
 
         vreduce(reduce, get,
 #ifdef _COMPRESSION
@@ -1024,7 +1022,7 @@ for (int i=0; i< communicatorSize;++i) {
             if (root_rank == store.getLocalColumnID())
             {
 
-                int32_t originalsize;
+                int originalsize;
                 FQ_T *startaddr;
 #ifdef _COMPRESSION
                 compressionType *compressed_fq;
@@ -1057,8 +1055,8 @@ for (int i=0; i< communicatorSize;++i) {
 
 #ifdef _COMPRESSION
 
-                int32_t * restrict vectorizedsize = NULL;
-                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int32_t));
+                int * restrict vectorizedsize = NULL;
+                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
                 if (err) {
                     throw "Memory error.";
                 }
@@ -1067,11 +1065,11 @@ for (int i=0; i< communicatorSize;++i) {
                 vectorizedsize[1] = compressedsize;
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
 #if defined(_COMPRESSIONVERIFY)
-                bool isCompressed = schema.isCompressed(originalsize, compressedsize);
-                if (isCompressed)
-                {
-                    MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
-                }
+        bool isCompressed = schema.isCompressed(originalsize, compressedsize);
+        if (isCompressed)
+        {
+                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+        }
 #endif
 
                 MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
@@ -1143,9 +1141,9 @@ for (int i=0; i< communicatorSize;++i) {
 #ifdef _COMPRESSION
                 compressionType *compressed_fq = NULL;
                 FQ_T *uncompressed_fq = NULL;
-                int32_t originalsize, compressedsize;
-                int32_t * restrict vectorizedsize = NULL;
-                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int32_t));
+                int originalsize, compressedsize;
+        int * restrict vectorizedsize = NULL;
+                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
                 if (err) {
                     throw "Memory error.";
                 }
@@ -1159,7 +1157,7 @@ for (int i=0; i< communicatorSize;++i) {
                 }
 
 #if defined(_COMPRESSIONVERIFY)
-                bool isCompressed = schema.isCompressed(originalsize, compressedsize);
+        bool isCompressed = schema.isCompressed(originalsize, compressedsize);
                 FQ_T *startaddr = NULL;
                 if (isCompressed)
                 {
@@ -1192,7 +1190,7 @@ for (int i=0; i< communicatorSize;++i) {
 
 
 #else
-                int32_t originalsize;
+                int originalsize;
                 MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
@@ -1201,7 +1199,6 @@ for (int i=0; i< communicatorSize;++i) {
                 tstart = MPI_Wtime();
 #endif
 
-                CQ_length = static_cast<size_t>(originalsize);
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 
 #ifdef INSTRUMENTED

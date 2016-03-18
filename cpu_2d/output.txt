@@ -13,99 +13,48 @@ been deprecated and replaced as follows:
 The deprecated forms *will* disappear in a future version of Open MPI.
 Please update to the new syntax.
 --------------------------------------------------------------------------
- Data for JOB [18429,1] offset 0
+ Data for JOB [23143,1] offset 0
 
  ========================   JOB MAP   ========================
 
  Data for node: creek01	Num slots: 2	Max slots: 0	Num procs: 1
- 	Process OMPI jobid: [18429,1] App: 0 Process rank: 0
+ 	Process OMPI jobid: [23143,1] App: 0 Process rank: 0
 
  Data for node: creek02	Num slots: 2	Max slots: 0	Num procs: 1
- 	Process OMPI jobid: [18429,1] App: 0 Process rank: 1
+ 	Process OMPI jobid: [23143,1] App: 0 Process rank: 1
 
  Data for node: creek03	Num slots: 2	Max slots: 0	Num procs: 1
- 	Process OMPI jobid: [18429,1] App: 0 Process rank: 2
+ 	Process OMPI jobid: [23143,1] App: 0 Process rank: 2
 
  Data for node: creek04	Num slots: 2	Max slots: 0	Num procs: 1
- 	Process OMPI jobid: [18429,1] App: 0 Process rank: 3
+ 	Process OMPI jobid: [23143,1] App: 0 Process rank: 3
 
  =============================================================
 row slices: 2, column slices: 2
-graph_generation:               1.055172 s
+graph_generation:               1.055434 s
 Input list of edges genereted.
-4.194304e+06 edge(s) generated in 1.055296s (3.974529 Medges/s on 4 processor(s))
+4.194304e+06 edge(s) generated in 1.055557s (3.973546 Medges/s on 4 processor(s))
 Global matrix redistribution done!
 Adjacency Matrix setup.
 3.884920e+05 edge(s) removed, because they are duplicates or self loops.
-7.611624e+06 unique edge(s) processed in 2.073511s (3.670887 Medges/s on 4 processor(s))
-[creek04:18743] *** Process received signal ***
-[creek04:18743] Signal: Segmentation fault (11)
-[creek04:18743] Signal code: Address not mapped (1)
-[creek04:18743] Failing at address: 0xfffffd000000005c
-[creek01:01217] *** Process received signal ***
-[creek01:01217] Signal: Segmentation fault (11)
-[creek01:01217] Signal code: Address not mapped (1)
-[creek01:01217] Failing at address: 0xfffffd000000005c
-[creek03:02194] *** Process received signal ***
-[creek03:02194] Signal: Segmentation fault (11)
-[creek03:02194] Signal code: Address not mapped (1)
-[creek03:02194] Failing at address: 0xfffffd000000005c
-[creek01:01217] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0xfcb0)[0x7f031961ecb0]
-[creek01:01217] [ 1] /lib/x86_64-linux-gnu/libc.so.6(+0x14f4c5)[0x7f03193a04c5]
-[creek01:01217] [ 2] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x31548f)[0x7f030dfd948f]
-[creek01:01217] [ 3] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x1fb0ae)[0x7f030debf0ae]
-[creek01:01217] [ 4] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x20bbd6)[0x7f030decfbd6]
-[creek01:01217] [ 5] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x1fc257)[0x7f030dec0257]
-[creek01:01217] [ 6] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x16b3f2)[0x7f030de2f3f2]
-[creek01:01217] [ 7] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x16e71a)[0x7f030de3271a]
-[creek01:01217] [ 8] /usr/lib/x86_64-linux-gnu/libcuda.so.1(cuMemcpyDtoH_v2+0x65)[0x7f030de0fcf5]
-[creek01:01217] [ 9] /usr/local/cuda-7.0/lib64/libcudart.so.7.0(+0x2ce5a)[0x7f0319dece5a]
-[creek01:01217] [10] /usr/local/cuda-7.0/lib64/libcudart.so.7.0(+0x11306)[0x7f0319dd1306]
-[creek01:01217] [11] /usr/local/cuda-7.0/lib64/libcudart.so.7.0(cudaMemcpy+0x78)[0x7f0319df3328]
-[creek01:01217] [12] ../cpu_2d/g500[0x59e5d7]
-[creek01:01217] [13] ../cpu_2d/g500[0x46f54b]
-[creek01:01217] [14] ../cpu_2d/g500[0x46ac52]
-[creek01:01217] [15] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7f031927276d]
-[creek01:01217] [16] ../cpu_2d/g500[0x40cc85]
-[creek01:01217] *** End of error message ***
-[creek04:18743] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0xfcb0)[0x7f372dd46cb0]
-[creek04:18743] [ 1] /lib/x86_64-linux-gnu/libc.so.6(+0x14f4c5)[0x7f372dac84c5]
-[creek04:18743] [ 2] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x31548f)[0x7f372260348f]
-[creek04:18743] [ 3] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x1fb0ae)[0x7f37224e90ae]
-[creek04:18743] [ 4] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x20bbd6)[0x7f37224f9bd6]
-[creek04:18743] [ 5] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x1fc257)[0x7f37224ea257]
-[creek04:18743] [ 6] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x16b3f2)[0x7f37224593f2]
-[creek04:18743] [ 7] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x16e71a)[0x7f372245c71a]
-[creek04:18743] [ 8] /usr/lib/x86_64-linux-gnu/libcuda.so.1(cuMemcpyDtoH_v2+0x65)[0x7f3722439cf5]
-[creek04:18743] [ 9] /usr/local/cuda-7.0/lib64/libcudart.so.7.0(+0x2ce5a)[0x7f372e514e5a]
-[creek04:18743] [10] /usr/local/cuda-7.0/lib64/libcudart.so.7.0(+0x11306)[0x7f372e4f9306]
-[creek04:18743] [11] /usr/local/cuda-7.0/lib64/libcudart.so.7.0(cudaMemcpy+0x78)[0x7f372e51b328]
-[creek04:18743] [12] ../cpu_2d/g500[0x59e5d7]
-[creek04:18743] [13] ../cpu_2d/g500[0x46f54b]
-[creek04:18743] [14] ../cpu_2d/g500[0x46aca1]
-[creek04:18743] [15] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7f372d99a76d]
-[creek04:18743] [16] ../cpu_2d/g500[0x40cc85]
-[creek04:18743] *** End of error message ***
-[creek02:20952] *** Process received signal ***
-[creek03:02194] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0xfcb0)[0x7fc1ee5a1cb0]
-[creek03:02194] [ 1] /lib/x86_64-linux-gnu/libc.so.6(+0x14f4c5)[0x7fc1ee3234c5]
-[creek03:02194] [ 2] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x31548f)[0x7fc1e2e5d48f]
-[creek03:02194] [ 3] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x1fb0ae)[0x7fc1e2d430ae]
-[creek03:02194] [ 4] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x20bbd6)[0x7fc1e2d53bd6]
-[creek03:02194] [ 5] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x1fc257)[0x7fc1e2d44257]
-[creek03:02194] [ 6] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x16b3f2)[0x7fc1e2cb33f2]
-[creek03:02194] [ 7] /usr/lib/x86_64-linux-gnu/libcuda.so.1(+0x16e71a)[0x7fc1e2cb671a]
-[creek03:02194] [ 8] /usr/lib/x86_64-linux-gnu/libcuda.so.1(cuMemcpyDtoH_v2+0x65)[0x7fc1e2c93cf5]
-[creek03:02194] [ 9] /usr/local/cuda-7.0/lib64/libcudart.so.7.0(+0x2ce5a)[0x7fc1eed6fe5a]
-[creek03:02194] [10] /usr/local/cuda-7.0/lib64/libcudart.so.7.0(+0x11306)[0x7fc1eed54306]
-[creek03:02194] [11] /usr/local/cuda-7.0/lib64/libcudart.so.7.0(cudaMemcpy+0x78)[0x7fc1eed76328]
-[creek03:02194] [12] ../cpu_2d/g500[0x59e5d7]
-[creek03:02194] [13] ../cpu_2d/g500[0x46f54b]
-[creek03:02194] [14] ../cpu_2d/g500[0x46aca1]
-[creek03:02194] [15] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7fc1ee1f576d]
-[creek03:02194] [16] ../cpu_2d/g500[0x40cc85]
-[creek03:02194] *** End of error message ***
-./test2.sh: line 27: 20952 Segmentation fault      (core dumped) $g500 -s $1 -C $2 -gpus 1 -qs 1 -be $codec -btr $threshold -btc $threshold
+7.611624e+06 unique edge(s) processed in 1.995257s (3.814859 Medges/s on 4 processor(s))
+[creek04:21713] *** Process received signal ***
+[creek04:21713] Signal: Segmentation fault (11)
+[creek04:21713] Signal code: Address not mapped (1)
+[creek04:21713] Failing at address: 0xf
+[creek01:02558] *** Process received signal ***
+[creek01:02558] Signal: Segmentation fault (11)
+[creek01:02558] Signal code: Address not mapped (1)
+[creek01:02558] Failing at address: 0xf
+[creek03:03199] *** Process received signal ***
+[creek03:03199] Signal: Segmentation fault (11)
+[creek03:03199] Signal code: Address not mapped (1)
+[creek03:03199] Failing at address: 0xf
+[creek02:21904] *** Process received signal ***
+[creek02:21904] Signal: Segmentation fault (11)
+[creek02:21904] Signal code: Address not mapped (1)
+[creek02:21904] Failing at address: 0x13965
+./test2.sh: line 27:  3199 Segmentation fault      (core dumped) $g500 -s $1 -C $2 -gpus 1 -qs 1 -be $codec -btr $threshold -btc $threshold
 -------------------------------------------------------
 Primary job  terminated normally, but 1 process returned
 a non-zero exit code.. Per user-direction, the job has been aborted.
@@ -114,6 +63,6 @@ a non-zero exit code.. Per user-direction, the job has been aborted.
 mpirun detected that one or more processes exited with non-zero status, thus causing
 the job to be terminated. The first process to do so was:
 
-  Process name: [[18429,1],1]
+  Process name: [[23143,1],2]
   Exit code:    139
 --------------------------------------------------------------------------

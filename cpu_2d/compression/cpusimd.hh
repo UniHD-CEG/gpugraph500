@@ -27,7 +27,7 @@ private:
 public:
     CpuSimd();
     void debugCompression(T *fq, const size_t size) const;
-    inline void compress(T *fq_64, const size_t size, T_C **compressed_fq_64, size_t &compressedsize) const ;
+    inline void compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const ;
     inline void decompress(T_C *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
@@ -63,7 +63,7 @@ void CpuSimd<T, T_C>::debugCompression(T *fq, const size_t size) const
 }
 
 template <typename T, typename T_C>
-inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t size, T_C ** restrict compressed_fq_32,
+inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t &size, T_C ** restrict compressed_fq_32,
                                size_t &compressedsize) const
 {
     if (isCompressible(size))
