@@ -61,9 +61,9 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing,
     //fq_64 = new vertexType[fq_64_length];
     cudaHostAlloc(&fq_64, fq_64_length * sizeof(vertexType), cudaHostAllocDefault);
     //multipurpose buffer
-    qb_length = 0ULL;
+    qb_length = 0UL;
     cudaHostAlloc(&queuebuff, fq_64_length * sizeof(vertexType), cudaHostAllocDefault);
-    rb_length = 0ULL;
+    rb_length = 0UL;
     cudaHostAlloc(&redbuff, fq_64_length * sizeof(vertexType), cudaHostAllocDefault);
 
     csr_problem = new Csr;
@@ -225,7 +225,7 @@ void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *star
     std::swap(queuebuff, redbuff);
 }
 
-void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, int &outsize)
+void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, size_t &outsize)
 {
     startaddr = queuebuff;
     outsize = qb_length;
@@ -235,7 +235,7 @@ void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, int &outsize)
  * -set the Outgoing queue after the column reduction
  * -recompute the visited mask
  */
-void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, int insize)
+void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, size_t insize)
 {
 
     const int numGpus = csr_problem->num_gpus;
@@ -257,7 +257,7 @@ void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, int insize)
         qb_length = insize;
     }
     //update visited
-    for (uint64_t i = 0ULL; i < qb_length; ++i)
+    for (size_t i = 0UL; i < qb_length; ++i)
     {
         const typename Csr::ProblemType::VertexId vtxID = queuebuff[i] & Csr::ProblemType::VERTEX_ID_MASK;
         vmask[vtxID >> 3] |= 1 << (vtxID & 0x7);
@@ -319,7 +319,7 @@ void CUDA_BFS::getOutgoingFQ(vertexType globalstart, long size, vertexType *&sta
 /*  Sets the incoming FQ.
  *  Expect symmetric partitioning, so all parameters are ignored.
  */
-void CUDA_BFS::setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, int &insize_max)
+void CUDA_BFS::setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, size_t &insize_max)
 {
     if (startaddr == fq_64)
     {
@@ -343,7 +343,7 @@ void CUDA_BFS::getBackPredecessor()
                            "Extraction of result failed", __FILE__, __LINE__);
     bfsGPU->finalize();
 
-    const uint64_t sizeOfMType = 8ULL * sizeof(MType);
+    const std::size_t sizeOfMType = 8ULL * sizeof(MType);
     const uint64_t storeColLength = static_cast<uint64_t>(store.getLocColLength());
     const uint64_t imask_size = static_cast<uint64_t>(mask_size);
 
@@ -415,7 +415,7 @@ void CUDA_BFS::getBackOutqueue()
 
 
 
-    qb_length = 0ULL;//csr_problem->num_gpus;
+    qb_length = 0UL;//csr_problem->num_gpus;
     typename MatrixT::vertexType *qb_nxt = queuebuff;
     // copy next queue to host
     for (int i = 0; i < numGpus; ++i)
@@ -596,7 +596,7 @@ void CUDA_BFS::setStartVertex(vertexType start)
     }
 
     //new next queue
-    qb_length = 0ULL;
+    qb_length = 0UL;
 
     if (store.isLocalRow(start))
     {
@@ -605,7 +605,7 @@ void CUDA_BFS::setStartVertex(vertexType start)
         rstart |= (src_owner << Csr::ProblemType::GPU_MASK_SHIFT);
 
         queuebuff[0U] = rstart;
-        qb_length = 1ULL;
+        qb_length = 1UL;
     }
 
     if (b40c::util::B40CPerror(bfsGPU->EnactSearch(
