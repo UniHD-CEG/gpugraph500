@@ -453,10 +453,9 @@ struct CsrProblem
                 */
 
                 // Construct data structures for gpus on host
-#ifdef _DISABLED_OPENMP
+#ifdef _OPENMP
     #pragma omp parallel for
 #endif
-
                 for (VertexId node = 0LL; node < nodes; ++node) {
 
                     int gpu                 = GpuIndex(node);

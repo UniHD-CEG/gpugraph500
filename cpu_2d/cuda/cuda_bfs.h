@@ -45,7 +45,7 @@ private:
     typedef CsrProblem <vertexType, rowtyp, true> Csr;
     int64_t verbosity;
     double queue_sizing;
-    uint64_t qb_length, rb_length;
+    size_t qb_length, rb_length;
     vertexType * __restrict__ queuebuff;
     vertexType * __restrict__ redbuff;
     MType * __restrict__ vmask;
