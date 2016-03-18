@@ -225,7 +225,7 @@ void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *star
     std::swap(queuebuff, redbuff);
 }
 
-void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, size_t &outsize)
+void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, int &outsize)
 {
     startaddr = queuebuff;
     outsize = qb_length;
@@ -235,7 +235,7 @@ void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, size_t &outsize)
  * -set the Outgoing queue after the column reduction
  * -recompute the visited mask
  */
-void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, size_t insize)
+void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, int insize)
 {
 
     const int numGpus = csr_problem->num_gpus;
@@ -319,7 +319,7 @@ void CUDA_BFS::getOutgoingFQ(vertexType globalstart, long size, vertexType *&sta
 /*  Sets the incoming FQ.
  *  Expect symmetric partitioning, so all parameters are ignored.
  */
-void CUDA_BFS::setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, size_t &insize_max)
+void CUDA_BFS::setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, int &insize_max)
 {
     if (startaddr == fq_64)
     {
