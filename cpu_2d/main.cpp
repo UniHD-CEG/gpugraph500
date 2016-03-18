@@ -45,7 +45,7 @@
 
 // vertexType, compressionType
 #include "types_bfs.h"
-
+#include "constants.hh"
 
 using std::vector;
 using std::knuth_b;
@@ -128,6 +128,7 @@ int main(int argc, char **argv)
     int next, maxiterations;
     long local_edges, elem, global_edges_wd;
     string compressionCodec = "";
+    string predecessorListCompressionCodec = "";
     int compressionThreshold = 0;
     int iterations = 0, maxgenvtx =
                          32; // relative number of maximum attempts to find a valid start vertix per possible attempt
@@ -165,7 +166,7 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
- 
+
    if (rank == 0)
     {
         externalArgumentsIterate(argc, argv, scale, edgefactor, num_of_iterations, verbosity,
@@ -246,6 +247,7 @@ int main(int argc, char **argv)
     }
 
 #if defined(_COMPRESSION) && defined(_SIMD)
+#if defined(_COMPRESSIONDEBUG)
     // Check Matrix. Values lower than 32 bits are needed for SIMDcompression
     if (rank == 0)
     {
@@ -262,8 +264,10 @@ int main(int argc, char **argv)
         printf(" done!\n");
     }
 #endif
+#endif
 
 #if defined(_COMPRESSION) // && defined(_SIMD_PLUS)
+#if defined(_COMPRESSIONDEBUG)
     // Check Matrix. Values are possitive
     if (rank == 0)
     {
@@ -280,6 +284,7 @@ int main(int argc, char **argv)
         printf(" done!\n");
     }
 #endif
+#endif
 
 
 #ifdef _COMPRESSION
@@ -289,6 +294,10 @@ int main(int argc, char **argv)
 #if defined(_SIMD)
     Compression<vertexType, compressionType> &schema = *CompressionFactory<vertexType, compressionType>::getFromName("cpusimd");
     schema.reconfigure(compressionThreshold, compressionCodec);
+    // non ordered 64-bit integer data. choosed VSimple codec
+    Compression<vertexType, compressionType> &predecessorListSchema = *CompressionFactory<vertexType, compressionType>::getFromName("cpusimd");
+    predecessorListCompressionCodec = "maskedvbyte";
+    predecessorListSchema.reconfigure(compressionThreshold, predecessorListCompressionCodec);
 #elif defined(_SIMD_PLUS)
     Compression<vertexType, compressionType> &schema = *CompressionFactory<vertexType, compressionType>::getFromName("simdplus");
 #elif defined(_SIMT)
@@ -408,20 +417,20 @@ int main(int argc, char **argv)
 #ifdef INSTRUMENTED
         if (rank == 0)
         {
-            bfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred, schema);
+            bfs.runBFS(tries[i], lexp, lqueue, rowcom, colcom, predlistred, schema, predecessorListSchema);
         }
         else
         {
-            bfs.runBFS(-1, lexp, lqueue, rowcom, colcom, predlistred, schema);
+            bfs.runBFS(-1, lexp, lqueue, rowcom, colcom, predlistred, schema, predecessorListSchema);
         }
 #else
         if (rank == 0)
         {
-            bfs.runBFS(tries[i], schema);
+            bfs.runBFS(tries[i], schema, predecessorListSchema);
         }
         else
         {
-            bfs.runBFS(-1, schema);
+            bfs.runBFS(-1, schema, predecessorListSchema);
         }
 #endif
 #else

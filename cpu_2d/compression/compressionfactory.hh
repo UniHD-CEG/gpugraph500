@@ -45,7 +45,6 @@ public:
     static map<string, shared_ptr<Compression<T, T_C>>> compressionschemes;
     static shared_ptr<Compression<T, T_C>> defaultptr;
 
-
     static shared_ptr<Compression<T, T_C>> &getFromName(string name)
     {
         if (compressionschemes.find(name) == compressionschemes.end())

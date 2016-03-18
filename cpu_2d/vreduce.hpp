@@ -19,6 +19,7 @@
 #include <sstream>
 #include "bitlevelfunctions.h"
 #include "config.h"
+#include "constants.hh"
 
 #ifdef _COMPRESSION
 #include "compression/compression.hh"
@@ -27,13 +28,6 @@
 using std::function;
 using std::is_sorted;
 
-#ifndef ALIGNMENT
-#if HAVE_AVX
-#define ALIGNMENT 32UL
-#else
-#define ALIGNMENT 16UL
-#endif
-#endif
 
 
 #ifdef _COMPRESSION

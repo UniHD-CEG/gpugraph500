@@ -11,7 +11,7 @@ class NoCompression: public Compression<T, T_C>
 {
 public:
     void debugCompression(T *fq, const int size) const;
-    void compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const;
+    void compress(T *fq_64, const size_t size, T_C **compressed_fq_64, size_t &compressedsize) const;
     void decompress(T_C *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
@@ -55,7 +55,7 @@ void NoCompression<T, T_C>::debugCompression(T *fq, const int size) const
 }
 
 template<typename T, typename T_C>
-void NoCompression<T, T_C>::compress(T *fq_64, const size_t &size, T_C **compressed_fq_64,
+void NoCompression<T, T_C>::compress(T *fq_64, const size_t size, T_C **compressed_fq_64,
                                      size_t &compressedsize) const
 {
     compressedsize = size;

@@ -16,6 +16,7 @@
 #include <cstddef> // needed by MPICH implem.
 #include <cstdlib> // only for values of packed_edge typ!!!
 #include "config.h"
+#include "constants.hh"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -24,14 +25,6 @@
 
 #if _OPENMP
 #include <parallel/algorithm>
-#endif
-
-#ifndef ALIGNMENT
-#if HAVE_AVX
-#define ALIGNMENT 32UL
-#else
-#define ALIGNMENT 16UL
-#endif
 #endif
 
 // WOLO: without local offset; ALG: vertex alligment; PAD: pad the row slices, so that they are equal
@@ -129,7 +122,11 @@ public:
                                       size_t *local_p) const;
 
     bool allValuesSmallerThan32Bits() const;
+
+#ifdef _COMPRESSIONDEBUG
     bool allValuesPositive() const;
+#endif
+
 };
 
 /**
@@ -1370,6 +1367,7 @@ bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesSmallerThan
     return allSmaller;
 }
 
+#ifdef _COMPRESSIONDEBUG
 /**
  * allPositive Check
  * Checks if all values in the Matrix are possitive
@@ -1403,5 +1401,6 @@ bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesPositive() 
 
     return allPositive;
 }
+#endif
 
 #endif // DISTMATRIX2D_HH

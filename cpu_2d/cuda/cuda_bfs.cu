@@ -11,6 +11,7 @@
 #ifdef _COMPRESSION
 #include "../types_bfs.h"
 #endif
+#include "../constants.hh"
 
 CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing,
                    int64_t _verbosity
@@ -40,7 +41,13 @@ CUDA_BFS::CUDA_BFS(MatrixT &_store, int &num_gpus, double _queue_sizing,
         printf("Partitioning has to be symmetric.\n");
         exit(1);
     }
-    predecessor = new vertexType[store.getLocColLength()];
+    // predecessor = new vertexType[store.getLocColLength()];
+    vertexType *predecessor;
+    int err = posix_memalign((void **)&predecessor, ALIGNMENT, store.getLocColLength() * sizeof(vertexType));
+    if (err) {
+        throw "Memory error.";
+    }
+
 
 #ifdef _COMPRESSION
     fq_tp_typeC = MPIcompressed;
@@ -136,7 +143,8 @@ CUDA_BFS::~CUDA_BFS()
     cudaFreeHost(redbuff);
     cudaFreeHost(queuebuff);
     cudaFreeHost(fq_64);
-    delete[] predecessor;
+    free(predecessor);
+    //delete[] predecessor;
 }
 
 /*
