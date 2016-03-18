@@ -28,7 +28,7 @@ public:
     CpuSimd();
     void debugCompression(T *fq, const size_t size) const;
     inline void compress(T *fq_64, const size_t size, T_C **compressed_fq_64, size_t &compressedsize) const ;
-    inline void decompress(T_C *compressed_fq_64, const int32_t size,
+    inline void decompress(T_C *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
@@ -76,7 +76,7 @@ inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t size, T_C
         if (err1 || err2) {
             throw "Memory error.";
         }
-/*
+
 #ifndef _COMPRESSIONDEBUG
         // test overflow
         const uint32_t LIMIT_UINT32 = (1L << 32) - 1;
@@ -87,7 +87,7 @@ inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t size, T_C
             // assert(tested >= 0);
         }
 #endif
-*/
+
         for (size_t i = 0U; i < size; ++i)
         {
             fq_32[i] = static_cast<T_C>(fq_64[i]);
@@ -118,7 +118,7 @@ inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t size, T_C
 }
 
 template <typename T, typename T_C>
-inline void CpuSimd<T, T_C>::decompress(T_C * restrict compressed_fq_32, const int32_t size,
+inline void CpuSimd<T, T_C>::decompress(T_C * restrict compressed_fq_32, const int size,
                                  /*Out*/ T ** restrict uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const
 {
    if (isCompressed(uncompressedsize, size))

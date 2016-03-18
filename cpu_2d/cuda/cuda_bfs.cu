@@ -160,7 +160,7 @@ void CUDA_BFS::bfsMemCpy(vertexType *&dst, vertexType *src, size_t size)
  * Function for reduction of the current and incoming frontier queue
  * Supports now only one gpu, because the vertexranges are not continuous
  */
-void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *startaddr, int insize)
+void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *startaddr, int32_t insize)
 {
 
 #ifdef _DEBUG
@@ -225,17 +225,17 @@ void CUDA_BFS::reduce_fq_out(vertexType globalstart, long size, vertexType *star
     std::swap(queuebuff, redbuff);
 }
 
-void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, int &outsize)
+void CUDA_BFS::getOutgoingFQ(vertexType *&startaddr, int32_t &outsize)
 {
     startaddr = queuebuff;
-    outsize = qb_length;
+    outsize = static_cast<size_t>(qb_length);
 }
 
 /*
  * -set the Outgoing queue after the column reduction
  * -recompute the visited mask
  */
-void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, int insize)
+void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, int32_t insize)
 {
 
     const int numGpus = csr_problem->num_gpus;
@@ -254,7 +254,7 @@ void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, int insize)
     if (startaddr != 0)
     {
         std::swap(fq_64, queuebuff);
-        qb_length = insize;
+        qb_length = static_cast<size_t>(insize);
     }
     //update visited
     for (size_t i = 0UL; i < qb_length; ++i)
@@ -280,7 +280,7 @@ void CUDA_BFS::setModOutgoingFQ(vertexType * restrict startaddr, int insize)
 /*
  *  Expect symmetric partitioning
  */
-void CUDA_BFS::getOutgoingFQ(vertexType globalstart, long size, vertexType *&startaddr, int &outsize)
+void CUDA_BFS::getOutgoingFQ(vertexType globalstart, long size, vertexType *&startaddr, int32_t &outsize)
 {
     typename MatrixT::vertexType *start_local;
     typename MatrixT::vertexType *end_local;
@@ -313,19 +313,19 @@ void CUDA_BFS::getOutgoingFQ(vertexType globalstart, long size, vertexType *&sta
 #endif
 
     startaddr = start_local;
-    outsize = end_local - start_local;
+    outsize = static_cast<int32_t>(end_local - start_local);
 }
 
 /*  Sets the incoming FQ.
  *  Expect symmetric partitioning, so all parameters are ignored.
  */
-void CUDA_BFS::setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, int &insize_max)
+void CUDA_BFS::setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, int32_t &insize_max)
 {
     if (startaddr == fq_64)
     {
         std::swap(fq_64, queuebuff);
     }
-    qb_length = static_cast<uint64_t>(insize_max);
+    qb_length = static_cast<size_t>(insize_max);
 }
 
 bool CUDA_BFS::istheresomethingnew()
@@ -663,3 +663,4 @@ void CUDA_BFS::runLocalBFS()
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 }
+

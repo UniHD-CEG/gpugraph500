@@ -72,11 +72,11 @@ public:
     void setBackInqueue();
     void generatOwenMask() { }
     void reduce_fq_out(vertexType globalstart, long size, vertexType *startaddr,
-                       int insize);    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
-    void getOutgoingFQ(vertexType *&startaddr, int &outsize);
-    void setModOutgoingFQ(vertexType *startaddr, int insize); //startaddr: 0, self modification
-    void getOutgoingFQ(vertexType globalstart, long size, vertexType *&startaddr, int &outsize);
-    void setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, int &insize_max);
+                       int32_t insize);    //Global Reducer of the local outgoing frontier queues.  Have to be implemented by the children.
+    void getOutgoingFQ(vertexType *&startaddr, int32_t &outsize);
+    void setModOutgoingFQ(vertexType *startaddr, int32_t insize); //startaddr: 0, self modification
+    void getOutgoingFQ(vertexType globalstart, long size, vertexType *&startaddr, int32_t &outsize);
+    void setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, int32_t &insize_max);
     bool istheresomethingnew();           //to detect if finished
     void setStartVertex(vertexType start);
     void runLocalBFS();

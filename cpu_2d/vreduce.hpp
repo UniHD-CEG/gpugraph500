@@ -240,7 +240,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                uncompressedsize = static_cast<size_t>(originalsize);
+                uncompressedsize = originalsize;
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 #endif
 
@@ -286,7 +286,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                schema.compress(send, (size_t)psizeTo, &compressed_fq, compressedsize);
+                schema.compress(send, psizeTo, &compressed_fq, compressedsize);
 #endif
 
 #if defined(_COMPRESSION) && defined(_COMPRESSIONDEBUG)
@@ -343,7 +343,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
 #ifdef _COMPRESSION
-                uncompressedsize = static_cast<size_t>(originalsize);
+                uncompressedsize = originalsize;
                 schema.decompress(temporal_recv_buff, psizeFrom, &uncompressed_fq, uncompressedsize);
 #endif
 
