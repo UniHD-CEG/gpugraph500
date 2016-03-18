@@ -902,17 +902,19 @@ std::cout << "---> rank: " << communicatorRank << " size: " << fq_64_length << s
 
             int32_t *sizes;
             int32_t *disps;
+/*
             err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
             err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
             if (err1 || err2) {
                 throw "Memory error.";
             }
-
+*/
             std::size_t psize = fq_64_length;
 
             uint64_t maskLengthRes = psize % (1UL << intLdSize);
             uint32_t lastReversedSliceIDs = 0UL;
             int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
+/*
             sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
             disps[lastTargetNode] = 0L;
             for (int32_t slice = 1L; slice < power2intLdSize; ++slice)
@@ -944,8 +946,8 @@ std::cout << "---> rank: " << communicatorRank << " size: " << fq_64_length << s
             MPI_Allgatherv(fq_64, psize, fq_tp_type,
                             complete_CQ, sizes, disps, fq_tp_type, col_comm);
 */
-            free(sizes);
-            free(disps);
+//            free(sizes);
+//            free(disps);
 //            free(complete_CQ);
 /*
 std::cout << "sizes: (" << communicatorRank << ")";
