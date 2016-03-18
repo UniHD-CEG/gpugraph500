@@ -22,7 +22,7 @@ cluster=`hostname`
 str="$1"
 hostfile=$2
 maxsf=$3
-numNodes="4 2 1"
+numNodes="1"
 sfs=`seq 16 ${maxsf}`
 
 for c in `echo $numNodes`; do
@@ -45,7 +45,16 @@ for c in `echo $numNodes`; do
 		if [ x"$result" != x ];then
                         echo "Skipping np: $np scale: $sf type: $str on [$cluster] ..."
 			continue
+		fi
+
+                # score-p
+		# before script execution:
+		# $ export G500_ENABLE_RUNTIME_SCALASCA=yes
+		if [ "x$G500_ENABLE_RUNTIME_SCALASCA" = "xyes" ]; then
+			export SCOREP_EXPERIMENT_DIRECTORY=${file}.scorep
 		fi	
-		mpirun -np ${np} -hostfile ${hostfile} --display-map -bynode ./test2.sh ${sf} ${c} "s4-bp128-d4" 64 | tee ${file}
+
+		# pass score-p's $SCOREP_EXPERIMENT_DIRECTORY to mpirun
+		mpirun -x LD_LIBRARY_PATH=$LD_LIBRARY_PATH -x SCOREP_EXPERIMENT_DIRECTORY=$SCOREP_EXPERIMENT_DIRECTORY -np ${np} -hostfile ${hostfile} --display-map -bynode ./test2.sh ${sf} ${c} "s4-bp128-d4" 64 | tee ${file}
 	done
 done
