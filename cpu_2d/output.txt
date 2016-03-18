@@ -1,0 +1,79 @@
+--------------------------------------------------------------------------
+The following command line options and corresponding MCA parameter have
+been deprecated and replaced as follows:
+
+  Command line options:
+    Deprecated:  --bynode, -bynode
+    Replacement: --map-by node
+
+  Equivalent MCA parameter:
+    Deprecated:  rmaps_base_bynode
+    Replacement: rmaps_base_mapping_policy=node
+
+The deprecated forms *will* disappear in a future version of Open MPI.
+Please update to the new syntax.
+--------------------------------------------------------------------------
+ Data for JOB [56428,1] offset 0
+
+ ========================   JOB MAP   ========================
+
+ Data for node: creek01	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [56428,1] App: 0 Process rank: 0
+
+ Data for node: creek02	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [56428,1] App: 0 Process rank: 1
+
+ Data for node: creek03	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [56428,1] App: 0 Process rank: 2
+
+ Data for node: creek04	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [56428,1] App: 0 Process rank: 3
+
+ =============================================================
+row slices: 2, column slices: 2
+graph_generation:               0.239443 s
+Input list of edges genereted.
+1.048576e+06 edge(s) generated in 0.243509s (4.306111 Medges/s on 4 processor(s))
+Global matrix redistribution done!
+Adjacency Matrix setup.
+1.390430e+05 edge(s) removed, because they are duplicates or self loops.
+1.819066e+06 unique edge(s) processed in 0.518700s (3.506972 Medges/s on 4 processor(s))
+terminate called after throwing an instance of 'char const*'
+[creek02:18686] *** Process received signal ***
+[creek02:18686] Signal: Aborted (6)
+[creek02:18686] Signal code:  (-6)
+[creek02:18686] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0xfcb0)[0x7f86483b0cb0]
+[creek02:18686] [ 1] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x35)[0x7f86480190d5]
+[creek02:18686] [ 2] /lib/x86_64-linux-gnu/libc.so.6(abort+0x17b)[0x7f864801c83b]
+[creek02:18686] [ 3] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(_ZN9__gnu_cxx27__verbose_terminate_handlerEv+0x155)[0x7f8648834b05]
+[creek02:18686] [ 4] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5ec76)[0x7f8648832c76]
+[creek02:18686] [ 5] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5eca3)[0x7f8648832ca3]
+[creek02:18686] [ 6] /usr/lib/x86_64-linux-gnu/libstdc++.so.6(+0x5eece)[0x7f8648832ece]
+[creek02:18686] [ 7] ../cpu_2d/g500[0x472335]
+[creek02:18686] [ 8] ../cpu_2d/g500[0x46cd0d]
+[creek02:18686] [ 9] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7f864800476d]
+[creek02:18686] [10] ../cpu_2d/g500[0x40ccc5]
+[creek02:18686] *** End of error message ***
+[creek04:10855] *** Process received signal ***
+[creek04:10855] Signal: Segmentation fault (11)
+[creek04:10855] Signal code: Invalid permissions (2)
+[creek04:10855] Failing at address: 0x201000000
+[creek04:10855] [ 0] /lib/x86_64-linux-gnu/libpthread.so.0(+0xfcb0)[0x7f00e0232cb0]
+[creek04:10855] [ 1] ../cpu_2d/g500[0x45737d]
+[creek04:10855] [ 2] ../cpu_2d/g500[0x47202d]
+[creek04:10855] [ 3] ../cpu_2d/g500[0x46cd0d]
+[creek04:10855] [ 4] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xed)[0x7f00dfe8676d]
+[creek04:10855] [ 5] ../cpu_2d/g500[0x40ccc5]
+[creek04:10855] *** End of error message ***
+./test2.sh: line 27: 18686 Aborted                 (core dumped) $g500 -s $1 -C $2 -gpus 1 -qs 1 -be $codec -btr $threshold -btc $threshold
+-------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code.. Per user-direction, the job has been aborted.
+-------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[56428,1],1]
+  Exit code:    134
+--------------------------------------------------------------------------

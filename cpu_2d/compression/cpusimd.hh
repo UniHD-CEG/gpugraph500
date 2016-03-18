@@ -76,7 +76,7 @@ inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t size, T_C
         if (err1 || err2) {
             throw "Memory error.";
         }
-
+/*
 #ifndef _COMPRESSIONDEBUG
         // test overflow
         const uint32_t LIMIT_UINT32 = (1L << 32) - 1;
@@ -87,7 +87,7 @@ inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t size, T_C
             // assert(tested >= 0);
         }
 #endif
-
+*/
         for (size_t i = 0U; i < size; ++i)
         {
             fq_32[i] = static_cast<T_C>(fq_64[i]);

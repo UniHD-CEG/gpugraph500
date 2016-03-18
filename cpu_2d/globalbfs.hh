@@ -1079,7 +1079,7 @@ for (int i=0; i< communicatorSize;++i) {
             if (root_rank == store.getLocalColumnID())
             {
 
-                int32_t originalsize;
+                size_t originalsize;
                 FQ_T *startaddr;
 #ifdef _COMPRESSION
                 compressionType *compressed_fq;
@@ -1089,7 +1089,8 @@ for (int i=0; i< communicatorSize;++i) {
 #ifdef INSTRUMENTED
                 tstart = MPI_Wtime();
 #endif
-                static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, originalsize);
+		int int_originalsize = static_cast<int>(originalsize);
+                static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, int_originalsize);
 
 #ifdef INSTRUMENTED
                 lqueue += MPI_Wtime() - tstart;
@@ -1247,7 +1248,7 @@ for (int i=0; i< communicatorSize;++i) {
 
 
 #else
-                int32_t originalsize;
+                size_t originalsize;
                 MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
