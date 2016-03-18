@@ -1251,7 +1251,7 @@ for (int i=0; i< communicatorSize;++i) {
 
 
 #else
-                size_t originalsize;
+                int32_t originalsize;
                 MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
