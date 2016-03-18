@@ -759,8 +759,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
      *
      */
 
-    //int communicatorRank;
-    //MPI_Comm_rank(col_comm, &communicatorRank); // current rank
+#ifdef _SCOREP_USER_INSTRUMENTATION
+    SCOREP_USER_REGION_DEFINE(vertexBroadcast_handle)
+    SCOREP_USER_REGION_DEFINE(localExpansion_handle)
+    SCOREP_USER_REGION_DEFINE(columnCommunication_handle)
+    SCOREP_USER_REGION_DEFINE(rowCommunication_handle)
+    SCOREP_USER_REGION_DEFINE(allReduceBC_handle)
+#endif
 
     int communicatorSize, communicatorRank;
     MPI_Comm_size(col_comm, &communicatorSize);
@@ -771,8 +776,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     const int32_t power2intLdSize = 1 << intLdSize; // 2^n
     const int32_t residuum = communicatorSize - power2intLdSize;
     size_t CQ_length = 0;
-    bool finishedBFS = false;
 
+#ifdef INSTRUMENTED
+    double tstart, tend;
+    lexp = 0;
+    lqueue = 0;
+    double comtstart, comtend;
+    rowcom = 0;
+    colcom = 0;
+#endif
 
     const function <int32_t(int32_t)> newRank = [&residuum](int32_t oldr)
     {
@@ -787,22 +799,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     bitmapSchema.init();
 
 
-#ifdef INSTRUMENTED
-    double tstart, tend;
-    lexp = 0;
-    lqueue = 0;
-    double comtstart, comtend;
-    rowcom = 0;
-    colcom = 0;
-#endif
 
-#ifdef _SCOREP_USER_INSTRUMENTATION
-    SCOREP_USER_REGION_DEFINE(vertexBroadcast_handle)
-    SCOREP_USER_REGION_DEFINE(localExpansion_handle)
-    SCOREP_USER_REGION_DEFINE(columnCommunication_handle)
-    SCOREP_USER_REGION_DEFINE(rowCommunication_handle)
-    SCOREP_USER_REGION_DEFINE(allReduceBC_handle)
-#endif
+
+
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_BEGIN(vertexBroadcast_handle, "BFSRUN_region_vertexBroadcast", SCOREP_USER_REGION_TYPE_COMMON)
@@ -810,6 +809,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 // 0) Node 0 sends start vertex to all nodes
     MPI_Bcast(&startVertex, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+
+
+#ifdef _COMPRESSION
+    size_t uncompressedsize, compressedsize;
+#endif
+
+    // moved anonymous functions outside loop
+    const function <void(FQ_T, long, FQ_T *, int)> reduce =
+        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
+             static_cast<Derived *>(this), _1, _2, _3, _4);
+    const function <void(FQ_T, long, FQ_T *&, int &)> get =
+        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
+             static_cast<Derived *>(this), _1, _2, _3, _4);
+
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
     SCOREP_USER_REGION_END(vertexBroadcast_handle)
@@ -828,20 +841,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
 // 2) Local expansion
-    int levelBFS = 0;
-
-
-#ifdef _COMPRESSION
-    size_t uncompressedsize, compressedsize;
-#endif
-
-    // moved anonymous functions outside loop
-    const function <void(FQ_T, long, FQ_T *, int)> reduce =
-        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
-             static_cast<Derived *>(this), _1, _2, _3, _4);
-    const function <void(FQ_T, long, FQ_T *&, int &)> get =
-        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
-             static_cast<Derived *>(this), _1, _2, _3, _4);
 
         /**
          *
@@ -853,7 +852,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
          */
 
 
-    while (!finishedBFS)
+    int iter = 0;
+    while (true)
     {
 
 #ifdef INSTRUMENTED
@@ -881,7 +881,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         tstart = MPI_Wtime();
 #endif
 
-        //if (levelBFS > 0)
+        //if (iter > 0)
         //{
 
             anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
@@ -962,6 +962,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                                 predecessor, sizes, disps, fq_tp_type, col_comm);
 
+                free(sizes);
+                free(disps);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
                 SCOREP_USER_REGION_END(allReduceBC_handle)
@@ -971,10 +973,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 predlistred = MPI_Wtime() - tstart;
 #endif
 
-                free(sizes);
-                free(disps);
-
-                finishedBFS = true;
                 return; // There is nothing to do. Finish iteration.
             }
         //}
@@ -996,7 +994,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         lqueue +=  MPI_Wtime() - tstart;
 #endif
 
-        int _outsize; //really int, because mpi supports no long message sizes :(
+        int _outsize;
 
             /**
              *
@@ -1099,16 +1097,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 if (err) {
                     throw "Memory error.";
                 }
-
                 vectorizedsize[0] = originalsize;
                 vectorizedsize[1] = compressedsize;
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
+
 #if defined(_COMPRESSIONVERIFY)
-        bool isCompressed = schema.isCompressed(originalsize, compressedsize);
-        if (isCompressed)
-        {
-                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
-        }
+                bool isCompressed = schema.isCompressed(originalsize, compressedsize);
+                if (isCompressed)
+                {
+                        MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+                }
 #endif
 
                 MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
@@ -1181,7 +1179,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 compressionType *compressed_fq = NULL;
                 FQ_T *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
-        int * restrict vectorizedsize = NULL;
+                int * restrict vectorizedsize = NULL;
                 err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
                 if (err) {
                     throw "Memory error.";
@@ -1290,7 +1288,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
          *
          */
 
-        ++levelBFS;
+        ++iter;
     }
 }
 #endif // GLOBALBFS_HH
