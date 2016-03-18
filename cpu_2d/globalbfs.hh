@@ -771,7 +771,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     const int32_t power2intLdSize = 1 << intLdSize; // 2^n
     const int32_t residuum = communicatorSize - power2intLdSize;
     size_t CQ_length = 0;
-    //bool finishedBFS = false;
+    bool finishedBFS = false;
 
 
     const function <int32_t(int32_t)> newRank = [&residuum](int32_t oldr)
@@ -828,7 +828,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
 // 2) Local expansion
-    int iter = 0;
+    int levelBFS = 0;
 
 
 #ifdef _COMPRESSION
@@ -853,7 +853,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
          */
 
 
-    while (true)
+    while (!finishedBFS)
     {
 
 #ifdef INSTRUMENTED
@@ -881,7 +881,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         tstart = MPI_Wtime();
 #endif
 
-        //if (iter > 0)
+        //if (levelBFS > 0)
         //{
 
             anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
@@ -974,7 +974,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 free(sizes);
                 free(disps);
 
-                //finishedBFS = true;
+                finishedBFS = true;
                 return; // There is nothing to do. Finish iteration.
             }
         //}
@@ -1290,7 +1290,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
          *
          */
 
-        ++iter;
+        ++levelBFS;
     }
 }
 #endif // GLOBALBFS_HH
