@@ -76,7 +76,7 @@ public:
     void getOutgoingFQ(vertexType *&startaddr, int &outsize);
     void setModOutgoingFQ(vertexType *startaddr, int insize); //startaddr: 0, self modification
     void getOutgoingFQ(vertexType globalstart, long size, vertexType *&startaddr, int &outsize);
-    void setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, size_t &insize_max);
+    void setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, int &insize_max);
     bool istheresomethingnew();           //to detect if finished
     void setStartVertex(vertexType start);
     void runLocalBFS();

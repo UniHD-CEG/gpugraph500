@@ -319,13 +319,13 @@ void CUDA_BFS::getOutgoingFQ(vertexType globalstart, long size, vertexType *&sta
 /*  Sets the incoming FQ.
  *  Expect symmetric partitioning, so all parameters are ignored.
  */
-void CUDA_BFS::setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, size_t &insize_max)
+void CUDA_BFS::setIncommingFQ(vertexType globalstart, long size, vertexType *startaddr, int &insize_max)
 {
     if (startaddr == fq_64)
     {
         std::swap(fq_64, queuebuff);
     }
-    qb_length = insize_max;
+    qb_length = static_cast<uint64_t>(insize_max);
 }
 
 bool CUDA_BFS::istheresomethingnew()
