@@ -1089,7 +1089,7 @@ for (int i=0; i< communicatorSize;++i) {
 #ifdef INSTRUMENTED
                 tstart = MPI_Wtime();
 #endif
-		int int_originalsize = static_cast<int>(originalsize);
+                int32_t int_originalsize = static_cast<int32_t>(originalsize);
                 static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, int_originalsize);
 
 #ifdef INSTRUMENTED
@@ -1102,8 +1102,8 @@ for (int i=0; i< communicatorSize;++i) {
                 schema.debugCompression(startaddr, originalsize);
 #endif
 
-                uncompressedsize = originalsize;
-                schema.compress(startaddr, (size_t)uncompressedsize, &compressed_fq, compressedsize);
+
+                schema.compress(startaddr, originalsize, &compressed_fq, compressedsize);
 
 #if defined(_COMPRESSIONVERIFY)
                 schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq, uncompressedsize);
@@ -1141,7 +1141,7 @@ for (int i=0; i< communicatorSize;++i) {
 
                 if (communicatorRank != root_rank)
                 {
-                    uncompressedsize = static_cast<size_t>(originalsize);
+                    uncompressedsize = originalsize;
                     schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq,  uncompressedsize);
                 }
 
@@ -1215,7 +1215,7 @@ for (int i=0; i< communicatorSize;++i) {
                 }
 
 #if defined(_COMPRESSIONVERIFY)
-        bool isCompressed = schema.isCompressed(originalsize, compressedsize);
+                bool isCompressed = schema.isCompressed(originalsize, compressedsize);
                 FQ_T *startaddr = NULL;
                 if (isCompressed)
                 {
@@ -1224,7 +1224,7 @@ for (int i=0; i< communicatorSize;++i) {
                         throw "Memory error.";
                     }
 
-                    MPI_Bcast(startaddr, (int)originalsize, fq_tp_type, root_rank, row_comm);
+                    MPI_Bcast(startaddr, static_cast<int32_t>(originalsize), fq_tp_type, root_rank, row_comm);
                 }
 #endif
                 // Please Note: fq_64 buffer has been alloceted in the children class.
