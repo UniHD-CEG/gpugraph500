@@ -776,6 +776,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     const int32_t power2intLdSize = 1 << intLdSize; // 2^n
     const int32_t residuum = communicatorSize - power2intLdSize;
     size_t CQ_length = 0;
+    bool finishedBFS = false;
 
 #ifdef INSTRUMENTED
     double tstart, tend;
@@ -850,8 +851,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
          *
          */
 
-
-    while (true)
+    while (!finishedBFS)
     {
 
 
@@ -921,10 +921,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 static_cast<Derived *>(this)->generatOwenMask();
 
-                allReduceBitCompressed(predecessor,
-                                       fq_64,
-                                       owenmask, tmpmask, communicatorRank, communicatorSize, col_comm);
-
+                std::cout << "finished size: ("<< communicatorRank <<") " << CQ_length << std::endl;
 
                 int32_t *sizes;
                 int32_t *disps;
@@ -959,11 +956,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                 }
 
+                allReduceBitCompressed(predecessor,
+                                       fq_64,
+                                       owenmask, tmpmask, communicatorRank, communicatorSize, col_comm);
+
+
+
                 MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                                 predecessor, sizes, disps, fq_tp_type, col_comm);
 
-                free(sizes);
-                free(disps);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
                 SCOREP_USER_REGION_END(allReduceBC_handle)
@@ -973,7 +974,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 predlistred = MPI_Wtime() - tstart;
 #endif
 
-                return; // There is nothing to do. Finish iteration.
+                free(sizes);
+                free(disps);
+
+                finishedBFS = true;
+                return;
             }
         }
 
@@ -1236,6 +1241,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 tstart = MPI_Wtime();
 #endif
 
+                std::cout << "calculated size: ("<< communicatorRank << ") " << CQ_length << std::endl;
+
+                CQ_length = static_cast<size_t>(originalsize);
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 
 #ifdef INSTRUMENTED
@@ -1244,9 +1252,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
                 free(vectorizedsize);
-
                 free(uncompressed_fq);
                 free(compressed_fq);
+
 #if defined(_COMPRESSIONVERIFY)
                 if (isCompressed)
                 {
