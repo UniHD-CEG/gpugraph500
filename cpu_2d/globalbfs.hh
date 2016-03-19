@@ -955,7 +955,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 decompressedsize = normalsize;
                 compressedsize_int = static_cast<int32_t>(decompressedsize);
-                schema.decompress(&compressedFQ, compressedsize_int, &decompressedFQ, decompressedsize);
+                schema.decompress(compressedFQ, compressedsize_int, &decompressedFQ, decompressedsize);
                 assert(normalsize == decompressedsize);
                 assert(memcmp(fq_64, decompressedFQ, normalsize * sizeof(FQ_T)) == 0);
 
