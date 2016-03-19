@@ -965,22 +965,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 }
 
 
-std::cout << "rank: "<< rank << "\n";
-
-if ((communicatorRank & 1) == 0)
-{
-std::cout << "rank par: "<< communicatorRank << "\n";
                 //MPI_Allgatherv(owenmask, sizes[communicatorRank], bm_type,
 //                                complete_bitmask, sizes, disps, bm_type, col_comm);
-
-}
-else
-{
-std::cout << "rank impar: "<< communicatorRank << "\n";
-}
-
-//                MPI_Allgather(owenmask, psize, bm_type,
-//                                complete_bitmask, communicatorSize * psize, bm_type, col_comm);
 
 		free(complete_bitmask);
 
@@ -1017,9 +1003,9 @@ std::cout << "rank impar: "<< communicatorRank << "\n";
                 }
 
 
+std::cout << "rank: " << rank << " size: " << store.getLocColLength() << "\n";
 
-/*
-std::cout << "sizes: (" << communicatorRank << ")";
+std::cout << "sizes: (" << rank << ")";
 for (int i=0; i< communicatorSize;++i) {
     std::cout << sizes[i] << "-" << psize;
     if (std::is_sorted(fq_64 + disps[i], fq_64 + disps[i] + psize) == 0) {
@@ -1037,7 +1023,7 @@ for (int i=0; i< communicatorSize;++i) {
     std::cout << disps[i] << ", ";
 }
 std::cout << std::endl;
-*/
+
 //assert((std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0));
 /*
 if (std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0) {
