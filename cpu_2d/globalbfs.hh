@@ -54,6 +54,7 @@ class GlobalBFS
 {
 private:
     MPI_Comm row_comm, col_comm;
+    //int rank;
     int err, err1, err2;
     // sending node column slice, startvtx, size
     vector <typename STORE::fold_prop> fold_fq_props;
@@ -142,6 +143,8 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
 {
     int64_t mtypesize = sizeof(MType) << 3; // * 2^3
     int64_t local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
+    //MPI_Status status;
+    //MPI_Comm_rank(MPI_COMM_WORLD, &rank);	
     // Split communicator into row and column communicator
     // Split by row, rank by column
     MPI_Comm_split(MPI_COMM_WORLD, local_row, local_column, &row_comm);
@@ -964,7 +967,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, col_comm);
 
-                for (int32_t i = 1L; i< power2intLdSize; ++i)
+                for (int32_t i = 1L; i< communicatorSize; ++i)
                 {
                     sizes[i] = normalsize;
                 }
@@ -998,15 +1001,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                     compressed_disps[index] = 0;
                 }
-                size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-                size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
-/*
+
+    size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+    size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
+
                 err = posix_memalign((void **)&compressedPredeccessors, ALIGNMENT, csize * sizeof(compressionType));
                 if (err) {
                     throw "Memory error.";
                 }
-
-                err = posix_memalign((void **)&compressedPredeccessors, ALIGNMENT, rsize * sizeof(FQ_T));
+/*
+                err = posix_memalign((void **)&decompressedPredeccesors, ALIGNMENT, rsize * sizeof(FQ_T));
                 if (err) {
                     throw "Memory error.";
                 }
@@ -1020,8 +1024,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 MPI_Allgatherv(compressedFQ, compressed_sizes[communicatorRank],
                         fq_tp_typeC, compressedPredeccessors, compressed_sizes,
                         compressed_disps, fq_tp_typeC, col_comm);
-
+i*/
                 free(compressedFQ);
+/*
 */
                 /**
                  *
@@ -1046,8 +1051,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 //std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
 
-//                free(compressedPredeccessors);
-//                free(decompressedPredeccesors);
+                free(compressedPredeccessors);
+                free(decompressedPredeccesors);
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
