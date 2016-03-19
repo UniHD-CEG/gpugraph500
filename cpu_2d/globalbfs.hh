@@ -768,7 +768,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
     int communicatorSize, communicatorRank, rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(col_comm, &communicatorSize);
     MPI_Comm_rank(col_comm, &communicatorRank);
 
@@ -904,7 +904,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  *
                  *
                  */
-                int err1, err2;
+                int err, err1, err2;
 
                 int32_t * restrict sizes = NULL;
                 int32_t * restrict disps = NULL;
@@ -927,6 +927,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 
 
+
 #ifdef INSTRUMENTED
                 tstart = MPI_Wtime();
 #endif
@@ -946,10 +947,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 size_t normalsize = store.getLocColLength();
                 size_t compressedsize, decompressedsize;
-                compressionType *compressedFQ = NULL;
+                compressionType *compressedFQ = NULL, *compressed_chunks = NULL;
                 FQ_T *decompressedFQ = NULL;
                 int32_t compressedsize_int;
 
+                err = posix_memalign((void **)&compressed_chunks, ALIGNMENT, communicatorSize * normalsize * sizeof(compressionType));
+                if (err) {
+                    throw "Memory error.";
+                }
 
                 /**
                  *
@@ -958,6 +963,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  */
 
                 schema.compress(fq_64, normalsize, &compressedFQ, compressedsize);
+
+                MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, col_comm);
 
 #ifdef _COMPRESSIONVERIFY
                 decompressedsize = normalsize;
@@ -988,8 +995,22 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                     compressed_disps[index] = 0;
                 }
-                //size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-                //size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
+                size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+                size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
+
+
+                /**
+                 *
+                 *
+                 * transmit compressed chunks
+                 */
+
+                MPI_Allgatherv(compressedFQ, compressed_sizes[communicatorRank],
+                        fq_tp_typeC, compressed_chunks, compressed_sizes,
+                        compressed_disps, fq_tp_typeC, col_comm);
+
+
+
 
 //std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
 
