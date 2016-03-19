@@ -951,13 +951,21 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 int32_t compressedsize_int;
 
 
+                /**
+                 *
+                 *
+                 * create compressed chunks of the frontierQ
+                 */
+
                 schema.compress(fq_64, normalsize, &compressedFQ, compressedsize);
 
+#ifdef _COMPRESSIONVERIFY
                 decompressedsize = normalsize;
-                compressedsize_int = static_cast<int32_t>(decompressedsize);
+                compressedsize_int = static_cast<int32_t>(compressedsize);
                 schema.decompress(compressedFQ, compressedsize_int, &decompressedFQ, decompressedsize);
                 assert(normalsize == decompressedsize);
                 assert(memcmp(fq_64, decompressedFQ, normalsize * sizeof(FQ_T)) == 0);
+#endif
 
                 lastReversedSliceIDs = 0UL;
                 lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -970,7 +978,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
                     const int32_t targetNode = oldRank(reversedSliceIDs);
                     compressed_disps[targetNode] = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-
                     disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
                     lastTargetNode = targetNode;
                 }
