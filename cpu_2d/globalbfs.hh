@@ -795,6 +795,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         return (newr < residuum) ? (newr << 1) : newr + residuum;
     };
 
+    const function <void(FQ_T, long, FQ_T *, int)> reduce =
+        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
+             static_cast<Derived *>(this), _1, _2, _3, _4);
+    const function <void(FQ_T, long, FQ_T *&, int &)> get =
+        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
+             static_cast<Derived *>(this), _1, _2, _3, _4);
+
+#ifdef _COMPRESSION
+    size_t uncompressedsize, compressedsize;
+#endif
 
     bitmapSchema.init();
 
@@ -809,19 +819,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 // 0) Node 0 sends start vertex to all nodes
     MPI_Bcast(&startVertex, 1, MPI_LONG, 0, MPI_COMM_WORLD);
-
-
-#ifdef _COMPRESSION
-    size_t uncompressedsize, compressedsize;
-#endif
-
-    // moved anonymous functions outside loop
-    const function <void(FQ_T, long, FQ_T *, int)> reduce =
-        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *, int)>(&Derived::reduce_fq_out),
-             static_cast<Derived *>(this), _1, _2, _3, _4);
-    const function <void(FQ_T, long, FQ_T *&, int &)> get =
-        bind(static_cast<void (Derived::*)(FQ_T, long, FQ_T *&, int &)>(&Derived::getOutgoingFQ),
-             static_cast<Derived *>(this), _1, _2, _3, _4);
 
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
@@ -842,6 +839,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 // 2) Local expansion
 
+    int depthBFS = 0;
+
         /**
          *
          *
@@ -852,9 +851,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
          */
 
 
-    int iter = 0;
     while (true)
     {
+
+
 
 #ifdef INSTRUMENTED
         tstart = MPI_Wtime();
@@ -881,8 +881,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         tstart = MPI_Wtime();
 #endif
 
-        //if (iter > 0)
-        //{
+        if (depthBFS > 0)
+        {
 
             anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
 
@@ -975,7 +975,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 return; // There is nothing to do. Finish iteration.
             }
-        //}
+        }
 
 // 4) global expansion
 #ifdef INSTRUMENTED
@@ -1288,7 +1288,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
          *
          */
 
-        ++iter;
+        ++depthBFS;
     }
 }
 #endif // GLOBALBFS_HH
