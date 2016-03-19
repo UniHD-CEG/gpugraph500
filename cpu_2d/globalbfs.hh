@@ -767,7 +767,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     SCOREP_USER_REGION_DEFINE(allReduceBC_handle)
 #endif
 
-    int communicatorSize, communicatorRank;
+    int communicatorSize, communicatorRank, rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(col_comm, &communicatorSize);
     MPI_Comm_rank(col_comm, &communicatorRank);
 
@@ -904,7 +905,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  *
                  */
 
-                MType * restrict disps = NULL;
+                MType * restrict complete_bitmask = NULL;
                 int32_t *sizes = NULL;
                 int32_t *disps = NULL;
                 int err, err1, err2;
@@ -931,7 +932,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
                 psize = static_cast<int32_t>(mask_size);
-                err = posix_memalign((void **)&complete_bitmask, ALIGNMENT, psize * sizeof(MType));
+                err = posix_memalign((void **)&complete_bitmask, ALIGNMENT, (psize * communicatorSize * sizeof(MType))+communicatorSize  );
                 if (err) {
                     throw "Memory error.";
                 }
@@ -963,8 +964,25 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                 }
 
-                MPI_Allgatherv(owenmask, bm_type, sizes[communicatorRank],
-                                complete_bitmask, sizes, disps, bm_type, col_comm);
+
+std::cout << "rank: "<< rank << "\n";
+
+if ((communicatorRank & 1) == 0)
+{
+std::cout << "rank par: "<< communicatorRank << "\n";
+                //MPI_Allgatherv(owenmask, sizes[communicatorRank], bm_type,
+//                                complete_bitmask, sizes, disps, bm_type, col_comm);
+
+}
+else
+{
+std::cout << "rank impar: "<< communicatorRank << "\n";
+}
+
+//                MPI_Allgather(owenmask, psize, bm_type,
+//                                complete_bitmask, communicatorSize * psize, bm_type, col_comm);
+
+		free(complete_bitmask);
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
