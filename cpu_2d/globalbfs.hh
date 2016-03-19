@@ -768,7 +768,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
     int communicatorSize, communicatorRank, rank;
-    //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(col_comm, &communicatorSize);
     MPI_Comm_rank(col_comm, &communicatorRank);
 
@@ -951,10 +951,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 FQ_T *decompressedFQ = NULL;
                 int32_t compressedsize_int;
 
-                err = posix_memalign((void **)&compressed_chunks, ALIGNMENT, communicatorSize * normalsize * sizeof(compressionType));
-                if (err) {
-                    throw "Memory error.";
-                }
 
                 /**
                  *
@@ -996,8 +992,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     compressed_disps[index] = 0;
                 }
                 size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-                size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
+                //size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
+                err = posix_memalign((void **)&compressed_chunks, ALIGNMENT, csize * sizeof(compressionType));
+                if (err) {
+                    throw "Memory error.";
+                }
 
                 /**
                  *
@@ -1009,12 +1009,32 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                         fq_tp_typeC, compressed_chunks, compressed_sizes,
                         compressed_disps, fq_tp_typeC, col_comm);
 
+                free(compressedFQ);
 
+                /**
+                 *
+                 *
+                 *
+                 *
+                 * Unensamble the compressed data chunks
+                 */
+
+                for (int32_t i = 0; i < communicatorSize; ++i)
+                {
+                    compressedsize = compressed_sizes[i];
+                    decompressedsize = sizes[i];
+                    if (compressedsize != 0)
+                    {
+                        schema.decompress(&compressed_chunks[compressed_disps[i]], compressedsize, &decompressedFQ, decompressedsize);
+                        memcpy(&recv_buff[disps[i]], decompressedFQ, decompressedsize * sizeof(T));
+                        free(decompressedFQ);
+                    }
+                }
 
 
 //std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
 
-                free(compressedFQ);
+                free(compressed_chunks);
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
