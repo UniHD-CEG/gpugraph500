@@ -904,7 +904,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  *
                  *
                  */
-                int err, err1, err2;
+                int err1, err2;
 
                 int32_t * restrict sizes = NULL;
                 int32_t * restrict disps = NULL;
@@ -948,28 +948,27 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 size_t compressedsize, decompressedsize;
                 compressionType *compressedFQ = NULL;
                 FQ_T *decompressedFQ = NULL;
-                int32_t compressedsize_int
+                int32_t compressedsize_int;
 
 
                 schema.compress(fq_64, normalsize, &compressedFQ, compressedsize);
 
                 decompressedsize = normalsize;
                 compressedsize_int = static_cast<int32_t>(decompressedsize);
-                schema.decompress(&compressedFQ, compressedsize, &decompressedFQ, decompressedsize);
+                schema.decompress(&compressedFQ, compressedsize_int, &decompressedFQ, decompressedsize);
                 assert(normalsize == decompressedsize);
                 assert(memcmp(fq_64, decompressedFQ, normalsize * sizeof(FQ_T)) == 0);
 
                 lastReversedSliceIDs = 0UL;
                 lastTargetNode = oldRank(lastReversedSliceIDs);
-                uint32_t reversedSliceIDs;
 
                 disps[lastTargetNode] = 0;
                 compressed_disps[lastTargetNode] = 0;
 
                 for (int32_t slice = 1; slice < power2intLdSize; ++slice)
                 {
-                    reversedSliceIDs = reverse(slice, intLdSize);
-                    targetNode = oldRank(reversedSliceIDs);
+                    const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
+                    const int32_t targetNode = oldRank(reversedSliceIDs);
                     compressed_disps[targetNode] = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
 
                     disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
@@ -982,8 +981,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                     compressed_disps[index] = 0;
                 }
-                size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-                size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
+                //size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+                //size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
 //std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
 
