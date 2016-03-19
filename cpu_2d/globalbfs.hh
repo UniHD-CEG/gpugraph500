@@ -949,8 +949,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 size_t normalsize = store.getLocColLength();
                 size_t compressedsize, decompressedsize;
-                compressionType * restrict compressedFQ = NULL, * restrict compressedPredeccessors = NULL;
-                FQ_T * restrict decompressedFQ = NULL, * restrict decompressedPredeccesors = NULL;
+                compressionType *compressedFQ = NULL, *compressedPredeccessors = NULL;
+                FQ_T *decompressedFQ = NULL, *decompressedPredeccesors = NULL;
                 int32_t compressedsize_int;
 
 
@@ -1033,7 +1033,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     if (compressedsize != 0)
                     {
                         schema.decompress(&compressedPredeccessors[compressed_disps[i]], compressedsize, &decompressedFQ, decompressedsize);
-                        memcpy(&decompressedPredeccesors[disps[i]], decompressedFQ, decompressedsize * sizeof(T));
+                        memcpy(&decompressedPredeccesors[disps[i]], decompressedFQ, decompressedsize * sizeof(FQ_T));
                         free(decompressedFQ);
                     }
                 }
@@ -1042,7 +1042,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 //std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
 
                 free(compressedPredeccessors);
-                free(decompressedPredeccessors);
+                free(decompressedPredeccesors);
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
