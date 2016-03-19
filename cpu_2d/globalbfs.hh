@@ -845,6 +845,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         /**
          *
          *
+         *
          * Start main BFS iteration.
          *
          *
@@ -904,6 +905,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  *
                  */
 
+                int32_t *sizes;
+                int32_t *disps;
+                int err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
+                int err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
+                if (err1 || err2) {
+                    throw "Memory error.";
+                }
+                int32_t psize;
+                int32_t maskLengthRes;
+                int32_t lastTargetNode;
+                uint32_t lastReversedSliceIDs;
 
 #ifdef INSTRUMENTED
                 tstart = MPI_Wtime();
@@ -921,22 +933,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 static_cast<Derived *>(this)->generatOwenMask();
 
-                std::cout << "finished size: ("<< communicatorRank <<") " << CQ_length << std::endl;
+                // std::cout << "finished size: ("<< communicatorRank <<") " << CQ_length << std::endl;
 
-                int32_t *sizes;
-                int32_t *disps;
-                int32_t err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
-                int32_t err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
-                if (err1 || err2) {
-                    throw "Memory error.";
-                }
-
-                const int32_t psize = static_cast<int32_t>(mask_size);
-                const int32_t maskLengthRes = psize % (1 << intLdSize);
-                uint32_t lastReversedSliceIDs = 0U;
-                int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
+                psize = static_cast<int32_t>(mask_size);
+                maskLengthRes = psize % (1 << intLdSize);
+                lastReversedSliceIDs = 0U;
+                lastTargetNode = oldRank(lastReversedSliceIDs);
                 sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
                 disps[lastTargetNode] = 0;
+
                 for (int32_t slice = 1; slice < power2intLdSize; ++slice)
                 {
                     const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
@@ -962,6 +967,52 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 
 
+                psize = static_cast<int32_t>(mask_size);
+                maskLengthRes = psize % (1 << intLdSize);
+                lastReversedSliceIDs = 0U;
+                lastTargetNode = oldRank(lastReversedSliceIDs);
+                sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
+                disps[lastTargetNode] = 0;
+
+                for (int32_t slice = 1; slice < power2intLdSize; ++slice)
+                {
+                    const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
+                    const int32_t targetNode = oldRank(reversedSliceIDs);
+                    sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
+                                        mtypesize;
+                    disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
+                    lastTargetNode = targetNode;
+                }
+                sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
+                                                 static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
+
+                for (int32_t node = 0; node < residuum; ++node)
+                {
+                    const int32_t index = (node * 2) + 1;
+                    sizes[index] = 0;
+                    disps[index] = 0;
+                }
+
+
+std::cout << "sizes: (" << communicatorRank << ")";
+for (int i=0; i< communicatorSize;++i) {
+    std::cout << sizes[i];
+    if (std::is_sorted(fq_64 + disps[i], fq_64 + disps[i] + psize) == 0) {
+        std::cout << " (sorted), ";
+    }
+    else
+    {
+        std::cout << " (unsorted), ";
+    }
+}
+std::cout << std::endl;
+
+std::cout << "disp: (" << communicatorRank << ")";
+for (int i=0; i< communicatorSize;++i) {
+    std::cout << disps[i] << ", ";
+}
+std::cout << std::endl;
+
                 MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                                 predecessor, sizes, disps, fq_tp_type, col_comm);
 
@@ -976,6 +1027,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 free(sizes);
                 free(disps);
+
 
                 finishedBFS = true;
                 return;
@@ -1004,7 +1056,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
             /**
              *
              *
+             *
              * 2D - Column communication. (vreduce())
+             *
              *
              *
              */
@@ -1030,6 +1084,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
              *
              *
              * 2D - Rows communication.
+             *
              *
              *
              */
@@ -1241,9 +1296,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 tstart = MPI_Wtime();
 #endif
 
-                std::cout << "calculated size: ("<< communicatorRank << ") " << CQ_length << std::endl;
-
-                CQ_length = static_cast<size_t>(originalsize);
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 
 #ifdef INSTRUMENTED
