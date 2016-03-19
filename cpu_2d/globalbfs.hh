@@ -775,7 +775,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     const uint32_t mtypesize = sizeof(MType) << 3; // * 8
     const int32_t power2intLdSize = 1 << intLdSize; // 2^n
     const int32_t residuum = communicatorSize - power2intLdSize;
-    size_t CQ_length = 0;
     bool finishedBFS = false;
 
 #ifdef INSTRUMENTED
@@ -933,8 +932,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 static_cast<Derived *>(this)->generatOwenMask();
 
-                // std::cout << "finished size: ("<< communicatorRank <<") " << CQ_length << std::endl;
-
                 psize = static_cast<int32_t>(mask_size);
                 maskLengthRes = psize % (1 << intLdSize);
                 lastReversedSliceIDs = 0U;
@@ -993,10 +990,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                 }
 
-
 std::cout << "sizes: (" << communicatorRank << ")";
 for (int i=0; i< communicatorSize;++i) {
-    std::cout << sizes[i];
+    std::cout << sizes[i] << "-" << psize;
     if (std::is_sorted(fq_64 + disps[i], fq_64 + disps[i] + psize) == 0) {
         std::cout << " (sorted), ";
     }
@@ -1012,6 +1008,15 @@ for (int i=0; i< communicatorSize;++i) {
     std::cout << disps[i] << ", ";
 }
 std::cout << std::endl;
+
+if (std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)) == 0) {
+    std::cout << " (4xsorted)" << std::endl;
+}
+else
+{
+    std::cout << " (4xunsorted)" << std::endl;
+}
+
 
                 MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                                 predecessor, sizes, disps, fq_tp_type, col_comm);
