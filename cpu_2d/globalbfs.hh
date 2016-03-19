@@ -990,6 +990,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                 }
 
+/*
 std::cout << "sizes: (" << communicatorRank << ")";
 for (int i=0; i< communicatorSize;++i) {
     std::cout << sizes[i] << "-" << psize;
@@ -1008,14 +1009,52 @@ for (int i=0; i< communicatorSize;++i) {
     std::cout << disps[i] << ", ";
 }
 std::cout << std::endl;
-
-if (std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)) == 0) {
-    std::cout << " (4xsorted)" << std::endl;
+*/
+assert((std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0));
+/*
+if (std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0) {
+    std::cout << " (4xsorted1)" << std::endl;
 }
 else
 {
-    std::cout << " (4xunsorted)" << std::endl;
+    std::cout << " (4xunsorted1)" << std::endl;
 }
+
+if (std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-communicatorSize) == 0) {
+    std::cout << " (4xsorted2)" << std::endl;
+}
+else
+{
+    std::cout << " (4xunsorted2)" << std::endl;
+}
+*/
+/*
+int sum=0;
+for (int i = 0; i < (sizes[communicatorSize] * psize)-1; ++i)
+{
+    sum+= fq_64[i];
+}
+std::cout << "sum: ("<<communicatorRank<<") "<< sum << std::endl;
+*/
+/*
+int sum=0;
+for (int i = 0; i < (sizes[communicatorRank])-1; ++i)
+{
+    sum+= *(fq_64 + i);
+}
+std::cout << "sum: ("<<communicatorRank<<") "<< sum << std::endl;
+*/
+
+std::cout << "CQ: ("<< communicatorRank << ") " << std::endl;
+for (int i = 0L; i < sizes[communicatorRank]-1; ++i)
+{
+    std::cout << static_cast<int64_t>(fq_64[i+ disps[communicatorRank]]) << ", ";
+}
+std::cout << std::endl;
+
+
+
+//std::cout << "sum: ("<<communicatorRank<<") "<< sum << std::endl;
 
 
                 MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
