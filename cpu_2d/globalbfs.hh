@@ -947,11 +947,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 static_cast<Derived *>(this)->generatOwenMask();
 
 
-                size_t normalsize = store.getLocColLength();
+                const size_t normalsize = store.getLocColLength();
                 size_t compressedsize, decompressedsize;
                 compressionType *compressedFQ = NULL, *compressedPredeccessors = NULL;
                 FQ_T *decompressedFQ = NULL, *decompressedPredeccesors = NULL;
-                int32_t compressedsize_int;
+
 
 
                 /**
@@ -964,10 +964,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, col_comm);
 
+                for (int32_t i = 1L; i< power2intLdSize; ++i)
+                {
+                    sizes[i] = normalsize;
+                }
 
 #ifdef _COMPRESSIONVERIFY
                 decompressedsize = normalsize;
-                compressedsize_int = static_cast<int32_t>(compressedsize);
+                int compressedsize_int = static_cast<int32_t>(compressedsize);
                 schema.decompress(compressedFQ, compressedsize_int, &decompressedFQ, decompressedsize);
                 assert(normalsize == decompressedsize);
                 assert(memcmp(fq_64, decompressedFQ, normalsize * sizeof(FQ_T)) == 0);
@@ -979,7 +983,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 disps[lastTargetNode] = 0;
                 compressed_disps[lastTargetNode] = 0;
 
-                for (int32_t slice = 1; slice < power2intLdSize; ++slice)
+                for (int32_t slice = 1L; slice < power2intLdSize; ++slice)
                 {
                     const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
                     const int32_t targetNode = oldRank(reversedSliceIDs);
@@ -988,7 +992,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     lastTargetNode = targetNode;
                 }
 
-                for (int32_t node = 0; node < residuum; ++node)
+                for (int32_t node = 0L; node < residuum; ++node)
                 {
                     const int32_t index = 2 * node + 1;
                     disps[index] = 0;
@@ -1104,7 +1108,7 @@ std::cout << std::endl;
 std::cout << "csizes: (" << rank << ")";
 for (int i=0; i< communicatorSize;++i) {
     std::cout << compressed_sizes[i] << "-";
-/*  
+/*
   if (std::is_sorted(fq_64 + disps[i], fq_64 + disps[i] + psize) == 0) {
         std::cout << " (sorted), ";
     }
