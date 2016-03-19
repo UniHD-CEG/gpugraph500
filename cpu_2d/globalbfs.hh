@@ -904,10 +904,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  *
                  */
 
-                int32_t *sizes;
-                int32_t *disps;
-                int err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
-                int err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
+                MType * restrict disps = NULL;
+                int32_t *sizes = NULL;
+                int32_t *disps = NULL;
+                int err, err1, err2;
+                err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
+                err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
                 if (err1 || err2) {
                     throw "Memory error.";
                 }
@@ -919,9 +921,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #ifdef INSTRUMENTED
                 tstart = MPI_Wtime();
 #endif
-
                 static_cast<Derived *>(this)->getBackPredecessor();
-
 #ifdef INSTRUMENTED
                 lqueue += MPI_Wtime() - tstart;
 #endif
@@ -930,9 +930,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 SCOREP_USER_REGION_BEGIN(allReduceBC_handle, "BFSRUN_region_allReduceBC", SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
+                psize = static_cast<int32_t>(mask_size);
+                err = posix_memalign((void **)&complete_bitmask, ALIGNMENT, psize * sizeof(MType));
+                if (err) {
+                    throw "Memory error.";
+                }
+
                 static_cast<Derived *>(this)->generatOwenMask();
 
-                psize = static_cast<int32_t>(mask_size);
                 maskLengthRes = psize % (1 << intLdSize);
                 lastReversedSliceIDs = 0U;
                 lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -957,6 +962,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     sizes[index] = 0;
                     disps[index] = 0;
                 }
+
+                MPI_Allgatherv(owenmask, bm_type, sizes[communicatorRank],
+                                complete_bitmask, sizes, disps, bm_type, col_comm);
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
@@ -990,6 +998,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                 }
 
+
+
 /*
 std::cout << "sizes: (" << communicatorRank << ")";
 for (int i=0; i< communicatorSize;++i) {
@@ -1010,7 +1020,7 @@ for (int i=0; i< communicatorSize;++i) {
 }
 std::cout << std::endl;
 */
-assert((std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0));
+//assert((std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0));
 /*
 if (std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0) {
     std::cout << " (4xsorted1)" << std::endl;
@@ -1044,14 +1054,14 @@ for (int i = 0; i < (sizes[communicatorRank])-1; ++i)
 }
 std::cout << "sum: ("<<communicatorRank<<") "<< sum << std::endl;
 */
-
+/*
 std::cout << "CQ: ("<< communicatorRank << ") " << std::endl;
 for (int i = 0L; i < sizes[communicatorRank]-1; ++i)
 {
     std::cout << static_cast<int64_t>(fq_64[i+ disps[communicatorRank]]) << ", ";
 }
 std::cout << std::endl;
-
+*/
 
 
 //std::cout << "sum: ("<<communicatorRank<<") "<< sum << std::endl;
