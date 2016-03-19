@@ -2,6 +2,7 @@
 #define BFS_MULTINODE_CONSTANTS_H
 
 #define NULL_VERTEX (1L << 32) -  1 // -1UL = (2^32)L
+#define OMP_CHUNK 2
 
 #if HAVE_AVX
 #define ALIGNMENT 32UL

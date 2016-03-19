@@ -181,9 +181,9 @@ typename STORE::vertexType *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecess
  */
 
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vertexType *&owen,
-        typename STORE::vertexType *tmp, MType *owenmap,
-        MType *tmpmap, int communicatorRank, int communicatorSize, MPI_Comm col_comm)
+void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vertexType *&predecessorQ,
+        typename STORE::vertexType *tmp, MType *predecessorQmap,
+        MType *frontierQmap, int communicatorRank, int communicatorSize, MPI_Comm col_comm)
 {
     MPI_Status status;
     const int32_t psize = static_cast<int32_t>(mask_size);
@@ -208,53 +208,53 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     {
         if ((communicatorRank & 1) == 0)   // even
         {
-            MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank + 1, 0, tmpmap, psize, bm_type, communicatorRank + 1, 0,
+            MPI_Sendrecv(predecessorQmap, psize, bm_type, communicatorRank + 1, 0, frontierQmap, psize, bm_type, communicatorRank + 1, 0,
                          col_comm, &status);
 
             for (int32_t i = 0; i < psize; ++i)
             {
-                tmpmap[i] &= ~owenmap[i];
-                owenmap[i] |= tmpmap[i];
+                frontierQmap[i] &= ~predecessorQmap[i];
+                predecessorQmap[i] |= frontierQmap[i];
             }
-            MPI_Recv(tmp, store.getLocColLength(), fq_tp_type, communicatorRank + 1, 1, col_comm, &status);
+            MPI_Recv(frontierQ, store.getLocColLength(), fq_tp_type, communicatorRank + 1, 1, col_comm, &status);
             // set recived elements where the bit maps indicate it
             int32_t p = 0;
             for (int32_t i = 0; i < psize; ++i)
             {
-                MType tmpm = tmpmap[i];
+                MType frontierQm = frontierQmap[i];
                 const int32_t size = i * mtypesize;
-                while (tmpm != 0U)
+                while (frontierQm != 0U)
                 {
-                    int32_t last = ffsl(tmpm) - 1;
-                    owen[size + last] = tmp[p];
+                    int32_t last = ffsl(frontierQm) - 1;
+                    predecessorQ[size + last] = frontierQ[p];
                     ++p;
-                    tmpm ^= (1U << last);
+                    frontierQm ^= (1U << last);
                 }
             }
         }
         else     // odd
         {
-            MPI_Sendrecv(owenmap, psize, bm_type, communicatorRank - 1, 0, tmpmap, psize, bm_type, communicatorRank - 1, 0,
+            MPI_Sendrecv(predecessorQmap, psize, bm_type, communicatorRank - 1, 0, frontierQmap, psize, bm_type, communicatorRank - 1, 0,
                          col_comm, &status);
 
             for (int32_t i = 0; i < psize; ++i)
             {
-                tmpmap[i] = ~tmpmap[i] & owenmap[i];
+                frontierQmap[i] = ~frontierQmap[i] & predecessorQmap[i];
             }
             int32_t p = 0;
             for (int32_t i = 0; i < psize; ++i)
             {
-                MType tmpm = tmpmap[i];
+                MType frontierQm = frontierQmap[i];
                 const int32_t size = i * mtypesize;
-                while (tmpm != 0U)
+                while (frontierQm != 0U)
                 {
-                    const int32_t last = ffsl(tmpm) - 1;
-                    tmp[p] = owen[size + last];
+                    const int32_t last = ffsl(frontierQm) - 1;
+                    frontierQ[p] = predecessorQ[size + last];
                     ++p;
-                    tmpm ^= (1 << last);
+                    frontierQm ^= (1 << last);
                 }
             }
-            MPI_Send(tmp, p, fq_tp_type, communicatorRank - 1, 1, col_comm);
+            MPI_Send(frontierQ, p, fq_tp_type, communicatorRank - 1, 1, col_comm);
         }
     }
 
@@ -281,8 +281,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             if (((vrank >> it) & 1) == 0)  // even
             {
                 //Transmission of the the bitmap
-                MPI_Sendrecv(owenmap + offset, ssize, bm_type, orankEven, iterator2,
-                             tmpmap + offset, ssize, bm_type, orankEven, iterator2,
+                MPI_Sendrecv(predecessorQmap + offset, ssize, bm_type, orankEven, iterator2,
+                             frontierQmap + offset, ssize, bm_type, orankEven, iterator2,
                              col_comm, &status);
 
                 // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
@@ -292,8 +292,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 for (int32_t i = 0; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
-                    tmpmap[iOffset] &= ~owenmap[iOffset];
-                    owenmap[iOffset] |= tmpmap[iOffset];
+                    frontierQmap[iOffset] &= ~predecessorQmap[iOffset];
+                    predecessorQmap[iOffset] |= frontierQmap[iOffset];
                 }
 
                 // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
@@ -303,7 +303,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 for (int32_t i = lowers; i < ssize; ++i)
                 {
                     const int32_t iOffset = i + offset;
-                    tmpmap[iOffset] = (~tmpmap[iOffset]) & owenmap[iOffset];
+                    frontierQmap[iOffset] = (~frontierQmap[iOffset]) & predecessorQmap[iOffset];
                 }
 
                 //Generation of foreign updates
@@ -314,19 +314,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     const int32_t iOffset = i + offset;
                     const int32_t iOffsetLowers = iOffset + lowers;
                     const int32_t index = iOffsetLowers * mtypesize;
-                    MType tmpm = tmpmap[iOffsetLowers];
-                    while (tmpm != 0U)
+                    MType frontierQm = frontierQmap[iOffsetLowers];
+                    while (frontierQm != 0U)
                     {
-                        int32_t last = ffsl(tmpm) - 1;
-                        tmp[size + p] = owen[index + last];
+                        int32_t last = ffsl(frontierQm) - 1;
+                        frontierQ[size + p] = predecessorQ[index + last];
                         ++p;
-                        tmpm ^= (1U << last);
+                        frontierQm ^= (1U << last);
                     }
                 }
                 //Transmission of updates
-                MPI_Sendrecv(tmp + size, p, fq_tp_type,
+                MPI_Sendrecv(frontierQ + size, p, fq_tp_type,
                              orankEven, iterator3,
-                             tmp, size, fq_tp_type,
+                             frontierQ, size, fq_tp_type,
                              orankEven, iterator3,
                              col_comm, &status);
 
@@ -337,13 +337,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 {
                     const int32_t iOffset = i + offset;
                     const int32_t index = iOffset * mtypesize;
-                    MType tmpm = tmpmap[iOffset];
-                    while (tmpm != 0U)
+                    MType frontierQm = frontierQmap[iOffset];
+                    while (frontierQm != 0U)
                     {
-                        int32_t last = ffsl(tmpm) - 1;
-                        owen[index + last] = tmp[p];
+                        int32_t last = ffsl(frontierQm) - 1;
+                        predecessorQ[index + last] = frontierQ[p];
                         ++p;
-                        tmpm ^= (1U << last);
+                        frontierQm ^= (1U << last);
                     }
                 }
                 ssize = lowers;
@@ -351,9 +351,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             else     // odd
             {
                 //Transmission of the the bitmap
-                MPI_Sendrecv(owenmap + offset, ssize, bm_type,
+                MPI_Sendrecv(predecessorQmap + offset, ssize, bm_type,
                              orankOdd, iterator2,
-                             tmpmap + offset, ssize, bm_type,
+                             frontierQmap + offset, ssize, bm_type,
                              orankOdd, iterator2,
                              col_comm, &status);
 
@@ -364,7 +364,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 for (int32_t i = 0; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
-                    tmpmap[iOffset] = (~tmpmap[iOffset]) & owenmap[iOffset];
+                    frontierQmap[iOffset] = (~frontierQmap[iOffset]) & predecessorQmap[iOffset];
                 }
 
                 // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
@@ -374,8 +374,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 for (int32_t i = lowers; i < ssize; ++i)
                 {
                     const int32_t iOffset = i + offset;
-                    tmpmap[iOffset] &= ~owenmap[iOffset];
-                    owenmap[iOffset] |= tmpmap[iOffset];
+                    frontierQmap[iOffset] &= ~predecessorQmap[iOffset];
+                    predecessorQmap[iOffset] |= frontierQmap[iOffset];
                 }
 
                 // Generation of foreign updates
@@ -385,20 +385,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 {
                     const int32_t iOffset = i + offset;
                     const int32_t iOffsetMtype = iOffset * mtypesize;
-                    MType tmpm = tmpmap[iOffset];
-                    while (tmpm != 0U)
+                    MType frontierQm = frontierQmap[iOffset];
+                    while (frontierQm != 0U)
                     {
-                        const int32_t last = ffsl(tmpm) - 1;
-                        tmp[p] = owen[iOffsetMtype + last];
+                        const int32_t last = ffsl(frontierQm) - 1;
+                        frontierQ[p] = predecessorQ[iOffsetMtype + last];
                         ++p;
-                        tmpm ^= (1U << last);
+                        frontierQm ^= (1U << last);
                     }
                 }
 
                 //Transmission of updates
-                MPI_Sendrecv(tmp, p, fq_tp_type,
+                MPI_Sendrecv(frontierQ, p, fq_tp_type,
                              orankOdd, iterator3,
-                             tmp + size, uppers * mtypesize, fq_tp_type,
+                             frontierQ + size, uppers * mtypesize, fq_tp_type,
                              orankOdd, iterator3,
                              col_comm, &status);
 
@@ -409,13 +409,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 {
                     const int32_t iOffset = offset + lowers + i;
                     const int32_t lindex = iOffset * mtypesize;
-                    MType tmpm = tmpmap[iOffset];
-                    while (tmpm != 0U)
+                    MType frontierQm = frontierQmap[iOffset];
+                    while (frontierQm != 0U)
                     {
-                        const int32_t last = ffsl(tmpm) - 1;
-                        owen[lindex + last] = tmp[p + size];
+                        const int32_t last = ffsl(frontierQm) - 1;
+                        predecessorQ[lindex + last] = frontierQ[p + size];
                         ++p;
-                        tmpm ^= (1U << last);
+                        frontierQm ^= (1U << last);
                     }
                 }
                 offset += lowers;
@@ -931,14 +931,30 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 SCOREP_USER_REGION_BEGIN(allReduceBC_handle, "BFSRUN_region_allReduceBC", SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
+/*
                 psize = static_cast<int32_t>(mask_size);
-                err = posix_memalign((void **)&complete_bitmask, ALIGNMENT, (psize * communicatorSize * sizeof(MType))+communicatorSize  );
+                err = posix_memalign((void **)&buffer, ALIGNMENT, (psize * communicatorSize * sizeof(MType))+communicatorSize  );
+                if (err) {
+                    throw "Memory error.";
+                }
+*/
+                static_cast<Derived *>(this)->generatOwenMask();
+
+                size_t normalsize = store.getLocColLength();
+                size_t compressedsize;
+                compressionType *buffer;
+
+                err = posix_memalign((void **)&buffer, ALIGNMENT, normalsize * sizeof(compressionType));
                 if (err) {
                     throw "Memory error.";
                 }
 
-                static_cast<Derived *>(this)->generatOwenMask();
+                schema.compress(fq_64, normalsize, &buffer, compressedsize);
 
+std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
+
+
+/*
                 maskLengthRes = psize % (1 << intLdSize);
                 lastReversedSliceIDs = 0U;
                 lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -964,11 +980,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                 }
 
-
+*/
                 //MPI_Allgatherv(owenmask, sizes[communicatorRank], bm_type,
 //                                complete_bitmask, sizes, disps, bm_type, col_comm);
-
-		free(complete_bitmask);
+                free(buffer);
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
@@ -1002,7 +1017,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                 }
 
-
+/*
 std::cout << "rank: " << rank << " size: " << store.getLocColLength() << "\n";
 
 std::cout << "sizes: (" << rank << ")";
@@ -1023,7 +1038,7 @@ for (int i=0; i< communicatorSize;++i) {
     std::cout << disps[i] << ", ";
 }
 std::cout << std::endl;
-
+*/
 //assert((std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0));
 /*
 if (std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0) {
