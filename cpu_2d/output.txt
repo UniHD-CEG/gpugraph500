@@ -1,0 +1,2273 @@
+--------------------------------------------------------------------------
+The following command line options and corresponding MCA parameter have
+been deprecated and replaced as follows:
+
+  Command line options:
+    Deprecated:  --bynode, -bynode
+    Replacement: --map-by node
+
+  Equivalent MCA parameter:
+    Deprecated:  rmaps_base_bynode
+    Replacement: rmaps_base_mapping_policy=node
+
+The deprecated forms *will* disappear in a future version of Open MPI.
+Please update to the new syntax.
+--------------------------------------------------------------------------
+ Data for JOB [6756,1] offset 0
+
+ ========================   JOB MAP   ========================
+
+ Data for node: creek01	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [6756,1] App: 0 Process rank: 0
+
+ Data for node: creek02	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [6756,1] App: 0 Process rank: 1
+
+ Data for node: creek03	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [6756,1] App: 0 Process rank: 2
+
+ Data for node: creek04	Num slots: 2	Max slots: 0	Num procs: 1
+ 	Process OMPI jobid: [6756,1] App: 0 Process rank: 3
+
+ =============================================================
+row slices: 2, column slices: 2
+graph_generation:               0.237047 s
+Input list of edges genereted.
+1.048576e+06 edge(s) generated in 0.239582s (4.376688 Medges/s on 4 processor(s))
+Global matrix redistribution done!
+Adjacency Matrix setup.
+1.390430e+05 edge(s) removed, because they are duplicates or self loops.
+1.819066e+06 unique edge(s) processed in 0.503565s (3.612375 Medges/s on 4 processor(s))
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3096-3056-
+cdisp: (1)0, 3096, 
+sum: (1) 531950071
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)2892-3116-
+cdisp: (0)0, 2892, 
+sum: (0) 435182865
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)2892-3116-
+cdisp: (1)0, 2892, 
+sum: (1) 427841931
+BFS Iteration 0: Finished in 0.015923s
+max. local exp.:     0.001478s(9.280527%)
+max. queue handling: 0.006408s(40.245564%)
+est. rest:           0.008037s(50.473909%)
+max. row com.:       0.001686s(10.589204%)
+max. col com.:       0.006699s(42.072322%)
+max. pred. list. red:0.003310s(20.787602%)
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3096-3056-
+cdisp: (0)0, 3096, 
+sum: (0) 427276807
+Validation of iteration 0 finished in 0.053065s
+Result: Valid 1048565 Edge(s) processed, 65.853116 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5092-5128-
+cdisp: (1)0, 5092, 
+sum: (1) 581883050
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5060-5112-
+cdisp: (1)0, 5060, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5092-5128-
+cdisp: (0)0, 5092, 
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5060-5112-
+cdisp: (0)0, 5060, 
+sum: (0) 506176010
+sum: (1) 504372578
+sum: (0) 512726905
+BFS Iteration 1: Finished in 0.011881s
+max. local exp.:     0.001273s(10.711777%)
+max. queue handling: 0.003011s(25.342644%)
+est. rest:           0.007597s(63.945578%)
+max. row com.:       0.001211s(10.194048%)
+max. col com.:       0.005640s(47.470552%)
+max. pred. list. red:0.004210s(35.434351%)
+Validation of iteration 1 finished in 0.061504s
+Result: Valid 1048565 Edge(s) processed, 88.254778 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4688-3364-
+cdisp: (1)0, 4688, 
+sum: (1) 585290253
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3336-4444-
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4688-3364-
+cdisp: (0)0, 4688, 
+cdisp: (0)0, 3336, 
+sum: (0) 476583716
+sum: (0) 502205204
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3336-4444-
+cdisp: (1)0, 3336, 
+sum: (1) 472548995
+BFS Iteration 2: Finished in 0.011328s
+max. local exp.:     0.001174s(10.363479%)
+max. queue handling: 0.003509s(30.978890%)
+est. rest:           0.006645s(58.657631%)
+max. row com.:       0.000993s(8.763917%)
+max. col com.:       0.005213s(46.021089%)
+max. pred. list. red:0.004230s(37.341359%)
+Validation of iteration 2 finished in 0.054583s
+Result: Valid 1048565 Edge(s) processed, 92.564148 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5136-4764-
+cdisp: (1)0, 5136, 
+sum: (1) 548084177
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5136-4764-
+cdisp: (0)0, 5136, 
+sum: (0) 446848754
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4508-5156-
+cdisp: (0)0, 4508, 
+sum: (0) 462030140
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4508-5156-
+cdisp: (1)0, 4508, 
+sum: (1) 443573809
+BFS Iteration 3: Finished in 0.010738s
+max. local exp.:     0.001217s(11.332652%)
+max. queue handling: 0.002974s(27.696612%)
+est. rest:           0.006547s(60.970736%)
+max. row com.:       0.000876s(8.159776%)
+max. col com.:       0.004767s(44.393623%)
+max. pred. list. red:0.003217s(29.959146%)
+Validation of iteration 3 finished in 0.056585s
+Result: Valid 1048565 Edge(s) processed, 97.650881 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4344-5372-
+cdisp: (1)0, 4344, 
+sum: (1) 595220303
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5316-4248-
+cdisp: (0)0, 5316, 
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5316-4248-
+cdisp: (1)0, 5316, 
+sum: (1) 478620406
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4344-5372-
+cdisp: (0)0, 4344, 
+sum: (0) 517403313
+sum: (0) 483409901
+BFS Iteration 4: Finished in 0.011055s
+max. local exp.:     0.001160s(10.489993%)
+max. queue handling: 0.003536s(31.989734%)
+est. rest:           0.006359s(57.520273%)
+max. row com.:       0.001407s(12.728606%)
+max. col com.:       0.005277s(47.737664%)
+max. pred. list. red:0.003884s(35.134144%)
+Validation of iteration 4 finished in 0.057221s
+Result: Valid 1048565 Edge(s) processed, 94.849905 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4084-5376-
+cdisp: (1)0, 4084, 
+sum: (1) 559503512
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4084-5376-
+cdisp: (0)0, 4084, 
+sum: (0) 431563362
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5304-4056-
+cdisp: (0)0, 5304, 
+sum: (0) 467926385
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5304-4056-
+cdisp: (1)0, 5304, 
+sum: (1) 431696928
+BFS Iteration 5: Finished in 0.011997s
+max. local exp.:     0.001267s(10.560623%)
+max. queue handling: 0.003550s(29.591208%)
+est. rest:           0.007180s(59.848169%)
+max. row com.:       0.000803s(6.695284%)
+max. col com.:       0.005590s(46.592738%)
+max. pred. list. red:0.003275s(27.297840%)
+Validation of iteration 5 finished in 0.093360s
+Result: Valid 1048565 Edge(s) processed, 87.402380 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3036-4428-
+cdisp: (1)0, 3036, 
+sum: (1) 549168916
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3036-4428-
+cdisp: (0)0, 3036, 
+csizes: (0)4372-3048-
+cdisp: (0)0, 4372, 
+sum: (0) 442075397
+sum: (0) 442328406
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4372-3048-
+cdisp: (1)0, 4372, 
+sum: (1) 439691905
+BFS Iteration 6: Finished in 0.011115s
+max. local exp.:     0.001209s(10.877539%)
+max. queue handling: 0.002903s(26.113816%)
+est. rest:           0.007003s(63.008645%)
+max. row com.:       0.001109s(9.978764%)
+max. col com.:       0.004656s(41.886355%)
+max. pred. list. red:0.003271s(29.430061%)
+Validation of iteration 6 finished in 0.072363s
+Result: Valid 1048565 Edge(s) processed, 94.339226 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5148-5856-
+cdisp: (1)0, 5148, 
+sum: (1) 576892350
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5148-5856-
+cdisp: (0)0, 5148, 
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5792-5164-
+cdisp: (0)0, 5792, 
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5792-5164-
+cdisp: (1)0, 5792, 
+sum: (0) 558594386
+sum: (1) 555568562
+sum: (0) 555838538
+BFS Iteration 7: Finished in 0.011627s
+max. local exp.:     0.001386s(11.921996%)
+max. queue handling: 0.003037s(26.118072%)
+est. rest:           0.007204s(61.959932%)
+max. row com.:       0.001013s(8.712859%)
+max. col com.:       0.005191s(44.649045%)
+max. pred. list. red:0.003283s(28.234257%)
+Validation of iteration 7 finished in 0.079427s
+Result: Valid 1048565 Edge(s) processed, 90.183944 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4928-3600-
+cdisp: (1)0, 4928, 
+sum: (1) 547908632
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4928-3600-
+cdisp: (0)0, 4928, 
+sum: (0) 496978521
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3508-4932-
+cdisp: (0)0, 3508, 
+sum: (0) 509493792
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3508-4932-
+cdisp: (1)0, 3508, 
+sum: (1) 497415158
+BFS Iteration 8: Finished in 0.011191s
+max. local exp.:     0.001318s(11.777238%)
+max. queue handling: 0.002898s(25.893732%)
+est. rest:           0.006975s(62.329030%)
+max. row com.:       0.001205s(10.765265%)
+max. col com.:       0.004701s(42.010738%)
+max. pred. list. red:0.003342s(29.864928%)
+Validation of iteration 8 finished in 0.063148s
+Result: Valid 1048565 Edge(s) processed, 93.698078 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4128-5176-
+cdisp: (1)0, 4128, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4128-5176-
+cdisp: (0)0, 4128, 
+sum: (1) 545306073
+sum: (0) 411398568
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5076-4092-
+cdisp: (0)0, 5076, 
+sum: (0) 434824094
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5076-4092-
+cdisp: (1)0, 5076, 
+sum: (1) 407189170
+BFS Iteration 9: Finished in 0.011364s
+max. local exp.:     0.001215s(10.691507%)
+max. queue handling: 0.003555s(31.283568%)
+est. rest:           0.006594s(58.024924%)
+max. row com.:       0.000755s(6.644428%)
+max. col com.:       0.005197s(45.734726%)
+max. pred. list. red:0.004093s(36.018798%)
+Validation of iteration 9 finished in 0.062396s
+Result: Valid 1048565 Edge(s) processed, 92.270904 MTeps
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5184-4484-
+cdisp: (0)0, 5184, 
+sum: (0) 441698159
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5184-4484-
+cdisp: (1)0, 5184, 
+sum: (1) 554944806
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4348-5208-
+cdisp: (0)0, 4348, 
+sum: (0) 461886716
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4348-5208-
+cdisp: (1)0, 4348, 
+sum: (1) 436214686
+BFS Iteration 10: Finished in 0.011955s
+max. local exp.:     0.001221s(10.210797%)
+max. queue handling: 0.003451s(28.863451%)
+est. rest:           0.007284s(60.925752%)
+max. row com.:       0.001284s(10.741280%)
+max. col com.:       0.005642s(47.195022%)
+max. pred. list. red:0.011166s(93.400874%)
+Validation of iteration 10 finished in 0.061892s
+Result: Valid 1048565 Edge(s) processed, 87.709159 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3712-5604-
+cdisp: (1)0, 3712, 
+sum: (1) 558258064
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5548-3624-
+cdisp: (0)0, 5548, 
+sum: (0) 458393760
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5548-3624-
+cdisp: (1)0, 5548, 
+sum: (1) 442211765
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3712-5604-
+cdisp: (0)0, 3712, 
+sum: (0) 446264280
+BFS Iteration 11: Finished in 0.010699s
+max. local exp.:     0.001257s(11.748189%)
+max. queue handling: 0.002913s(27.226741%)
+est. rest:           0.006529s(61.025070%)
+max. row com.:       0.001062s(9.925348%)
+max. col com.:       0.004941s(46.183844%)
+max. pred. list. red:0.005298s(49.519777%)
+Validation of iteration 11 finished in 0.060174s
+Result: Valid 1048565 Edge(s) processed, 98.005579 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5860-3512-
+cdisp: (1)0, 5860, 
+sum: (1) 570436772
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3328-5756-
+cdisp: (0)0, 3328, 
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3328-5756-
+cdisp: (1)0, 3328, 
+sum: (1) 482453194
+sum: (0) 495773399
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5860-3512-
+cdisp: (0)0, 5860, 
+sum: (0) 490761717
+BFS Iteration 12: Finished in 0.011223s
+max. local exp.:     0.001206s(10.742889%)
+max. queue handling: 0.003561s(31.725193%)
+est. rest:           0.006457s(57.531919%)
+max. row com.:       0.001297s(11.554394%)
+max. col com.:       0.005239s(46.682812%)
+max. pred. list. red:0.005175s(46.111359%)
+Validation of iteration 12 finished in 0.060475s
+Result: Valid 1048565 Edge(s) processed, 93.429362 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5508-6404-
+cdisp: (1)0, 5508, 
+sum: (1) 548426953
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5508-6404-
+cdisp: (0)0, 5508, 
+sum: (0) 493494891
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)6360-5376-
+cdisp: (0)0, 6360, 
+sum: (0) 514116943
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)6360-5376-
+cdisp: (1)0, 6360, 
+sum: (1) 491325833
+BFS Iteration 13: Finished in 0.010690s
+max. local exp.:     0.001298s(12.143988%)
+max. queue handling: 0.002987s(27.945670%)
+est. rest:           0.006404s(59.910342%)
+max. row com.:       0.000713s(6.668600%)
+max. col com.:       0.004702s(43.985994%)
+max. pred. list. red:0.004970s(46.492852%)
+Validation of iteration 13 finished in 0.058619s
+Result: Valid 1048565 Edge(s) processed, 98.088640 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4156-5116-
+cdisp: (1)0, 4156, 
+sum: (1) 549996731
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4964-4180-
+cdisp: (0)0, 4964, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4156-5116-
+cdisp: (0)0, 4156, 
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4964-4180-
+cdisp: (1)0, 4964, 
+sum: (0) 418850946
+sum: (0) 448540396
+sum: (1) 415355694
+BFS Iteration 14: Finished in 0.011140s
+max. local exp.:     0.001215s(10.904227%)
+max. queue handling: 0.003534s(31.721776%)
+est. rest:           0.006392s(57.373997%)
+max. row com.:       0.001060s(9.515249%)
+max. col com.:       0.005339s(47.925094%)
+max. pred. list. red:0.006114s(54.882825%)
+Validation of iteration 14 finished in 0.057462s
+Result: Valid 1048565 Edge(s) processed, 94.125209 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5976-6008-
+cdisp: (1)0, 5976, 
+sum: (1) 572277945
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5952-5976-
+cdisp: (0)0, 5952, 
+sum: (0) 521670258
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5952-5976-
+cdisp: (1)0, 5952, 
+sum: (1) 483796017
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5976-6008-
+cdisp: (0)0, 5976, 
+sum: (0) 489054807
+BFS Iteration 15: Finished in 0.012550s
+max. local exp.:     0.001339s(10.669098%)
+max. queue handling: 0.003495s(27.850602%)
+est. rest:           0.007716s(61.480299%)
+max. row com.:       0.001630s(12.986816%)
+max. col com.:       0.005813s(46.316349%)
+max. pred. list. red:0.004817s(38.382917%)
+Validation of iteration 15 finished in 0.066368s
+Result: Valid 1048565 Edge(s) processed, 83.551814 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3788-4384-
+cdisp: (1)0, 3788, 
+sum: (1) 549942356
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4416-3712-
+cdisp: (0)0, 4416, 
+sum: (0) 439748946
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3788-4384-
+cdisp: (0)0, 3788, 
+sum: (0) 421420088
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4416-3712-
+cdisp: (1)0, 4416, 
+sum: (1) 413732732
+BFS Iteration 16: Finished in 0.011396s
+max. local exp.:     0.001194s(10.477426%)
+max. queue handling: 0.003596s(31.553621%)
+est. rest:           0.006606s(57.968953%)
+max. row com.:       0.001205s(10.573664%)
+max. col com.:       0.005473s(48.029206%)
+max. pred. list. red:0.004836s(42.436922%)
+Validation of iteration 16 finished in 0.058719s
+Result: Valid 1048565 Edge(s) processed, 92.012226 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6064-6384-
+cdisp: (1)0, 6064, 
+sum: (1) 595613236
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6064-6384-
+cdisp: (0)0, 6064, 
+sum: (0) 528248817
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)6300-5940-
+cdisp: (0)0, 6300, 
+sum: (0) 557652785
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)6300-5940-
+cdisp: (1)0, 6300, 
+sum: (1) 518938199
+BFS Iteration 17: Finished in 0.012286s
+max. local exp.:     0.001350s(10.991442%)
+max. queue handling: 0.003615s(29.425006%)
+est. rest:           0.007320s(59.583552%)
+max. row com.:       0.001147s(9.336128%)
+max. col com.:       0.005537s(45.068017%)
+max. pred. list. red:0.005641s(45.914110%)
+Validation of iteration 17 finished in 0.070291s
+Result: Valid 1048565 Edge(s) processed, 85.346692 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3076-4020-
+cdisp: (1)0, 3076, 
+sum: (1) 548708151
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3984-3212-
+cdisp: (0)0, 3984, 
+sum: (0) 439064028
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3984-3212-
+cdisp: (1)0, 3984, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3076-4020-
+cdisp: (0)0, 3076, 
+sum: (0) 432825188
+sum: (1) 429769665
+BFS Iteration 18: Finished in 0.011826s
+max. local exp.:     0.001223s(10.342325%)
+max. queue handling: 0.003478s(29.408088%)
+est. rest:           0.007125s(60.249587%)
+max. row com.:       0.000920s(7.779928%)
+max. col com.:       0.005484s(46.375146%)
+max. pred. list. red:0.004361s(36.875529%)
+Validation of iteration 18 finished in 0.060627s
+Result: Valid 1048565 Edge(s) processed, 88.665787 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3188-3376-
+cdisp: (1)0, 3188, 
+sum: (1) 553278182
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3452-3124-
+cdisp: (0)0, 3452, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3188-3376-
+cdisp: (0)0, 3188, 
+sum: (0) 442564668
+sum: (0) 424102408
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3452-3124-
+cdisp: (1)0, 3452, 
+sum: (1) 420695505
+BFS Iteration 19: Finished in 0.011650s
+max. local exp.:     0.001248s(10.709316%)
+max. queue handling: 0.003439s(29.522757%)
+est. rest:           0.006963s(59.767927%)
+max. row com.:       0.001899s(16.300344%)
+max. col com.:       0.005446s(46.744024%)
+max. pred. list. red:0.004885s(41.930665%)
+Validation of iteration 19 finished in 0.060452s
+Result: Valid 1048565 Edge(s) processed, 90.004919 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3284-3356-
+cdisp: (1)0, 3284, 
+sum: (1) 536066823
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3300-3160-
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3284-3356-
+cdisp: (0)0, 3284, 
+cdisp: (0)0, 3300, 
+sum: (0) 393999022
+sum: (0) 412134596
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3300-3160-
+cdisp: (1)0, 3300, 
+sum: (1) 387946743
+BFS Iteration 20: Finished in 0.011437s
+max. local exp.:     0.001208s(10.560547%)
+max. queue handling: 0.002968s(25.953180%)
+est. rest:           0.007261s(63.486273%)
+max. row com.:       0.001347s(11.775865%)
+max. col com.:       0.005210s(45.554606%)
+max. pred. list. red:0.004202s(36.738863%)
+Validation of iteration 20 finished in 0.057479s
+Result: Valid 1048565 Edge(s) processed, 91.680398 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3312-3480-
+cdisp: (1)0, 3312, 
+sum: (1) 536171486
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3312-3480-
+cdisp: (0)0, 3312, 
+sum: (0) 399078979
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3524-3080-
+cdisp: (0)0, 3524, 
+sum: (0) 413892228
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3524-3080-
+cdisp: (1)0, 3524, 
+sum: (1) 392853286
+BFS Iteration 21: Finished in 0.011657s
+max. local exp.:     0.001234s(10.584337%)
+max. queue handling: 0.003603s(30.912401%)
+est. rest:           0.006820s(58.503262%)
+max. row com.:       0.001104s(9.471704%)
+max. col com.:       0.005379s(46.141574%)
+max. pred. list. red:0.004230s(36.287403%)
+Validation of iteration 21 finished in 0.063864s
+Result: Valid 1048565 Edge(s) processed, 89.951534 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3412-3604-
+cdisp: (1)0, 3412, 
+sum: (1) 536681248
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3412-3604-
+cdisp: (0)0, 3412, 
+csizes: (0)3284-3172-
+cdisp: (0)0, 3284, 
+sum: (0) 396506085
+sum: (0) 414941682
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3284-3172-
+cdisp: (1)0, 3284, 
+sum: (1) 391382402
+BFS Iteration 22: Finished in 0.011232s
+max. local exp.:     0.001223s(10.889177%)
+max. queue handling: 0.003558s(31.678377%)
+est. rest:           0.006451s(57.432447%)
+max. row com.:       0.000921s(8.199783%)
+max. col com.:       0.005519s(49.132899%)
+max. pred. list. red:0.004239s(37.740655%)
+Validation of iteration 22 finished in 0.059621s
+Result: Valid 1048565 Edge(s) processed, 93.354002 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6080-3460-
+cdisp: (1)0, 6080, 
+sum: (1) 581603555
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6080-3460-
+cdisp: (0)0, 6080, 
+sum: (0) 517342335
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3392-5864-
+cdisp: (0)0, 3392, 
+sum: (0) 518136008
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3392-5864-
+cdisp: (1)0, 3392, 
+sum: (1) 513239288
+BFS Iteration 23: Finished in 0.011432s
+max. local exp.:     0.001274s(11.143090%)
+max. queue handling: 0.003525s(30.834845%)
+est. rest:           0.006633s(58.022065%)
+max. row com.:       0.001662s(14.536278%)
+max. col com.:       0.005242s(45.852885%)
+max. pred. list. red:0.004525s(39.581639%)
+Validation of iteration 23 finished in 0.056907s
+Result: Valid 1048565 Edge(s) processed, 91.722463 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4972-6016-
+cdisp: (1)0, 4972, 
+sum: (1) 601372937
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5660-4584-
+cdisp: (0)0, 5660, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4972-6016-
+cdisp: (0)0, 4972, 
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5660-4584-
+cdisp: (1)0, 5660, 
+sum: (0) 499960214
+sum: (0) 521006501
+sum: (1) 492351147
+BFS Iteration 24: Finished in 0.011254s
+max. local exp.:     0.001176s(10.452725%)
+max. queue handling: 0.003816s(33.904625%)
+est. rest:           0.006262s(55.642650%)
+max. row com.:       0.000919s(8.166854%)
+max. col com.:       0.005540s(49.225685%)
+max. pred. list. red:0.004732s(42.046056%)
+Validation of iteration 24 finished in 0.056760s
+Result: Valid 1048565 Edge(s) processed, 93.172052 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4960-4640-
+cdisp: (1)0, 4960, 
+sum: (1) 606915841
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4364-4624-
+cdisp: (0)0, 4364, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4960-4640-
+cdisp: (0)0, 4960, 
+sum: (0) 521735808
+sum: (0) 501673171
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4364-4624-
+cdisp: (1)0, 4364, 
+sum: (1) 492706079
+BFS Iteration 25: Finished in 0.011461s
+max. local exp.:     0.001175s(10.251503%)
+max. queue handling: 0.003539s(30.875164%)
+est. rest:           0.006747s(58.873333%)
+max. row com.:       0.000901s(7.857128%)
+max. col com.:       0.005486s(47.870858%)
+max. pred. list. red:0.004948s(43.173639%)
+Validation of iteration 25 finished in 0.056464s
+Result: Valid 1048565 Edge(s) processed, 91.489679 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5288-4700-
+cdisp: (1)0, 5288, 
+sum: (1) 463939670
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4420-4928-
+cdisp: (0)0, 4420, 
+sum: (0) 460279408
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4420-4928-
+cdisp: (1)0, 4420, 
+sum: (1) 487418175
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5288-4700-
+cdisp: (0)0, 5288, 
+sum: (0) 491739817
+BFS Iteration 26: Finished in 0.011894s
+max. local exp.:     0.001367s(11.493976%)
+max. queue handling: 0.003433s(28.861226%)
+est. rest:           0.007094s(59.644797%)
+max. row com.:       0.001488s(12.512278%)
+max. col com.:       0.005686s(47.804037%)
+max. pred. list. red:0.004339s(36.480446%)
+Validation of iteration 26 finished in 0.065352s
+Result: Valid 1048565 Edge(s) processed, 88.159247 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6112-5348-
+cdisp: (1)0, 6112, 
+sum: (1) 582244255
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4928-5872-
+cdisp: (0)0, 4928, 
+sum: (0) 531220833
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4928-5872-
+cdisp: (1)0, 4928, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6112-5348-
+cdisp: (0)0, 6112, 
+sum: (1) 513299485
+sum: (0) 520584639
+BFS Iteration 27: Finished in 0.010456s
+max. local exp.:     0.001268s(12.126325%)
+max. queue handling: 0.003035s(29.027477%)
+est. rest:           0.006153s(58.846198%)
+max. row com.:       0.000988s(9.451602%)
+max. col com.:       0.004794s(45.851100%)
+max. pred. list. red:0.004355s(41.650895%)
+Validation of iteration 27 finished in 0.057986s
+Result: Valid 1048565 Edge(s) processed, 100.285039 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4796-6100-
+cdisp: (1)0, 4796, 
+sum: (1) 574328391
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4796-6100-
+cdisp: (0)0, 4796, 
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5792-4540-
+cdisp: (0)0, 5792, 
+sum: (0) 468015971
+sum: (0) 448636857
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5792-4540-
+cdisp: (1)0, 5792, 
+sum: (1) 441551776
+BFS Iteration 28: Finished in 0.011798s
+max. local exp.:     0.001255s(10.635761%)
+max. queue handling: 0.003490s(29.583300%)
+est. rest:           0.007053s(59.780939%)
+max. row com.:       0.001873s(15.875839%)
+max. col com.:       0.005720s(48.482338%)
+max. pred. list. red:0.004448s(37.703096%)
+Validation of iteration 28 finished in 0.064673s
+Result: Valid 1048565 Edge(s) processed, 88.877220 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6092-6344-
+cdisp: (1)0, 6092, 
+sum: (1) 586450426
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)6024-5840-
+cdisp: (0)0, 6024, 
+sum: (0) 512446484
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)6024-5840-
+cdisp: (1)0, 6024, 
+sum: (1) 488529810
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6092-6344-
+cdisp: (0)0, 6092, 
+sum: (0) 492961164
+BFS Iteration 29: Finished in 0.011683s
+max. local exp.:     0.001295s(11.083221%)
+max. queue handling: 0.003622s(31.002816%)
+est. rest:           0.006766s(57.913963%)
+max. row com.:       0.001032s(8.836374%)
+max. col com.:       0.005840s(49.987756%)
+max. pred. list. red:0.004112s(35.196523%)
+Validation of iteration 29 finished in 0.064197s
+Result: Valid 1048565 Edge(s) processed, 89.751446 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5776-4916-
+cdisp: (1)0, 5776, 
+sum: (1) 566755770
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4916-5564-
+cdisp: (0)0, 4916, 
+sum: (0) 466808498
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5776-4916-
+cdisp: (0)0, 5776, 
+sum: (0) 452839818
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4916-5564-
+cdisp: (1)0, 4916, 
+sum: (1) 445001575
+BFS Iteration 30: Finished in 0.011163s
+max. local exp.:     0.001210s(10.839153%)
+max. queue handling: 0.003018s(27.037013%)
+est. rest:           0.006935s(62.123833%)
+max. row com.:       0.001083s(9.698639%)
+max. col com.:       0.005330s(47.747805%)
+max. pred. list. red:0.004346s(38.933385%)
+Validation of iteration 30 finished in 0.056837s
+Result: Valid 1048565 Edge(s) processed, 93.932218 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4560-6112-
+cdisp: (1)0, 4560, 
+sum: (1) 560567427
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5788-4312-
+cdisp: (0)0, 5788, 
+sum: (0) 490613894
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4560-6112-
+cdisp: (0)0, 4560, 
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5788-4312-
+cdisp: (1)0, 5788, 
+sum: (0) 468911785
+sum: (1) 466455102
+BFS Iteration 31: Finished in 0.011088s
+max. local exp.:     0.001272s(11.471391%)
+max. queue handling: 0.003507s(31.631797%)
+est. rest:           0.006309s(56.896811%)
+max. row com.:       0.000926s(8.351431%)
+max. col com.:       0.005504s(49.637689%)
+max. pred. list. red:0.004314s(38.905971%)
+Validation of iteration 31 finished in 0.056214s
+Result: Valid 1048565 Edge(s) processed, 94.566417 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5748-4712-
+cdisp: (1)0, 5748, 
+sum: (1) 545220609
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4648-5620-
+cdisp: (0)0, 4648, 
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4648-5620-
+cdisp: (1)0, 4648, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5748-4712-
+cdisp: (0)0, 5748, 
+sum: (0) 496875630
+sum: (0) 503601541
+sum: (1) 492981157
+BFS Iteration 32: Finished in 0.010668s
+max. local exp.:     0.001281s(12.010280%)
+max. queue handling: 0.002994s(28.067941%)
+est. rest:           0.006392s(59.921779%)
+max. row com.:       0.000761s(7.131523%)
+max. col com.:       0.004737s(44.404961%)
+max. pred. list. red:0.004336s(40.643647%)
+Validation of iteration 32 finished in 0.056748s
+Result: Valid 1048565 Edge(s) processed, 98.290320 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3308-5508-
+cdisp: (1)0, 3308, 
+sum: (1) 543205665
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5436-3188-
+cdisp: (0)0, 5436, 
+sum: (0) 424475533
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5436-3188-
+cdisp: (1)0, 5436, 
+sum: (1) 407233947
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3308-5508-
+cdisp: (0)0, 3308, 
+sum: (0) 410585053
+BFS Iteration 33: Finished in 0.011335s
+max. local exp.:     0.001221s(10.769198%)
+max. queue handling: 0.003701s(32.648339%)
+est. rest:           0.006414s(56.582462%)
+max. row com.:       0.000883s(7.788739%)
+max. col com.:       0.005553s(48.989336%)
+max. pred. list. red:0.004146s(36.577414%)
+Validation of iteration 33 finished in 0.057518s
+Result: Valid 1048565 Edge(s) processed, 92.505740 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3516-3572-
+cdisp: (1)0, 3516, 
+sum: (1) 545126250
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3492-3384-
+cdisp: (0)0, 3492, 
+sum: (0) 443426300
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3516-3572-
+cdisp: (0)0, 3516, 
+sum: (0) 430863429
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3492-3384-
+cdisp: (1)0, 3492, 
+sum: (1) 424242544
+BFS Iteration 34: Finished in 0.011421s
+max. local exp.:     0.001247s(10.917897%)
+max. queue handling: 0.003491s(30.563848%)
+est. rest:           0.006683s(58.518256%)
+max. row com.:       0.000806s(7.058013%)
+max. col com.:       0.005529s(48.412417%)
+max. pred. list. red:0.004266s(37.352567%)
+Validation of iteration 34 finished in 0.059800s
+Result: Valid 1048565 Edge(s) processed, 91.810542 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5776-3812-
+cdisp: (1)0, 5776, 
+sum: (1) 544193366
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5776-3812-
+cdisp: (0)0, 5776, 
+sum: (0) 442208213
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3368-5760-
+cdisp: (1)0, 3368, 
+sum: (1) 437864407
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3368-5760-
+cdisp: (0)0, 3368, 
+sum: (0) 448689091
+BFS Iteration 35: Finished in 0.020304s
+max. local exp.:     0.001215s(5.985134%)
+max. queue handling: 0.003565s(17.556158%)
+est. rest:           0.015524s(76.458708%)
+max. row com.:       0.001354s(6.666197%)
+max. col com.:       0.005331s(26.256150%)
+max. pred. list. red:0.011777s(58.003077%)
+Validation of iteration 35 finished in 0.057157s
+Result: Valid 1048565 Edge(s) processed, 51.643362 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5772-5784-
+cdisp: (1)0, 5772, 
+sum: (1) 477292777
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5772-5784-
+cdisp: (0)0, 5772, 
+sum: (0) 498944991
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5344-5512-
+cdisp: (0)0, 5344, 
+sum: (0) 465885411
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5344-5512-
+cdisp: (1)0, 5344, 
+sum: (1) 491812634
+BFS Iteration 36: Finished in 0.015330s
+max. local exp.:     0.001323s(8.631684%)
+max. queue handling: 0.003062s(19.972627%)
+est. rest:           0.010945s(71.395689%)
+max. row com.:       0.000867s(5.656475%)
+max. col com.:       0.005101s(33.277862%)
+max. pred. list. red:0.007192s(46.914367%)
+Validation of iteration 36 finished in 0.063260s
+Result: Valid 1048565 Edge(s) processed, 68.400267 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6092-6012-
+cdisp: (1)0, 6092, 
+sum: (1) 588943108
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)6032-5976-
+cdisp: (0)0, 6032, 
+sum: (0) 530517974
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6092-6012-
+cdisp: (0)0, 6092, 
+sum: (0) 515323066
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)6032-5976-
+cdisp: (1)0, 6032, 
+sum: (1) 506611159
+BFS Iteration 37: Finished in 0.013619s
+max. local exp.:     0.001263s(9.274885%)
+max. queue handling: 0.003565s(26.175554%)
+est. rest:           0.008791s(64.549561%)
+max. row com.:       0.001276s(9.371170%)
+max. col com.:       0.005187s(38.086902%)
+max. pred. list. red:0.005659s(41.553167%)
+Validation of iteration 37 finished in 0.055094s
+Result: Valid 1048565 Edge(s) processed, 76.993109 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6120-6352-
+cdisp: (1)0, 6120, 
+sum: (1) 589188239
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)6040-5980-
+cdisp: (0)0, 6040, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6120-6352-
+cdisp: (0)0, 6120, 
+sum: (0) 526408377
+sum: (0) 512642135
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)6040-5980-
+cdisp: (1)0, 6040, 
+sum: (1) 504207676
+BFS Iteration 38: Finished in 0.013937s
+max. local exp.:     0.001298s(9.314698%)
+max. queue handling: 0.003585s(25.721910%)
+est. rest:           0.009054s(64.963391%)
+max. row com.:       0.000920s(6.601546%)
+max. col com.:       0.005233s(37.549610%)
+max. pred. list. red:0.005673s(40.704119%)
+Validation of iteration 38 finished in 0.056557s
+Result: Valid 1048565 Edge(s) processed, 75.236081 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5516-6056-
+cdisp: (1)0, 5516, 
+sum: (1) 563220778
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)6236-5412-
+cdisp: (0)0, 6236, 
+sum: (0) 533339445
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5516-6056-
+cdisp: (0)0, 5516, 
+sum: (0) 506169404
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)6236-5412-
+cdisp: (1)0, 6236, 
+sum: (1) 501595513
+BFS Iteration 39: Finished in 0.014437s
+max. local exp.:     0.001316s(9.114330%)
+max. queue handling: 0.003479s(24.097898%)
+est. rest:           0.009642s(66.787773%)
+max. row com.:       0.001717s(11.893713%)
+max. col com.:       0.005256s(36.407775%)
+max. pred. list. red:0.006106s(42.295179%)
+Validation of iteration 39 finished in 0.055803s
+Result: Valid 1048565 Edge(s) processed, 72.630594 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3348-5684-
+cdisp: (1)0, 3348, 
+sum: (1) 544482479
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5368-3344-
+cdisp: (0)0, 5368, 
+sum: (0) 432478383
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3348-5684-
+cdisp: (0)0, 3348, 
+sum: (0) 419070469
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5368-3344-
+cdisp: (1)0, 5368, 
+sum: (1) 419709864
+BFS Iteration 40: Finished in 0.013134s
+max. local exp.:     0.001225s(9.328710%)
+max. queue handling: 0.003534s(26.909672%)
+est. rest:           0.008374s(63.761618%)
+max. row com.:       0.000997s(7.591490%)
+max. col com.:       0.005368s(40.870970%)
+max. pred. list. red:0.004851s(36.933633%)
+Validation of iteration 40 finished in 0.055717s
+Result: Valid 1048565 Edge(s) processed, 79.835906 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3384-3368-
+cdisp: (1)0, 3384, 
+sum: (1) 539486060
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3492-3372-
+cdisp: (0)0, 3492, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3384-3368-
+cdisp: (0)0, 3384, 
+sum: (0) 416357737
+sum: (0) 399779430
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3492-3372-
+cdisp: (1)0, 3492, 
+sum: (1) 393352798
+BFS Iteration 41: Finished in 0.013458s
+max. local exp.:     0.001209s(8.985420%)
+max. queue handling: 0.003554s(26.410615%)
+est. rest:           0.008694s(64.603965%)
+max. row com.:       0.001025s(7.614222%)
+max. col com.:       0.005544s(41.196166%)
+max. pred. list. red:0.004877s(36.239304%)
+Validation of iteration 41 finished in 0.055782s
+Result: Valid 1048565 Edge(s) processed, 77.913802 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3884-4160-
+cdisp: (1)0, 3884, 
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3736-3620-
+cdisp: (0)0, 3736, 
+sum: (1) 553743910
+sum: (0) 458104781
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3884-4160-
+cdisp: (0)0, 3884, 
+sum: (0) 437834981
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3736-3620-
+cdisp: (1)0, 3736, 
+sum: (1) 433632060
+BFS Iteration 42: Finished in 0.012363s
+max. local exp.:     0.001233s(9.970301%)
+max. queue handling: 0.002997s(24.244996%)
+est. rest:           0.008133s(65.784703%)
+max. row com.:       0.000972s(7.862460%)
+max. col com.:       0.004744s(38.375053%)
+max. pred. list. red:0.004727s(38.234273%)
+Validation of iteration 42 finished in 0.055257s
+Result: Valid 1048565 Edge(s) processed, 84.815065 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4168-6164-
+cdisp: (1)0, 4168, 
+sum: (1) 561808387
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5972-4012-
+cdisp: (0)0, 5972, 
+sum: (0) 454739805
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4168-6164-
+cdisp: (0)0, 4168, 
+sum: (0) 431369623
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5972-4012-
+cdisp: (1)0, 5972, 
+sum: (1) 426502503
+BFS Iteration 43: Finished in 0.013299s
+max. local exp.:     0.001230s(9.250627%)
+max. queue handling: 0.003637s(27.346719%)
+est. rest:           0.008432s(63.402653%)
+max. row com.:       0.000721s(5.419505%)
+max. col com.:       0.005775s(43.425959%)
+max. pred. list. red:0.004566s(34.333094%)
+Validation of iteration 43 finished in 0.063821s
+Result: Valid 1048565 Edge(s) processed, 78.845471 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5608-3992-
+cdisp: (1)0, 5608, 
+sum: (1) 548986195
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3800-5516-
+cdisp: (0)0, 3800, 
+sum: (0) 451208106
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5608-3992-
+cdisp: (0)0, 5608, 
+sum: (0) 442377102
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3800-5516-
+cdisp: (1)0, 3800, 
+sum: (1) 435770286
+BFS Iteration 44: Finished in 0.012682s
+max. local exp.:     0.001208s(9.521930%)
+max. queue handling: 0.003569s(28.142801%)
+est. rest:           0.007905s(62.335270%)
+max. row com.:       0.000820s(6.465136%)
+max. col com.:       0.005379s(42.415355%)
+max. pred. list. red:0.004549s(35.869381%)
+Validation of iteration 44 finished in 0.056114s
+Result: Valid 1048565 Edge(s) processed, 82.680059 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3424-5624-
+cdisp: (1)0, 3424, 
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5644-3184-
+cdisp: (0)0, 5644, 
+sum: (0) 388428101
+sum: (1) 510357406
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3424-5624-
+cdisp: (0)0, 3424, 
+sum: (0) 369895944
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5644-3184-
+cdisp: (1)0, 5644, 
+sum: (1) 364875804
+BFS Iteration 45: Finished in 0.013395s
+max. local exp.:     0.001199s(8.949326%)
+max. queue handling: 0.002973s(22.197106%)
+est. rest:           0.009223s(68.853568%)
+max. row com.:       0.001634s(12.197640%)
+max. col com.:       0.005341s(39.875051%)
+max. pred. list. red:0.004948s(36.940000%)
+Validation of iteration 45 finished in 0.055614s
+Result: Valid 1048565 Edge(s) processed, 78.279913 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6224-3768-
+cdisp: (1)0, 6224, 
+sum: (1) 562677543
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3604-6136-
+cdisp: (0)0, 3604, 
+sum: (0) 535836215
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6224-3768-
+cdisp: (0)0, 6224, 
+sum: (0) 540788009
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3604-6136-
+cdisp: (1)0, 3604, 
+sum: (1) 533294328
+BFS Iteration 46: Finished in 0.012483s
+max. local exp.:     0.001355s(10.852210%)
+max. queue handling: 0.002926s(23.440544%)
+est. rest:           0.008202s(65.707246%)
+max. row com.:       0.000799s(6.400168%)
+max. col com.:       0.004822s(38.628290%)
+max. pred. list. red:0.004585s(36.729822%)
+Validation of iteration 46 finished in 0.055731s
+Result: Valid 1048565 Edge(s) processed, 83.998632 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6232-6476-
+cdisp: (1)0, 6232, 
+sum: (1) 588613535
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)6244-6084-
+cdisp: (0)0, 6244, 
+sum: (0) 527361620
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6232-6476-
+cdisp: (0)0, 6232, 
+sum: (0) 511997348
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)6244-6084-
+cdisp: (1)0, 6244, 
+sum: (1) 507857914
+BFS Iteration 47: Finished in 0.012449s
+max. local exp.:     0.001274s(10.232692%)
+max. queue handling: 0.003560s(28.597146%)
+est. rest:           0.007615s(61.170162%)
+max. row com.:       0.001361s(10.931725%)
+max. col com.:       0.005257s(42.227329%)
+max. pred. list. red:0.004364s(35.055061%)
+Validation of iteration 47 finished in 0.056129s
+Result: Valid 1048565 Edge(s) processed, 84.228677 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6220-6120-
+cdisp: (1)0, 6220, 
+sum: (1) 595860927
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)6008-6084-
+cdisp: (0)0, 6008, 
+sum: (0) 539648044
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6220-6120-
+cdisp: (0)0, 6220, 
+sum: (0) 514402025
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)6008-6084-
+cdisp: (1)0, 6008, 
+sum: (1) 508485127
+BFS Iteration 48: Finished in 0.012596s
+max. local exp.:     0.001275s(10.122653%)
+max. queue handling: 0.002969s(23.570942%)
+est. rest:           0.008352s(66.306405%)
+max. row com.:       0.001071s(8.500530%)
+max. col com.:       0.005270s(41.838280%)
+max. pred. list. red:0.004320s(34.297396%)
+Validation of iteration 48 finished in 0.055503s
+Result: Valid 1048565 Edge(s) processed, 83.245010 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3312-5712-
+cdisp: (1)0, 3312, 
+sum: (1) 545601276
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3312-5712-
+cdisp: (0)0, 3312, 
+sum: (0) 435090284
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5644-3196-
+cdisp: (0)0, 5644, 
+sum: (0) 434958139
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5644-3196-
+cdisp: (1)0, 5644, 
+sum: (1) 427673909
+BFS Iteration 49: Finished in 0.012374s
+max. local exp.:     0.001209s(9.772640%)
+max. queue handling: 0.002868s(23.179191%)
+est. rest:           0.008296s(67.048170%)
+max. row com.:       0.001158s(9.360308%)
+max. col com.:       0.004698s(37.965318%)
+max. pred. list. red:0.004324s(34.946050%)
+Validation of iteration 49 finished in 0.055347s
+Result: Valid 1048565 Edge(s) processed, 84.739892 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4140-3668-
+cdisp: (1)0, 4140, 
+sum: (1) 557293928
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3584-3888-
+cdisp: (0)0, 3584, 
+sum: (0) 493015963
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3584-3888-
+cdisp: (1)0, 3584, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4140-3668-
+cdisp: (0)0, 4140, 
+sum: (1) 475975292
+sum: (0) 480008587
+BFS Iteration 50: Finished in 0.012561s
+max. local exp.:     0.001319s(10.500142%)
+max. queue handling: 0.003515s(27.983297%)
+est. rest:           0.007727s(61.516561%)
+max. row com.:       0.001455s(11.582044%)
+max. col com.:       0.005252s(41.808864%)
+max. pred. list. red:0.004288s(34.138749%)
+Validation of iteration 50 finished in 0.076060s
+Result: Valid 1048565 Edge(s) processed, 83.477278 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6140-5232-
+cdisp: (1)0, 6140, 
+sum: (1) 555990648
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4920-6028-
+cdisp: (0)0, 4920, 
+sum: (0) 535804131
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6140-5232-
+cdisp: (0)0, 6140, 
+sum: (0) 554905676
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4920-6028-
+cdisp: (1)0, 4920, 
+sum: (1) 552036205
+BFS Iteration 51: Finished in 0.012044s
+max. local exp.:     0.001372s(11.392430%)
+max. queue handling: 0.002971s(24.665453%)
+est. rest:           0.007701s(63.942117%)
+max. row com.:       0.000851s(7.067068%)
+max. col com.:       0.004790s(39.773537%)
+max. pred. list. red:0.004355s(36.158841%)
+Validation of iteration 51 finished in 0.065815s
+Result: Valid 1048565 Edge(s) processed, 87.061532 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6104-6456-
+cdisp: (1)0, 6104, 
+sum: (1) 604839092
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6104-6456-
+cdisp: (0)0, 6104, 
+sum: (0) 559752844
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)6272-5992-
+cdisp: (0)0, 6272, 
+sum: (0) 566921882
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)6272-5992-
+cdisp: (1)0, 6272, 
+sum: (1) 554130108
+BFS Iteration 52: Finished in 0.013059s
+max. local exp.:     0.001366s(10.459533%)
+max. queue handling: 0.003055s(23.392913%)
+est. rest:           0.008638s(66.147554%)
+max. row com.:       0.000754s(5.772917%)
+max. col com.:       0.005059s(38.743542%)
+max. pred. list. red:0.004871s(37.301225%)
+Validation of iteration 52 finished in 0.075742s
+Result: Valid 1048565 Edge(s) processed, 80.295043 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3608-5572-
+cdisp: (1)0, 3608, 
+sum: (1) 560321293
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3608-5572-
+cdisp: (0)0, 3608, 
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5972-3504-
+cdisp: (0)0, 5972, 
+sum: (0) 445071724
+sum: (0) 462735804
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5972-3504-
+cdisp: (1)0, 5972, 
+sum: (1) 446203024
+BFS Iteration 53: Finished in 0.012661s
+max. local exp.:     0.001257s(9.927689%)
+max. queue handling: 0.003454s(27.282314%)
+est. rest:           0.007950s(62.789997%)
+max. row com.:       0.001837s(14.507382%)
+max. col com.:       0.005303s(41.885734%)
+max. pred. list. red:0.004345s(34.317566%)
+Validation of iteration 53 finished in 0.060473s
+Result: Valid 1048565 Edge(s) processed, 82.818627 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3628-3480-
+cdisp: (1)0, 3628, 
+sum: (1) 432828875
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3412-3500-
+cdisp: (0)0, 3412, 
+sum: (0) 428676004
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3628-3480-
+cdisp: (0)0, 3628, 
+sum: (0) 445216566
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3412-3500-
+cdisp: (1)0, 3412, 
+sum: (1) 445177893
+BFS Iteration 54: Finished in 0.012578s
+max. local exp.:     0.001302s(10.353325%)
+max. queue handling: 0.002902s(23.068466%)
+est. rest:           0.008374s(66.578209%)
+max. row com.:       0.001093s(8.689059%)
+max. col com.:       0.004938s(39.258094%)
+max. pred. list. red:0.004305s(34.227386%)
+Validation of iteration 54 finished in 0.065736s
+Result: Valid 1048565 Edge(s) processed, 83.364932 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3488-4028-
+cdisp: (1)0, 3488, 
+sum: (1) 542254833
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3488-4028-
+cdisp: (0)0, 3488, 
+sum: (0) 410344795
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3820-3376-
+cdisp: (0)0, 3820, 
+sum: (0) 424759322
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3820-3376-
+cdisp: (1)0, 3820, 
+sum: (1) 405345424
+BFS Iteration 55: Finished in 0.012640s
+max. local exp.:     0.001215s(9.612193%)
+max. queue handling: 0.003585s(28.363136%)
+est. rest:           0.007840s(62.024672%)
+max. row com.:       0.000923s(7.299683%)
+max. col com.:       0.005366s(42.455108%)
+max. pred. list. red:0.004343s(34.359439%)
+Validation of iteration 55 finished in 0.059757s
+Result: Valid 1048565 Edge(s) processed, 82.956096 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5984-3768-
+cdisp: (1)0, 5984, 
+sum: (1) 564710569
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3596-5856-
+cdisp: (0)0, 3596, 
+sum: (0) 502671318
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5984-3768-
+cdisp: (0)0, 5984, 
+sum: (0) 518217224
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3596-5856-
+cdisp: (1)0, 3596, 
+sum: (1) 508392130
+BFS Iteration 56: Finished in 0.012091s
+max. local exp.:     0.001258s(10.401467%)
+max. queue handling: 0.003022s(24.991127%)
+est. rest:           0.007812s(64.607406%)
+max. row com.:       0.000924s(7.642860%)
+max. col com.:       0.004775s(39.494025%)
+max. pred. list. red:0.004531s(37.472887%)
+Validation of iteration 56 finished in 0.059362s
+Result: Valid 1048565 Edge(s) processed, 86.721623 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5168-6224-
+cdisp: (1)0, 5168, 
+sum: (1) 572022194
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)6168-5100-
+cdisp: (0)0, 6168, 
+sum: (0) 479926936
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5168-6224-
+cdisp: (0)0, 5168, 
+sum: (0) 461388633
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)6168-5100-
+cdisp: (1)0, 6168, 
+sum: (1) 458370576
+BFS Iteration 57: Finished in 0.012336s
+max. local exp.:     0.001196s(9.698305%)
+max. queue handling: 0.003539s(28.690980%)
+est. rest:           0.007600s(61.610715%)
+max. row com.:       0.000806s(6.534470%)
+max. col com.:       0.005330s(43.209447%)
+max. pred. list. red:0.004228s(34.274560%)
+Validation of iteration 57 finished in 0.058505s
+Result: Valid 1048565 Edge(s) processed, 85.000297 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)4920-5436-
+cdisp: (1)0, 4920, 
+sum: (1) 561324427
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)4920-5436-
+cdisp: (0)0, 4920, 
+sum: (0) 486796623
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5500-4684-
+cdisp: (0)0, 5500, 
+sum: (0) 504837320
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5500-4684-
+cdisp: (1)0, 5500, 
+sum: (1) 484012768
+BFS Iteration 58: Finished in 0.013043s
+max. local exp.:     0.001320s(10.119548%)
+max. queue handling: 0.003448s(26.432201%)
+est. rest:           0.008276s(63.448251%)
+max. row com.:       0.001613s(12.369758%)
+max. col com.:       0.005125s(39.291851%)
+max. pred. list. red:0.004599s(35.261214%)
+Validation of iteration 58 finished in 0.058417s
+Result: Valid 1048565 Edge(s) processed, 80.393382 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5108-5120-
+cdisp: (1)0, 5108, 
+sum: (1) 586001922
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)4796-4724-
+cdisp: (0)0, 4796, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5108-5120-
+cdisp: (0)0, 5108, 
+sum: (0) 501425625
+sum: (0) 489764352
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)4796-4724-
+cdisp: (1)0, 4796, 
+sum: (1) 483736401
+BFS Iteration 59: Finished in 0.011148s
+max. local exp.:     0.001183s(10.614226%)
+max. queue handling: 0.003705s(33.230677%)
+est. rest:           0.006260s(56.155096%)
+max. row com.:       0.000935s(8.387869%)
+max. col com.:       0.005473s(49.095342%)
+max. pred. list. red:0.004236s(37.997776%)
+Validation of iteration 59 finished in 0.055788s
+Result: Valid 1048565 Edge(s) processed, 94.058779 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)6140-5464-
+cdisp: (1)0, 6140, 
+sum: (1) 567641944
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5160-6020-
+cdisp: (0)0, 5160, 
+sum: (0) 535057992
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)6140-5464-
+cdisp: (0)0, 6140, 
+sum: (0) 542287373
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5160-6020-
+cdisp: (1)0, 5160, 
+sum: (1) 538227768
+BFS Iteration 60: Finished in 0.012443s
+max. local exp.:     0.001352s(10.864358%)
+max. queue handling: 0.002954s(23.736803%)
+est. rest:           0.008137s(65.398839%)
+max. row com.:       0.001086s(8.727893%)
+max. col com.:       0.004827s(38.795532%)
+max. pred. list. red:0.004475s(35.963517%)
+Validation of iteration 60 finished in 0.055658s
+Result: Valid 1048565 Edge(s) processed, 84.270639 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)3352-5664-
+cdisp: (1)0, 3352, 
+sum: (1) 543584570
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5524-3088-
+cdisp: (0)0, 5524, 
+sum: (0) 429127915
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)3352-5664-
+cdisp: (0)0, 3352, 
+sum: (0) 424448866
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5524-3088-
+cdisp: (1)0, 5524, 
+sum: (1) 421185332
+BFS Iteration 61: Finished in 0.012686s
+max. local exp.:     0.001242s(9.793456%)
+max. queue handling: 0.003578s(28.205755%)
+est. rest:           0.007865s(62.000789%)
+max. row com.:       0.001200s(9.458926%)
+max. col com.:       0.005485s(43.238926%)
+max. pred. list. red:0.004123s(32.500141%)
+Validation of iteration 61 finished in 0.056281s
+Result: Valid 1048565 Edge(s) processed, 82.655197 MTeps
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5528-3488-
+cdisp: (1)0, 5528, 
+sum: (1) 585961028
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)3260-5248-
+cdisp: (0)0, 3260, 
+sum: (0) 514128630
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5528-3488-
+cdisp: (0)0, 5528, 
+sum: (0) 514466482
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)3260-5248-
+cdisp: (1)0, 3260, 
+sum: (1) 509246669
+BFS Iteration 62: Finished in 0.012159s
+max. local exp.:     0.001263s(10.384517%)
+max. queue handling: 0.003481s(28.631934%)
+est. rest:           0.007415s(60.983549%)
+max. row com.:       0.001483s(12.200239%)
+max. col com.:       0.005384s(44.281260%)
+max. pred. list. red:0.004266s(35.085002%)
+Validation of iteration 62 finished in 0.055111s
+Result: Valid 1048565 Edge(s) processed, 86.236992 MTeps
+rank: 0 size: 32768
+sizes: (0)16384-16384-
+disp: (0)0, 16384, 
+csizes: (0)5256-5076-
+cdisp: (0)0, 5256, 
+rank: 1 size: 32768
+sizes: (1)16384-16384-
+disp: (0)0, 16384, 
+csizes: (1)5484-5460-
+cdisp: (0)0, 5484, 
+sum: (0) 512705078
+sum: (0) 507287101
+rank: 3 size: 32768
+sizes: (3)16384-16384-
+disp: (1)0, 16384, 
+csizes: (3)5484-5460-
+cdisp: (1)0, 5484, 
+sum: (1) 591005787
+rank: 2 size: 32768
+sizes: (2)16384-16384-
+disp: (1)0, 16384, 
+csizes: (2)5256-5076-
+cdisp: (1)0, 5256, 
+sum: (1) 502990255
+BFS Iteration 63: Finished in 0.015595s
+max. local exp.:     0.001246s(7.987953%)
+max. queue handling: 0.003556s(22.800446%)
+est. rest:           0.010794s(69.211600%)
+max. row com.:       0.003421s(21.935149%)
+max. col com.:       0.007916s(50.759047%)
+max. pred. list. red:0.011096s(71.150112%)
+Validation of iteration 63 finished in 0.062311s
+Result: Valid 1048565 Edge(s) processed, 67.236403 MTeps
+Validation: passed
+SCALE: 16
+edgefactor: 16
+NBFS: 64
+graph_generation: 2.396e-01
+num_mpi_processes: 4
+gpus_per_process: 1
+total_gpus: 4
+construction_time: 5.036e-01
+min_time: 1.046e-02
+firstquartile_time: 1.133e-02
+median_time: 1.198e-02
+thirdquartile_time: 1.265e-02
+max_time: 2.030e-02
+mean_time: 1.229e-02
+stddev_time: 1.535e-03
+min_nedge: 1.049e+06
+firstquartile_nedge: 1.049e+06
+median_nedge: 1.049e+06
+thirdquartile_nedge: 1.049e+06
+max_nedge: 1.049e+06
+mean_nedge: 1.049e+06
+stddev_nedge: 0.000e+00
+min_TEPS: 5.164e+07
+firstquartile_TEPS: 8.289e+07
+median_TEPS: 8.756e+07
+thirdquartile_TEPS: 9.253e+07
+max_TEPS: 1.003e+08
+harmonic_mean_TEPS: 8.532e+07
+harmonic_stddev_TEPS: 1.343e+06
+min_validation_time: 5.307e-02
+firstquartile_validation_time: 5.617e-02
+median_validation_time: 5.846e-02
+thirdquartile_validation_time: 6.277e-02
+max_validation_time: 9.336e-02
+mean_validation_time: 6.058e-02
+stddev_validation_time: 6.874e-03
+min_local_bfs_time: 1.160e-03
+firstquartile_local_bfs_time: 1.215e-03
+median_local_bfs_time: 1.251e-03
+thirdquartile_local_bfs_time: 1.298e-03
+max_local_bfs_time: 1.478e-03
+mean_local_bfs_time: 1.261e-03
+stddev_local_bfs_time: 6.222e-05
+min_bfs_local_share: 5.985e-02
+firstquartile_bfs_local_share: 9.861e-02
+median_bfs_local_share: 1.050e-01
+thirdquartile_bfs_local_share: 1.088e-01
+max_bfs_local_share: 1.214e-01
+harmonic_mean_bfs_local_share: 1.025e-01
+harmonic_stddev_bfs_local_share: 1.608e-03
+min_local_queue_time: 2.868e-03
+firstquartile_local_queue_time: 3.015e-03
+median_local_queue_time: 3.493e-03
+thirdquartile_local_queue_time: 3.560e-03
+max_local_queue_time: 6.408e-03
+mean_local_queue_time: 3.396e-03
+stddev_local_queue_time: 4.754e-04
+min_queue_local_share: 1.756e-01
+firstquartile_queue_local_share: 2.581e-01
+median_queue_local_share: 2.803e-01
+thirdquartile_queue_local_share: 3.070e-01
+max_queue_local_share: 4.025e-01
+harmonic_mean_queue_local_share: 2.735e-01
+harmonic_stddev_queue_local_share: 4.848e-03
+min_rest_time: 6.153e-03
+firstquartile_rest_time: 6.639e-03
+median_rest_time: 7.302e-03
+thirdquartile_rest_time: 8.170e-03
+max_rest_time: 1.552e-02
+mean_rest_time: 7.633e-03
+stddev_rest_time: 1.442e-03
+min_rest_share: 5.047e-01
+firstquartile_rest_share: 5.875e-01
+median_rest_share: 6.150e-01
+thirdquartile_rest_share: 6.425e-01
+max_rest_share: 7.646e-01
+harmonic_mean_rest_share: 6.152e-01
+harmonic_stddev_rest_share: 5.124e-03
+min_row_com_time: 7.129e-04
+firstquartile_row_com_time: 9.196e-04
+median_row_com_time: 1.066e-03
+thirdquartile_row_com_time: 1.350e-03
+max_row_com_time: 3.421e-03
+mean_row_com_time: 1.173e-03
+stddev_row_com_time: 4.219e-04
+min_row_com_share: 5.420e-02
+firstquartile_row_com_share: 7.603e-02
+median_row_com_share: 8.800e-02
+thirdquartile_row_com_share: 1.085e-01
+max_row_com_share: 2.194e-01
+harmonic_mean_row_com_share: 8.825e-02
+harmonic_stddev_row_com_share: 2.933e-03
+min_column_com_time: 4.656e-03
+firstquartile_column_com_time: 5.113e-03
+median_column_com_time: 5.330e-03
+thirdquartile_column_com_time: 5.511e-03
+max_column_com_time: 7.916e-03
+mean_column_com_time: 5.327e-03
+stddev_column_com_time: 4.860e-04
+min_column_com_share: 2.626e-01
+firstquartile_column_com_share: 4.103e-01
+median_column_com_share: 4.440e-01
+thirdquartile_column_com_share: 4.733e-01
+max_column_com_share: 5.076e-01
+harmonic_mean_column_com_share: 4.319e-01
+harmonic_stddev_column_com_share: 6.776e-03
+min_predecessor_list_reduction_time: 3.217e-03
+firstquartile_predecessor_list_reduction_time: 4.233e-03
+median_predecessor_list_reduction_time: 4.358e-03
+thirdquartile_predecessor_list_reduction_time: 4.874e-03
+max_predecessor_list_reduction_time: 1.178e-02
+mean_predecessor_list_reduction_time: 4.836e-03
+stddev_predecessor_list_reduction_time: 1.612e-03
+min_predecessor_list_reduction_share: 2.079e-01
+firstquartile_predecessor_list_reduction_share: 3.507e-01
+median_predecessor_list_reduction_share: 3.690e-01
+thirdquartile_predecessor_list_reduction_share: 4.113e-01
+max_predecessor_list_reduction_share: 9.340e-01
+harmonic_mean_predecessor_list_reduction_share: 3.745e-01
+harmonic_stddev_predecessor_list_reduction_share: 9.087e-03

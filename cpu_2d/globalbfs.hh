@@ -996,7 +996,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 }
                 size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
                 size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
-
+/*
                 err = posix_memalign((void **)&compressedPredeccessors, ALIGNMENT, csize * sizeof(compressionType));
                 if (err) {
                     throw "Memory error.";
@@ -1006,18 +1006,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 if (err) {
                     throw "Memory error.";
                 }
+*/
                 /**
                  *
                  *
                  * transmit compressed chunks
                  */
-
+/*
                 MPI_Allgatherv(compressedFQ, compressed_sizes[communicatorRank],
                         fq_tp_typeC, compressedPredeccessors, compressed_sizes,
                         compressed_disps, fq_tp_typeC, col_comm);
 
                 free(compressedFQ);
-
+*/
                 /**
                  *
                  *
@@ -1025,7 +1026,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  *
                  * Unensamble the compressed data chunks
                  */
-
+/*
                 for (int32_t i = 0; i < communicatorSize; ++i)
                 {
                     compressedsize = compressed_sizes[i];
@@ -1037,12 +1038,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                         free(decompressedFQ);
                     }
                 }
-
+*/
 
 //std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
 
-                free(compressedPredeccessors);
-                free(decompressedPredeccesors);
+//                free(compressedPredeccessors);
+//                free(decompressedPredeccesors);
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
@@ -1076,12 +1077,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     disps[index] = 0;
                 }
 
-/*
+
 std::cout << "rank: " << rank << " size: " << store.getLocColLength() << "\n";
 
 std::cout << "sizes: (" << rank << ")";
 for (int i=0; i< communicatorSize;++i) {
-    std::cout << sizes[i] << "-" << psize;
+    std::cout << sizes[i] << "-";
+/*
     if (std::is_sorted(fq_64 + disps[i], fq_64 + disps[i] + psize) == 0) {
         std::cout << " (sorted), ";
     }
@@ -1089,6 +1091,7 @@ for (int i=0; i< communicatorSize;++i) {
     {
         std::cout << " (unsorted), ";
     }
+*/
 }
 std::cout << std::endl;
 
@@ -1097,7 +1100,29 @@ for (int i=0; i< communicatorSize;++i) {
     std::cout << disps[i] << ", ";
 }
 std::cout << std::endl;
+
+std::cout << "csizes: (" << rank << ")";
+for (int i=0; i< communicatorSize;++i) {
+    std::cout << compressed_sizes[i] << "-";
+/*  
+  if (std::is_sorted(fq_64 + disps[i], fq_64 + disps[i] + psize) == 0) {
+        std::cout << " (sorted), ";
+    }
+    else
+    {
+        std::cout << " (unsorted), ";
+    }
 */
+}
+std::cout << std::endl;
+
+std::cout << "cdisp: (" << communicatorRank << ")";
+for (int i=0; i< communicatorSize;++i) {
+    std::cout << compressed_disps[i] << ", ";
+}
+std::cout << std::endl;
+
+
 //assert((std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0));
 /*
 if (std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0) {
@@ -1116,14 +1141,14 @@ else
     std::cout << " (4xunsorted2)" << std::endl;
 }
 */
-/*
+
 int sum=0;
-for (int i = 0; i < (sizes[communicatorSize] * psize)-1; ++i)
+for (int i = 0; i < normalsize; ++i)
 {
     sum+= fq_64[i];
 }
 std::cout << "sum: ("<<communicatorRank<<") "<< sum << std::endl;
-*/
+
 /*
 int sum=0;
 for (int i = 0; i < (sizes[communicatorRank])-1; ++i)
