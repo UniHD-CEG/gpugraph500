@@ -419,7 +419,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         throw "Memory error.";
     }
 
-    int32_t lastReversedSliceIDs = 0;
+    uint32_t lastReversedSliceIDs = 0UL;
     int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
     int32_t targetNode;
     uint32_t reversedSliceIDs;

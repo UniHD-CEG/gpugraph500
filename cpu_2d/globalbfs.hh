@@ -182,7 +182,7 @@ typename STORE::vertexType *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecess
 
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vertexType *&predecessorQ,
-        typename STORE::vertexType *tmp, MType *predecessorQmap,
+        typename STORE::vertexType *frontierQ, MType *predecessorQmap,
         MType *frontierQmap, int communicatorRank, int communicatorSize, MPI_Comm col_comm)
 {
     MPI_Status status;
@@ -904,13 +904,20 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  *
                  *
                  */
+                int err, err1, err2;
 
                 MType * restrict complete_bitmask = NULL;
-                int32_t *sizes = NULL;
-                int32_t *disps = NULL;
-                int err, err1, err2;
+                int32_t * restrict sizes = NULL;
+                int32_t * restrict disps = NULL;
                 err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
                 err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
+                if (err1 || err2) {
+                    throw "Memory error.";
+                }
+                int32_t * restrict compressed_sizes = NULL;
+                int32_t * restrict compressed_disps = NULL;
+                err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
+                err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
                 if (err1 || err2) {
                     throw "Memory error.";
                 }
@@ -918,6 +925,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 int32_t maskLengthRes;
                 int32_t lastTargetNode;
                 uint32_t lastReversedSliceIDs;
+
+
 
 #ifdef INSTRUMENTED
                 tstart = MPI_Wtime();
@@ -931,59 +940,55 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 SCOREP_USER_REGION_BEGIN(allReduceBC_handle, "BFSRUN_region_allReduceBC", SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
-/*
-                psize = static_cast<int32_t>(mask_size);
-                err = posix_memalign((void **)&buffer, ALIGNMENT, (psize * communicatorSize * sizeof(MType))+communicatorSize  );
-                if (err) {
-                    throw "Memory error.";
-                }
-*/
+
+
                 static_cast<Derived *>(this)->generatOwenMask();
 
+
                 size_t normalsize = store.getLocColLength();
-                size_t compressedsize;
-                compressionType *buffer;
-
-                err = posix_memalign((void **)&buffer, ALIGNMENT, normalsize * sizeof(compressionType));
-                if (err) {
-                    throw "Memory error.";
-                }
-
-                schema.compress(fq_64, normalsize, &buffer, compressedsize);
-
-std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
+                size_t compressedsize, decompressedsize;
+                compressionType *compressedFQ = NULL;
+                FQ_T *decompressedFQ = NULL;
 
 
-/*
-                maskLengthRes = psize % (1 << intLdSize);
-                lastReversedSliceIDs = 0U;
-                lastTargetNode = oldRank(lastReversedSliceIDs);
-                sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
+                schema.compress(fq_64, normalsize, &compressedFQ, compressedsize);
+
+                decompressedsize = static_cast<size_t>(normalsize);
+
+                schema.decompress(&compressedFQ, compressedsize, &decompressedFQ, decompressedsize);
+                assert(normalsize == decompressedsize);
+                assert(memcmp(fq_64, decompressedFQ, normalsize * sizeof(FQ_T)) == 0);
+
+                uint32_t lastReversedSliceIDs = 0UL;
+                int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
+                int32_t targetNode;
+                uint32_t reversedSliceIDs;
+
                 disps[lastTargetNode] = 0;
+                compressed_disps[lastTargetNode] = 0;
 
                 for (int32_t slice = 1; slice < power2intLdSize; ++slice)
                 {
-                    const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
-                    const int32_t targetNode = oldRank(reversedSliceIDs);
-                    sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
-                                        mtypesize;
+                    reversedSliceIDs = reverse(slice, intLdSize);
+                    targetNode = oldRank(reversedSliceIDs);
+                    compressed_disps[targetNode] = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+
                     disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
                     lastTargetNode = targetNode;
                 }
-                sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
-                                                 static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
 
                 for (int32_t node = 0; node < residuum; ++node)
                 {
-                    const int32_t index = (node * 2) + 1;
-                    sizes[index] = 0;
+                    const int32_t index = 2 * node + 1;
                     disps[index] = 0;
+                    compressed_disps[index] = 0;
                 }
+                size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+                size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
-*/
-                //MPI_Allgatherv(owenmask, sizes[communicatorRank], bm_type,
-//                                complete_bitmask, sizes, disps, bm_type, col_comm);
-                free(buffer);
+//std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
+
+                free(compressedFQ);
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
