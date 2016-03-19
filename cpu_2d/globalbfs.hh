@@ -906,7 +906,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  */
                 int err, err1, err2;
 
-                MType * restrict complete_bitmask = NULL;
                 int32_t * restrict sizes = NULL;
                 int32_t * restrict disps = NULL;
                 err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
@@ -949,19 +948,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 size_t compressedsize, decompressedsize;
                 compressionType *compressedFQ = NULL;
                 FQ_T *decompressedFQ = NULL;
+                int32_t compressedsize_int
 
 
                 schema.compress(fq_64, normalsize, &compressedFQ, compressedsize);
 
-                decompressedsize = static_cast<size_t>(normalsize);
-
+                decompressedsize = normalsize;
+                compressedsize_int = static_cast<int32_t>(decompressedsize);
                 schema.decompress(&compressedFQ, compressedsize, &decompressedFQ, decompressedsize);
                 assert(normalsize == decompressedsize);
                 assert(memcmp(fq_64, decompressedFQ, normalsize * sizeof(FQ_T)) == 0);
 
-                uint32_t lastReversedSliceIDs = 0UL;
-                int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
-                int32_t targetNode;
+                lastReversedSliceIDs = 0UL;
+                lastTargetNode = oldRank(lastReversedSliceIDs);
                 uint32_t reversedSliceIDs;
 
                 disps[lastTargetNode] = 0;
