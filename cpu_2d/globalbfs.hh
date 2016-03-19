@@ -162,6 +162,8 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS()
 {
     delete[] owenmask;
     delete[] tmpmask;
+    MPI_Comm_free(&row_comm);
+    MPI_Comm_free(&col_comm);
 }
 
 /**
@@ -947,8 +949,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 size_t normalsize = store.getLocColLength();
                 size_t compressedsize, decompressedsize;
-                compressionType *compressedFQ = NULL, *compressed_chunks = NULL;
-                FQ_T *decompressedFQ = NULL;
+                compressionType * restrict compressedFQ = NULL, * restrict compressedPredeccessors = NULL;
+                FQ_T * restrict decompressedFQ = NULL, * restrict decompressedPredeccesors = NULL;
                 int32_t compressedsize_int;
 
 
@@ -961,6 +963,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 schema.compress(fq_64, normalsize, &compressedFQ, compressedsize);
 
                 MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, col_comm);
+
 
 #ifdef _COMPRESSIONVERIFY
                 decompressedsize = normalsize;
@@ -992,13 +995,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     compressed_disps[index] = 0;
                 }
                 size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-                //size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
+                size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
-                err = posix_memalign((void **)&compressed_chunks, ALIGNMENT, csize * sizeof(compressionType));
+                err = posix_memalign((void **)&compressedPredeccessors, ALIGNMENT, csize * sizeof(compressionType));
                 if (err) {
                     throw "Memory error.";
                 }
 
+                err = posix_memalign((void **)&compressedPredeccessors, ALIGNMENT, rsize * sizeof(FQ_T));
+                if (err) {
+                    throw "Memory error.";
+                }
                 /**
                  *
                  *
@@ -1006,7 +1013,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  */
 
                 MPI_Allgatherv(compressedFQ, compressed_sizes[communicatorRank],
-                        fq_tp_typeC, compressed_chunks, compressed_sizes,
+                        fq_tp_typeC, compressedPredeccessors, compressed_sizes,
                         compressed_disps, fq_tp_typeC, col_comm);
 
                 free(compressedFQ);
@@ -1025,8 +1032,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     decompressedsize = sizes[i];
                     if (compressedsize != 0)
                     {
-                        schema.decompress(&compressed_chunks[compressed_disps[i]], compressedsize, &decompressedFQ, decompressedsize);
-                        memcpy(&recv_buff[disps[i]], decompressedFQ, decompressedsize * sizeof(T));
+                        schema.decompress(&compressedPredeccessors[compressed_disps[i]], compressedsize, &decompressedFQ, decompressedsize);
+                        memcpy(&decompressedPredeccesors[disps[i]], decompressedFQ, decompressedsize * sizeof(T));
                         free(decompressedFQ);
                     }
                 }
@@ -1034,7 +1041,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 //std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
 
-                free(compressed_chunks);
+                free(compressedPredeccessors);
+                free(decompressedPredeccessors);
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
