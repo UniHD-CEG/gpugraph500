@@ -45,14 +45,15 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
              int &rsize, /* Out */ // size of the final result
              int ssize,  // size of the slice
              MPI_Datatype type,
-             MPI_Comm comm
+             MPI_Comm col_comm,
+             MPI_Comm row_comm
 #ifdef INSTRUMENTED
              , double &timeQueueProcessing // time of work
 #endif
             )
 {
 
-    int communicatorSize, communicatorRank, previousRank;
+    int colCommunicatorSize, colCommunicatorRank, previousRank;
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
@@ -71,11 +72,11 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
     //step 1
-    MPI_Comm_size(comm, &communicatorSize);
-    MPI_Comm_rank(comm, &communicatorRank);
-    const int32_t intLdSize = ilogb(static_cast<float>(communicatorSize)); //integer log_2 of size
+    MPI_Comm_size(col_comm, &colCommunicatorSize);
+    MPI_Comm_rank(col_comm, &colCommunicatorRank);
+    const int32_t intLdSize = ilogb(static_cast<float>(colCommunicatorSize)); //integer log_2 of size
     const int32_t power2intLdSize = 1 << intLdSize;
-    const int32_t residuum = communicatorSize - (1 << intLdSize);
+    const int32_t residuum = colCommunicatorSize - (1 << intLdSize);
     const int32_t twoTimesResiduum = residuum << 1;
 
     // auxiliar lambdas
@@ -89,14 +90,14 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     };
 
     //step 2
-    if (communicatorRank < twoTimesResiduum)
+    if (colCommunicatorRank < twoTimesResiduum)
     {
-        if ((communicatorRank & 1) == 0)  // even
+        if ((colCommunicatorRank & 1) == 0)  // even
         {
 
             MPI_Status status;
             int psize_from;
-            MPI_Recv(recv_buff, ssize, type, communicatorRank + 1, 1, comm, &status);
+            MPI_Recv(recv_buff, ssize, type, colCommunicatorRank + 1, 1, col_comm, &status);
             MPI_Get_count(&status, type, &psize_from);
 
 #ifdef INSTRUMENTED
@@ -126,7 +127,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
             timeQueueProcessing += endTimeQueueProcessing - startTimeQueueProcessing;
 #endif
 
-            MPI_Send(send, psize_to, type, communicatorRank - 1, 1, comm);
+            MPI_Send(send, psize_to, type, colCommunicatorRank - 1, 1, col_comm);
         }
     }
 
@@ -145,8 +146,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     T *send;
 
     // step 3
-    if ((((communicatorRank & 1) == 0)
-         && (communicatorRank < twoTimesResiduum)) || (communicatorRank >= twoTimesResiduum))
+    if ((((colCommunicatorRank & 1) == 0)
+         && (colCommunicatorRank < twoTimesResiduum)) || (colCommunicatorRank >= twoTimesResiduum))
     {
 
         int32_t vrank;
@@ -155,7 +156,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
         int32_t lowerId;
         int32_t upperId;
 
-        vrank  = newRank(communicatorRank);
+        vrank  = newRank(colCommunicatorRank);
         currentSliceSize  = ssize;
         offset = 0;
 
@@ -203,7 +204,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                              previousRank, it + 2,
                              &originalsize, 1, MPI_INT,
                              previousRank, it + 2,
-                             comm, MPI_STATUS_IGNORE);
+                             col_comm, MPI_STATUS_IGNORE);
 
 
                 T_C * restrict temporal_recv_buff = NULL;
@@ -216,7 +217,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                          previousRank, it + 2,
                          temporal_recv_buff, lowerId, typeC,
                          previousRank, it + 2,
-                         comm, &status);
+                         col_comm, &status);
                 MPI_Get_count(&status, typeC, &psizeFrom);
 
 
@@ -225,7 +226,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                              previousRank, it + 2,
                              recv_buff, lowerId, type,
                              previousRank, it + 2,
-                             comm, &status);
+                             col_comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
 #endif
 
@@ -306,7 +307,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                              previousRank, it + 2,
                              &originalsize, 1, MPI_INT,
                              previousRank, it + 2,
-                             comm, MPI_STATUS_IGNORE);
+                             col_comm, MPI_STATUS_IGNORE);
 
                 T_C * restrict temporal_recv_buff = NULL;
                 err = posix_memalign((void **)&temporal_recv_buff, ALIGNMENT, upperId * sizeof(T_C));
@@ -318,14 +319,14 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                          previousRank, it + 2,
                          temporal_recv_buff, upperId, typeC,
                          previousRank, it + 2,
-                         comm, &status);
+                         col_comm, &status);
                 MPI_Get_count(&status, typeC, &psizeFrom);
 #else
                 MPI_Sendrecv(send, psizeTo, type,
                              previousRank, it + 2,
                              recv_buff, upperId, type,
                              previousRank, it + 2,
-                             comm, &status);
+                             col_comm, &status);
                 MPI_Get_count(&status, type, &psizeFrom);
 #endif
 
@@ -403,8 +404,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     int32_t * restrict sizes;
     int32_t * restrict disps;
 
-    err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
-    err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
+    err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+    err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
     if (err1 || err2) {
         throw "Memory error.";
     }
@@ -413,8 +414,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     int32_t * restrict compressed_sizes;
     int32_t * restrict compressed_disps;
 
-    err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
-    err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
+    err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+    err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
     if (err1 || err2) {
         throw "Memory error.";
     }
@@ -430,15 +431,15 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     int32_t * restrict composed_recv;
     int32_t * restrict composed_send;
 
-    err1 = posix_memalign((void **)&composed_recv, ALIGNMENT, 2U * communicatorSize * sizeof(int32_t));
+    err1 = posix_memalign((void **)&composed_recv, ALIGNMENT, 2U * colCommunicatorSize * sizeof(int32_t));
     err2 = posix_memalign((void **)&composed_send, ALIGNMENT, 2U * sizeof(int32_t));
 
     composed_send[0U] = psizeTo;
     composed_send[1U] = compressedsize;
 
-    MPI_Allgather(composed_send, 1, MPI_2INT, composed_recv, 1, MPI_2INT, comm);
+    MPI_Allgather(composed_send, 1, MPI_2INT, composed_recv, 1, MPI_2INT, col_comm);
 
-    const int32_t totalsize = communicatorSize << 1;
+    const int32_t totalsize = colCommunicatorSize << 1;
     for (int32_t i = 0, j = 0; i < totalsize; ++i)
     {
         if (i % 2 == 0)
@@ -481,7 +482,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #else
     // Transmission of the subslice sizes
-    MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, comm);
+    MPI_Allgather(&psizeTo, 1, MPI_INT, sizes, 1, MPI_INT, col_comm);
 
     int32_t lastReversedSliceIDs = 0;
     int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -510,19 +511,19 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 #ifdef _COMPRESSION
 
-    MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
+    MPI_Allgatherv(compressed_fq, compressed_sizes[colCommunicatorRank],
                    typeC, compressed_recv_buff, compressed_sizes,
-                   compressed_disps, typeC, comm);
+                   compressed_disps, typeC, col_comm);
 
 #else
-    MPI_Allgatherv(send, sizes[communicatorRank],
+    MPI_Allgatherv(send, sizes[colCommunicatorRank],
                    type, recv_buff, sizes,
-                   disps, type, comm);
+                   disps, type, col_comm);
 #endif
 
 #ifdef _COMPRESSION
     // reensamble uncompressed chunks
-    for (int32_t i = 0; i < communicatorSize; ++i)
+    for (int32_t i = 0; i < colCommunicatorSize; ++i)
     {
         compressedsize = compressed_sizes[i];
         uncompressedsize = sizes[i];

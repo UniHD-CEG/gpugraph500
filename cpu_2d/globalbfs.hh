@@ -60,7 +60,7 @@ private:
     vector <typename STORE::fold_prop> fold_fq_props;
 
     void allReduceBitCompressed(typename STORE::vertexType *&owen, typename STORE::vertexType *tmp,
-                                MType *owenmap, MType *tmpmap, int communicatorRank, int communicatorSize, MPI_Comm col_comm);
+                                MType *owenmap, MType *tmpmap);
 
 protected:
     const STORE &store;
@@ -188,19 +188,24 @@ typename STORE::vertexType *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecess
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vertexType *&predecessorQ,
         typename STORE::vertexType *frontierQ, MType *predecessorQmap,
-        MType *frontierQmap, int communicatorRank, int communicatorSize, MPI_Comm col_comm)
+        MType *frontierQmap)
 {
     /**
      *
      *
-     * calculate communicator distribution for transmissions (even-to-odd ranks and viceversa)
+     * calculates communicator distribution for transmissions (even-to-odd ranks and viceversa)
+     *
      * e.g.
-     * scale 4 ---> p=16nodes (2^scale), residuum=0 (sqrt_p (4) - log2_p (4) = 0)
-     * scale 5 ---> p=25nodes (2^scale), residuum=1 (sqrt_p (5) - log2_p (4) = 1)
+     * scale 3 ---> p=9nodes (scale^2), half_p=4,3 (hprow,hpcol); ilog2_hpcol=2; residuum=1 (hpcol (3) - 2^ilog2_hpcol (2) = 1)
+     * scale 4 ---> p=16nodes (scale^2), half_p=8,8 (hprow,hpcol); ilog2_hpcol=3; residuum=0 (hpcol (8) - 2^ilog2_hpcol (8) = 0)
+     * scale 5 ---> p=25nodes (scale^2), half_p=13,12 (hprow,hpcol); ilog2_hpcol=3 residuum=4 (hpcol (12) - 2^ilog2_hpcol (8) = 4)
      *
-     * (bitwise mult && div: x>>y == x/(2^y); x<<y == x*(2^y) )
+     * the matrix is symmetric (scale x scale). however, may not be even: (scale x scale) % 2 (e.g scale 5 or scale 9)
+     * row and columns rank partitions (half_p -> (hprow,hpcol)) are configurable at the constructor (MPI_comm_split)
      *
-     * if the general VertexType is changed from int64_t to uint64_t (better for compression. would remove 2 full buffer convertions per compression call)
+     * bitwise mult && div: x>>y == x/(2^y); x<<y == x*(2^y)
+     *
+     * If the general VertexType is changed from int64_t to uint64_t (better for compression. would remove 2 full buffer convertions per compression call)
      * the int32_t type in this func. should also be changed to unsigned. (uint32_t)
      *
      * the previous change is not possible yet since the NULL (starting) vertex uses a '-1' label
@@ -208,13 +213,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
      * the OpenMP buffer initializations, fix each buffer to a fixed core/thread (for the case of OMP only). this avoids the same data
      * to be treated by a different thread (OMP case only) and thus, a possible && expensive L1 cache miss.
      */
+
     MPI_Status status;
     const int32_t psize = static_cast<int32_t>(mask_size);
     const int32_t mtypesize = sizeof(MType) << 3; // * 8
     //step 1
-    const int32_t intLdSize = ilogbf(static_cast<float>(communicatorSize)); //integer log_2 of size
+    const int32_t intLdSize = ilogbf(static_cast<float>(colCommunicatorSize)); //integer log_2 of size
     const int32_t power2intLdSize = 1 << intLdSize; // 2^n
-    const int32_t residuum = communicatorSize - power2intLdSize;
+    const int32_t residuum = colCommunicatorSize - power2intLdSize;
     const int32_t twoTimesResiduum = residuum << 1;
 
     /**
@@ -229,19 +235,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     {
         return (newr < residuum) ? (newr << 1) : newr + residuum;
     };
-    const int32_t vrank = newRank(communicatorRank);
+    const int32_t vrank = newRank(colCommunicatorRank);
 
     /**
      *
      *
-     * manage residuums. when residuum is not the last rank
+     * manage residuums.
      */
 
-    if (communicatorRank < twoTimesResiduum)
+    if ((colCommunicatorRank < twoTimesResiduum) && (rowCommunicatorSize == 0))
     {
-        if ((communicatorRank & 1) == 0)   // even
+        if ((colCommunicatorRank & 1) == 0)   // even
         {
-            MPI_Sendrecv(predecessorQmap, psize, bm_type, communicatorRank + 1, 0, frontierQmap, psize, bm_type, communicatorRank + 1, 0,
+            MPI_Sendrecv(predecessorQmap, psize, bm_type, colCommunicatorRank + 1, 0, frontierQmap, psize, bm_type, colCommunicatorRank + 1, 0,
                          col_comm, &status);
 
             for (int32_t i = 0; i < psize; ++i)
@@ -249,7 +255,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 frontierQmap[i] &= ~predecessorQmap[i];
                 predecessorQmap[i] |= frontierQmap[i];
             }
-            MPI_Recv(frontierQ, store.getLocColLength(), fq_tp_type, communicatorRank + 1, 1, col_comm, &status);
+            MPI_Recv(frontierQ, store.getLocColLength(), fq_tp_type, colCommunicatorRank + 1, 1, col_comm, &status);
             // set recived elements where the bit maps indicate it
             int32_t p = 0;
             for (int32_t i = 0; i < psize; ++i)
@@ -267,7 +273,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         }
         else     // odd
         {
-            MPI_Sendrecv(predecessorQmap, psize, bm_type, communicatorRank - 1, 0, frontierQmap, psize, bm_type, communicatorRank - 1, 0,
+            MPI_Sendrecv(predecessorQmap, psize, bm_type, colCommunicatorRank - 1, 0, frontierQmap, psize, bm_type, colCommunicatorRank - 1, 0,
                          col_comm, &status);
 
             for (int32_t i = 0; i < psize; ++i)
@@ -287,7 +293,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     frontierQm ^= (1 << last);
                 }
             }
-            MPI_Send(frontierQ, p, fq_tp_type, communicatorRank - 1, 1, col_comm);
+            MPI_Send(frontierQ, p, fq_tp_type, colCommunicatorRank - 1, 1, col_comm);
         }
     }
 
@@ -295,9 +301,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
      *
      * general communication case
      */
-    if ((((communicatorRank & 1) == 0) &&
-        (communicatorRank < twoTimesResiduum)) || (communicatorRank >= twoTimesResiduum))
+//std::cout << "trying to enter - rank: " << colCommunicatorRank << " two_times_resid: " << twoTimesResiduum << "\n";
+    if (((((colCommunicatorRank & 1) == 0) &&
+        (colCommunicatorRank < twoTimesResiduum)) || (colCommunicatorRank >= twoTimesResiduum)) && (rowCommunicatorSize == 0))
     {
+//std::cout << "rank: " << colCommunicatorRank << " entered.\n";
         int32_t ssize, offset;
         ssize = psize;
         offset = 0;
@@ -465,7 +473,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     // It tries to do it iterative insted of recursive.
     int32_t *sizes;
     int32_t *disps;
-    int32_t err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
+    int32_t err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
     int32_t err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
     if (err1 || err2) {
         throw "Memory error.";
@@ -516,7 +524,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     if (err1 || err2) {
         throw "Memory error.";
     }
-    size_t normalsize = static_cast<size_t>(sizes[communicatorRank]);
+    size_t normalsize = static_cast<size_t>(sizes[colCommunicatorRank]);
     size_t compressedsize = 0U;
     compressionType *compressed_predecessor = NULL;
     //FQ_T *pointerToPredListInit = owen;
@@ -802,15 +810,18 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     SCOREP_USER_REGION_DEFINE(allReduceBC_handle)
 #endif
 
-    int communicatorSize, communicatorRank, rank;
+    static inline int colCommunicatorSize, colCommunicatorRank, rowCommunicatorSize, rowCommunicatorRank, rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(col_comm, &communicatorSize);
-    MPI_Comm_rank(col_comm, &communicatorRank);
+    MPI_Comm_size(col_comm, &colCommunicatorSize);
+    MPI_Comm_rank(col_comm, &colCommunicatorRank);
 
-    const int32_t intLdSize = ilogbf(communicatorSize); //integer log_2 of size
+    MPI_Comm_size(row_comm, &rowCommunicatorSize);
+    MPI_Comm_rank(row_comm, &rowCommunicatorRank);
+
+    const int32_t intLdSize = ilogbf(colCommunicatorSize); //integer log_2 of size
     const uint32_t mtypesize = sizeof(MType) << 3; // * 8
     const int32_t power2intLdSize = 1 << intLdSize; // 2^n
-    const int32_t residuum = communicatorSize - power2intLdSize;
+    const int32_t residuum = colCommunicatorSize - power2intLdSize;
     bool finishedBFS = false;
 
 #ifdef INSTRUMENTED
@@ -948,15 +959,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 int32_t * restrict sizes = NULL;
                 int32_t * restrict disps = NULL;
-                err1 = posix_memalign((void **)&sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
-                err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
+                err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+                err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
                 if (err1 || err2) {
                     throw "Memory error.";
                 }
                 int32_t * restrict compressed_sizes = NULL;
                 int32_t * restrict compressed_disps = NULL;
-                err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
-                err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
+                err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+                err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
                 if (err1 || err2) {
                     throw "Memory error.";
                 }
@@ -1002,7 +1013,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
                 MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, col_comm);
 
-                for (int32_t i = 1L; i< communicatorSize; ++i)
+                for (int32_t i = 1L; i< colCommunicatorSize; ++i)
                 {
                     sizes[i] = normalsize;
                 }
@@ -1070,7 +1081,7 @@ i*/
                  * Unensamble the compressed data chunks
                  */
 /*
-                for (int32_t i = 0; i < communicatorSize; ++i)
+                for (int32_t i = 0; i < colCommunicatorSize; ++i)
                 {
                     compressedsize = compressed_sizes[i];
                     decompressedsize = sizes[i];
@@ -1090,7 +1101,7 @@ i*/
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
-                                       owenmask, tmpmask, communicatorRank, communicatorSize, col_comm);
+                                       owenmask, tmpmask);
 
 
 
@@ -1275,7 +1286,8 @@ std::cout << std::endl;
                 _outsize,
                 store.getLocColLength(),
                 fq_tp_type,
-                col_comm
+                col_comm,
+                row_comm
 
 #ifdef INSTRUMENTED
                 , lqueue
@@ -1381,14 +1393,14 @@ std::cout << std::endl;
 
 #ifdef _COMPRESSION
 
-                if (communicatorRank != root_rank)
+                if (colCommunicatorRank != root_rank)
                 {
                     uncompressedsize = static_cast<size_t>(originalsize);
                     schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq,  uncompressedsize);
                 }
 
 #if defined(_COMPRESSIONVERIFY)
-                if (communicatorRank != root_rank)
+                if (colCommunicatorRank != root_rank)
                 {
                     assert(memcmp(startaddr, uncompressed_fq, originalsize * sizeof(FQ_T)) == 0);
                     assert(is_sorted(uncompressed_fq, uncompressed_fq + uncompressedsize));
@@ -1409,7 +1421,7 @@ std::cout << std::endl;
 
 
 #ifdef _COMPRESSION
-                if (communicatorRank != root_rank)
+                if (colCommunicatorRank != root_rank)
                 {
                     static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq, originalsize);
                 }
@@ -1422,7 +1434,7 @@ std::cout << std::endl;
 #endif
 
 #ifdef _COMPRESSION
-                if (communicatorRank != root_rank)
+                if (colCommunicatorRank != root_rank)
                 {
                     free(uncompressed_fq);
                 }
