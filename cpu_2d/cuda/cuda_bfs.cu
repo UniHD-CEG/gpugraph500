@@ -349,11 +349,13 @@ void CUDA_BFS::getBackPredecessor()
         {
             MType tmp = 0;
             const uint64_t isize = i * sizeOfMType;
-            for (uint64_t j = 0ULL; j < sizeOfMType; ++j)
+            bool finished = false;
+            for (uint64_t j = 0ULL; j < sizeOfMType && !finished; ++j)
             {
                 const uint64_t jsize = isize + j;
                 const vertexType pred = predecessor[jsize];
-                if ((pred != -1LL) && (jsize < storeColLength))
+                finished = ((pred == -1LL) || (jsize >= storeColLength));
+                if (!finished)
                 {
                     tmp |= 1 << j;
                     if (pred > -2LL)

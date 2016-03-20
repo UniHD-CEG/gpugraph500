@@ -143,8 +143,8 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
 {
     int64_t mtypesize = sizeof(MType) << 3; // * 2^3
     int64_t local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
-    //MPI_Status status;
-    //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     // Split communicator into row and column communicator
     // Split by row, rank by column
     MPI_Comm_split(MPI_COMM_WORLD, local_row, local_column, &row_comm);
@@ -197,7 +197,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     /**
      *
      *
-     * calculates communicator distribution for transmissions (even-to-odd ranks and viceversa)
+     * calculates communicator distribution for p2p transmissions (even-to-odd ranks and viceversa)
      *
      * e.g.
      * scale 3 ---> p=9nodes (scale^2), half_p=4,3 (hprow,hpcol); ilog2_hpcol=2; residuum=1 (hpcol (3) - 2^ilog2_hpcol (2) = 1)
@@ -205,12 +205,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
      * scale 5 ---> p=25nodes (scale^2), half_p=13,12 (hprow,hpcol); ilog2_hpcol=3 residuum=4 (hpcol (12) - 2^ilog2_hpcol (8) = 4)
      *
      * the matrix is symmetric (scale x scale). however, may not be even: (scale x scale) % 2 (e.g scale 5 or scale 9)
-     * row and columns rank partitions (half_p -> (hprow,hpcol)) are configurable at the constructor (MPI_comm_split)
+     * row and columns rank partitions are configurable at the constructor (MPI_comm_split)
      *
      * bitwise mult && div: x>>y == x/(2^y); x<<y == x*(2^y)
      *
      * If the general VertexType is changed from int64_t to uint64_t (better for compression. would remove 2 full buffer convertions per compression call)
-     * the int32_t type in this func. should also be changed to unsigned. (uint32_t)
+     * the int32_t type in this func. should also be changed to unsigned 64-bit. (uint64_t)
      *
      * the previous change is not possible yet since the NULL (starting) vertex uses a '-1' label
      *
@@ -392,7 +392,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     }
                 }
                 ssize = lowers;
-std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
+//std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
 
             }
             else     // odd
@@ -467,265 +467,12 @@ std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - l
                 }
                 offset += lowers;
                 ssize = uppers;
-std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
+//std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
 
             }
         }
     }
 
-/**
-    // Computation of displacements
-    // It is based on the slice selection in the iterative part above.
-    // It tries to do it iterative insted of recursive.
-    int32_t *sizes;
-    int32_t *disps;
-    int32_t err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-    int32_t err2 = posix_memalign((void **)&disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
-    if (err1 || err2) {
-        throw "Memory error.";
-    }
-
-
-    const int32_t maskLengthRes = psize % (1 << intLdSize);
-    uint32_t lastReversedSliceIDs = 0U;
-    int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
-    sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
-    disps[lastTargetNode] = 0;
-    for (int32_t slice = 1; slice < power2intLdSize; ++slice)
-    {
-        const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
-        const int32_t targetNode = oldRank(reversedSliceIDs);
-        sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
-                            mtypesize;
-        disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
-        lastTargetNode = targetNode;
-    }
-    sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
-                                     static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
-    //nodes without a partial resulty
-    for (int32_t node = 0; node < residuum; ++node)
-    {
-        const int32_t index = (node * 2) + 1;
-        sizes[index] = 0;
-        disps[index] = 0;
-    }
-**/
-
-
-
-
-
-
-    /**
-     * compute compression vectors
-     */
-/*
-    int32_t *compressed_sizes;
-    int32_t *compressed_disps;
-    err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, communicatorSize * sizeof(int32_t));
-    err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, communicatorSize * sizeof(int32_t));
-    if (err1 || err2) {
-        throw "Memory error.";
-    }
-    size_t normalsize = static_cast<size_t>(sizes[colCommunicatorRank]);
-    size_t compressedsize = 0U;
-    compressionType *compressed_predecessor = NULL;
-    //FQ_T *pointerToPredListInit = owen;
-    FQ_T *pointerToPredListInit = NULL;
-    FQ_T *predecessor_list = NULL;
-    //&owen[disps[communicatorRank]];
-
-
-std::cout << "sizes: (" << communicatorRank << ")";
-for (int i=0; i< communicatorSize;++i) {
-    std::cout << sizes[i] << ", ";
-}
-std::cout << std::endl;
-
-std::cout << "disp: (" << communicatorRank << ")";
-for (int i=0; i< communicatorSize;++i) {
-    std::cout << disps[i] << ", ";
-}
-std::cout << std::endl;
-
-int64_t sum = 0;
-std::cout << "---> : (" << communicatorRank << ")";
-for (int i=0; i< normalsize;++i) {
-    sum += pointerToPredListInit[i];
-}
-std::cout << "sum: " << sum << std::endl;
-*/
-//std::replace(owen, owen + normalsize , -1LL, NULL_VERTEX);
-/*
-for (int i=0; i< normalsize;++i) {
-
-    std::cout << owen[i];
-}
-std::cout << std::endl;
-*/
-/**
- *
- *
- *
- *
- *
- *
- *
- *
-
-err2 = posix_memalign((void **)&pointerToPredListInit, ALIGNMENT, normalsize * sizeof(FQ_T));
-
-for (size_t i = 0U; i < normalsize; ++i)
-{
-    pointerToPredListInit[i] = owen[disps[communicatorRank] + i];
-}
-
-assert(memcmp(owen[disps[communicatorRank]], pointerToPredListInit, normalsize * sizeof(FQ_T)) == 0);
-*/
-/*
-#ifdef _OPENMP
-    __gnu_parallel::replace(pointerToPredListInit, pointerToPredListInit+normalsize, -1L, NULL_VERTEX);
-#else
-    std::replace(pointerToPredListInit, pointerToPredListInit+normalsize, -1L, NULL_VERTEX);
-#endif
-*/
-
-/*
-sum = 0;
-std::cout << "---> : (" << communicatorRank << ")";
-for (int i=0; i< normalsize;++i) {
-    sum += pointerToPredListInit[i];
-}
-std::cout << "sum_after: " << sum << std::endl;
-*/
-
-/*
-if (communicatorRank != 0)
-{
-    bitmapSchema.compress(pointerToPredListInit, normalsize, &compressed_predecessor, compressedsize);
-    //bitmapSchema.decompress(compressed_predecessor, compressedsize, &predecessor_list, normalsize);
-
-#ifdef _OPENMP
-    __gnu_parallel::replace(pointerToPredListInit, pointerToPredListInit+normalsize, NULL_VERTEX, -1L);
-#else
-    std::replace(pointerToPredListInit, pointerToPredListInit+normalsize, NULL_VERTEX, -1L);
-#endif
-
-    //assert(memcmp(predecessor_list, pointerToPredListInit, normalsize * sizeof(FQ_T)) == 0);
-}
-*/
-    //std::cout << "size: (" << communicatorRank << ") "<< normalsize << " c_size: " << compressedsize << std::endl;
-
-    //MPI_Allgather(&compressedsize, 1, MPI_INT, compressed_sizes, 1, MPI_INT, col_comm);
-
-    /**
-     * compute disps
-     */
-/*
-    lastReversedSliceIDs = 0;
-    lastTargetNode = oldRank(lastReversedSliceIDs);
-    compressed_disps[lastTargetNode] = 0;
-    for (int32_t slice = 1; slice < power2intLdSize; ++slice)
-    {
-        const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
-        const int32_t targetNode = oldRank(reversedSliceIDs);
-        compressed_disps[targetNode] = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-        lastTargetNode = targetNode;
-    }
-
-
-std::cout << "csizes: (" << communicatorRank << ")";
-for (int i=0; i< communicatorSize;++i) {
-
-    std::cout << compressed_sizes[i] << ", ";
-}
-std::cout << std::endl;
-
-std::cout << "cdisp: (" << communicatorRank << ")";
-for (int i=0; i< communicatorSize;++i) {
-
-    std::cout << compressed_disps[i] << ", ";
-}
-std::cout << std::endl;
-*/
-
-/*
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
-    //nodes without a partial resulty
-    for (int32_t node = 0; node < residuum; ++node)
-    {
-        const int32_t index = (node * 2) + 1;
-        compressed_sizes[index] = 0;
-        compressed_disps[index] = 0;
-    }
-    size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-    compressionType *compressed_buff;
-    err = posix_memalign((void **)&compressed_buff, ALIGNMENT, csize * sizeof(compressionType));
-    if (err) {
-        throw "Memory error.";
-    }
-*/
-
-
-
-
-//#ifdef _COMPRESSION
-    /**
-     * compressed data + bitmap
-     */
-/*
-    MPI_Allgatherv(compressed_fq, compressed_sizes[communicatorRank],
-                   fq_tp_typeC, compressed_recv_buff, compressed_sizes,
-                   compressed_disps, fq_tp_typeC, col_comm);
-
-
-    // reensamble uncompressed chunks
-    for (int i = 0; i < communicatorSize; ++i)
-    {
-        compressedsize = compressed_sizes[i];
-        uncompressedsize = sizes[i];
-        if (compressedsize != 0)
-        {
-            schema.decompress(&compressed_recv_buff[compressed_disps[i]], compressedsize, &uncompressed_fq, uncompressedsize);
-            memcpy(&recv_buff[disps[i]], uncompressed_fq, uncompressedsize * sizeof(T));
-            free(uncompressed_fq);
-        }
-    }
-
-    //std::replace(a, a+(50), 50, 11);
-    //__gnu_parallel::replace(a, a+(50), 50, 11);
-    //include <parallel/algorithm>
-
-*/
-/**
-#ifdef _COMPRESSION
-    //MPI_Allgatherv(pointerToPredListInit, sizes[communicatorRank], fq_tp_type,
-    //                owen, sizes, disps, fq_tp_type, col_comm);
-
-    //MPI_Allgatherv(MPI_IN_PLACE, sizes[communicatorRank], fq_tp_type,
-    //                owen, sizes, disps, fq_tp_type, col_comm);
-
-    //free(compressed_predecessor);
-    //free(pointerToPredListInit);
-    //free(compressed_sizes);
-    //free(compressed_disps);
-    MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                    owen, sizes, disps, fq_tp_type, col_comm);
-#else
-    // Transmission of the final results
-    MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                    owen, sizes, disps, fq_tp_type, col_comm);
-#endif
-
-
-    free(sizes);
-    free(disps);
-**/
 }
 
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
@@ -768,7 +515,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
 }
 
 /**
+ *
  * runBFS
+ *
+ *
+ *
  *
  * BFS search:
  * 0) Node 0 sends start vertex to all nodes
@@ -779,6 +530,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
  * 4) global expansion: Column Communication
  * 5) global fold: Row Communication
  */
+
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 #ifdef INSTRUMENTED
 #ifdef _COMPRESSION
@@ -957,6 +709,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
             if (!anynewnodes_global)
             {
 
+                finishedBFS = true;
+
                 /**
                  *
                  *
@@ -965,6 +719,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  *
                  *
                  */
+
+                /*
                 int err, err1, err2;
 
                 int32_t * restrict sizes = NULL;
@@ -1013,11 +769,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 
 
-                /**
-                 *
-                 *
-                 * create compressed chunks of the frontierQ
-                 */
+
 
                 schema.compress(fq_64, normalsize, &compressedFQ, compressedsize);
 
@@ -1058,9 +810,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     compressed_disps[index] = 0;
                 }
 
-    //size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-    //size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
-/*
+                //size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+                //size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
+
                 err = posix_memalign((void **)&compressedPredeccessors, ALIGNMENT, csize * sizeof(compressionType));
                 if (err) {
                     throw "Memory error.";
@@ -1069,28 +821,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 if (err) {
                     throw "Memory error.";
                 }
-*/
-                /**
-                 *
-                 *
-                 * transmit compressed chunks
-                 */
-/*
+
                 MPI_Allgatherv(compressedFQ, compressed_sizes[communicatorRank],
                         fq_tp_typeC, compressedPredeccessors, compressed_sizes,
                         compressed_disps, fq_tp_typeC, col_comm);
-i*/
+
                 free(compressedFQ);
-/*
-*/
-                /**
-                 *
-                 *
-                 *
-                 *
-                 * Unensamble the compressed data chunks
-                 */
-/*
+
                 for (int32_t i = 0; i < colCommunicatorSize; ++i)
                 {
                     compressedsize = compressed_sizes[i];
@@ -1102,9 +839,6 @@ i*/
                         free(decompressedFQ);
                     }
                 }
-*/
-
-//std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
 
                 //free(compressedPredeccessors);
                 //free(decompressedPredeccesors);
@@ -1141,100 +875,6 @@ i*/
                     disps[index] = 0;
                 }
 
-
-/*
-std::cout << "rank: " << rank << " size: " << store.getLocColLength() << "\n";
-
-std::cout << "sizes: (" << rank << ")";
-for (int i=0; i< communicatorSize;++i) {
-    std::cout << sizes[i] << "-";
-    if (std::is_sorted(fq_64 + disps[i], fq_64 + disps[i] + psize) == 0) {
-        std::cout << " (sorted), ";
-    }
-    else
-    {
-        std::cout << " (unsorted), ";
-    }
-}
-std::cout << std::endl;
-*/
-/*
-std::cout << "disp: (" << communicatorRank << ")";
-for (int i=0; i< communicatorSize;++i) {
-    std::cout << disps[i] << ", ";
-}
-std::cout << std::endl;
-
-std::cout << "csizes: (" << rank << ")";
-for (int i=0; i< communicatorSize;++i) {
-    std::cout << compressed_sizes[i] << "-";
-
-  if (std::is_sorted(fq_64 + disps[i], fq_64 + disps[i] + psize) == 0) {
-        std::cout << " (sorted), ";
-    }
-    else
-    {
-        std::cout << " (unsorted), ";
-    }
-}
-*/
-/*
-std::cout << std::endl;
-
-std::cout << "cdisp: (" << communicatorRank << ")";
-for (int i=0; i< communicatorSize;++i) {
-    std::cout << compressed_disps[i] << ", ";
-}
-std::cout << std::endl;
-*/
-
-//assert((std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0));
-/*
-if (std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0) {
-    std::cout << " (4xsorted1)" << std::endl;
-}
-else
-{
-    std::cout << " (4xunsorted1)" << std::endl;
-}
-
-if (std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-communicatorSize) == 0) {
-    std::cout << " (4xsorted2)" << std::endl;
-}
-else
-{
-    std::cout << " (4xunsorted2)" << std::endl;
-}
-*/
-/*
-int sum=0;
-for (int i = 0; i < normalsize; ++i)
-{
-    sum+= fq_64[i];
-}
-std::cout << "sum: ("<<communicatorRank<<") "<< sum << std::endl;
-*/
-/*
-int sum=0;
-for (int i = 0; i < (sizes[communicatorRank])-1; ++i)
-{
-    sum+= *(fq_64 + i);
-}
-std::cout << "sum: ("<<communicatorRank<<") "<< sum << std::endl;
-*/
-/*
-std::cout << "CQ: ("<< communicatorRank << ") " << std::endl;
-for (int i = 0L; i < sizes[communicatorRank]-1; ++i)
-{
-    std::cout << static_cast<int64_t>(fq_64[i+ disps[communicatorRank]]) << ", ";
-}
-std::cout << std::endl;
-*/
-
-
-//std::cout << "sum: ("<<communicatorRank<<") "<< sum << std::endl;
-
-
                 MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                                 predecessor, sizes, disps, fq_tp_type, col_comm);
 
@@ -1255,6 +895,7 @@ std::cout << std::endl;
 
                 finishedBFS = true;
                 return;
+*/
             }
         }
 
@@ -1281,36 +922,31 @@ std::cout << std::endl;
              *
              *
              *
-             * 2D - Column communication. (vreduce())
              *
              *
+             * 2D-partitioning - Column communication. (vreduce())
              *
              */
 
         vreduce(reduce, get,
 #ifdef _COMPRESSION
-                schema,
-                fq_tp_typeC,
+                schema, fq_tp_typeC,
 #endif
-                fq_64,
-                _outsize,
-                store.getLocColLength(),
-                fq_tp_type,
-                col_comm,
-                row_comm
-
+                fq_64, _outsize, store.getLocColLength(), fq_tp_type, col_comm, row_comm
 #ifdef INSTRUMENTED
                 , lqueue
 #endif
                );
 
+
             /**
              *
              *
              *
-             * 2D - Rows communication.
              *
              *
+             *
+             * 2D-partitioning - Rows communication.
              *
              */
 
@@ -1517,9 +1153,85 @@ std::cout << std::endl;
                 MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
+
+                if (finishedBFS) {
+
+
+                    static_cast<Derived *>(this)->getBackPredecessor();
+
+
+                    /**
+                     *
+                     *
+                     *
+                     * End of BFS iteration. Pass predecessors to main() for Verification()
+                     *
+                     *
+                     */
+
+
+                    int err, err1, err2;
+
+                    int32_t * restrict sizes = NULL;
+                    int32_t * restrict disps = NULL;
+                    err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+                    err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+                    if (err1 || err2) {
+                        throw "Memory error.";
+                    }
+                    int32_t * restrict compressed_sizes = NULL;
+                    int32_t * restrict compressed_disps = NULL;
+                    err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+                    err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+                    if (err1 || err2) {
+                        throw "Memory error.";
+                    }
+                    int32_t psize;
+                    int32_t maskLengthRes;
+                    int32_t lastTargetNode;
+                    uint32_t lastReversedSliceIDs;
+
+
+                    allReduceBitCompressed(predecessor, fq_64, owenmask, tmpmask);
+
+
+                    psize = static_cast<int32_t>(mask_size);
+                    maskLengthRes = psize % (1 << intLdSize);
+                    lastReversedSliceIDs = 0U;
+                    lastTargetNode = oldRank(lastReversedSliceIDs);
+                    sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
+                    disps[lastTargetNode] = 0;
+
+                    for (int32_t slice = 1; slice < power2intLdSize; ++slice)
+                    {
+                        const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
+                        const int32_t targetNode = oldRank(reversedSliceIDs);
+                        sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
+                                            mtypesize;
+                        disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
+                        lastTargetNode = targetNode;
+                    }
+                    sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
+                                                     static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
+
+                    for (int32_t node = 0; node < residuum; ++node)
+                    {
+                        const int32_t index = (node * 2) + 1;
+                        sizes[index] = 0;
+                        disps[index] = 0;
+                    }
+
+                    MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                                    predecessor, sizes, disps, fq_tp_type, col_comm);
+                    return;
+
+                }
+
+
 #ifdef INSTRUMENTED
                 tstart = MPI_Wtime();
 #endif
+
 
                 static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 
