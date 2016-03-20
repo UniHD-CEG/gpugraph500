@@ -190,7 +190,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         typename STORE::vertexType *frontierQ, MType *predecessorQmap,
         MType *frontierQmap)
 {
-    static inline int colCommunicatorSize, colCommunicatorSize, rowCommunicatorSize, rowCommunicatorRank;
+    static int colCommunicatorSize, colCommunicatorRank, rowCommunicatorSize, rowCommunicatorRank;
     MPI_Comm_size(col_comm, &colCommunicatorSize);
     MPI_Comm_rank(col_comm, &colCommunicatorRank);
 
@@ -816,7 +816,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     SCOREP_USER_REGION_DEFINE(allReduceBC_handle)
 #endif
 
-    static inline int colCommunicatorSize, colCommunicatorRank, rowCommunicatorSize, rowCommunicatorRank, rank;
+    static int colCommunicatorSize, colCommunicatorRank, rowCommunicatorSize, rowCommunicatorRank, rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(col_comm, &colCommunicatorSize);
     MPI_Comm_rank(col_comm, &colCommunicatorRank);
