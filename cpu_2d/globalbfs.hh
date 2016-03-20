@@ -165,8 +165,6 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS()
 {
     delete[] owenmask;
     delete[] tmpmask;
-    MPI_Comm_free(&row_comm);
-    MPI_Comm_free(&col_comm);
 }
 
 /**
@@ -249,7 +247,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
      * manage residuums.
      */
 
-    if ((colCommunicatorRank < twoTimesResiduum) && (rowCommunicatorSize == 0))
+    if (colCommunicatorRank < twoTimesResiduum)
     {
         if ((colCommunicatorRank & 1) == 0)   // even
         {
@@ -307,11 +305,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
      *
      * general communication case
      */
-//std::cout << "trying to enter - rank: " << colCommunicatorRank << " two_times_resid: " << twoTimesResiduum << "\n";
-    if (((((colCommunicatorRank & 1) == 0) &&
-        (colCommunicatorRank < twoTimesResiduum)) || (colCommunicatorRank >= twoTimesResiduum)) && (rowCommunicatorSize == 0))
+    if ((((colCommunicatorRank & 1) == 0) &&
+        (colCommunicatorRank < twoTimesResiduum)) || (colCommunicatorRank >= twoTimesResiduum))
     {
-//std::cout << "rank: " << colCommunicatorRank << " entered.\n";
         int32_t ssize, offset;
         ssize = psize;
         offset = 0;
@@ -396,6 +392,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     }
                 }
                 ssize = lowers;
+std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
+
             }
             else     // odd
             {
@@ -469,6 +467,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 }
                 offset += lowers;
                 ssize = uppers;
+std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
+
             }
         }
     }
@@ -859,6 +859,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     size_t uncompressedsize, compressedsize;
 #endif
 
+    /**
+     *
+     * empty. available for allBitmapCompressed() bitmap. Run-Length Encoding codec family recommended here
+     */
     bitmapSchema.init();
 
 

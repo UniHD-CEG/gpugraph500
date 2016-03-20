@@ -18,11 +18,6 @@
 #include "config.h"
 #include "constants.hh"
 
-#ifdef _OPENMP
-#include <omp.h>
-#define OMP_CHUNK 4
-#endif
-
 #if _OPENMP
 #include <parallel/algorithm>
 #endif
