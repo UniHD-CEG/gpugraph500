@@ -190,6 +190,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         typename STORE::vertexType *frontierQ, MType *predecessorQmap,
         MType *frontierQmap)
 {
+    static inline int colCommunicatorSize, colCommunicatorSize, rowCommunicatorSize, rowCommunicatorRank;
+    MPI_Comm_size(col_comm, &colCommunicatorSize);
+    MPI_Comm_rank(col_comm, &colCommunicatorRank);
+
+    MPI_Comm_size(row_comm, &rowCommunicatorSize);
+    MPI_Comm_rank(row_comm, &rowCommunicatorRank);
     /**
      *
      *
