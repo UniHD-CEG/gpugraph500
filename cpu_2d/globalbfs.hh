@@ -61,24 +61,23 @@ private:
 
     void allReduceBitCompressed(typename STORE::vertexType *&owen, typename STORE::vertexType *tmp,
                                 MType *owenmap, MType *tmpmap);
+    void allReduceBitCompressed_dup(typename STORE::vertexType *&owen, typename STORE::vertexType *tmp,
+                                MType *owenmap, MType *tmpmap);
 
 protected:
     const STORE &store;
     typename STORE::vertexType *predecessor;
-    MPI_Datatype fq_tp_type; //Frontier Queue Type
+    MPI_Datatype fq_tp_type; //Frontier Queue Type (Usually Integger 64-bit. Converting this to unsigned would save time in compression calls. see allBitCompressedBitmap() banner)
 #ifdef _COMPRESSION
-    MPI_Datatype fq_tp_typeC; //Compressed FQ
+    MPI_Datatype fq_tp_typeC; //Compressed FQ (usually Unisigned 32-bit)
 #endif
     MPI_Datatype bm_type;    // Bitmap Type
     // FQ_T*  __restrict__ fq_64; - conflicts with void* ref
-    FQ_T *fq_64;
-    // FQ_T *fq_64_slice;
-    // compressionType *c_fq; // uncompressed and compressed column-buffers
+    FQ_T *fq_64; // Frontier Queue (aka. Current Queue, CQ, etc). Beware: allocated using cudaMemAlloc() (uses pinned mem)
     std::size_t fq_64_length;
     MType *owenmask;
     MType *tmpmask;
     std::size_t mask_size;
-
 
     // Functions that have to be implemented by the children
     // void reduce_fq_out(FQ_T* startaddr, long insize)=0;  //Global Reducer of the local outgoing frontier queues. Have to be implemented by the children.
@@ -88,15 +87,13 @@ protected:
     // void setIncommingFQ(vertexTypee globalstart, vertexTypee size, FQ_T* startaddr, vertexTypee& insize_max)=0;
     // bool istheresomethingnew()=0;           //to detect if finished
     // void setStartVertex(const vertexTypee start)=0;
-    // void runLocalBFS()=0;
-    // For accelerators with own memory
-
-    void getBackPredecessor(); // expected to be used afet the application finished
+    // void runLocalBFS()=0; // For accelerators with own memory
+    void getBackPredecessor(); // expected to be used after the application finished
     void getBackOutqueue();
     void setBackInqueue();
     void generatOwenMask();
 
-    // Uses the device memory calls to copy the MPI buffer. This buffer is created on the device (CPU, CUDA, OPENGL, etc)
+    // bfsMemCpy() - Uses the device memory calls to copy the MPI buffer. This buffer is created on the device (CPU, CUDA, OPENGL, etc)
     // using a malloc will cause a crash if the app is not in CPU mode. Implemented on the clidren class where also, the
     // buffer is created.
     void bfsMemCpy(FQ_T *&dst, FQ_T *src, size_t size);
@@ -107,13 +104,10 @@ public:
      */
     GlobalBFS(STORE &_store);
     ~GlobalBFS();
-
     typename STORE::vertexType *getPredecessor();
-
 #ifdef _COMPRESSION
     typedef Compression<FQ_T, compressionType> CompressionClassT;
 #endif
-
 #ifdef INSTRUMENTED
 #ifdef _COMPRESSION
     void runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue, double &rowcom, double &colcom,
@@ -122,9 +116,7 @@ public:
     void runBFS(typename STORE::vertexType startVertex, double &lexp, double &lqueue, double &rowcom, double &colcom,
                 double &predlistred);
 #endif
-
 #else
-
 #ifdef _COMPRESSION
     void runBFS(typename STORE::vertexType startVertex, const CompressionClassT &bitmapSchema, const CompressionClassT &predecessorListbitmapSchema);
 #else
@@ -135,8 +127,11 @@ public:
 };
 
 /**
- * Constructor
  *
+ *
+ *
+ *
+ * GlobalBFS
  */
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
@@ -157,8 +152,11 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
 }
 
 /**
- * Destructor
  *
+ *
+ *
+ *
+ * ~GlobalBFS
  */
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
 GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS()
@@ -167,7 +165,54 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::~GlobalBFS()
     delete[] tmpmask;
 }
 
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+void GlobalBFS<Derived, FQ_T, MType, STORE>::getBackPredecessor() { }
+
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+void GlobalBFS<Derived, FQ_T, MType, STORE>::getBackOutqueue() { }
+
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+void GlobalBFS<Derived, FQ_T, MType, STORE>::setBackInqueue() { }
+
 /**
+ *
+ *
+ *
+ *
+ * generatOwenMask(). Generates a map of the vertex with predecessor
+ */
+template<typename Derived, typename FQ_T, typename MType, typename STORE>
+void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
+{
+    const std::size_t mtypesize = sizeof(MType) << 3;
+    const uint64_t store_col_length = store.getLocColLength();
+
+
+#ifdef _OPENMP
+        #pragma omp for schedule (guided, OMP_CHUNK)
+#endif
+        for (std::size_t i = 0ULL; i < mask_size; ++i)
+        {
+            MType tmp = 0U;
+            const uint64_t iindex = i * mtypesize;
+            const std::size_t mask_word_end = std::min(mtypesize, store_col_length - iindex);
+            for (std::size_t j = 0LL; j < mask_word_end; ++j)
+            {
+                const std::size_t jindex = iindex + j;
+                if (predecessor[jindex] != -1)
+                {
+                    tmp |= 1U << j;
+                }
+            }
+            owenmask[i] = tmp;
+        }
+}
+
+/**
+ *
+ *
+ *
+ *
  * getPredecessor()
  *
  */
@@ -177,7 +222,12 @@ typename STORE::vertexType *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecess
     return predecessor;
 }
 
-/*
+/**
+ *
+ *
+ *
+ *
+ *
  * allReduceBitCompressed()
  * Bitmap compression on predecessor reduction
  *
@@ -302,6 +352,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     }
 
     /**
+     *
      *
      * general communication case
      */
@@ -475,44 +526,312 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
 }
 
-template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::getBackPredecessor() { }
 
-template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::getBackOutqueue() { }
-
-template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::setBackInqueue() { }
-
-/*
- * Generates a map of the vertex with predecessor
+/**
+ *
+ *
+ *
+ *
+ *
+ * allReduceBitCompressed_dup()
+ * Bitmap compression on predecessor reduction
+ *
  */
+
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::generatOwenMask()
+void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed_dup(typename STORE::vertexType *&predecessorQ,
+        typename STORE::vertexType *frontierQ, MType *predecessorQmap,
+        MType *frontierQmap)
 {
-    const std::size_t mtypesize = sizeof(MType) << 3;
-    const uint64_t store_col_length = store.getLocColLength();
+    static int colCommunicatorSize, colCommunicatorRank, rowCommunicatorSize, rowCommunicatorRank;
+    MPI_Comm_size(col_comm, &colCommunicatorSize);
+    MPI_Comm_rank(col_comm, &colCommunicatorRank);
 
+    MPI_Comm_size(row_comm, &rowCommunicatorSize);
+    MPI_Comm_rank(row_comm, &rowCommunicatorRank);
+    /**
+     *
+     *
+     * calculates communicator distribution for p2p transmissions (even-to-odd ranks and viceversa)
+     *
+     * e.g.
+     * scale 3 ---> p=9nodes (scale^2), half_p=4,3 (hprow,hpcol); ilog2_hpcol=2; residuum=1 (hpcol (3) - 2^ilog2_hpcol (2) = 1)
+     * scale 4 ---> p=16nodes (scale^2), half_p=8,8 (hprow,hpcol); ilog2_hpcol=3; residuum=0 (hpcol (8) - 2^ilog2_hpcol (8) = 0)
+     * scale 5 ---> p=25nodes (scale^2), half_p=13,12 (hprow,hpcol); ilog2_hpcol=3 residuum=4 (hpcol (12) - 2^ilog2_hpcol (8) = 4)
+     *
+     * the matrix is symmetric (scale x scale). however, may not be even: (scale x scale) % 2 (e.g scale 5 or scale 9)
+     * row and columns rank partitions are configurable at the constructor (MPI_comm_split)
+     *
+     * bitwise mult && div: x>>y == x/(2^y); x<<y == x*(2^y)
+     *
+     * If the general VertexType is changed from int64_t to uint64_t (better for compression. would remove 2 full buffer convertions per compression call)
+     * the int32_t type in this func. should also be changed to unsigned 64-bit. (uint64_t)
+     *
+     * the previous change is not possible yet since the NULL (starting) vertex uses a '-1' label
+     *
+     * the OpenMP buffer initializations, fix each buffer to a fixed core/thread (for the case of OMP only). this avoids the same data
+     * to be treated by a different thread (OMP case only) and thus, a possible && expensive L1 cache miss.
+     */
 
-#ifdef _OPENMP
-        #pragma omp for schedule (guided, OMP_CHUNK)
-#endif
-        for (std::size_t i = 0ULL; i < mask_size; ++i)
+    MPI_Status status;
+    const int32_t psize = static_cast<int32_t>(mask_size);
+    const int32_t mtypesize = sizeof(MType) << 3; // * 8
+    //step 1
+    const int32_t intLdSize = ilogbf(static_cast<float>(colCommunicatorSize)); //integer log_2 of size
+    const int32_t power2intLdSize = 1 << intLdSize; // 2^n
+    const int32_t residuum = colCommunicatorSize - power2intLdSize;
+    const int32_t twoTimesResiduum = residuum << 1;
+
+    /**
+     *
+     * created at compiletime. in most of the cases faster than inline funcs
+     */
+    const function <int32_t(int32_t)> newRank = [&residuum](int32_t oldr)
+    {
+        return (oldr < (residuum << 1)) ? (oldr >> 1) : oldr - residuum;
+    };
+    const function <int32_t(int32_t)> oldRank = [&residuum](uint32_t newr)
+    {
+        return (newr < residuum) ? (newr << 1) : newr + residuum;
+    };
+    const int32_t vrank = newRank(colCommunicatorRank);
+
+    /**
+     *
+     *
+     * manage residuums.
+     */
+
+    if (colCommunicatorRank < twoTimesResiduum)
+    {
+        if ((colCommunicatorRank & 1) == 0)   // even
         {
-            MType tmp = 0U;
-            const uint64_t iindex = i * mtypesize;
-            const std::size_t mask_word_end = std::min(mtypesize, store_col_length - iindex);
-            for (std::size_t j = 0LL; j < mask_word_end; ++j)
+            MPI_Sendrecv(predecessorQmap, psize, bm_type, colCommunicatorRank + 1, 0, frontierQmap, psize, bm_type, colCommunicatorRank + 1, 0,
+                         col_comm, &status);
+
+            for (int32_t i = 0; i < psize; ++i)
             {
-                const std::size_t jindex = iindex + j;
-                if (predecessor[jindex] != -1)
+                frontierQmap[i] &= ~predecessorQmap[i];
+                predecessorQmap[i] |= frontierQmap[i];
+            }
+            MPI_Recv(frontierQ, store.getLocColLength(), fq_tp_type, colCommunicatorRank + 1, 1, col_comm, &status);
+            // set recived elements where the bit maps indicate it
+            int32_t p = 0;
+            for (int32_t i = 0; i < psize; ++i)
+            {
+                MType frontierQm = frontierQmap[i];
+                const int32_t size = i * mtypesize;
+                while (frontierQm != 0U)
                 {
-                    tmp |= 1U << j;
+                    int32_t last = ffsl(frontierQm) - 1;
+                    predecessorQ[size + last] = frontierQ[p];
+                    ++p;
+                    frontierQm ^= (1U << last);
                 }
             }
-            owenmask[i] = tmp;
         }
+        else     // odd
+        {
+            MPI_Sendrecv(predecessorQmap, psize, bm_type, colCommunicatorRank - 1, 0, frontierQmap, psize, bm_type, colCommunicatorRank - 1, 0,
+                         col_comm, &status);
+
+            for (int32_t i = 0; i < psize; ++i)
+            {
+                frontierQmap[i] = ~frontierQmap[i] & predecessorQmap[i];
+            }
+            int32_t p = 0;
+            for (int32_t i = 0; i < psize; ++i)
+            {
+                MType frontierQm = frontierQmap[i];
+                const int32_t size = i * mtypesize;
+                while (frontierQm != 0U)
+                {
+                    const int32_t last = ffsl(frontierQm) - 1;
+                    frontierQ[p] = predecessorQ[size + last];
+                    ++p;
+                    frontierQm ^= (1 << last);
+                }
+            }
+            MPI_Send(frontierQ, p, fq_tp_type, colCommunicatorRank - 1, 1, col_comm);
+        }
+    }
+
+    /**
+     *
+     *
+     * general communication case
+     */
+    if ((((colCommunicatorRank & 1) == 0) &&
+        (colCommunicatorRank < twoTimesResiduum)) || (colCommunicatorRank >= twoTimesResiduum))
+    {
+        int32_t ssize, offset;
+        ssize = psize;
+        offset = 0;
+        // intLdSize: 4 iteractions (scale 22, 16 gpus)
+        for (int32_t it = 0; it < intLdSize; ++it)
+        {
+            const int32_t lowers = ssize >> 1; //lower slice size
+            const int32_t uppers = ssize - lowers; //upper slice size
+            const int32_t size = lowers * mtypesize;
+            const int32_t orankEven = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
+            const int32_t orankOdd = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
+            const int32_t twoTimesIterator = it << 1;
+            const int32_t iterator2 = twoTimesIterator + 2;
+            const int32_t iterator3 = twoTimesIterator + 3;
+
+            if (((vrank >> it) & 1) == 0)  // even
+            {
+                //Transmission of the the bitmap
+                MPI_Sendrecv(predecessorQmap + offset, ssize, bm_type, orankEven, iterator2,
+                             frontierQmap + offset, ssize, bm_type, orankEven, iterator2,
+                             col_comm, &status);
+
+                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
+#ifdef _OPENMP
+                #pragma omp parallel for
+#endif
+                for (int32_t i = 0; i < lowers; ++i)
+                {
+                    const int32_t iOffset = i + offset;
+                    frontierQmap[iOffset] &= ~predecessorQmap[iOffset];
+                    predecessorQmap[iOffset] |= frontierQmap[iOffset];
+                }
+
+                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
+#ifdef _OPENMP
+                #pragma omp parallel for
+#endif
+                for (int32_t i = lowers; i < ssize; ++i)
+                {
+                    const int32_t iOffset = i + offset;
+                    frontierQmap[iOffset] = (~frontierQmap[iOffset]) & predecessorQmap[iOffset];
+                }
+
+                //Generation of foreign updates
+                // uppers: ~65k iteractions per MPI node (scale 22, 16 gpus)
+                int32_t p = 0;
+                for (int32_t i = 0; i < uppers; ++i)
+                {
+                    const int32_t iOffset = i + offset;
+                    const int32_t iOffsetLowers = iOffset + lowers;
+                    const int32_t index = iOffsetLowers * mtypesize;
+                    MType frontierQm = frontierQmap[iOffsetLowers];
+                    while (frontierQm != 0U)
+                    {
+                        int32_t last = ffsl(frontierQm) - 1;
+                        frontierQ[size + p] = predecessorQ[index + last];
+                        ++p;
+                        frontierQm ^= (1U << last);
+                    }
+                }
+                //Transmission of updates
+                MPI_Sendrecv(frontierQ + size, p, fq_tp_type,
+                             orankEven, iterator3,
+                             frontierQ, size, fq_tp_type,
+                             orankEven, iterator3,
+                             col_comm, &status);
+
+                //Updates for own data
+                p = 0;
+                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
+                for (int32_t i = 0; i < lowers; ++i)
+                {
+                    const int32_t iOffset = i + offset;
+                    const int32_t index = iOffset * mtypesize;
+                    MType frontierQm = frontierQmap[iOffset];
+                    while (frontierQm != 0U)
+                    {
+                        int32_t last = ffsl(frontierQm) - 1;
+                        predecessorQ[index + last] = frontierQ[p];
+                        ++p;
+                        frontierQm ^= (1U << last);
+                    }
+                }
+                ssize = lowers;
+//std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
+
+            }
+            else     // odd
+            {
+                //Transmission of the the bitmap
+                MPI_Sendrecv(predecessorQmap + offset, ssize, bm_type,
+                             orankOdd, iterator2,
+                             frontierQmap + offset, ssize, bm_type,
+                             orankOdd, iterator2,
+                             col_comm, &status);
+
+                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
+#ifdef _OPENMP
+                #pragma omp parallel for
+#endif
+                for (int32_t i = 0; i < lowers; ++i)
+                {
+                    const int32_t iOffset = i + offset;
+                    frontierQmap[iOffset] = (~frontierQmap[iOffset]) & predecessorQmap[iOffset];
+                }
+
+                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
+#ifdef _OPENMP
+                #pragma omp parallel for
+#endif
+                for (int32_t i = lowers; i < ssize; ++i)
+                {
+                    const int32_t iOffset = i + offset;
+                    frontierQmap[iOffset] &= ~predecessorQmap[iOffset];
+                    predecessorQmap[iOffset] |= frontierQmap[iOffset];
+                }
+
+                // Generation of foreign updates
+                // inner p: ~50k iteractions per MPI node (scale 22, 16 gpus)
+                int32_t p = 0;
+                for (int32_t i = 0; i < lowers; ++i)
+                {
+                    const int32_t iOffset = i + offset;
+                    const int32_t iOffsetMtype = iOffset * mtypesize;
+                    MType frontierQm = frontierQmap[iOffset];
+                    while (frontierQm != 0U)
+                    {
+                        const int32_t last = ffsl(frontierQm) - 1;
+                        frontierQ[p] = predecessorQ[iOffsetMtype + last];
+                        ++p;
+                        frontierQm ^= (1U << last);
+                    }
+                }
+
+                //Transmission of updates
+                MPI_Sendrecv(frontierQ, p, fq_tp_type,
+                             orankOdd, iterator3,
+                             frontierQ + size, uppers * mtypesize, fq_tp_type,
+                             orankOdd, iterator3,
+                             col_comm, &status);
+
+                //Updates for own data
+                // inner p: ~50k iteractions per MPI node (scale 22, 16 gpus)
+                p = 0;
+                for (int32_t i = 0; i < uppers; ++i)
+                {
+                    const int32_t iOffset = offset + lowers + i;
+                    const int32_t lindex = iOffset * mtypesize;
+                    MType frontierQm = frontierQmap[iOffset];
+                    while (frontierQm != 0U)
+                    {
+                        const int32_t last = ffsl(frontierQm) - 1;
+                        predecessorQ[lindex + last] = frontierQ[p + size];
+                        ++p;
+                        frontierQm ^= (1U << last);
+                    }
+                }
+                offset += lowers;
+                ssize = uppers;
+//std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
+
+            }
+        }
+    }
+
 }
+
+
 
 /**
  *
@@ -1154,78 +1473,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
 
 
-                if (finishedBFS) {
-
-
-                    static_cast<Derived *>(this)->getBackPredecessor();
-
-
-                    /**
-                     *
-                     *
-                     *
-                     * End of BFS iteration. Pass predecessors to main() for Verification()
-                     *
-                     *
-                     */
-
-
-                    int err, err1, err2;
-
-                    int32_t * restrict sizes = NULL;
-                    int32_t * restrict disps = NULL;
-                    err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-                    err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-                    if (err1 || err2) {
-                        throw "Memory error.";
-                    }
-                    int32_t * restrict compressed_sizes = NULL;
-                    int32_t * restrict compressed_disps = NULL;
-                    err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-                    err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-                    if (err1 || err2) {
-                        throw "Memory error.";
-                    }
-                    int32_t psize;
-                    int32_t maskLengthRes;
-                    int32_t lastTargetNode;
-                    uint32_t lastReversedSliceIDs;
-
-
-                    allReduceBitCompressed(predecessor, fq_64, owenmask, tmpmask);
-
-
-                    psize = static_cast<int32_t>(mask_size);
-                    maskLengthRes = psize % (1 << intLdSize);
-                    lastReversedSliceIDs = 0U;
-                    lastTargetNode = oldRank(lastReversedSliceIDs);
-                    sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
-                    disps[lastTargetNode] = 0;
-
-                    for (int32_t slice = 1; slice < power2intLdSize; ++slice)
-                    {
-                        const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
-                        const int32_t targetNode = oldRank(reversedSliceIDs);
-                        sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
-                                            mtypesize;
-                        disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
-                        lastTargetNode = targetNode;
-                    }
-                    sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
-                                                     static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
-
-                    for (int32_t node = 0; node < residuum; ++node)
-                    {
-                        const int32_t index = (node * 2) + 1;
-                        sizes[index] = 0;
-                        disps[index] = 0;
-                    }
-
-                    MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                                    predecessor, sizes, disps, fq_tp_type, col_comm);
-                    return;
-
-                }
 
 
 #ifdef INSTRUMENTED
@@ -1258,6 +1505,74 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #endif
             }
         }
+
+
+        if (finishedBFS) {
+
+
+            static_cast<Derived *>(this)->getBackPredecessor();
+
+
+            /**
+             *
+             *
+             *
+             * End of BFS iteration. Pass predecessors to main() for Verification()
+             *
+             *
+             */
+
+
+            int err, err1, err2;
+
+            int32_t * restrict sizes = NULL;
+            int32_t * restrict disps = NULL;
+            err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+            err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+            if (err1 || err2) {
+                throw "Memory error.";
+            }
+            int32_t psize;
+            int32_t maskLengthRes;
+            int32_t lastTargetNode;
+            uint32_t lastReversedSliceIDs;
+
+
+            allReduceBitCompressed_dup(predecessor, fq_64, owenmask, tmpmask);
+
+
+            psize = static_cast<int32_t>(mask_size);
+            maskLengthRes = psize % (1 << intLdSize);
+            lastReversedSliceIDs = 0U;
+            lastTargetNode = oldRank(lastReversedSliceIDs);
+            sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
+            disps[lastTargetNode] = 0;
+
+            for (int32_t slice = 1; slice < power2intLdSize; ++slice)
+            {
+                const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
+                const int32_t targetNode = oldRank(reversedSliceIDs);
+                sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
+                                    mtypesize;
+                disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
+                lastTargetNode = targetNode;
+            }
+            sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
+                                             static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
+
+            for (int32_t node = 0; node < residuum; ++node)
+            {
+                const int32_t index = (node * 2) + 1;
+                sizes[index] = 0;
+                disps[index] = 0;
+            }
+
+            MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                            predecessor, sizes, disps, fq_tp_type, col_comm);
+            return;
+        }
+
+
 
 #ifdef INSTRUMENTED
         tstart = MPI_Wtime();
