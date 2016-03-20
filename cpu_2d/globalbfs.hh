@@ -144,7 +144,7 @@ GlobalBFS<Derived, FQ_T, MType, STORE>::GlobalBFS(STORE &_store) : store(_store)
     int64_t mtypesize = sizeof(MType) << 3; // * 2^3
     int64_t local_column = store.getLocalColumnID(), local_row = store.getLocalRowID();
     //MPI_Status status;
-    //MPI_Comm_rank(MPI_COMM_WORLD, &rank);	
+    //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     // Split communicator into row and column communicator
     // Split by row, rank by column
     MPI_Comm_split(MPI_COMM_WORLD, local_row, local_column, &row_comm);
@@ -190,6 +190,24 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         typename STORE::vertexType *frontierQ, MType *predecessorQmap,
         MType *frontierQmap, int communicatorRank, int communicatorSize, MPI_Comm col_comm)
 {
+    /**
+     *
+     *
+     * calculate communicator distribution for transmissions (even-to-odd ranks and viceversa)
+     * e.g.
+     * scale 4 ---> p=16nodes (2^scale), residuum=0 (sqrt_p (4) - log2_p (4) = 0)
+     * scale 5 ---> p=25nodes (2^scale), residuum=1 (sqrt_p (5) - log2_p (4) = 1)
+     *
+     * (bitwise mult && div: x>>y == x/(2^y); x<<y == x*(2^y) )
+     *
+     * if the general VertexType is changed from int64_t to uint64_t (better for compression. would remove 2 full buffer convertions per compression call)
+     * the int32_t type in this func. should also be changed to unsigned. (uint32_t)
+     *
+     * the previous change is not possible yet since the NULL (starting) vertex uses a '-1' label
+     *
+     * the OpenMP buffer initializations, fix each buffer to a fixed core/thread (for the case of OMP only). this avoids the same data
+     * to be treated by a different thread (OMP case only) and thus, a possible && expensive L1 cache miss.
+     */
     MPI_Status status;
     const int32_t psize = static_cast<int32_t>(mask_size);
     const int32_t mtypesize = sizeof(MType) << 3; // * 8
@@ -199,6 +217,10 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     const int32_t residuum = communicatorSize - power2intLdSize;
     const int32_t twoTimesResiduum = residuum << 1;
 
+    /**
+     *
+     * created at compiletime. in most of the cases faster than inline funcs
+     */
     const function <int32_t(int32_t)> newRank = [&residuum](int32_t oldr)
     {
         return (oldr < (residuum << 1)) ? (oldr >> 1) : oldr - residuum;
@@ -207,8 +229,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
     {
         return (newr < residuum) ? (newr << 1) : newr + residuum;
     };
+    const int32_t vrank = newRank(communicatorRank);
 
-    //step 2
+    /**
+     *
+     *
+     * manage residuums. when residuum is not the last rank
+     */
+
     if (communicatorRank < twoTimesResiduum)
     {
         if ((communicatorRank & 1) == 0)   // even
@@ -263,25 +291,27 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
         }
     }
 
+    /**
+     *
+     * general communication case
+     */
     if ((((communicatorRank & 1) == 0) &&
         (communicatorRank < twoTimesResiduum)) || (communicatorRank >= twoTimesResiduum))
     {
         int32_t ssize, offset;
         ssize = psize;
-        const int32_t vrank = newRank(communicatorRank);
         offset = 0;
-        // intLdSize: ~2 to 4 iteractions (scale 22, 16 gpus)
+        // intLdSize: 4 iteractions (scale 22, 16 gpus)
         for (int32_t it = 0; it < intLdSize; ++it)
         {
-            int32_t orankEven, orankOdd, iterator2, iterator3;
             const int32_t lowers = ssize >> 1; //lower slice size
             const int32_t uppers = ssize - lowers; //upper slice size
-            int32_t size = lowers * mtypesize;
-            orankEven = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
-            orankOdd = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
+            const int32_t size = lowers * mtypesize;
+            const int32_t orankEven = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
+            const int32_t orankOdd = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
             const int32_t twoTimesIterator = it << 1;
-            iterator2 = twoTimesIterator + 2;
-            iterator3 = twoTimesIterator + 3;
+            const int32_t iterator2 = twoTimesIterator + 2;
+            const int32_t iterator3 = twoTimesIterator + 3;
 
             if (((vrank >> it) & 1) == 0)  // even
             {
@@ -887,6 +917,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         tstart = MPI_Wtime();
 #endif
 
+        /**
+         *
+         * avoid first iteration's check
+         * adds a fail probaility of p=1/(2^scale) for a true random start Vertex selection
+         */
         if (depthBFS > 0)
         {
 
@@ -1002,14 +1037,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                     compressed_disps[index] = 0;
                 }
 
-    size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
-    size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
-
+    //size_t csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
+    //size_t rsize = disps[lastTargetNode] + sizes[lastTargetNode];
+/*
                 err = posix_memalign((void **)&compressedPredeccessors, ALIGNMENT, csize * sizeof(compressionType));
                 if (err) {
                     throw "Memory error.";
                 }
-/*
                 err = posix_memalign((void **)&decompressedPredeccesors, ALIGNMENT, rsize * sizeof(FQ_T));
                 if (err) {
                     throw "Memory error.";
@@ -1051,8 +1085,8 @@ i*/
 
 //std::cout << "rank: " << rank << " size: " << store.getLocColLength() << " csize: " << compressedsize << "\n";
 
-                free(compressedPredeccessors);
-                free(decompressedPredeccesors);
+                //free(compressedPredeccessors);
+                //free(decompressedPredeccesors);
 
                 allReduceBitCompressed(predecessor,
                                        fq_64,
@@ -1087,12 +1121,12 @@ i*/
                 }
 
 
+/*
 std::cout << "rank: " << rank << " size: " << store.getLocColLength() << "\n";
 
 std::cout << "sizes: (" << rank << ")";
 for (int i=0; i< communicatorSize;++i) {
     std::cout << sizes[i] << "-";
-/*
     if (std::is_sorted(fq_64 + disps[i], fq_64 + disps[i] + psize) == 0) {
         std::cout << " (sorted), ";
     }
@@ -1100,10 +1134,10 @@ for (int i=0; i< communicatorSize;++i) {
     {
         std::cout << " (unsorted), ";
     }
-*/
 }
 std::cout << std::endl;
-
+*/
+/*
 std::cout << "disp: (" << communicatorRank << ")";
 for (int i=0; i< communicatorSize;++i) {
     std::cout << disps[i] << ", ";
@@ -1113,7 +1147,7 @@ std::cout << std::endl;
 std::cout << "csizes: (" << rank << ")";
 for (int i=0; i< communicatorSize;++i) {
     std::cout << compressed_sizes[i] << "-";
-/*
+
   if (std::is_sorted(fq_64 + disps[i], fq_64 + disps[i] + psize) == 0) {
         std::cout << " (sorted), ";
     }
@@ -1121,8 +1155,9 @@ for (int i=0; i< communicatorSize;++i) {
     {
         std::cout << " (unsorted), ";
     }
-*/
 }
+*/
+/*
 std::cout << std::endl;
 
 std::cout << "cdisp: (" << communicatorRank << ")";
@@ -1130,7 +1165,7 @@ for (int i=0; i< communicatorSize;++i) {
     std::cout << compressed_disps[i] << ", ";
 }
 std::cout << std::endl;
-
+*/
 
 //assert((std::is_sorted(fq_64, fq_64 + (disps[communicatorSize] * psize)-1) == 0));
 /*
@@ -1150,14 +1185,14 @@ else
     std::cout << " (4xunsorted2)" << std::endl;
 }
 */
-
+/*
 int sum=0;
 for (int i = 0; i < normalsize; ++i)
 {
     sum+= fq_64[i];
 }
 std::cout << "sum: ("<<communicatorRank<<") "<< sum << std::endl;
-
+*/
 /*
 int sum=0;
 for (int i = 0; i < (sizes[communicatorRank])-1; ++i)
@@ -1181,6 +1216,8 @@ std::cout << std::endl;
 
                 MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                                 predecessor, sizes, disps, fq_tp_type, col_comm);
+
+
 
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
