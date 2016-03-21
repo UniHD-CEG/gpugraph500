@@ -1343,9 +1343,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
             MType *fullFrontierQmap = new MType[bsize];
             FQ_T *fullPredecessorQ = new FQ_T[fullPQSize];
 
-            std::memcpy(fullPredecessorQmap + boffset, predecessorQmap, psize);
-            std::memcpy(fullFrontierQmap + boffset, frontierQmap, psize);
-            std::memcpy(fullPredecessorQ + fullPQOffset, predecessorQ, psize * mtypesize);
+            std::memcpy(fullPredecessorQmap + boffset, owenmask, psize);
+            std::memcpy(fullFrontierQmap + boffset, tmpmask, psize);
+            std::memcpy(fullPredecessorQ + fullPQOffset, predecessor, psize * mtypesize);
 
 
             MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
