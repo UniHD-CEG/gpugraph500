@@ -58,6 +58,10 @@ void CpuSimd<T, T_C>::reconfigure(int compressionThreshold, string compressionCo
 template <typename T, typename T_C>
 void CpuSimd<T, T_C>::debugCompression(T *fq, const size_t size) const
 {
+    /**
+     *
+     * statistics, checks,etc here
+     */
     assert(fq != NULL);
     assert(size >= 0UL);
 }
