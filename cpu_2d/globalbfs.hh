@@ -750,9 +750,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                                  SCOREP_USER_REGION_TYPE_COMMON)
 #endif
 
-        if (!finishedBFS) {
-            static_cast<Derived *>(this)->getBackOutqueue();
-        }
+        static_cast<Derived *>(this)->getBackOutqueue();
 
 #ifdef INSTRUMENTED
         lqueue +=  MPI_Wtime() - tstart;
@@ -770,18 +768,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
          *
          */
 
-        if (!finishedBFS) {
 
-            vreduce(reduce, get,
+        vreduce(reduce, get,
 #ifdef _COMPRESSION
-                schema, fq_tp_typeC,
+            schema, fq_tp_typeC,
 #endif
-                fq_64, _outsize, store.getLocColLength(), fq_tp_type, col_comm, row_comm
+            fq_64, _outsize, store.getLocColLength(), fq_tp_type, col_comm, row_comm
 #ifdef INSTRUMENTED
-                , lqueue
+            , lqueue
 #endif
-               );
-        }
+           );
 
 
         /**
