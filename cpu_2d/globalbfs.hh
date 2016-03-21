@@ -717,18 +717,19 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
              *
              * test if everything is done.
              */
-//            anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
+            anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
 
 #ifdef INSTRUMENTED
             lqueue += MPI_Wtime() - tstart;
 #endif
 
 
-//            MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+            MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
 
-//            if (!anynewnodes_global)
-//            {
+            if (!anynewnodes_global)
+            {
 
+std::cout<<"-->finished at deeph(1) "<< depthBFS<<"\n";
                 /**
                  *
                  *
@@ -739,8 +740,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  *
                  */
 
-//                finishedBFS = true;
- //           }
+                //finishedBFS = true;
+           }
         }
 
 // 4) global expansion
@@ -1010,6 +1011,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
             if (!anynewnodes_global)
             {
 
+                std::cout<<"-->finished at deeph(2) "<< depthBFS<<"\n";
                 /**
                  *
                  *
