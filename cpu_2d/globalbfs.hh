@@ -704,11 +704,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         tstart = MPI_Wtime();
 #endif
 
-        /**
-         *
-         * avoid first iteration's check
-         * adds a fail probaility of p=1/(2^scale) for a true random start Vertex selection
-         */
+
         if (depthBFS > 0)
         {
 
@@ -723,25 +719,24 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
             lqueue += MPI_Wtime() - tstart;
 #endif
 
-
             MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
 
             if (!anynewnodes_global)
             {
 
-std::cout<<"-->finished at deeph(1) "<< depthBFS<<"\n";
                 /**
                  *
                  *
                  *
-                 * End of BFS iteration. Pass predecessors to main() for Verification()
-                 * processed at the end of the while-loop
                  *
+                 * End of BFS iteration. Pass predecessors to main() for Verification()
+                 * processed after the while-loop
                  *
                  */
 
-                //finishedBFS = true;
-           }
+                finishedBFS = true;
+                continue;
+            }
         }
 
 // 4) global expansion
@@ -800,9 +795,8 @@ std::cout<<"-->finished at deeph(1) "<< depthBFS<<"\n";
          *
          */
 
-        if (!finishedBFS) {
-            static_cast<Derived *>(this)->setModOutgoingFQ(fq_64, _outsize);
-        }
+
+        static_cast<Derived *>(this)->setModOutgoingFQ(fq_64, _outsize);
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
         SCOREP_USER_REGION_END(columnCommunication_handle)
@@ -823,29 +817,27 @@ std::cout<<"-->finished at deeph(1) "<< depthBFS<<"\n";
                                  SCOREP_USER_REGION_TYPE_LOOP)
 #endif
 
-        if (!finishedBFS) {
-
-            int root_rank;
-            for (typename vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin(); it != fold_fq_props.end(); ++it)
+        int root_rank;
+        for (typename vector<typename STORE::fold_prop>::iterator it = fold_fq_props.begin(); it != fold_fq_props.end(); ++it)
+        {
+            root_rank = it->sendColSl;
+            if (root_rank == store.getLocalColumnID())
             {
-                root_rank = it->sendColSl;
-                if (root_rank == store.getLocalColumnID())
-                {
 
-                    int originalsize;
-                    FQ_T *startaddr;
+                int originalsize;
+                FQ_T *startaddr;
 #ifdef _COMPRESSION
-                    compressionType *compressed_fq;
-                    FQ_T *uncompressed_fq;
+                compressionType *compressed_fq;
+                FQ_T *uncompressed_fq;
 #endif
 
 #ifdef INSTRUMENTED
-                    tstart = MPI_Wtime();
+                tstart = MPI_Wtime();
 #endif
-                    static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, originalsize);
+                static_cast<Derived *>(this)->getOutgoingFQ(it->startvtx, it->size, startaddr, originalsize);
 
 #ifdef INSTRUMENTED
-                    lqueue += MPI_Wtime() - tstart;
+                lqueue += MPI_Wtime() - tstart;
 #endif
 
 
@@ -856,175 +848,136 @@ std::cout<<"-->finished at deeph(1) "<< depthBFS<<"\n";
  * sample compression debug call for gathering stats, checks, etc
  */
 #if defined (_COMPRESSION) && defined(_COMPRESSIONDEBUG)
-                    schema.debugCompression(startaddr, originalsize);
+                schema.debugCompression(startaddr, originalsize);
 #endif
 
 
 #ifdef _COMPRESSION
-                    uncompressedsize = static_cast<size_t>(originalsize);
-                    schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
+                uncompressedsize = static_cast<size_t>(originalsize);
+                schema.compress(startaddr, uncompressedsize, &compressed_fq, compressedsize);
 #endif
 
 
 #ifdef _COMPRESSION
 
-                    int *vectorizedsize = NULL;
-                    err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
-                    if (err) {
-                        throw "Memory error.";
-                    }
-                    vectorizedsize[0] = originalsize;
-                    vectorizedsize[1] = compressedsize;
-                    MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
-                    MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
+                int *vectorizedsize = NULL;
+                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
+                if (err) {
+                    throw "Memory error.";
+                }
+                vectorizedsize[0] = originalsize;
+                vectorizedsize[1] = compressedsize;
+                MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
+                MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
 
 #else
-                    MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
-                    MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
+                MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
+                MPI_Bcast(startaddr, originalsize, fq_tp_type, root_rank, row_comm);
 #endif
 
 #ifdef _COMPRESSION
-                    if (colCommunicatorRank != root_rank)
-                    {
-                        uncompressedsize = static_cast<size_t>(originalsize);
-                        schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq,  uncompressedsize);
-                    }
+                if (colCommunicatorRank != root_rank)
+                {
+                    uncompressedsize = static_cast<size_t>(originalsize);
+                    schema.decompress(compressed_fq, compressedsize,  &uncompressed_fq,  uncompressedsize);
+                }
 #endif
 
 #ifdef INSTRUMENTED
-                    tstart = MPI_Wtime();
+                tstart = MPI_Wtime();
 #endif
 
 
 #ifdef _COMPRESSION
-                    if (colCommunicatorRank != root_rank)
-                    {
-                        static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq, originalsize);
-                    }
-                    else
-                    {
-                        static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
-                    }
-#else
+                if (colCommunicatorRank != root_rank)
+                {
+                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, uncompressed_fq, originalsize);
+                }
+                else
+                {
                     static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
+                }
+#else
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, startaddr, originalsize);
 #endif
 
 #ifdef _COMPRESSION
-                    if (colCommunicatorRank != root_rank)
-                    {
-                        free(uncompressed_fq);
-                    }
-                    free(compressed_fq);
-                    free(vectorizedsize);
+                if (colCommunicatorRank != root_rank)
+                {
+                    free(uncompressed_fq);
+                }
+                free(compressed_fq);
+                free(vectorizedsize);
 #endif
 
 #ifdef INSTRUMENTED
                 lqueue += MPI_Wtime() - tstart;
 #endif
 
-                }
-                else
-                {
-
-#ifdef _COMPRESSION
-                    compressionType *compressed_fq = NULL;
-                    FQ_T *uncompressed_fq = NULL;
-                    int originalsize, compressedsize;
-                    int *vectorizedsize = NULL;
-                    err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
-                    if (err) {
-                        throw "Memory error.";
-                    }
-
-                    MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
-                    originalsize = vectorizedsize[0];
-                    compressedsize = vectorizedsize[1];
-                    err = posix_memalign((void **)&compressed_fq, ALIGNMENT, compressedsize * sizeof(compressionType));
-                    if (err) {
-                        throw "Memory error.";
-                    }
-
-                    // note: fq_64 buffer has been alloceted in the children class.
-                    // In case of CUDA, it has been allocated using cudaMalloc. In that case,
-                    // it would be pinned memory and therefore can not be modified using
-                    // normal C/C++ memory functions. Further info on the
-                    // (this)->bfsMemCpy() call below.
-                    // MPI_Bcast(fq_64, compressedsize, fq_tp_typeC, root_rank, row_comm);
-                    // compressed_fq is type: fq_tp_typeC
-
-                    MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
-                    uncompressedsize = static_cast<size_t>(originalsize);
-                    schema.decompress(compressed_fq, compressedsize, &uncompressed_fq, uncompressedsize);
-                    static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq, originalsize);
-
-#else
-                    int originalsize;
-                    MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
-                    MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
-#endif
-
-
-
-#ifdef INSTRUMENTED
-                    tstart = MPI_Wtime();
-#endif
-
-                        static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
-
-#ifdef INSTRUMENTED
-                    lqueue += MPI_Wtime() - tstart;
-#endif
-
-#ifdef _COMPRESSION
-                    free(vectorizedsize);
-                    free(uncompressed_fq);
-                    free(compressed_fq);
-
-#endif
-                }
             }
-        }
-
-
-
-
-//----
-
-
-#ifdef INSTRUMENTED
-        tstart = MPI_Wtime();
-#endif
-
-        static_cast<Derived *>(this)->setBackInqueue();
-
-
-        anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
-        if (!anynewnodes) {
-            std::cout << "no\n";
-        } else {
-            std::cout << "yes\n";
-        }
-
-
-            MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
-
-            if (!anynewnodes_global)
+            else
             {
 
-                std::cout<<"-->finished at deeph(2) "<< depthBFS<<"\n";
-                /**
-                 *
-                 *
-                 *
-                 * End of BFS iteration. Pass predecessors to main() for Verification()
-                 * processed at the end of the while-loop
-                 *
-                 *
-                 */
+#ifdef _COMPRESSION
+                compressionType *compressed_fq = NULL;
+                FQ_T *uncompressed_fq = NULL;
+                int originalsize, compressedsize;
+                int *vectorizedsize = NULL;
+                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
+                if (err) {
+                    throw "Memory error.";
+                }
 
-                finishedBFS = true;
+                MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
+                originalsize = vectorizedsize[0];
+                compressedsize = vectorizedsize[1];
+                err = posix_memalign((void **)&compressed_fq, ALIGNMENT, compressedsize * sizeof(compressionType));
+                if (err) {
+                    throw "Memory error.";
+                }
+
+                // note: fq_64 buffer has been alloceted in the children class.
+                // In case of CUDA, it has been allocated using cudaMalloc. In that case,
+                // it would be pinned memory and therefore can not be modified using
+                // normal C/C++ memory functions. Further info on the
+                // (this)->bfsMemCpy() call below.
+                // MPI_Bcast(fq_64, compressedsize, fq_tp_typeC, root_rank, row_comm);
+                // compressed_fq is type: fq_tp_typeC
+
+                MPI_Bcast(compressed_fq, compressedsize, fq_tp_typeC, root_rank, row_comm);
+                uncompressedsize = static_cast<size_t>(originalsize);
+                schema.decompress(compressed_fq, compressedsize, &uncompressed_fq, uncompressedsize);
+                static_cast<Derived *>(this)->bfsMemCpy(fq_64, uncompressed_fq, originalsize);
+
+#else
+                int originalsize;
+                MPI_Bcast(&originalsize, 1, MPI_INT, root_rank, row_comm);
+                MPI_Bcast(fq_64, originalsize, fq_tp_type, root_rank, row_comm);
+#endif
+
+
+
+
+#ifdef INSTRUMENTED
+                tstart = MPI_Wtime();
+#endif
+
+                if (!finishedBFS) {
+                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
+                }
+
+#ifdef INSTRUMENTED
+                lqueue += MPI_Wtime() - tstart;
+#endif
+
+#ifdef _COMPRESSION
+                free(vectorizedsize);
+                free(uncompressed_fq);
+                free(compressed_fq);
+
+#endif
             }
-
+        }
 
 
         if (finishedBFS) {
@@ -1163,6 +1116,12 @@ std::cout<<"-->finished at deeph(1) "<< depthBFS<<"\n";
 
 
 #ifdef INSTRUMENTED
+        tstart = MPI_Wtime();
+#endif
+
+        static_cast<Derived *>(this)->setBackInqueue();
+
+#ifdef INSTRUMENTED
         tend = MPI_Wtime();
         lqueue += tend - tstart;
 #endif
@@ -1174,9 +1133,6 @@ std::cout<<"-->finished at deeph(1) "<< depthBFS<<"\n";
 #ifdef _SCOREP_USER_INSTRUMENTATION
         SCOREP_USER_REGION_END(rowCommunication_handle)
 #endif
-
-
-
         /**
          *
          *
@@ -1187,5 +1143,143 @@ std::cout<<"-->finished at deeph(1) "<< depthBFS<<"\n";
 
         ++depthBFS;
     }
+
+    if (finishedBFS) {
+
+        /**
+         *
+         *
+         *
+         *
+         *
+         * End of BFS iteration. Pass predecessors to main() for Verification()
+         */
+
+
+#ifdef INSTRUMENTED
+        tstart = MPI_Wtime();
+#endif
+        static_cast<Derived *>(this)->getBackPredecessor();
+
+#ifdef INSTRUMENTED
+        lqueue += MPI_Wtime() - tstart;
+#endif
+
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+        SCOREP_USER_REGION_BEGIN(allReduceBC_handle, "BFSRUN_region_allReduceBC", SCOREP_USER_REGION_TYPE_COMMON)
+#endif
+
+
+        /**
+         *
+         *
+         * non finished work to perform compression in allReduceBitCompressed()
+         *
+         * idea: predecessor vector can not be compressed because ist high entropy. it is not sorted as the bitmap has already been applied
+         * so, apply the compression to FQ instead. After that, broadcast the bitmaps and let each processor
+         * build the full predecessor List (including other node's)
+         *
+         * the call has been placed here so FQ is distributed (compressed) by the row communication's code
+         * the full goal is to be able to remove the lines below allReduceBitCompressed(). including (and specially)
+         * the MPI_allgatherv
+         *
+         * see commit:
+         *
+         * commit e0bc5f948ae736d2c2114fcac2a0d269379894a7
+         * Date:   Mon Mar 21 09:52:26 2016 +0100
+         * desist due to lack of time
+         */
+
+        /*
+        const int32_t psize = static_cast<int32_t>(mask_size);
+        const int32_t bsize = psize * colCommunicatorSize;
+        const int64_t boffset = psize * colCommunicatorRank;
+        const int64_t fullPQSize = psize * mtypesize * colCommunicatorSize;
+        const int64_t fullPQOffset = psize * mtypesize * colCommunicatorRank;
+
+
+        MType *fullPredecessorQmap = new MType[bsize];
+        MType *fullFrontierQmap = new MType[bsize];
+        FQ_T *fullPredecessorQ = new FQ_T[fullPQSize];
+
+        std::memcpy(fullPredecessorQmap + boffset, owenmask, psize);
+        std::memcpy(fullFrontierQmap + boffset, tmpmask, psize);
+        std::memcpy(fullPredecessorQ + fullPQOffset, predecessor, psize * mtypesize);
+
+
+        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                fullPredecessorQmap, psize, bm_type, col_comm);
+
+        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                fullFrontierQmap, psize, bm_type, col_comm);
+
+        delete[] fullFrontierQmap;
+        delete[] fullPredecessorQmap;
+        delete[] fullPredecessorQ;
+
+        */
+        allReduceBitCompressed(predecessor, fq_64, owenmask, tmpmask);
+
+
+        int err1, err2;
+
+        int32_t *sizes = NULL;
+        int32_t *disps = NULL;
+        err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+        err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+        if (err1 || err2) {
+            throw "Memory error.";
+        }
+        int32_t psize;
+        int32_t maskLengthRes;
+        int32_t lastTargetNode;
+        uint32_t lastReversedSliceIDs;
+
+
+        psize = static_cast<int32_t>(mask_size);
+        maskLengthRes = psize % (1 << intLdSize);
+        lastReversedSliceIDs = 0U;
+        lastTargetNode = oldRank(lastReversedSliceIDs);
+        sizes[lastTargetNode] = (psize >> intLdSize) * mtypesize;
+        disps[lastTargetNode] = 0;
+
+        for (int32_t slice = 1; slice < power2intLdSize; ++slice)
+        {
+            const uint32_t reversedSliceIDs = reverse(slice, intLdSize);
+            const int32_t targetNode = oldRank(reversedSliceIDs);
+            sizes[targetNode] = ((psize >> intLdSize) + (((power2intLdSize - reversedSliceIDs - 1) < maskLengthRes) ? 1 : 0)) *
+                                mtypesize;
+            disps[targetNode] = disps[lastTargetNode] + sizes[lastTargetNode];
+            lastTargetNode = targetNode;
+        }
+        sizes[lastTargetNode] = std::min(sizes[lastTargetNode],
+                                         static_cast<int32_t>(store.getLocColLength() - disps[lastTargetNode]));
+
+        for (int32_t node = 0; node < residuum; ++node)
+        {
+            const int32_t index = (node * 2) + 1;
+            sizes[index] = 0;
+            disps[index] = 0;
+        }
+
+        MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                        predecessor, sizes, disps, fq_tp_type, col_comm);
+
+
+#ifdef _SCOREP_USER_INSTRUMENTATION
+        SCOREP_USER_REGION_END(allReduceBC_handle)
+#endif
+
+#ifdef INSTRUMENTED
+         predlistred = MPI_Wtime() - tstart;
+#endif
+         /**
+          *
+          * return to main() for validation.
+          */
+        return;
+    }
+
 }
 #endif // GLOBALBFS_HH
