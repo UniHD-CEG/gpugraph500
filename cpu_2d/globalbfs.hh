@@ -443,7 +443,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                     }
                 }
                 ssize = lowers;
-//std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
+            //std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
 
             }
             else     // odd
@@ -518,318 +518,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                 }
                 offset += lowers;
                 ssize = uppers;
-//std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
-
             }
         }
     }
 
 }
 
-
-/**
- *
- *
- *
- *
- *
- * allReduceBitCompressed_dup()
- * Bitmap compression on predecessor reduction
- *
- */
-
-template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed_dup(typename STORE::vertexType *&predecessorQ,
-        typename STORE::vertexType *frontierQ, MType *predecessorQmap,
-        MType *frontierQmap)
-{
-    static int colCommunicatorSize, colCommunicatorRank, rowCommunicatorSize, rowCommunicatorRank;
-    MPI_Comm_size(col_comm, &colCommunicatorSize);
-    MPI_Comm_rank(col_comm, &colCommunicatorRank);
-
-    MPI_Comm_size(row_comm, &rowCommunicatorSize);
-    MPI_Comm_rank(row_comm, &rowCommunicatorRank);
-    /**
-     *
-     *
-     * calculates communicator distribution for p2p transmissions (even-to-odd ranks and viceversa)
-     *
-     * e.g.
-     * scale 3 ---> p=9nodes (scale^2), half_p=4,3 (hprow,hpcol); ilog2_hpcol=2; residuum=1 (hpcol (3) - 2^ilog2_hpcol (2) = 1)
-     * scale 4 ---> p=16nodes (scale^2), half_p=8,8 (hprow,hpcol); ilog2_hpcol=3; residuum=0 (hpcol (8) - 2^ilog2_hpcol (8) = 0)
-     * scale 5 ---> p=25nodes (scale^2), half_p=13,12 (hprow,hpcol); ilog2_hpcol=3 residuum=4 (hpcol (12) - 2^ilog2_hpcol (8) = 4)
-     *
-     * the matrix is symmetric (scale x scale). however, may not be even: (scale x scale) % 2 (e.g scale 5 or scale 9)
-     * row and columns rank partitions are configurable at the constructor (MPI_comm_split)
-     *
-     * bitwise mult && div: x>>y == x/(2^y); x<<y == x*(2^y)
-     *
-     * If the general VertexType is changed from int64_t to uint64_t (better for compression. would remove 2 full buffer convertions per compression call)
-     * the int32_t type in this func. should also be changed to unsigned 64-bit. (uint64_t)
-     *
-     * the previous change is not possible yet since the NULL (starting) vertex uses a '-1' label
-     *
-     * the OpenMP buffer initializations, fix each buffer to a fixed core/thread (for the case of OMP only). this avoids the same data
-     * to be treated by a different thread (OMP case only) and thus, a possible && expensive L1 cache miss.
-     */
-
-    MPI_Status status;
-    const int32_t psize = static_cast<int32_t>(mask_size);
-    const int32_t mtypesize = sizeof(MType) << 3; // * 8
-    //step 1
-    const int32_t intLdSize = ilogbf(static_cast<float>(colCommunicatorSize)); //integer log_2 of size
-    const int32_t power2intLdSize = 1 << intLdSize; // 2^n
-    const int32_t residuum = colCommunicatorSize - power2intLdSize;
-    const int32_t twoTimesResiduum = residuum << 1;
-
-    /**
-     *
-     * created at compiletime. in most of the cases faster than inline funcs
-     */
-    const function <int32_t(int32_t)> newRank = [&residuum](int32_t oldr)
-    {
-        return (oldr < (residuum << 1)) ? (oldr >> 1) : oldr - residuum;
-    };
-    const function <int32_t(int32_t)> oldRank = [&residuum](uint32_t newr)
-    {
-        return (newr < residuum) ? (newr << 1) : newr + residuum;
-    };
-    const int32_t vrank = newRank(colCommunicatorRank);
-
-    /**
-     *
-     *
-     * manage residuums.
-     */
-
-    if (colCommunicatorRank < twoTimesResiduum)
-    {
-        if ((colCommunicatorRank & 1) == 0)   // even
-        {
-            MPI_Sendrecv(predecessorQmap, psize, bm_type, colCommunicatorRank + 1, 0, frontierQmap, psize, bm_type, colCommunicatorRank + 1, 0,
-                         col_comm, &status);
-
-            for (int32_t i = 0; i < psize; ++i)
-            {
-                frontierQmap[i] &= ~predecessorQmap[i];
-                predecessorQmap[i] |= frontierQmap[i];
-            }
-            MPI_Recv(frontierQ, store.getLocColLength(), fq_tp_type, colCommunicatorRank + 1, 1, col_comm, &status);
-            // set recived elements where the bit maps indicate it
-            int32_t p = 0;
-            for (int32_t i = 0; i < psize; ++i)
-            {
-                MType frontierQm = frontierQmap[i];
-                const int32_t size = i * mtypesize;
-                while (frontierQm != 0U)
-                {
-                    int32_t last = ffsl(frontierQm) - 1;
-                    predecessorQ[size + last] = frontierQ[p];
-                    ++p;
-                    frontierQm ^= (1U << last);
-                }
-            }
-        }
-        else     // odd
-        {
-            MPI_Sendrecv(predecessorQmap, psize, bm_type, colCommunicatorRank - 1, 0, frontierQmap, psize, bm_type, colCommunicatorRank - 1, 0,
-                         col_comm, &status);
-
-            for (int32_t i = 0; i < psize; ++i)
-            {
-                frontierQmap[i] = ~frontierQmap[i] & predecessorQmap[i];
-            }
-            int32_t p = 0;
-            for (int32_t i = 0; i < psize; ++i)
-            {
-                MType frontierQm = frontierQmap[i];
-                const int32_t size = i * mtypesize;
-                while (frontierQm != 0U)
-                {
-                    const int32_t last = ffsl(frontierQm) - 1;
-                    frontierQ[p] = predecessorQ[size + last];
-                    ++p;
-                    frontierQm ^= (1 << last);
-                }
-            }
-            MPI_Send(frontierQ, p, fq_tp_type, colCommunicatorRank - 1, 1, col_comm);
-        }
-    }
-
-    /**
-     *
-     *
-     * general communication case
-     */
-    if ((((colCommunicatorRank & 1) == 0) &&
-        (colCommunicatorRank < twoTimesResiduum)) || (colCommunicatorRank >= twoTimesResiduum))
-    {
-        int32_t ssize, offset;
-        ssize = psize;
-        offset = 0;
-        // intLdSize: 4 iteractions (scale 22, 16 gpus)
-        for (int32_t it = 0; it < intLdSize; ++it)
-        {
-            const int32_t lowers = ssize >> 1; //lower slice size
-            const int32_t uppers = ssize - lowers; //upper slice size
-            const int32_t size = lowers * mtypesize;
-            const int32_t orankEven = oldRank((vrank + (1 << it)) & (power2intLdSize - 1));
-            const int32_t orankOdd = oldRank((power2intLdSize + vrank - (1 << it)) & (power2intLdSize - 1));
-            const int32_t twoTimesIterator = it << 1;
-            const int32_t iterator2 = twoTimesIterator + 2;
-            const int32_t iterator3 = twoTimesIterator + 3;
-
-            if (((vrank >> it) & 1) == 0)  // even
-            {
-                //Transmission of the the bitmap
-                MPI_Sendrecv(predecessorQmap + offset, ssize, bm_type, orankEven, iterator2,
-                             frontierQmap + offset, ssize, bm_type, orankEven, iterator2,
-                             col_comm, &status);
-
-                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
-#ifdef _OPENMP
-                #pragma omp parallel for
-#endif
-                for (int32_t i = 0; i < lowers; ++i)
-                {
-                    const int32_t iOffset = i + offset;
-                    frontierQmap[iOffset] &= ~predecessorQmap[iOffset];
-                    predecessorQmap[iOffset] |= frontierQmap[iOffset];
-                }
-
-                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
-#ifdef _OPENMP
-                #pragma omp parallel for
-#endif
-                for (int32_t i = lowers; i < ssize; ++i)
-                {
-                    const int32_t iOffset = i + offset;
-                    frontierQmap[iOffset] = (~frontierQmap[iOffset]) & predecessorQmap[iOffset];
-                }
-
-                //Generation of foreign updates
-                // uppers: ~65k iteractions per MPI node (scale 22, 16 gpus)
-                int32_t p = 0;
-                for (int32_t i = 0; i < uppers; ++i)
-                {
-                    const int32_t iOffset = i + offset;
-                    const int32_t iOffsetLowers = iOffset + lowers;
-                    const int32_t index = iOffsetLowers * mtypesize;
-                    MType frontierQm = frontierQmap[iOffsetLowers];
-                    while (frontierQm != 0U)
-                    {
-                        int32_t last = ffsl(frontierQm) - 1;
-                        frontierQ[size + p] = predecessorQ[index + last];
-                        ++p;
-                        frontierQm ^= (1U << last);
-                    }
-                }
-                //Transmission of updates
-                MPI_Sendrecv(frontierQ + size, p, fq_tp_type,
-                             orankEven, iterator3,
-                             frontierQ, size, fq_tp_type,
-                             orankEven, iterator3,
-                             col_comm, &status);
-
-                //Updates for own data
-                p = 0;
-                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
-                for (int32_t i = 0; i < lowers; ++i)
-                {
-                    const int32_t iOffset = i + offset;
-                    const int32_t index = iOffset * mtypesize;
-                    MType frontierQm = frontierQmap[iOffset];
-                    while (frontierQm != 0U)
-                    {
-                        int32_t last = ffsl(frontierQm) - 1;
-                        predecessorQ[index + last] = frontierQ[p];
-                        ++p;
-                        frontierQm ^= (1U << last);
-                    }
-                }
-                ssize = lowers;
-//std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
-
-            }
-            else     // odd
-            {
-                //Transmission of the the bitmap
-                MPI_Sendrecv(predecessorQmap + offset, ssize, bm_type,
-                             orankOdd, iterator2,
-                             frontierQmap + offset, ssize, bm_type,
-                             orankOdd, iterator2,
-                             col_comm, &status);
-
-                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
-#ifdef _OPENMP
-                #pragma omp parallel for
-#endif
-                for (int32_t i = 0; i < lowers; ++i)
-                {
-                    const int32_t iOffset = i + offset;
-                    frontierQmap[iOffset] = (~frontierQmap[iOffset]) & predecessorQmap[iOffset];
-                }
-
-                // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
-#ifdef _OPENMP
-                #pragma omp parallel for
-#endif
-                for (int32_t i = lowers; i < ssize; ++i)
-                {
-                    const int32_t iOffset = i + offset;
-                    frontierQmap[iOffset] &= ~predecessorQmap[iOffset];
-                    predecessorQmap[iOffset] |= frontierQmap[iOffset];
-                }
-
-                // Generation of foreign updates
-                // inner p: ~50k iteractions per MPI node (scale 22, 16 gpus)
-                int32_t p = 0;
-                for (int32_t i = 0; i < lowers; ++i)
-                {
-                    const int32_t iOffset = i + offset;
-                    const int32_t iOffsetMtype = iOffset * mtypesize;
-                    MType frontierQm = frontierQmap[iOffset];
-                    while (frontierQm != 0U)
-                    {
-                        const int32_t last = ffsl(frontierQm) - 1;
-                        frontierQ[p] = predecessorQ[iOffsetMtype + last];
-                        ++p;
-                        frontierQm ^= (1U << last);
-                    }
-                }
-
-                //Transmission of updates
-                MPI_Sendrecv(frontierQ, p, fq_tp_type,
-                             orankOdd, iterator3,
-                             frontierQ + size, uppers * mtypesize, fq_tp_type,
-                             orankOdd, iterator3,
-                             col_comm, &status);
-
-                //Updates for own data
-                // inner p: ~50k iteractions per MPI node (scale 22, 16 gpus)
-                p = 0;
-                for (int32_t i = 0; i < uppers; ++i)
-                {
-                    const int32_t iOffset = offset + lowers + i;
-                    const int32_t lindex = iOffset * mtypesize;
-                    MType frontierQm = frontierQmap[iOffset];
-                    while (frontierQm != 0U)
-                    {
-                        const int32_t last = ffsl(frontierQm) - 1;
-                        predecessorQ[lindex + last] = frontierQ[p + size];
-                        ++p;
-                        frontierQm ^= (1U << last);
-                    }
-                }
-                offset += lowers;
-                ssize = uppers;
-//std::cout << "c,r: " << colCommunicatorRank << ","<< rowCommunicatorRank<< " - lower predecessor created here.\n";
-
-            }
-        }
-    }
-
-}
 
 
 
@@ -1169,7 +863,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 #ifdef _COMPRESSION
 
-                int * restrict vectorizedsize = NULL;
+                int *vectorizedsize = NULL;
                 err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
                 if (err) {
                     throw "Memory error.";
@@ -1231,7 +925,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 compressionType *compressed_fq = NULL;
                 FQ_T *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
-                int * restrict vectorizedsize = NULL;
+                int *vectorizedsize = NULL;
                 err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
                 if (err) {
                     throw "Memory error.";
@@ -1316,22 +1010,22 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 
 
-/*
-            int err, err1, err2;
 
-            int32_t * restrict sizes = NULL;
-            int32_t * restrict disps = NULL;
-            err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-            err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-            if (err1 || err2) {
-                throw "Memory error.";
-            }
-            int32_t psize;
-            int32_t maskLengthRes;
-            int32_t lastTargetNode;
-            uint32_t lastReversedSliceIDs;
-*/
 
+            /**
+             *
+             *
+             * non finished wortk to perform compression in allReduceBitCompressed()
+             *
+             * idea: predecessor vector can not be compressed because  ist high entropy (randomness)
+             * so, apply the compression to FQ instead. After that, broadcast the bitmaps and let each processor
+             * build the full predecessor List (including other node's)
+             *
+             * the call has been placed here so FQ is distributed (compressed) by the row communication's code
+             * the full goal is to be able to remove the lines below allReduceBitCompressed(). including (and specially)
+             * the MPI_allgatherv
+             */
+            /*
             const int32_t psize = static_cast<int32_t>(mask_size);
             const int32_t bsize = psize * colCommunicatorSize;
             const int64_t boffset = psize * colCommunicatorRank;
@@ -1354,16 +1048,29 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
             MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                     fullFrontierQmap, psize, bm_type, col_comm);
 
-
-
-            allReduceBitCompressed(predecessor, fq_64, owenmask, tmpmask);
-
-
             delete[] fullFrontierQmap;
             delete[] fullPredecessorQmap;
             delete[] fullPredecessorQ;
 
-/*
+            */
+            allReduceBitCompressed(predecessor, fq_64, owenmask, tmpmask);
+
+
+            int err1, err2;
+
+            int32_t *sizes = NULL;
+            int32_t *disps = NULL;
+            err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+            err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+            if (err1 || err2) {
+                throw "Memory error.";
+            }
+            int32_t psize;
+            int32_t maskLengthRes;
+            int32_t lastTargetNode;
+            uint32_t lastReversedSliceIDs;
+
+
             psize = static_cast<int32_t>(mask_size);
             maskLengthRes = psize % (1 << intLdSize);
             lastReversedSliceIDs = 0U;
@@ -1392,7 +1099,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
             MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                             predecessor, sizes, disps, fq_tp_type, col_comm);
-*/
+
 
 #ifdef _SCOREP_USER_INSTRUMENTATION
             SCOREP_USER_REGION_END(allReduceBC_handle)
