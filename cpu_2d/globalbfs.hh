@@ -958,9 +958,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 tstart = MPI_Wtime();
 #endif
 
-                if (!finishedBFS) {
-                    static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
-                }
+                static_cast<Derived *>(this)->setIncommingFQ(it->startvtx, it->size, fq_64, originalsize);
 
 #ifdef INSTRUMENTED
                 lqueue += MPI_Wtime() - tstart;
