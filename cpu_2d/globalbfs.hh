@@ -717,16 +717,17 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
              *
              * test if everything is done.
              */
-            anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
+//            anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
 
 #ifdef INSTRUMENTED
             lqueue += MPI_Wtime() - tstart;
 #endif
 
-            MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
 
-            if (!anynewnodes_global)
-            {
+//            MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+
+//            if (!anynewnodes_global)
+//            {
 
                 /**
                  *
@@ -738,8 +739,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                  *
                  */
 
-                finishedBFS = true;
-            }
+//                finishedBFS = true;
+ //           }
         }
 
 // 4) global expansion
@@ -983,6 +984,47 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
             }
         }
 
+
+
+
+//----
+
+
+#ifdef INSTRUMENTED
+        tstart = MPI_Wtime();
+#endif
+
+        static_cast<Derived *>(this)->setBackInqueue();
+
+
+        anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
+        if (!anynewnodes) {
+            std::cout << "no\n";
+        } else {
+            std::cout << "yes\n";
+        }
+
+
+            MPI_Allreduce(&anynewnodes, &anynewnodes_global, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+
+            if (!anynewnodes_global)
+            {
+
+                /**
+                 *
+                 *
+                 *
+                 * End of BFS iteration. Pass predecessors to main() for Verification()
+                 * processed at the end of the while-loop
+                 *
+                 *
+                 */
+
+                finishedBFS = true;
+            }
+
+
+
         if (finishedBFS) {
 
             /**
@@ -1119,20 +1161,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 
 #ifdef INSTRUMENTED
-        tstart = MPI_Wtime();
-#endif
-
-        static_cast<Derived *>(this)->setBackInqueue();
-
-
-        anynewnodes = static_cast<Derived *>(this)->istheresomethingnew();
-        if (!anynewnodes) {
-            std::cout << "no\n";
-        } else {
-            std::cout << "yes\n";
-        }
-
-#ifdef INSTRUMENTED
         tend = MPI_Wtime();
         lqueue += tend - tstart;
 #endif
@@ -1144,6 +1172,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #ifdef _SCOREP_USER_INSTRUMENTATION
         SCOREP_USER_REGION_END(rowCommunication_handle)
 #endif
+
+
+
         /**
          *
          *
