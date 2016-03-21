@@ -55,7 +55,6 @@ class GlobalBFS
 private:
     MPI_Comm row_comm, col_comm;
     //int rank;
-    int err, err1, err2;
     // sending node column slice, startvtx, size
     vector <typename STORE::fold_prop> fold_fq_props;
 
@@ -855,10 +854,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #ifdef _COMPRESSION
 
                 int *vectorizedsize = NULL;
-                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
-                if (err) {
-                    throw "Memory error.";
-                }
+                posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
+
                 vectorizedsize[0] = originalsize;
                 vectorizedsize[1] = compressedsize;
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
@@ -917,18 +914,14 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 FQ_T *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
                 int *vectorizedsize = NULL;
-                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
-                if (err) {
-                    throw "Memory error.";
-                }
+                posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
+
 
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
                 originalsize = vectorizedsize[0];
                 compressedsize = vectorizedsize[1];
-                err = posix_memalign((void **)&compressed_fq, ALIGNMENT, compressedsize * sizeof(compressionType));
-                if (err) {
-                    throw "Memory error.";
-                }
+                posix_memalign((void **)&compressed_fq, ALIGNMENT, compressedsize * sizeof(compressionType));
+
 
                 // note: fq_64 buffer has been alloceted in the children class.
                 // In case of CUDA, it has been allocated using cudaMalloc. In that case,
@@ -1046,15 +1039,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
             allReduceBitCompressed(predecessor, fq_64, owenmask, tmpmask);
 
 
-            int err1, err2;
-
             int32_t *sizes = NULL;
             int32_t *disps = NULL;
-            err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-            err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-            if (err1 || err2) {
-                throw "Memory error.";
-            }
+            posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+            posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+
             int32_t psize;
             int32_t maskLengthRes;
             int32_t lastTargetNode;
@@ -1214,15 +1203,11 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
         allReduceBitCompressed(predecessor, fq_64, owenmask, tmpmask);
 
 
-        int err1, err2;
-
         int32_t *sizes = NULL;
         int32_t *disps = NULL;
-        err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-        err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-        if (err1 || err2) {
-            throw "Memory error.";
-        }
+        posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+        posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+
         int32_t psize;
         int32_t maskLengthRes;
         int32_t lastTargetNode;

@@ -82,6 +82,9 @@ enum GGen
  *
  */
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
                               int &graph_gen, int &gpus, double &queue_sizing, string &compressionCodec, int &compressionThreshold);
@@ -955,3 +958,4 @@ statistic getStatistics(vector <T> &input)
     return out;
 }
 
+#pragma GCC diagnostic pop

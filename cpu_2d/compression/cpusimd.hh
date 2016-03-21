@@ -75,11 +75,8 @@ inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t &size, T_
         compressedsize = size;
         T_C * restrict fq_32 = NULL;
 
-        const int err1 = posix_memalign((void **)&fq_32, ALIGNMENT, size * sizeof(T_C));
-        const int err2 = posix_memalign((void **)compressed_fq_32, ALIGNMENT, size * sizeof(T_C));
-        if (err1 || err2) {
-            throw "Memory error.";
-        }
+        posix_memalign((void **)&fq_32, ALIGNMENT, size * sizeof(T_C));
+        posix_memalign((void **)compressed_fq_32, ALIGNMENT, size * sizeof(T_C));
 
 #ifndef _COMPRESSIONDEBUG
         // test overflow
@@ -107,10 +104,8 @@ inline void CpuSimd<T, T_C>::compress(T * restrict fq_64, const size_t &size, T_
          * Buffer will not be compressed (Small size. Not worthed)
          */
 
-        const int err = posix_memalign((void **)compressed_fq_32, ALIGNMENT, size * sizeof(T_C));
-        if (err) {
-            throw "Memory error.";
-        }
+        posix_memalign((void **)compressed_fq_32, ALIGNMENT, size * sizeof(T_C));
+
 
         for (size_t i = 0U; i < size; ++i)
         {
@@ -130,21 +125,14 @@ inline void CpuSimd<T, T_C>::decompress(T_C * restrict compressed_fq_32, const i
         T_C * restrict compressed_fq_32_tmp = NULL;
         T_C * restrict uncompressed_fq_32 = NULL;
 
-        const int err1 = posix_memalign((void **)&compressed_fq_32_tmp, ALIGNMENT, size * sizeof(T_C));
-        const int err2 = posix_memalign((void **)&uncompressed_fq_32, ALIGNMENT, uncompressedsize * sizeof(T_C));
-        if (err1 || err2)
-        {
-            throw "Memory error.";
-        }
+        posix_memalign((void **)&compressed_fq_32_tmp, ALIGNMENT, size * sizeof(T_C));
+        posix_memalign((void **)&uncompressed_fq_32, ALIGNMENT, uncompressedsize * sizeof(T_C));
+
         memcpy(compressed_fq_32_tmp, compressed_fq_32, size * sizeof(T_C));
 
         codec.decodeArray(compressed_fq_32_tmp, size, uncompressed_fq_32, uncompressedsize);
 
-        const int err3 = posix_memalign((void **)uncompressed_fq_64, ALIGNMENT, uncompressedsize * sizeof(T));
-        if (err3)
-        {
-            throw "Memory error.";
-        }
+        posix_memalign((void **)uncompressed_fq_64, ALIGNMENT, uncompressedsize * sizeof(T));
 
         for (size_t i = 0UL; i < uncompressedsize; ++i)
         {
@@ -157,11 +145,8 @@ inline void CpuSimd<T, T_C>::decompress(T_C * restrict compressed_fq_32, const i
     else
     {
         uncompressedsize = size;
-        const int err = posix_memalign((void **)uncompressed_fq_64, ALIGNMENT, uncompressedsize * sizeof(T));
-        if (err)
-        {
-            throw "Memory error.";
-        }
+        posix_memalign((void **)uncompressed_fq_64, ALIGNMENT, uncompressedsize * sizeof(T));
+
 
         for (size_t i = 0U; i < uncompressedsize; ++i)
         {

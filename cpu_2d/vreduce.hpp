@@ -60,10 +60,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     T *uncompressed_fq = NULL;
     T_C *compressed_fq = NULL;
     T_C *compressed_recv_buff = NULL;
-    int err;
 #endif
 
-    int err1, err2;
 
 //time mesurement
 #ifdef INSTRUMENTED
@@ -212,10 +210,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 
                 T_C * restrict temporal_recv_buff = NULL;
-                err = posix_memalign((void **)&temporal_recv_buff, ALIGNMENT, lowerId * sizeof(T_C));
-                if (err) {
-                        throw "memory error.";
-                }
+                posix_memalign((void **)&temporal_recv_buff, ALIGNMENT, lowerId * sizeof(T_C));
+
 
                 MPI_Sendrecv(compressed_fq, compressedsize, typeC,
                          previousRank, it + 2,
@@ -314,10 +310,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                              col_comm, MPI_STATUS_IGNORE);
 
                 T_C * restrict temporal_recv_buff = NULL;
-                err = posix_memalign((void **)&temporal_recv_buff, ALIGNMENT, upperId * sizeof(T_C));
-                if (err) {
-                        throw "memory error.";
-                }
+                posix_memalign((void **)&temporal_recv_buff, ALIGNMENT, upperId * sizeof(T_C));
 
                 MPI_Sendrecv(compressed_fq, compressedsize, typeC,
                          previousRank, it + 2,
@@ -408,21 +401,15 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     int32_t * restrict sizes;
     int32_t * restrict disps;
 
-    err1 = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-    err2 = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-    if (err1 || err2) {
-        throw "Memory error.";
-    }
+    posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+    posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
 
 #ifdef _COMPRESSION
     int32_t * restrict compressed_sizes;
     int32_t * restrict compressed_disps;
 
-    err1 = posix_memalign((void **)&compressed_sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-    err2 = posix_memalign((void **)&compressed_disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-    if (err1 || err2) {
-        throw "Memory error.";
-    }
+    posix_memalign((void **)&compressed_sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+    posix_memalign((void **)&compressed_disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
 
     uint32_t lastReversedSliceIDs = 0UL;
     int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -435,8 +422,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     int32_t * restrict composed_recv;
     int32_t * restrict composed_send;
 
-    err1 = posix_memalign((void **)&composed_recv, ALIGNMENT, 2U * colCommunicatorSize * sizeof(int32_t));
-    err2 = posix_memalign((void **)&composed_send, ALIGNMENT, 2U * sizeof(int32_t));
+    posix_memalign((void **)&composed_recv, ALIGNMENT, 2U * colCommunicatorSize * sizeof(int32_t));
+    posix_memalign((void **)&composed_send, ALIGNMENT, 2U * sizeof(int32_t));
 
     composed_send[0U] = psizeTo;
     composed_send[1U] = compressedsize;
@@ -479,10 +466,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
-    err = posix_memalign((void **)&compressed_recv_buff, ALIGNMENT, csize * sizeof(T_C));
-    if (err) {
-        throw "Memory error.";
-    }
+    posix_memalign((void **)&compressed_recv_buff, ALIGNMENT, csize * sizeof(T_C));
 
 #else
     // Transmission of the subslice sizes

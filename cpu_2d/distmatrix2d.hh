@@ -881,10 +881,7 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     // allocate receive buffer
     // packed_edge *coltransBuf = (packed_edge *) malloc(numberOfEdges * sizeof(packed_edge));
     packed_edge *coltransBuf = NULL;
-    const int err1 = posix_memalign((void **)&coltransBuf, ALIGNMENT, numberOfEdges * sizeof(packed_edge));
-    if (err1) {
-        throw "Memory error.";
-    }
+    posix_memalign((void **)&coltransBuf, ALIGNMENT, numberOfEdges * sizeof(packed_edge));
 
     // transmit data
     MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, coltransBuf, other_size, other_offset,
@@ -954,10 +951,8 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     // allocate receive buffer
     // packed_edge *rowtransBuf = (packed_edge *) malloc(other_offset[C] * sizeof(packed_edge));
     packed_edge *rowtransBuf = NULL;
-    const int err2 = posix_memalign((void **)&rowtransBuf, ALIGNMENT, other_offset[C] * sizeof(packed_edge));
-    if (err2) {
-        throw "Memory error.";
-    }
+    posix_memalign((void **)&rowtransBuf, ALIGNMENT, other_offset[C] * sizeof(packed_edge));
+
 
     // transmit data
     MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, rowtransBuf, other_size, other_offset,
