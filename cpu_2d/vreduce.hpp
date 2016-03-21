@@ -41,7 +41,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
              const Compression<T, T_C> &schema,
              MPI_Datatype typeC,
 #endif
-             T * recv_buff, /* Out */
+             T * restrict recv_buff, /* Out */
              int &rsize, /* Out */ // size of the final result
              int ssize,  // size of the slice
              MPI_Datatype type,

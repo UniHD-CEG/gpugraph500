@@ -27,10 +27,10 @@ private:
 public:
     CpuSimd();
     void debugCompression(T *fq, const size_t size) const;
-    inline void compress(T *fq_64, const size_t &size, T_C **compressed_fq_64, size_t &compressedsize) const ;
+    inline void compress(T *f restrict q_64, const size_t &size, T_C ** restrict compressed_fq_64, size_t &compressedsize) const ;
     inline void decompress(T_C *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
-    void verifyCompression(const T *fq, const T *uncompressed_fq_64, size_t uncompressedsize) const;
+    void verifyCompression(const T * restrict fq, const T * restrict uncompressed_fq_64, size_t uncompressedsize) const;
     inline bool isCompressed(const size_t originalsize, const size_t compressedsize) const;
     inline string name() const;
     void reconfigure(int compressionThreshold, string compressionCodec);

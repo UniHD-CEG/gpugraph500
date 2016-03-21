@@ -59,10 +59,8 @@ private:
     // sending node column slice, startvtx, size
     vector <typename STORE::fold_prop> fold_fq_props;
 
-    void allReduceBitCompressed(typename STORE::vertexType *&owen, typename STORE::vertexType *tmp,
-                                MType *owenmap, MType *tmpmap);
-    void allReduceBitCompressed_dup(typename STORE::vertexType *&owen, typename STORE::vertexType *tmp,
-                                MType *owenmap, MType *tmpmap);
+    void allReduceBitCompressed(typename STORE::vertexType *& restrict owen, typename STORE::vertexType * restrict tmp,
+                                MType * restrict owenmap, MType * restrict tmpmap);
 
 protected:
     const STORE &store;
@@ -234,9 +232,9 @@ typename STORE::vertexType *GlobalBFS<Derived, FQ_T, MType, STORE>::getPredecess
  */
 
 template<typename Derived, typename FQ_T, typename MType, typename STORE>
-void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vertexType *&predecessorQ,
-        typename STORE::vertexType *frontierQ, MType *predecessorQmap,
-        MType *frontierQmap)
+void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STORE::vertexType *& restrict predecessorQ,
+        typename STORE::vertexType * restrict frontierQ, MType * restrict predecessorQmap,
+        MType * restrict frontierQmap)
 {
     static int colCommunicatorSize, colCommunicatorRank, rowCommunicatorSize, rowCommunicatorRank;
     MPI_Comm_size(col_comm, &colCommunicatorSize);
@@ -304,15 +302,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             MPI_Sendrecv(predecessorQmap, psize, bm_type, colCommunicatorRank + 1, 0, frontierQmap, psize, bm_type, colCommunicatorRank + 1, 0,
                          col_comm, &status);
 
-            for (int32_t i = 0; i < psize; ++i)
+            for (int32_t i = 0L; i < psize; ++i)
             {
                 frontierQmap[i] &= ~predecessorQmap[i];
                 predecessorQmap[i] |= frontierQmap[i];
             }
             MPI_Recv(frontierQ, store.getLocColLength(), fq_tp_type, colCommunicatorRank + 1, 1, col_comm, &status);
             // set recived elements where the bit maps indicate it
-            int32_t p = 0;
-            for (int32_t i = 0; i < psize; ++i)
+            int32_t p = 0L;
+            for (int32_t i = 0L; i < psize; ++i)
             {
                 MType frontierQm = frontierQmap[i];
                 const int32_t size = i * mtypesize;
@@ -330,12 +328,12 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
             MPI_Sendrecv(predecessorQmap, psize, bm_type, colCommunicatorRank - 1, 0, frontierQmap, psize, bm_type, colCommunicatorRank - 1, 0,
                          col_comm, &status);
 
-            for (int32_t i = 0; i < psize; ++i)
+            for (int32_t i = 0L; i < psize; ++i)
             {
                 frontierQmap[i] = ~frontierQmap[i] & predecessorQmap[i];
             }
-            int32_t p = 0;
-            for (int32_t i = 0; i < psize; ++i)
+            int32_t p = 0L;
+            for (int32_t i = 0L; i < psize; ++i)
             {
                 MType frontierQm = frontierQmap[i];
                 const int32_t size = i * mtypesize;
@@ -385,7 +383,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 #ifdef _OPENMP
                 #pragma omp parallel for
 #endif
-                for (int32_t i = 0; i < lowers; ++i)
+                for (int32_t i = 0L; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
                     frontierQmap[iOffset] &= ~predecessorQmap[iOffset];
@@ -404,8 +402,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
                 //Generation of foreign updates
                 // uppers: ~65k iteractions per MPI node (scale 22, 16 gpus)
-                int32_t p = 0;
-                for (int32_t i = 0; i < uppers; ++i)
+                int32_t p = 0L;
+                for (int32_t i = 0L; i < uppers; ++i)
                 {
                     const int32_t iOffset = i + offset;
                     const int32_t iOffsetLowers = iOffset + lowers;
@@ -427,16 +425,16 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
                              col_comm, &status);
 
                 //Updates for own data
-                p = 0;
+                p = 0L;
                 // lowers: ~65k iteractions per MPI node (scale 22, 16 gpus)
-                for (int32_t i = 0; i < lowers; ++i)
+                for (int32_t i = 0L; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
                     const int32_t index = iOffset * mtypesize;
                     MType frontierQm = frontierQmap[iOffset];
                     while (frontierQm != 0U)
                     {
-                        int32_t last = ffsl(frontierQm) - 1;
+                        int32_t last = ffsl(frontierQm) - 1L;
                         predecessorQ[index + last] = frontierQ[p];
                         ++p;
                         frontierQm ^= (1U << last);
@@ -459,7 +457,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 #ifdef _OPENMP
                 #pragma omp parallel for
 #endif
-                for (int32_t i = 0; i < lowers; ++i)
+                for (int32_t i = 0L; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
                     frontierQmap[iOffset] = (~frontierQmap[iOffset]) & predecessorQmap[iOffset];
@@ -478,15 +476,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
                 // Generation of foreign updates
                 // inner p: ~50k iteractions per MPI node (scale 22, 16 gpus)
-                int32_t p = 0;
-                for (int32_t i = 0; i < lowers; ++i)
+                int32_t p = 0L;
+                for (int32_t i = 0L; i < lowers; ++i)
                 {
                     const int32_t iOffset = i + offset;
                     const int32_t iOffsetMtype = iOffset * mtypesize;
                     MType frontierQm = frontierQmap[iOffset];
                     while (frontierQm != 0U)
                     {
-                        const int32_t last = ffsl(frontierQm) - 1;
+                        const int32_t last = ffsl(frontierQm) - 1L;
                         frontierQ[p] = predecessorQ[iOffsetMtype + last];
                         ++p;
                         frontierQm ^= (1U << last);
@@ -502,15 +500,15 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::allReduceBitCompressed(typename STO
 
                 //Updates for own data
                 // inner p: ~50k iteractions per MPI node (scale 22, 16 gpus)
-                p = 0;
-                for (int32_t i = 0; i < uppers; ++i)
+                p = 0L;
+                for (int32_t i = 0L; i < uppers; ++i)
                 {
                     const int32_t iOffset = offset + lowers + i;
                     const int32_t lindex = iOffset * mtypesize;
                     MType frontierQm = frontierQmap[iOffset];
                     while (frontierQm != 0U)
                     {
-                        const int32_t last = ffsl(frontierQm) - 1;
+                        const int32_t last = ffsl(frontierQm) - 1L;
                         predecessorQ[lindex + last] = frontierQ[p + size];
                         ++p;
                         frontierQm ^= (1U << last);
