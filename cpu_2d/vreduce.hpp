@@ -53,7 +53,7 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
             )
 {
 
-    int colCommunicatorSize, colCommunicatorRank, previousRank;
+    int colCommunicatorSize, colCommunicatorRank, rowCommunicatorSize, rowCommunicatorRank, previousRank;
 
 #ifdef _COMPRESSION
     size_t compressedsize, uncompressedsize;
@@ -74,6 +74,10 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     //step 1
     MPI_Comm_size(col_comm, &colCommunicatorSize);
     MPI_Comm_rank(col_comm, &colCommunicatorRank);
+
+    MPI_Comm_size(row_comm, &rowCommunicatorSize);
+    MPI_Comm_rank(row_comm, &rowCommunicatorRank);
+
     const int32_t intLdSize = ilogb(static_cast<float>(colCommunicatorSize)); //integer log_2 of size
     const int32_t power2intLdSize = 1 << intLdSize;
     const int32_t residuum = colCommunicatorSize - (1 << intLdSize);
