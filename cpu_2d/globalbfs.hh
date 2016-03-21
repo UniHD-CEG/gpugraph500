@@ -1361,7 +1361,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
             delete[] fullFrontierQmap;
             delete[] fullPredecessorQmap;
-            //delete[] fullPredecessorQ;
+            delete[] fullPredecessorQ;
 
 /*
             psize = static_cast<int32_t>(mask_size);
