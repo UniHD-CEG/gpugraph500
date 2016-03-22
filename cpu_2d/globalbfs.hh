@@ -35,7 +35,7 @@ using namespace std::chrono;
 #endif
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result" 
+#pragma GCC diagnostic ignored "-Wunused-result"
 
 using std::function;
 using std::min;
@@ -629,8 +629,9 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
      *
      * empty. available for allBitmapCompressed() bitmap. Run-Length Encoding codec family recommended here
      */
+#ifdef _COMPRESSION
     bitmapSchema.init();
-
+#endif
 
 
 
@@ -1261,6 +1262,6 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
 }
 
-#pragma GCC diagnostic pop 
+#pragma GCC diagnostic pop
 
 #endif // GLOBALBFS_HH
