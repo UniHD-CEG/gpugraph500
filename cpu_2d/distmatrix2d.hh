@@ -22,6 +22,10 @@
 #include <parallel/algorithm>
 #endif
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result" 
+
+
 // WOLO: without local offset; ALG: vertex alligment; PAD: pad the row slices, so that they are equal
 template<typename vertextyp, typename rowoffsettyp, bool WOLO = false, int64_t ALG = 1LL, bool PAD = false>
 class DistMatrix2d
@@ -32,6 +36,7 @@ public:
 
     const static bool WOLOFF = WOLO;
 private:
+    int err;
 
     int64_t R; //Row slices
     int64_t C; //Column slices
@@ -881,7 +886,8 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     // allocate receive buffer
     // packed_edge *coltransBuf = (packed_edge *) malloc(numberOfEdges * sizeof(packed_edge));
     packed_edge *coltransBuf = NULL;
-    posix_memalign((void **)&coltransBuf, ALIGNMENT, numberOfEdges * sizeof(packed_edge));
+    err = posix_memalign((void **)&coltransBuf, ALIGNMENT, numberOfEdges * sizeof(packed_edge));
+    _unused(err);
 
     // transmit data
     MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, coltransBuf, other_size, other_offset,
@@ -951,8 +957,9 @@ void DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::setupMatrix2(packed_
     // allocate receive buffer
     // packed_edge *rowtransBuf = (packed_edge *) malloc(other_offset[C] * sizeof(packed_edge));
     packed_edge *rowtransBuf = NULL;
-    posix_memalign((void **)&rowtransBuf, ALIGNMENT, other_offset[C] * sizeof(packed_edge));
+    err = posix_memalign((void **)&rowtransBuf, ALIGNMENT, other_offset[C] * sizeof(packed_edge));
 
+    _unused(err); 
 
     // transmit data
     MPI_Alltoallv(input, owen_send_size, owen_offset, packedEdgeMPI, rowtransBuf, other_size, other_offset,
@@ -1363,4 +1370,5 @@ bool DistMatrix2d<vertextyp, rowoffsettyp, WOLO, ALG, PAD>::allValuesPositive() 
 }
 #endif
 
+#pragma GCC diagnostic pop
 #endif // DISTMATRIX2D_HH

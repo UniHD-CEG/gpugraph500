@@ -82,8 +82,6 @@ enum GGen
  *
  */
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
 
 void externalArgumentsIterate(int argc, char *const *argv, int64_t &scale, int64_t &edgefactor,
                               int64_t &num_of_iterations, int64_t &verbosity, int &R, int &C, bool &R_set, bool &C_set,
@@ -115,6 +113,10 @@ void externalArgumentsVerify(bool R_set, bool C_set, int size, int &R, int &C);
 
 int main(int argc, char **argv)
 {
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+
     int64_t scale = 21;
     int64_t edgefactor = 16;
     int64_t num_of_iterations = 64;
@@ -568,6 +570,8 @@ int main(int argc, char **argv)
     }
     delete[] compressionCodecBuffer;
     MPI_Finalize();
+
+#pragma GCC diagnostic pop
 }
 
 
@@ -958,4 +962,3 @@ statistic getStatistics(vector <T> &input)
     return out;
 }
 
-#pragma GCC diagnostic pop

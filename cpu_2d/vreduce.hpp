@@ -28,7 +28,10 @@
 using std::function;
 using std::is_sorted;
 
+static int err;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
 
 #ifdef _COMPRESSION
 template <typename T, typename T_C>
@@ -210,8 +213,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 
 
                 T_C * restrict temporal_recv_buff = NULL;
-                posix_memalign((void **)&temporal_recv_buff, ALIGNMENT, lowerId * sizeof(T_C));
-
+                err = posix_memalign((void **)&temporal_recv_buff, ALIGNMENT, lowerId * sizeof(T_C));
+		_unused(err);
 
                 MPI_Sendrecv(compressed_fq, compressedsize, typeC,
                          previousRank, it + 2,
@@ -310,7 +313,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
                              col_comm, MPI_STATUS_IGNORE);
 
                 T_C * restrict temporal_recv_buff = NULL;
-                posix_memalign((void **)&temporal_recv_buff, ALIGNMENT, upperId * sizeof(T_C));
+                err = posix_memalign((void **)&temporal_recv_buff, ALIGNMENT, upperId * sizeof(T_C));
+		_unused(err);
 
                 MPI_Sendrecv(compressed_fq, compressedsize, typeC,
                          previousRank, it + 2,
@@ -401,15 +405,17 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     int32_t * restrict sizes;
     int32_t * restrict disps;
 
-    posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-    posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+    err = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+    err = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+    _unused(err);
 
 #ifdef _COMPRESSION
     int32_t * restrict compressed_sizes;
     int32_t * restrict compressed_disps;
 
-    posix_memalign((void **)&compressed_sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-    posix_memalign((void **)&compressed_disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+    err = posix_memalign((void **)&compressed_sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+    err = posix_memalign((void **)&compressed_disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+    _unused(err);
 
     uint32_t lastReversedSliceIDs = 0UL;
     int32_t lastTargetNode = oldRank(lastReversedSliceIDs);
@@ -422,8 +428,9 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     int32_t * restrict composed_recv;
     int32_t * restrict composed_send;
 
-    posix_memalign((void **)&composed_recv, ALIGNMENT, 2U * colCommunicatorSize * sizeof(int32_t));
-    posix_memalign((void **)&composed_send, ALIGNMENT, 2U * sizeof(int32_t));
+    err = posix_memalign((void **)&composed_recv, ALIGNMENT, 2U * colCommunicatorSize * sizeof(int32_t));
+    err = posix_memalign((void **)&composed_send, ALIGNMENT, 2U * sizeof(int32_t));
+    _unused(err);
 
     composed_send[0U] = psizeTo;
     composed_send[1U] = compressedsize;
@@ -466,7 +473,8 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
     csize = compressed_disps[lastTargetNode] + compressed_sizes[lastTargetNode];
     rsize = disps[lastTargetNode] + sizes[lastTargetNode];
 
-    posix_memalign((void **)&compressed_recv_buff, ALIGNMENT, csize * sizeof(T_C));
+    err = posix_memalign((void **)&compressed_recv_buff, ALIGNMENT, csize * sizeof(T_C));
+    _unused(err); 
 
 #else
     // Transmission of the subslice sizes
@@ -534,4 +542,6 @@ void vreduce(const function <void(T, long, T *, int)> &reduce,
 #endif
 
 }
+#pragma GCC diagnostic pop
+
 #endif // VREDUCE_HPP

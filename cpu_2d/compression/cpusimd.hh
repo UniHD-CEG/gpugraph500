@@ -1,7 +1,6 @@
 #ifndef BFS_MULTINODE_CPUSIMD_COMPRESSION_H
 #define BFS_MULTINODE_CPUSIMD_COMPRESSION_H
 
-#ifdef _SIMD
 
 #include "compression.hh"
 #include "codecfactory.h"
@@ -9,6 +8,8 @@
 #include <chrono>
 #include "../constants.hh"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
 
 using namespace std::chrono;
 using namespace SIMDCompressionLib;
@@ -27,7 +28,7 @@ private:
 public:
     CpuSimd();
     void debugCompression(T *fq, const size_t size) const;
-    inline void compress(T *f restrict q_64, const size_t &size, T_C ** restrict compressed_fq_64, size_t &compressedsize) const ;
+    inline void compress(T * restrict fq_64, const size_t &size, T_C ** restrict compressed_fq_64, size_t &compressedsize) const ;
     inline void decompress(T_C *compressed_fq_64, const int size,
                     /*Out*/ T **uncompressed_fq_64, /*In Out*/size_t &uncompressedsize) const;
     void verifyCompression(const T * restrict fq, const T * restrict uncompressed_fq_64, size_t uncompressedsize) const;
@@ -182,5 +183,6 @@ void CpuSimd<T, T_C>::init() const
 {
 }
 
-#endif // _SIMD
+#pragma GCC diagnostic pop 
+
 #endif // BFS_MULTINODE_CPUSIMD_COMPRESSION_H

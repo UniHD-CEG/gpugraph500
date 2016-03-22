@@ -34,6 +34,8 @@ using namespace std::chrono;
 #include "compression/types_compression.h"
 #endif
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result" 
 
 using std::function;
 using std::min;
@@ -854,7 +856,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 #ifdef _COMPRESSION
 
                 int *vectorizedsize = NULL;
-                posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
+                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
 
                 vectorizedsize[0] = originalsize;
                 vectorizedsize[1] = compressedsize;
@@ -914,14 +916,13 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
                 FQ_T *uncompressed_fq = NULL;
                 int originalsize, compressedsize;
                 int *vectorizedsize = NULL;
-                posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
+                err = posix_memalign((void **)&vectorizedsize, ALIGNMENT, 2 * sizeof(int));
 
 
                 MPI_Bcast(vectorizedsize, 1, MPI_2INT, root_rank, row_comm);
                 originalsize = vectorizedsize[0];
                 compressedsize = vectorizedsize[1];
-                posix_memalign((void **)&compressed_fq, ALIGNMENT, compressedsize * sizeof(compressionType));
-
+                err = posix_memalign((void **)&compressed_fq, ALIGNMENT, compressedsize * sizeof(compressionType));
 
                 // note: fq_64 buffer has been alloceted in the children class.
                 // In case of CUDA, it has been allocated using cudaMalloc. In that case,
@@ -1041,8 +1042,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
             int32_t *sizes = NULL;
             int32_t *disps = NULL;
-            posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-            posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+	    err = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+            err = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
 
             int32_t psize;
             int32_t maskLengthRes;
@@ -1205,8 +1206,8 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
 
         int32_t *sizes = NULL;
         int32_t *disps = NULL;
-        posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
-        posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+        err = posix_memalign((void **)&sizes, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
+        err = posix_memalign((void **)&disps, ALIGNMENT, colCommunicatorSize * sizeof(int32_t));
 
         int32_t psize;
         int32_t maskLengthRes;
@@ -1259,4 +1260,7 @@ void GlobalBFS<Derived, FQ_T, MType, STORE>::runBFS(typename STORE::vertexType s
     }
 
 }
+
+#pragma GCC diagnostic pop 
+
 #endif // GLOBALBFS_HH
