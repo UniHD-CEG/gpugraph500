@@ -7,10 +7,10 @@ fi
 
 gpus=(1)
 #scale factors
-msize=(15 16 17 18 19 20 21 22 23)
+#msize=(15)
+msize=(15 16 17 18 19 20 21 22 23 24 25 26 27)
 #square root of nodes
-snodes=(1 2 3 4)
-#5 6 7 8)
+snodes=(1 2 3 4 5 6 7 8)
 #snodes=(1)
 #BTR
 btrs=(64)
@@ -22,9 +22,9 @@ for g500 in "${g500ver[@]}"
 do
 echo "Copying over a new g500 version, $g500ver"
 cd ../cpu_2d/
-cp -f g500_versions/${g500ver} g500
+cp -f g500_versions/${g500} g500
 cd -
-log="${g500ver}_mar16"
+log="${g500}_mar16"
 
 for msc in ${msize[@]}
 do 
@@ -39,8 +39,10 @@ do
           maxsf=21
         elif [ x"$i" = "x2" ]; then
           maxsf=22
-        else
+        elif [ x"$i" = "x3" ]; then
           maxsf=23
+        else
+          maxsf=27
         fi
 
         if [ "$msc" -le "$maxsf" ]; then
