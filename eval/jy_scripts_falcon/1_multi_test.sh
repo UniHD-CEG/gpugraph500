@@ -8,11 +8,10 @@ fi
 gpus=(1)
 #scale factors
 #msize=(15)
-#msize=(15 16 17 18 19 20 21 22 23 24 25 26 27)
-msize=(25 26 27)
+msize=(15 16 17 18 19 20 21 22 23 24 25 26 27)
 #square root of nodes
-#snodes=(1 2 3 4 5 6 7 8)
-snodes=(3 4)
+snodes=(1 2 3 4 5 6 7 8)
+#snodes=(3 4)
 #BTR
 btrs=(64)
 #btcs=(128 256 512)
