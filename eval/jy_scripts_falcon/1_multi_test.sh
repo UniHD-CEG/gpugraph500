@@ -8,10 +8,11 @@ fi
 gpus=(1)
 #scale factors
 #msize=(15)
-msize=(15 16 17 18 19 20 21 22 23 24 25 26 27)
+#msize=(15 16 17 18 19 20 21 22 23 24 25 26 27)
+msize=(25 26 27)
 #square root of nodes
-snodes=(1 2 3 4 5 6 7 8)
-#snodes=(1)
+#snodes=(1 2 3 4 5 6 7 8)
+snodes=(3 4)
 #BTR
 btrs=(64)
 #btcs=(128 256 512)
@@ -36,11 +37,15 @@ do
         
         #Restrict max scale factor based on node count
         if [ x"$i" = "x1" ]; then
-          maxsf=21
-        elif [ x"$i" = "x2" ]; then
           maxsf=22
-        elif [ x"$i" = "x3" ]; then
+        elif [ x"$i" = "x2" ]; then
           maxsf=23
+        elif [ x"$i" = "x3" ]; then
+          maxsf=25
+        elif [ x"$i" = "x4" ]; then
+          maxsf=25
+        elif [ x"$i" = "x5" ]; then
+          maxsf=26
         else
           maxsf=27
         fi
