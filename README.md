@@ -449,10 +449,12 @@ Disable with:
 $ export G500_ENABLE_RUNTIME_SCALASCA=no
 ```
 
-# Author
+# Authors
 
 Computer Engineering Group at Ruprecht-Karls University of Heidelberg
+
 and
+
 School of Computer Science at Georgia Institute of Technology
 
 # License
