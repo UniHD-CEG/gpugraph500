@@ -75,7 +75,6 @@ $ make
 ## Run (using SLURM)
 
 ```
-$ cd bfs_multinode
 $ cd eval
 $ sbatch o16p8n.rsh 22 # (Replace 22 with Scale Factor)
 ```
@@ -139,7 +138,9 @@ The variable `G500_ENABLE_RUNTIME_SCALASCA` set to yes will enable the required 
 See TurboPFOR in Resources
 
 ## instrumentation
-Results will be stored on a folder with format `scorep-*` in the `/eval` folder.
+Results will be stored on folders with the format `scorep-*`.
+
+Possible ways of instrumenting:
 
 * The provided `scripts/Profiling/Statistics.sh` script. The options must be changed inside the script. Text output
 
