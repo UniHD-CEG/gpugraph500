@@ -392,7 +392,7 @@ Report bugs to the package provider.
 * -C Number - (2^SCALE_FACTOR) - This is also the value used in the the -np flag of ´mpirun´
 * -gpus Number - Number of GPUs per node. Currently, only the value 1 is fully tested.
 * -qs Number - Queue size as in B40C implementation, from 1 to 2 (e.g. 1.3).
-* -be "Codec" - Codec used when compression is enabled (--enable-compression)
+* -be "Codec" - [Codec](#codecs-currently-supported-by-the-gpugraph500-binary) used when compression is enabled (--enable-compression)
 * -btc Number - Row Threshoold number: Frontier queue minimum size at which compression would start. Allows disabling compression for small queue sizes.
 
 e.g. `g500 -s 22 -C 4 -gpus 1 -qs 1.1 -be "s4-bp128-d4" -btc 64`
