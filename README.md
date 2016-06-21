@@ -15,6 +15,7 @@
   - [build options](#build-options)
   - [codecs currently supported by the gpugraph500 binary](#codecs-currently-supported-by-the-gpugraph500-binary)
 - [Troubleshooting](#troubleshooting)
+- [Future work](#future-work)
 - [Author](#author)
 - [License](#license)
 - [Resources](#resources)
@@ -443,7 +444,11 @@ Computer Engineering Group at Ruprecht-Karls University of Heidelberg
 
 Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of Heidelberg, Germany. All rights reserved. Licensed under GNU/GPL version 3 https://www.gnu.org/licenses/gpl-3.0
 
+# Future work
 
+* Embed the [compression routines](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/compression.hh#L16) in the [communication module](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L536) (e.g lambda functions). The [current implementation](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/compression.hh#L15) does not allow code inlining by the Linker (due to the use of the `virtual` keyword).
+
+* Remove [types convertion](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd.hh#L93) in the compression calls (Using a [PFOR compression GPU implementation?)[https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/gpusimt/cudacompress.cu#L196]).
 
 # Resources
 [D. Lemire's SIMDCompression](https://github.com/lemire/SIMDCompressionAndIntersection)
