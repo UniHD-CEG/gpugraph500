@@ -28,7 +28,7 @@
 Recent research projects have investigated partitioning, acceleration, and data reduction techniques for improving the performance of Breadth First Search (BFS) and the related HPC benchmark, Graph500. However, few implementations have focused on cloud-based systems like Amazon's Web Services, which differ from HPC systems in several ways, most importantly in terms of network interconnect.
 
 
-This work looks at optimizations to reduce the communication overhead of an accelerated, distributed BFS on an HPC system and a smaller cloud-like system that contains GPUs. We demonstrate the effects of an efficient 2D partitioning scheme and allreduce implementation, as well as different CPU-based compression schemes for reducing the overall amount of data shared between nodes. Timing and Score-P profiling results demonstrate a dramatic reduction in row and column frontier queue data (up to 91\%) and show how compression can improve performance for a bandwidth-limited cluster.
+This work looks at optimizations to reduce the communication overhead of an accelerated, distributed BFS on an HPC system and a smaller cloud-like system that contains GPUs. We demonstrate the effects of an efficient 2D partitioning scheme and allreduce implementation, as well as different CPU-based compression schemes for reducing the overall amount of data shared between nodes. Timing and Score-P profiling results demonstrate a dramatic reduction in row and column frontier queue data (up to 91%) and show how compression can improve performance for a bandwidth-limited cluster.
 
 
 
@@ -59,7 +59,7 @@ $ cd gpugraph500
 ```
 
 # Build
-The code to compile is in the folder `cpu_2d/`. to build the binary:
+The code to compile is in the folder `cpu_2d/`. To build the binary:
 
 First build: (or when editing `configure.ac`)
 
@@ -77,14 +77,14 @@ $ ./configure --enable-aggressive-optimizations --enable-ptxa-optimizations  --d
 $ make
 ```
 
-(1) for options, run `./configure --help`
+(1) for further help, run `./configure --help`
 
 # Run
 
 ## Run (using SLURM)
 
 ```
-$ cd eval
+$ cd eval/
 $ sbatch o16p8n.rsh 22 # (Replace 22 with Scale Factor)
 ```
 
@@ -94,6 +94,7 @@ $ sbatch o16p8n.rsh 22 # (Replace 22 with Scale Factor)
 $ cd cpu_2d/
 $ mpirun -np 16 ../cpu_2d/g500 -s 22 -C 4 -gpus 1 -qs 2 -be "s4-bp128-d4" -btr 64 -btc 64 # available codecs listed below
 ```
+See a full description of the [options](#execution-options) below.
 
 runs a test with 16 proccesses in 8 nodes, using Scale Factor 21
 
