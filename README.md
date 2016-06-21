@@ -14,6 +14,7 @@
   - [instrumentation](#instrumentation)
 - [Options](#options)
   - [build options](#build-options)
+  - [execution options](#execution-options)
   - [codecs currently supported by the gpugraph500 binary](#codecs-currently-supported-by-the-gpugraph500-binary)
 - [Troubleshooting](#troubleshooting)
 - [Future work](#future-work)
@@ -26,7 +27,7 @@
 - C compiler. C++ Compiler with c++11 support.
 - An MPI implementation: OpenMPI (MPICH2 is not supported)
 - To use CUDA-BFS or CUDA-compression: CUDA 6+ support.
-- To use SIMD compression: SSE2 support (SEE4 support recommended)
+- To use SIMD compression: SSE2 support (SSE4+ support recommended)
 - To use SIMD+ compression SSE2 support. (Optional)
 - Scalasca (Score-P) and CUBE4+ for instrumentation and profiling (Optional)
 - System packages: `libtool`, `automake`
@@ -267,7 +268,7 @@ Optional Features:
                           default)
   --enable-other-basic-profiling
                           It is related with instrumentation. Displays
-                          graph500 default statistics. (Enabled by default)
+                          gpugraph500 default statistics. (Enabled by default)
   --enable-scorep         It is related with instrumentation. Enables
                           instrumentation with Scalasca/ScoreP. ScoreP must be
                           detected by ./configure. (Disabled by default)]
@@ -410,7 +411,7 @@ it to find libraries and programs with nonstandard names/locations.
 Report bugs to the package provider.
 ```
 
-## Execution options
+## execution options
 * -s Number - (SCALE_FACTOR)
 * -C Number - (2^SCALE_FACTOR) - This is also the value used in the the -np flag of ´mpirun´
 * -gpus Number - Number of GPUs per node. Currently, only the value 1 is fully tested.
@@ -441,6 +442,8 @@ $ export G500_ENABLE_RUNTIME_SCALASCA=no
 # Author
 
 Computer Engineering Group at Ruprecht-Karls University of Heidelberg
+and
+School of Computer Science at Georgia Institute of Technology
 
 # License
 - Duane Merrill's BC40 (back40computing) is licenced under [Apache 2 Licence.](https://github.com/UniHD-CEG/gpugraph500/tree/master/b40c/LICENSE.TXT)
@@ -462,3 +465,4 @@ Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of H
 [TurboPFOR SIMDCompression and Codec Benchmarking tool](https://github.com/powturbo/TurboPFor)
 
 [Alenka's CUDA–PFOR Compression](https://github.com/antonmks/Alenka/blob/master/compress.cu)
+
