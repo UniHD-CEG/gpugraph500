@@ -214,9 +214,7 @@ Computer Engineering Group at Ruprecht-Karls University of Heidelberg
 - Alenka GPU database engine is licensed under Apache 2 License.
 
 
-Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of Heidelberg, Germany. All rights reserved.
-
-Licensed under GNU/GPL version 3 https://www.gnu.org/licenses/gpl-3.0
+Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of Heidelberg, Germany. All rights reserved. Licensed under GNU/GPL version 3 https://www.gnu.org/licenses/gpl-3.0
 
 
 
