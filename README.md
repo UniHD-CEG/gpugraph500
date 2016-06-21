@@ -82,14 +82,14 @@ $ sbatch o16p8n.rsh 22 # (Replace 22 with Scale Factor)
 ## Run (using MPI)
 
 ```
-$ # ---- In cpu_2d directory ----:
+$ cd cpu_2d/
 $ mpirun -np 16 ../cpu_2d/g500 -s 22 -C 4 -gpus 1 -qs 2 -be "s4-bp128-d4" -btr 64 -btc 64 # available codecs listed below
 ```
 
 runs a test with 16 proccesses in 8 nodes, using Scale Factor 21
 
 # Profiling
-This application allows the code to be instrumented in zones using Score-P (Scalasca) with very low overhead.
+This application allows the code to be instrumented in zones using Score-P (Scalasca) with low overhead.
 
 ## zones
 The names of the instrumented zones are listed below.
@@ -144,7 +144,7 @@ Possible ways of instrumenting:
 
 * The provided `scripts/Profiling/Statistics.sh` script. The options must be changed inside the script. Text output
 
-* Manually using CUBE (text output)
+* Using CUBE (text output)
 ```
 $HOME/cube/bin/cube_stat -p -m time  -r BFSRUN_region_Compression,BFSRUN_region_Decompression,CPUSIMD_region_encode,BFSRUN_region_vreduceCompr,BFSRUN_region_vreduceDecompr profile.cubex
 ```
