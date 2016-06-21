@@ -1,5 +1,4 @@
-<!-- TOC depth:6 withLinks:1 updateOnSave:1 orderedList:0 -->
-
+# Table Of Contents
 - [Requirements](#requirements)
 - [Installation](#installation)
   - [Download and decompress:](#download-and-decompress)
@@ -21,8 +20,6 @@
 - [Author](#author)
 - [License](#license)
 - [Resources](#resources)
-- <!-- /TOC -->
-
 
 # Requirements
 - C compiler. C++ Compiler with c++11 support.
@@ -95,15 +92,15 @@ This application allows the code to be instrumented in zones using Score-P (Scal
 The names of the instrumented zones are listed below.                           
 
 Zone (label)                      | Explanation
---------------------------------- | :------------------------------------------------------------:
-BFSRUN_region_vertexBroadcast     | Initial vertices broadcast (No compression implemented)
-BFSRUN_region_localExpansion      | Predecessor List Reduction (No compression implemented)
-BFSRUN_region_columnCommunication | Column communication phase (Implemented Compression)
-BFSRUN_region_rowCommunication    | Row communication phase (Implemented Compression)
-BFSRUN_region_Compression         | Row Compression (type convertions + Compression encoding)
-BFSRUN_region_Decompression       | Row Compression (type convertions + Decompression encoding)
-CPUSIMD_region_encode             | Compression or decompression encoding
-BFSRUN_region_vreduceCompr        | Column Compression (type convertions + Compression encoding)
+--------------------------------- | -------------------------------------------------------------:
+BFSRUN_region_vertexBroadcast     |        Initial vertices broadcast (No compression implemented)
+BFSRUN_region_localExpansion      |        Predecessor List Reduction (No compression implemented)
+BFSRUN_region_columnCommunication |           Column communication phase (Implemented Compression)
+BFSRUN_region_rowCommunication    |              Row communication phase (Implemented Compression)
+BFSRUN_region_Compression         |      Row Compression (type convertions + Compression encoding)
+BFSRUN_region_Decompression       |    Row Compression (type convertions + Decompression encoding)
+CPUSIMD_region_encode             |                          Compression or decompression encoding
+BFSRUN_region_vreduceCompr        |   Column Compression (type convertions + Compression encoding)
 BFSRUN_region_vreduceDecompr      | Column Compression (type convertions + Decompression encoding)
 
 ## System variables
@@ -168,7 +165,7 @@ See TurboPFOR in Resources
 ## codecs currently supported by the gpugraph500 binary
 
 Lemire's SIMDCompression codecs | Notes
-------------------------------- | :-----------------------------------:
+------------------------------- | ------------------------------------:
 varintg8iu                      |
 fastpfor                        |
 varint                          |
@@ -187,11 +184,11 @@ ibp32                           |
 s4-bp128-d1-ni                  |
 s4-bp128-d2-ni                  |
 s4-bp128-d4-ni                  |
-s4-bp128-dm                     | Codec used as default
+s4-bp128-dm                     |                 Codec used as default
 s4-bp128-d1                     |
 s4-bp128-d2                     |
 s4-bp128-d4                     |
-for                             | Original FOR
+for                             |                          Original FOR
 
 # Troubleshooting
 - Q: In the .out file of Slurm/ Sbatch execution I get the text:
