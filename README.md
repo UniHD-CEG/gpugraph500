@@ -4,6 +4,7 @@
   - [downloading and decompressing:](#downloading-and-decompressing)
   - [using git](#using-git)
 - [Build](#build)
+- [Run](#run)
   - [Run (using SLURM)](#run-using-slurm)
   - [Run (using MPI)](#run-using-mpi)
 - [Profiling](#profiling)
@@ -64,6 +65,8 @@ $ make
 ```
 
 (1) for options, run `./configure --help`
+
+# Run
 
 ## Run (using SLURM)
 
