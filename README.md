@@ -209,10 +209,13 @@ $ export G500_ENABLE_RUNTIME_SCALASCA=no
 Computer Engineering Group at Ruprecht-Karls University of Heidelberg
 
 # License
-- Duane Merrill's BC40 (back40computing) is licenced under [Apache 2.0 Licence.](https://github.com/UniHD-CEG/gpugraph500/tree/master/b40c/LICENSE.TXT)
-- SIMDcompressionAndIntersection is licenced under [Apache 2.0 Licence.](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd/LICENSE)
+- Duane Merrill's BC40 (back40computing) is licenced under [Apache 2 Licence.](https://github.com/UniHD-CEG/gpugraph500/tree/master/b40c/LICENSE.TXT)
+- SIMDcompressionAndIntersection is licenced under [Apache 2 Licence.](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd/LICENSE)
+- Alenka GPU database engine is licensed under Apache 2 License.
+
 
 Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of Heidelberg, Germany. All rights reserved.
+
 Licensed under GNU/GPL version 3 https://www.gnu.org/licenses/gpl-3.0
 
 
