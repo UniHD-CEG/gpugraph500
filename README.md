@@ -1,25 +1,24 @@
 # Table Of Contents
+<!-- TOC depth:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 - [Requirements](#requirements)
 - [Installation](#installation)
-  - [Download and decompress:](#download-and-decompress)
-  - [Using git](#using-git)
-
+  - [downloading and decompressing:](#downloading-and-decompressing)
+  - [using git](#using-git)
 - [Build](#build)
   - [Run (using SLURM)](#run-using-slurm)
   - [Run (using MPI)](#run-using-mpi)
-
 - [Profiling](#profiling)
-- [Zones](#zones)
-  - [System variables](#system-variables)
-
-- [Codec Benchmarking tool](#codec-benchmarking-tool)
+  - [zones](#zones)
+  - [system variables](#system-variables)
+  - [compression benchmarking tool](#compression-benchmarking-tool)
 - [Options](#options)
   - [codecs currently supported by the gpugraph500 binary](#codecs-currently-supported-by-the-gpugraph500-binary)
-
 - [Troubleshooting](#troubleshooting)
 - [Author](#author)
 - [License](#license)
 - [Resources](#resources)
+<!-- /TOC -->
+
 
 # Requirements
 - C compiler. C++ Compiler with c++11 support.
@@ -31,7 +30,7 @@
 - System packages: `libtool`, `automake`
 
 # Installation
-## Download and decompress:
+## downloading and decompressing:
 
 ```
 $ mkdir gpugraph500
@@ -40,7 +39,7 @@ $ wget https://github.com/UniHD-CEG/gpugraph500/archive/master.zip
 $ unzip master.zip
 ```
 
-## Using git
+## using git
 
 ```
 $ git clone https://github.com/UniHD-CEG/gpugraph500.git
@@ -50,7 +49,7 @@ $ cd gpugraph500
 # Build
 The code to compile is in the folder `cpu_2d/`. to build the binary:
 
-First build (or when file configure.ac is modified)  
+First build: (or when editing `configure.ac`)  
 
 ```
 $ cd cpu_2d
@@ -58,7 +57,7 @@ $ ./autogen.sh # ./configure options: (1)
 $ make
 ```
 
-Consecutive builds  
+Consecutive builds:  
 
 ```
 $ cd cpu_2d
@@ -88,7 +87,7 @@ runs a test with 16 proccesses in 8 nodes, using Scale Factor 21
 # Profiling
 This application allows the code to be instrumented in zones using Score-P (Scalasca) with very low overhead.
 
-# Zones
+## zones
 The names of the instrumented zones are listed below.                           
 
 Zone (label)                      | Explanation
@@ -103,7 +102,7 @@ CPUSIMD_region_encode             |                          Compression or deco
 BFSRUN_region_vreduceCompr        |   Column Compression (type convertions + Compression encoding)
 BFSRUN_region_vreduceDecompr      | Column Compression (type convertions + Decompression encoding)
 
-## System variables
+## system variables
 The following example asumes an installation of CUBE and scalasca in `$HOME/cube` and `$HOME/scorep`
 
 ```
@@ -158,7 +157,7 @@ $ cd eval/scorep-____FOLDER_NAME____
 $ scorep-score -r profile.cubex
 ```
 
-# Codec Benchmarking tool
+## compression benchmarking tool
 See TurboPFOR in Resources
 
 # Options
