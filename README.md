@@ -45,10 +45,9 @@ This work looks at optimizations to reduce the communication overhead of an acce
 ## downloading and decompressing:
 
 ```
-$ mkdir gpugraph500
-$ cd gpugraph500
 $ wget https://github.com/UniHD-CEG/gpugraph500/archive/master.zip
 $ unzip master.zip
+$ cd gpugraph500-master
 ```
 
 ## using git
@@ -389,7 +388,7 @@ Report bugs to the package provider.
 
 ## execution options
 * -s Number - (SCALE_FACTOR)
-* -C Number - (2^SCALE_FACTOR) - This is also the value used in the the -np flag of ´mpirun´
+* -C Number - (2^SCALE_FACTOR) - This is also the value used in the the -np flag of `mpirun`
 * -gpus Number - Number of GPUs per node. Currently, only the value 1 is fully tested.
 * -qs Number - Queue size as in B40C implementation, from 1 to 2 (e.g. 1.3).
 * -be "Codec" - [Codec](#codecs-currently-supported-by-the-gpugraph500-binary) used when compression is enabled (--enable-compression)
@@ -406,7 +405,6 @@ S=C=A=N: Abort: No SCOREP instrumentation found in target ../cpu_2d/g500
 ```
 
 - A:
-
 The instrumentation is activated for the runtime execution (i.e: the binary is being run prefixed with scalasca).
 
 Disable with:
@@ -427,7 +425,7 @@ School of Computer Science at Georgia Institute of Technology
 - Alenka GPU database engine is licensed under [Apache 2 License.](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/gpusimt/cudacompress.cu)
 
 
-Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of Heidelberg, Germany. All rights reserved. Licensed under GNU/GPL version 3 https://www.gnu.org/licenses/gpl-3.0
+Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of Heidelberg, Germany. All rights reserved. Licensed under GNU/GPL version 3 -  https://www.gnu.org/licenses/gpl-3.0
 
 # Future work
 
