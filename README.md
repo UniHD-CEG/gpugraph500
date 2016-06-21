@@ -1,3 +1,29 @@
+<!-- TOC depth:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+  - [Download and decompress:](#download-and-decompress)
+  - [Using git](#using-git)
+
+- [Build](#build)
+  - [Run (using SLURM)](#run-using-slurm)
+  - [Run (using MPI)](#run-using-mpi)
+
+- [Profiling](#profiling)
+- [Zones](#zones)
+  - [System variables](#system-variables)
+
+- [Codec Benchmarking tool](#codec-benchmarking-tool)
+- [Options](#options)
+  - [codecs currently supported by the gpugraph500 binary](#codecs-currently-supported-by-the-gpugraph500-binary)
+
+- [Troubleshooting](#troubleshooting)
+- [Author](#author)
+- [License](#license)
+- [Resources](#resources)
+- <!-- /TOC -->
+
+
 # Requirements
 - C compiler. C++ Compiler with c++11 support.
 - An MPI implementation: OpenMPI (MPICH2 is not supported)
@@ -139,31 +165,34 @@ $ scorep-score -r profile.cubex
 See TurboPFOR in Resources
 
 # Options
-## Available compression codecs (Lemire's SIMDCompression lib)
-### varintg8iu
-### fastpfor
-### varint
-### vbyte
-### maskedvbyte
-### streamvbyte
-### frameofreference
-### simdframeofreference
-### varintgb
-### s4-fastpfor-d4
-### s4-fastpfor-dm
-### s4-fastpfor-d1
-### s4-fastpfor-d2
-### bp32
-### ibp32
-### s4-bp128-d1-ni
-### s4-bp128-d2-ni
-### s4-bp128-d4-ni
-### s4-bp128-dm
-### s4-bp128-d1
-### s4-bp128-d2
-### s4-bp128-d4
-### s4-bp128-dm
-### for
+## codecs currently supported by the gpugraph500 binary
+
+Lemire's SIMDCompression codecs | Notes
+------------------------------- | :-----------------------------------:
+varintg8iu                      |
+fastpfor                        |
+varint                          |
+vbyte                           |
+maskedvbyte                     |
+streamvbyte                     |
+frameofreference                |
+simdframeofreference            |
+varintgb                        | Based on a talk by Jeff Dean (Google)
+s4-fastpfor-d4                  |
+s4-fastpfor-dm                  |
+s4-fastpfor-d1                  |
+s4-fastpfor-d2                  |
+bp32                            |
+ibp32                           |
+s4-bp128-d1-ni                  |
+s4-bp128-d2-ni                  |
+s4-bp128-d4-ni                  |
+s4-bp128-dm                     | Codec used as default
+s4-bp128-d1                     |
+s4-bp128-d2                     |
+s4-bp128-d4                     |
+for                             | Original FOR
+
 # Troubleshooting
 - Q: In the .out file of Slurm/ Sbatch execution I get the text:
 
