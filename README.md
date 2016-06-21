@@ -221,8 +221,6 @@ Licensed under GNU/GPL version 3 https://www.gnu.org/licenses/gpl-3.0
 
 
 # Resources
-[OpenSource R suite: RStudio](https://www.rstudio.com/products/RStudio/)
-
 [D. Lemire's SIMDCompression](https://github.com/lemire/SIMDCompressionAndIntersection)
 
 [TurboPFOR SIMDCompression and Codec Benchmarking tool](https://github.com/powturbo/TurboPFor)
