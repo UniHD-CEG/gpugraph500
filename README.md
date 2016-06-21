@@ -1,4 +1,5 @@
 # Table Of Contents
+- [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Installation](#installation)
   - [downloading and decompressing:](#downloading-and-decompressing)
@@ -21,6 +22,14 @@
 - [Author](#author)
 - [License](#license)
 - [Resources](#resources)
+
+
+# Introduction
+Recent research projects have investigated partitioning, acceleration, and data reduction techniques for improving the performance of Breadth First Search (BFS) and the related HPC benchmark, Graph500. However, few implementations have focused on cloud-based systems like Amazon's Web Services, which differ from HPC systems in several ways, most importantly in terms of network interconnect.
+
+
+This work looks at optimizations to reduce the communication overhead of an accelerated, distributed BFS on an HPC system and a smaller cloud-like system that contains GPUs. We demonstrate the effects of an efficient 2D partitioning scheme and allreduce implementation, as well as different CPU-based compression schemes for reducing the overall amount of data shared between nodes. Timing and Score-P profiling results demonstrate a dramatic reduction in row and column frontier queue data (up to 91\%) and show how compression can improve performance for a bandwidth-limited cluster.
+
 
 
 # Requirements
