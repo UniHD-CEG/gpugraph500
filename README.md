@@ -203,7 +203,7 @@ for                             |                          Original FOR
 
 ## build options
 ```
-`configure' configures g500 1.1 to adapt to many kinds of systems.
+`configure' configures gpugraph500 1.0 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -235,27 +235,6 @@ an installation prefix other than `/usr/local' using `--prefix',
 for instance `--prefix=$HOME'.
 
 For better control, use the options below.
-
-Fine tuning of the installation directories:
-  --bindir=DIR            user executables [EPREFIX/bin]
-  --sbindir=DIR           system admin executables [EPREFIX/sbin]
-  --libexecdir=DIR        program executables [EPREFIX/libexec]
-  --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
-  --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
-  --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --libdir=DIR            object code libraries [EPREFIX/lib]
-  --includedir=DIR        C header files [PREFIX/include]
-  --oldincludedir=DIR     C header files for non-gcc [/usr/include]
-  --datarootdir=DIR       read-only arch.-independent data root [PREFIX/share]
-  --datadir=DIR           read-only architecture-independent data [DATAROOTDIR]
-  --infodir=DIR           info documentation [DATAROOTDIR/info]
-  --localedir=DIR         locale-dependent data [DATAROOTDIR/locale]
-  --mandir=DIR            man documentation [DATAROOTDIR/man]
-  --docdir=DIR            documentation root [DATAROOTDIR/doc/g500]
-  --htmldir=DIR           html documentation [DOCDIR]
-  --dvidir=DIR            dvi documentation [DOCDIR]
-  --pdfdir=DIR            pdf documentation [DOCDIR]
-  --psdir=DIR             ps documentation [DOCDIR]
 
 Program names:
   --program-prefix=PREFIX            prepend PREFIX to installed program names
@@ -311,20 +290,8 @@ Optional Features:
                           (Disabled by default)
   --enable-aggressive-optimizations
                           It is related with optimizations. Enables aggressive
-                          compiler optimizations on the compiler. These
-                          optimizations have been tested and work fine.
-                          Disable if your executable fails or hangs. (Disabled
+                          compiler optimizations on the compiler. (Disabled
                           by default)
-  --enable-vector-optimizations
-                          It is related with optimizations. Auto-aligns
-                          allocated memory depending on the detected processor
-                          capabilities. Adds hints to the compiler when data
-                          is not self-dependant, so the compiler can
-                          autovectorize that data. The run afterwards using hw
-                          SIMD instructions. These optimizations have been
-                          tested and work fine. Disable if your executable
-                          fails or hangs. Not fully implemented. (Enabled by
-                          default)
   --enable-openmp         It is related with optimizations. Enables or
                           disables both --enable-cuda-openmp and
                           --enable-general-openmp. This option overrides both
@@ -335,16 +302,15 @@ Optional Features:
   --enable-general-openmp It is related with optimizations. Selects whether
                           OpenMP will be enabled. This option applies to
                           general C and C++ files. (Disabled by default)
-  --enable-cuda           It is related with optimizations. Use the CUDA
-                          implementation of the BFS runs. Requires NVIDIA
-                          hardware support. (Enabled by default)
+  --enable-cuda           Use the CUDA implementation of the BFS runs.
+                          Requires NVIDIA hardware support. (Enabled by default)
   --enable-ptxa-optimizations
                           It is related with optimizations. Selects whether
                           CUDA assembly (PTXAS) will be optimized or not. This
                           option will only be used if --enable-cuda is present
                           (default). The default PTXAS optimization is -O3.
                           (Disabled by default)
-  --enable-nvidia-architecture=<fermi|kepler|auto|detect>
+  --enable-nvidia-architecture= fermi|kepler|auto|detect
                           It is related with optimizations.. Selects the
                           NVIDIA target architecture. Requires --enable-cuda
                           to be selected (default). Default option is
@@ -360,11 +326,11 @@ Optional Features:
   --enable-portable-binary
                           disable compiler optimizations that would produce
                           unportable binaries
-  --enable-cc-warnings=<no|minimum|yes|maximum|error>
+  --enable-cc-warnings= no|minimum|yes|maximum|error
                           Turn on C compiler warnings. Default selection si
                           maximum
   --enable-iso-c          Try to warn if code is not ISO C
-  --enable-cxx-warnings=<no|minimum|yes|maximum|error>
+  --enable-cxx-warnings= no|minimum|yes|maximum|error
                           Turn on C++ compiler warnings. Default selection is
                           maximum
   --enable-iso-cxx        Try to warn if code is not ISO C++
@@ -452,9 +418,7 @@ $ export G500_ENABLE_RUNTIME_SCALASCA=no
 # Authors
 
 Computer Engineering Group at Ruprecht-Karls University of Heidelberg
-
 and
-
 School of Computer Science at Georgia Institute of Technology
 
 # License
