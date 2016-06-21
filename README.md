@@ -145,7 +145,7 @@ The variable `G500_ENABLE_RUNTIME_SCALASCA` set to yes will enable the required 
 
 
 ## compression benchmarking tool
-See TurboPFOR in Resources
+See TurboPFOR in [Resources](#resources)
 
 ## instrumentation
 Results will be stored on folders with the format `scorep-*`.
@@ -316,10 +316,9 @@ Optional Features:
                           NVIDIA target architecture. Requires --enable-cuda
                           to be selected (default). Default option is
                           'detect'. In case detection does not succeed 'all'
-                          mode is selected. Detect mode is not fully
-                          implemented
-  --enable-debug          It is related with debugging. Provides extra traces
-                          at runtime. (Disabled by default)
+                          mode is selected.
+  --enable-debug          Provides extra traces at runtime. (Disabled by
+                          default)
   --enable-debugging      It is related with debugging. Enables -g option on
                           compiler (debugging). (Disabled by default)
   --enable-quiet          It is related with debugging. Disable compile
@@ -328,7 +327,7 @@ Optional Features:
                           disable compiler optimizations that would produce
                           unportable binaries
   --enable-cc-warnings= no|minimum|yes|maximum|error
-                          Turn on C compiler warnings. Default selection si
+                          Turn on C compiler warnings. Default selection is
                           maximum
   --enable-iso-c          Try to warn if code is not ISO C
   --enable-cxx-warnings= no|minimum|yes|maximum|error
@@ -394,7 +393,7 @@ Report bugs to the package provider.
 * -gpus Number - Number of GPUs per node. Currently, only the value 1 is fully tested.
 * -qs Number - Queue size as in B40C implementation, from 1 to 2 (e.g. 1.3).
 * -be "Codec" - Codec used when compression is enabled (--enable-compression)
-* -btc Number - Row Threshoold number: Frontier Queue minimun length from which compression starts working. Avoids compression for small queues.
+* -btc Number - Row Threshoold number: Frontier queue minimum size at which compression would start. Allows disabling compression for small queue sizes.
 
 e.g. `g500 -s 22 -C 4 -gpus 1 -qs 1.1 -be "s4-bp128-d4" -btc 64`
 
