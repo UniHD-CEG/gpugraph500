@@ -11,6 +11,7 @@
   - [zones](#zones)
   - [system variables](#system-variables)
   - [compression benchmarking tool](#compression-benchmarking-tool)
+  - [instrumentation](#instrumentation)
 - [Options](#options)
   - [build options](#build-options)
   - [codecs currently supported by the gpugraph500 binary](#codecs-currently-supported-by-the-gpugraph500-binary)
@@ -132,36 +133,32 @@ EOF
 
 The variable `G500_ENABLE_RUNTIME_SCALASCA` set to yes will enable the required runtime instrumentor of Scalasca.
 
-Results will be stored on a folder with format `scorep-*` in the `/eval` folder.
-
-To instrument graphically with CUBE run:
-
-```
-$ cd eval/scorep-____FOLDER_NAME____
-$ cube profile.cubex
-```
-
-To instrument through the console run either:
-
-* The provided `scripts/Profiling/Statistics.sh` script. The options must be changed inside the script.
-
-* Manually using CUBE:
-
-```
-$HOME/cube/bin/cube_stat -p -m time  -r BFSRUN_region_Compression,BFSRUN_region_Decompression,CPUSIMD_region_encode,BFSRUN_region_vreduceCompr,BFSRUN_region_vreduceDecompr profile.cubex
-```
-
-Flag -m <time|bytes_sent>
-
-* Manually using scorep-score
-
-```
-$ cd eval/scorep-____FOLDER_NAME____
-$ scorep-score -r profile.cubex
-```
 
 ## compression benchmarking tool
 See TurboPFOR in Resources
+
+## instrumentation
+Results will be stored on a folder with format `scorep-*` in the `/eval` folder.
+
+* The provided `scripts/Profiling/Statistics.sh` script. The options must be changed inside the script. Text output
+
+* Manually using CUBE (text output)
+```
+$HOME/cube/bin/cube_stat -p -m time  -r BFSRUN_region_Compression,BFSRUN_region_Decompression,CPUSIMD_region_encode,BFSRUN_region_vreduceCompr,BFSRUN_region_vreduceDecompr profile.cubex
+```
+Flag -m in ´cube_stat´ may be set to: time or bytes_sent
+
+
+* Using scorep-score (text ouptut)
+```
+$ scorep-score -r [zone1,zone2,zone3....] profile.cubex
+```
+
+* Using CUBE (graphical interface)
+```
+$ $HOME/cube/bin/cube profile.cubex
+```
+
 
 # Options
 ## codecs currently supported by the gpugraph500 binary
