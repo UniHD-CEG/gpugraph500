@@ -23,7 +23,7 @@
 - An MPI implementation: OpenMPI (MPICH2 is not supported)
 - To use CUDA-BFS or CUDA-compression: CUDA 6+ support.
 - To use SIMD compression: SSE2 support (SEE4 support recommended)
-- To use SIMD+ compression SSE2 support.  
+- To use SIMD+ compression SSE2 support.
 - Scalasca(Score-P) and CUBE4+ for instrumentation and profiling
 - System packages: `libtool`, `automake`
 
@@ -47,7 +47,7 @@ $ cd gpugraph500
 # Build
 The code to compile is in the folder `cpu_2d/`. to build the binary:
 
-First build: (or when editing `configure.ac`)  
+First build: (or when editing `configure.ac`)
 
 ```
 $ cd cpu_2d
@@ -55,7 +55,7 @@ $ ./autogen.sh # ./configure options: (1)
 $ make
 ```
 
-Consecutive builds:  
+Consecutive builds:
 
 ```
 $ cd cpu_2d
@@ -80,13 +80,13 @@ $ # ---- In cpu_2d directory ----:
 $ mpirun -np 16 ../cpu_2d/g500 -s 22 -C 4 -gpus 1 -qs 2 -be "s4-bp128-d4" -btr 64 -btc 64 # available codecs listed below
 ```
 
-runs a test with 16 proccesses in 8 nodes, using Scale Factor 21  
+runs a test with 16 proccesses in 8 nodes, using Scale Factor 21
 
 # Profiling
 This application allows the code to be instrumented in zones using Score-P (Scalasca) with very low overhead.
 
 ## zones
-The names of the instrumented zones are listed below.                           
+The names of the instrumented zones are listed below.
 
 Zone (label)                      | Explanation
 --------------------------------- | -------------------------------------------------------------:
@@ -205,12 +205,17 @@ $ export G500_ENABLE_RUNTIME_SCALASCA=no
 ```
 
 # Author
-Rupretch-karls University of Heidelberg
+
+Computer Engineering Group at Ruprecht-Karls University of Heidelberg
 
 # License
-- This code contains a subset of Duane Merrill's BC40 repository of GPU-related functions, including his BFS implementation used in the paper, Scalable Graph Traversals.
-- SIMDcompressionAndIntersection is licenced under Apache Licence 2.0.
-- All copyrights reserved to their original owners.
+- Duane Merrill's BC40 (back40computing) is licenced under [Apache 2.0 Licence.](https://github.com/UniHD-CEG/gpugraph500/tree/master/b40c/LICENSE.TXT)
+- SIMDcompressionAndIntersection is licenced under [Apache 2.0 Licence.](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd/LICENSE)
+
+Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of Heidelberg, Germany. All rights reserved.
+Licensed under GNU/GPL version 3 https://www.gnu.org/licenses/gpl-3.0
+
+
 
 # Resources
 [OpenSource R suite: RStudio](https://www.rstudio.com/products/RStudio/)
