@@ -414,12 +414,12 @@ Report bugs to the package provider.
 ```
 
 ## Execution options
-* -s <number> SCALE_FACTOR
-* -C <number> (2^SCALE_FACTOR). This is also the value used in the the -np flag of ´mpirun´
-* -gpus <number> (Number of GPUs per node. Currently, only the value 1 fully tested.
-* -qs <number> . Queue size as in B40C implementation, from 1 to 2 (e.g. 1.3).
-* -be <"codec"> Codec used when compression is enabled (--enable-compression)
-* -btc [number] Row Threshoold number: Frontier Queue minimun length from which compression starts working. Avoids compression for small queues.
+* -s Number - (SCALE_FACTOR)
+* -C Number - (2^SCALE_FACTOR) - This is also the value used in the the -np flag of ´mpirun´
+* -gpus Number - Number of GPUs per node. Currently, only the value 1 fully tested.
+* -qs Number - Queue size as in B40C implementation, from 1 to 2 (e.g. 1.3).
+* -be "Codec" - Codec used when compression is enabled (--enable-compression)
+* -btc Number - Row Threshoold number: Frontier Queue minimun length from which compression starts working. Avoids compression for small queues.
 
 e.g. `g500 -s 22 -C 4 -gpus 1 -qs 2 -be "s4-bp128-d4" -btc 64`
 
