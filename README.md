@@ -1,5 +1,4 @@
 # Table Of Contents
-<!-- TOC depth:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 - [Requirements](#requirements)
 - [Installation](#installation)
   - [downloading and decompressing:](#downloading-and-decompressing)
@@ -17,7 +16,6 @@
 - [Author](#author)
 - [License](#license)
 - [Resources](#resources)
-<!-- /TOC -->
 
 
 # Requirements
