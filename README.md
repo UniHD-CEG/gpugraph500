@@ -2,7 +2,7 @@
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Installation](#installation)
-  - [downloading and decompressing:](#downloading-and-decompressing)
+  - [downloading and decompressing](#downloading-and-decompressing)
   - [using git](#using-git)
 - [Build](#build)
 - [Run](#run)
@@ -42,7 +42,7 @@ This work looks at optimizations to reduce the communication overhead of an acce
 - System packages: `libtool`, `automake`
 
 # Installation
-## downloading and decompressing:
+## downloading and decompressing
 
 ```
 $ wget https://github.com/UniHD-CEG/gpugraph500/archive/master.zip
@@ -108,15 +108,15 @@ The names of the instrumented zones are listed below.
 
 Zone (label)                      | Explanation
 --------------------------------- | -------------------------------------------------------------:
-BFSRUN_region_vertexBroadcast     |        Initial vertices broadcast (No compression implemented)
-BFSRUN_region_localExpansion      |        Predecessor List Reduction (No compression implemented)
-BFSRUN_region_columnCommunication |           Column communication phase (Implemented Compression)
-BFSRUN_region_rowCommunication    |              Row communication phase (Implemented Compression)
-BFSRUN_region_Compression         |      Row Compression (type convertions + Compression encoding)
-BFSRUN_region_Decompression       |    Row Compression (type convertions + Decompression encoding)
-CPUSIMD_region_encode             |                          Compression or decompression encoding
-BFSRUN_region_vreduceCompr        |   Column Compression (type convertions + Compression encoding)
-BFSRUN_region_vreduceDecompr      | Column Compression (type convertions + Decompression encoding)
+BFSRUN_region_vertexBroadcast     |        Initial vertices broadcast (No compression)
+BFSRUN_region_localExpansion      |        Predecessor List Reduction (No compression)
+BFSRUN_region_columnCommunication |           Column communication phase (Compression)
+BFSRUN_region_rowCommunication    |              Row communication phase (Compression)
+BFSRUN_region_Compression         |      Row Compression (type convertions + compression/ encoding)
+BFSRUN_region_Decompression       |    Row Decompression (type convertions + decompression/ encoding)
+CPUSIMD_region_encode             |                          compression or decompression/ encoding
+BFSRUN_region_vreduceCompr        |   Column Compression (type convertions + compression/ encoding)
+BFSRUN_region_vreduceDecompr      | Column Decompression (type convertions + decompression/ encoding)
 
 ## system variables
 The following example asumes an installation of CUBE and scalasca in `$HOME/cube` and `$HOME/scorep`
