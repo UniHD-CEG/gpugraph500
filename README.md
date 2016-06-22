@@ -16,7 +16,7 @@
 - [Options](#options)
   - [build options](#build-options)
   - [execution options](#execution-options)
-  - [codecs currently supported by the gpugraph500 binary](#codecs-currently-supported-by-the-gpugraph500-binary)
+  - [currently supported codecs in the gpugraph500 binary](#currently-supported-codecs-in-the-gpugraph500-binary)
 - [Troubleshooting](#troubleshooting)
 - [Future work](#future-work)
 - [Author](#author)
@@ -34,7 +34,7 @@ This work looks at optimizations to reduce the communication overhead of an acce
 
 # Requirements
 - C compiler. C++ Compiler with c++11 support.
-- An MPI implementation: OpenMPI (MPICH2 is not supported)
+- A MPI implementation: OpenMPI (MPICH2 is not fully supported)
 - To use CUDA-BFS or CUDA-compression: CUDA 6+ support.
 - To use SIMD compression: SSE2 support (SSE4+ support recommended)
 - To use SIMD+ compression SSE2 support. (Optional)
@@ -64,7 +64,7 @@ First build: (or when editing `configure.ac`)
 
 ```
 $ cd cpu_2d
-$ ./autogen.sh # ./configure options: (1)
+$ ./autogen.sh [option1 option2 ...] # ./configure options: (1)
 $ make
 ```
 
@@ -72,11 +72,11 @@ Consecutive builds:
 
 ```
 $ cd cpu_2d
-$ ./configure --enable-aggressive-optimizations --enable-ptxa-optimizations  --disable-openmp --enable-compression --enable-simd  # ./configure options (1)
+$ ./configure [option1 option2 ...]  # ./configure options (1)
 $ make
 ```
 
-(1) for further help, run `./configure --help`
+(1) for further help check the [available options](#build-options) or run `./configure --help`
 
 # Run
 
@@ -87,13 +87,16 @@ $ cd eval/
 $ sbatch o16p8n.rsh 22 # (Replace 22 with Scale Factor)
 ```
 
-## Run (using MPI)
+## Run (using MPIRUN)
 
 ```
 $ cd cpu_2d/
-$ mpirun -np 16 ../cpu_2d/g500 -s 22 -C 4 -gpus 1 -qs 2 -be "s4-bp128-d4" -btr 64 -btc 64 # available codecs listed below
+$ mpirun -np 16 ../cpu_2d/g500 -s 22 -C 4 -gpus 1 -qs 2 -be "s4-bp128-d4" -btr 64 -btc 64
 ```
 See a full description of the [options](#execution-options) below.
+
+See a full description of the [available codecs](#currently-supported-codecs-in-the-gpugraph500-binary) below.
+
 
 runs a test with 16 proccesses in 8 nodes, using Scale Factor 21
 
@@ -165,6 +168,8 @@ Flag -m in ´cube_stat´ may be set to: time or bytes_sent
 $ scorep-score -r [zone1,zone2,zone3....] profile.cubex
 ```
 
+See the available [zones](#zones) section, for further information.
+
 * Using CUBE (graphical interface)
 ```
 $ $HOME/cube/bin/cube profile.cubex
@@ -172,7 +177,7 @@ $ $HOME/cube/bin/cube profile.cubex
 
 
 # Options
-## codecs currently supported by the gpugraph500 binary
+## currently supported codecs in the gpugraph500 binary
 
 Lemire's SIMDCompression codecs | Notes
 ------------------------------- | ------------------------------------:
@@ -303,7 +308,7 @@ Optional Features:
                           OpenMP will be enabled. This option applies to
                           general C and C++ files. (Disabled by default)
   --enable-cuda           Use the CUDA implementation of the BFS runs.
-                          Requires NVIDIA hardware support. (Enabled by default)
+                          Requires NVIDIA hardware support. Enabled by default
   --enable-ptxa-optimizations
                           It is related with optimizations. Selects whether
                           CUDA assembly (PTXAS) will be optimized or not. This
@@ -311,10 +316,7 @@ Optional Features:
                           (default). The default PTXAS optimization is -O3.
                           (Disabled by default)
   --enable-nvidia-architecture= fermi|kepler|auto|detect
-                          It is related with optimizations.. Selects the
-                          NVIDIA target architecture. Requires --enable-cuda
-                          to be selected (default). Default option is
-                          'detect'. In case detection does not succeed 'all'
+                          Selects the NVIDIA target architecture. Requires --enable-cuda to be selected (default). Default option is 'detect'. In case detection does not succeed 'all'
                           mode is selected.
   --enable-debug          Provides extra traces at runtime. (Disabled by
                           default)
@@ -333,17 +335,6 @@ Optional Features:
                           Turn on C++ compiler warnings. Default selection is
                           maximum
   --enable-iso-cxx        Try to warn if code is not ISO C++
-  --disable-doxygen-doc   don't generate any doxygen documentation
-  --disable-doxygen-dot   don't generate graphics for doxygen documentation
-  --enable-doxygen-man    generate doxygen manual pages
-  --enable-doxygen-rtf    generate doxygen RTF documentation
-  --enable-doxygen-xml    generate doxygen XML documentation
-  --enable-doxygen-chm    generate doxygen compressed HTML help documentation
-  --enable-doxygen-chi    generate doxygen seperate compressed HTML help index
-                          file
-  --disable-doxygen-html  don't generate doxygen plain HTML documentation
-  --enable-doxygen-ps     generate doxygen PostScript documentation
-  --enable-doxygen-pdf    generate doxygen PDF documentation
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -391,7 +382,7 @@ Report bugs to the package provider.
 * -C Number - (2^SCALE_FACTOR) - This is also the value used in the the -np flag of `mpirun`
 * -gpus Number - Number of GPUs per node. Currently, only the value 1 is fully tested.
 * -qs Number - Queue size as in B40C implementation, from 1 to 2 (e.g. 1.3).
-* -be "Codec" - [Codec](#codecs-currently-supported-by-the-gpugraph500-binary) used when compression is enabled (--enable-compression)
+* -be "Codec" - [Codec](#currently-supported-codecs-in-the-gpugraph500-binary) used when compression is enabled (--enable-compression)
 * -btc Number - Row Threshoold number: Frontier queue minimum size at which compression would start. Allows disabling compression for small queue sizes.
 
 e.g. `g500 -s 22 -C 4 -gpus 1 -qs 1.1 -be "s4-bp128-d4" -btc 64`
@@ -429,7 +420,7 @@ Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of H
 
 # Future work
 
-* Embed the [compression encoding routines](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd/include/codecfactory.h#L106) in the [communication module](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L536) (e.g lambda functions). The [current implementation](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/compression.hh#L15) does not allow code inlining by the Linker (due to the use of the `virtual` keyword).
+* Embed the [compression encoding routines](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd/include/codecfactory.h#L106) in the [communication module](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L536) (e.g. by using lambda functions). The [current implementation](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/compression.hh#L15) does not allow code inlining by the Linker (due to the use of the `virtual` keyword).
 
 * Remove [types convertion](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd.hh#L93) in the compression calls (Using a [GPU PFOR-compression implementation?](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/gpusimt/cudacompress.cu#L196)).
 
