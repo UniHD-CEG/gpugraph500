@@ -58,7 +58,7 @@
 <ul>
 <li><a href="#build-options">build options</a></li>
 <li><a href="#execution-options">execution options</a></li>
-<li><a href="#codecs-currently-supported-by-the-gpugraph500-binary">codecs currently supported by the gpugraph500 binary</a></li>
+<li><a href="#currently-supported-codecs-in-the-gpugraph500-binary">currently supported codecs in the gpugraph500 binary</a></li>
 </ul>
 </li>
 <li><a href="#troubleshooting">Troubleshooting</a></li>
@@ -80,7 +80,7 @@
 
 <ul>
 <li>C compiler. C++ Compiler with c++11 support.</li>
-<li>An MPI implementation: OpenMPI (MPICH2 is not supported)</li>
+<li>A MPI implementation: OpenMPI (MPICH2 is not fully supported)</li>
 <li>To use CUDA-BFS or CUDA-compression: CUDA 6+ support.</li>
 <li>To use SIMD compression: SSE2 support (SSE4+ support recommended)</li>
 <li>To use SIMD+ compression SSE2 support. (Optional)</li>
@@ -115,18 +115,18 @@ $ cd gpugraph500
 <p>First build: (or when editing <code>configure.ac</code>)</p>
 
 <pre><code>$ cd cpu_2d
-$ ./autogen.sh # ./configure options: (1)
+$ ./autogen.sh [option1 option2 ...] # ./configure options: (1)
 $ make
 </code></pre>
 
 <p>Consecutive builds:</p>
 
 <pre><code>$ cd cpu_2d
-$ ./configure --enable-aggressive-optimizations --enable-ptxa-optimizations  --disable-openmp --enable-compression --enable-simd  # ./configure options (1)
+$ ./configure [option1 option2 ...]  # ./configure options (1)
 $ make
 </code></pre>
 
-<p>(1) for further help, run <code>./configure --help</code></p>
+<p>(1) for further help check the <a href="#build-options">available options</a> or run <code>./configure --help</code></p>
 
 <h1>
 <a id="run" class="anchor" href="#run" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Run</h1>
@@ -139,13 +139,15 @@ $ sbatch o16p8n.rsh 22 # (Replace 22 with Scale Factor)
 </code></pre>
 
 <h2>
-<a id="run-using-mpi" class="anchor" href="#run-using-mpi" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Run (using MPI)</h2>
+<a id="run-using-mpirun" class="anchor" href="#run-using-mpirun" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Run (using MPIRUN)</h2>
 
 <pre><code>$ cd cpu_2d/
-$ mpirun -np 16 ../cpu_2d/g500 -s 22 -C 4 -gpus 1 -qs 2 -be "s4-bp128-d4" -btr 64 -btc 64 # available codecs listed below
+$ mpirun -np 16 ../cpu_2d/g500 -s 22 -C 4 -gpus 1 -qs 2 -be "s4-bp128-d4" -btr 64 -btc 64
 </code></pre>
 
 <p>See a full description of the <a href="#execution-options">options</a> below.</p>
+
+<p>See a full description of the <a href="#currently-supported-codecs-in-the-gpugraph500-binary">available codecs</a> below.</p>
 
 <p>runs a test with 16 proccesses in 8 nodes, using Scale Factor 21</p>
 
@@ -263,6 +265,8 @@ EOF
 <pre><code>$ scorep-score -r [zone1,zone2,zone3....] profile.cubex
 </code></pre>
 
+<p>See the available <a href="#zones">zones</a> section, for further information.</p>
+
 <ul>
 <li>Using CUBE (graphical interface)</li>
 </ul>
@@ -274,7 +278,7 @@ EOF
 <a id="options" class="anchor" href="#options" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Options</h1>
 
 <h2>
-<a id="codecs-currently-supported-by-the-gpugraph500-binary" class="anchor" href="#codecs-currently-supported-by-the-gpugraph500-binary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>codecs currently supported by the gpugraph500 binary</h2>
+<a id="currently-supported-codecs-in-the-gpugraph500-binary" class="anchor" href="#currently-supported-codecs-in-the-gpugraph500-binary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>currently supported codecs in the gpugraph500 binary</h2>
 
 <table>
 <thead>
@@ -482,7 +486,7 @@ Optional Features:
                           OpenMP will be enabled. This option applies to
                           general C and C++ files. (Disabled by default)
   --enable-cuda           Use the CUDA implementation of the BFS runs.
-                          Requires NVIDIA hardware support. (Enabled by default)
+                          Requires NVIDIA hardware support. Enabled by default
   --enable-ptxa-optimizations
                           It is related with optimizations. Selects whether
                           CUDA assembly (PTXAS) will be optimized or not. This
@@ -490,10 +494,7 @@ Optional Features:
                           (default). The default PTXAS optimization is -O3.
                           (Disabled by default)
   --enable-nvidia-architecture= fermi|kepler|auto|detect
-                          It is related with optimizations.. Selects the
-                          NVIDIA target architecture. Requires --enable-cuda
-                          to be selected (default). Default option is
-                          'detect'. In case detection does not succeed 'all'
+                          Selects the NVIDIA target architecture. Requires --enable-cuda to be selected (default). Default option is 'detect'. In case detection does not succeed 'all'
                           mode is selected.
   --enable-debug          Provides extra traces at runtime. (Disabled by
                           default)
@@ -512,17 +513,6 @@ Optional Features:
                           Turn on C++ compiler warnings. Default selection is
                           maximum
   --enable-iso-cxx        Try to warn if code is not ISO C++
-  --disable-doxygen-doc   don't generate any doxygen documentation
-  --disable-doxygen-dot   don't generate graphics for doxygen documentation
-  --enable-doxygen-man    generate doxygen manual pages
-  --enable-doxygen-rtf    generate doxygen RTF documentation
-  --enable-doxygen-xml    generate doxygen XML documentation
-  --enable-doxygen-chm    generate doxygen compressed HTML help documentation
-  --enable-doxygen-chi    generate doxygen seperate compressed HTML help index
-                          file
-  --disable-doxygen-html  don't generate doxygen plain HTML documentation
-  --enable-doxygen-ps     generate doxygen PostScript documentation
-  --enable-doxygen-pdf    generate doxygen PDF documentation
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -574,7 +564,7 @@ Report bugs to the package provider.
 </li>
 <li>-gpus Number - Number of GPUs per node. Currently, only the value 1 is fully tested.</li>
 <li>-qs Number - Queue size as in B40C implementation, from 1 to 2 (e.g. 1.3).</li>
-<li>-be "Codec" - <a href="#codecs-currently-supported-by-the-gpugraph500-binary">Codec</a> used when compression is enabled (--enable-compression)</li>
+<li>-be "Codec" - <a href="#currently-supported-codecs-in-the-gpugraph500-binary">Codec</a> used when compression is enabled (--enable-compression)</li>
 <li>-btc Number - Row Threshoold number: Frontier queue minimum size at which compression would start. Allows disabling compression for small queue sizes.</li>
 </ul>
 
@@ -625,7 +615,7 @@ School of Computer Science at Georgia Institute of Technology</p>
 <a id="future-work" class="anchor" href="#future-work" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Future work</h1>
 
 <ul>
-<li><p>Embed the <a href="https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd/include/codecfactory.h#L106">compression encoding routines</a> in the <a href="https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L536">communication module</a> (e.g lambda functions). The <a href="https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/compression.hh#L15">current implementation</a> does not allow code inlining by the Linker (due to the use of the <code>virtual</code> keyword).</p></li>
+<li><p>Embed the <a href="https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd/include/codecfactory.h#L106">compression encoding routines</a> in the <a href="https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L536">communication module</a> (e.g. by using lambda functions). The <a href="https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/compression.hh#L15">current implementation</a> does not allow code inlining by the Linker (due to the use of the <code>virtual</code> keyword).</p></li>
 <li><p>Remove <a href="https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd.hh#L93">types convertion</a> in the compression calls (Using a <a href="https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/gpusimt/cudacompress.cu#L196">GPU PFOR-compression implementation?</a>).</p></li>
 </ul>
 
