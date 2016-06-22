@@ -29,7 +29,7 @@
 <a href="#installation">Installation</a>
 
 <ul>
-<li><a href="#downloading-and-decompressing">downloading and decompressing:</a></li>
+<li><a href="#downloading-and-decompressing">downloading and decompressing</a></li>
 <li><a href="#using-git">using git</a></li>
 </ul>
 </li>
@@ -93,7 +93,7 @@
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h1>
 
 <h2>
-<a id="downloading-and-decompressing" class="anchor" href="#downloading-and-decompressing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>downloading and decompressing:</h2>
+<a id="downloading-and-decompressing" class="anchor" href="#downloading-and-decompressing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>downloading and decompressing</h2>
 
 <pre><code>$ wget https://github.com/UniHD-CEG/gpugraph500/archive/master.zip
 $ unzip master.zip
@@ -171,39 +171,39 @@ $ mpirun -np 16 ../cpu_2d/g500 -s 22 -C 4 -gpus 1 -qs 2 -be "s4-bp128-d4" -btr 6
 <tbody>
 <tr>
 <td>BFSRUN_region_vertexBroadcast</td>
-<td align="right">Initial vertices broadcast (No compression implemented)</td>
+<td align="right">Initial vertices broadcast (No compression)</td>
 </tr>
 <tr>
 <td>BFSRUN_region_localExpansion</td>
-<td align="right">Predecessor List Reduction (No compression implemented)</td>
+<td align="right">Predecessor List Reduction (No compression)</td>
 </tr>
 <tr>
 <td>BFSRUN_region_columnCommunication</td>
-<td align="right">Column communication phase (Implemented Compression)</td>
+<td align="right">Column communication phase (Compression)</td>
 </tr>
 <tr>
 <td>BFSRUN_region_rowCommunication</td>
-<td align="right">Row communication phase (Implemented Compression)</td>
+<td align="right">Row communication phase (Compression)</td>
 </tr>
 <tr>
 <td>BFSRUN_region_Compression</td>
-<td align="right">Row Compression (type convertions + Compression encoding)</td>
+<td align="right">Row Compression (type convertions + compression/ encoding)</td>
 </tr>
 <tr>
 <td>BFSRUN_region_Decompression</td>
-<td align="right">Row Compression (type convertions + Decompression encoding)</td>
+<td align="right">Row Decompression (type convertions + decompression/ encoding)</td>
 </tr>
 <tr>
 <td>CPUSIMD_region_encode</td>
-<td align="right">Compression or decompression encoding</td>
+<td align="right">compression or decompression/ encoding</td>
 </tr>
 <tr>
 <td>BFSRUN_region_vreduceCompr</td>
-<td align="right">Column Compression (type convertions + Compression encoding)</td>
+<td align="right">Column Compression (type convertions + compression/ encoding)</td>
 </tr>
 <tr>
 <td>BFSRUN_region_vreduceDecompr</td>
-<td align="right">Column Compression (type convertions + Decompression encoding)</td>
+<td align="right">Column Decompression (type convertions + decompression/ encoding)</td>
 </tr>
 </tbody>
 </table>
