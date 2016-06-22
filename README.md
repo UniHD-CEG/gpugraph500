@@ -25,10 +25,10 @@
 
 
 # Introduction
+
 Recent research projects have investigated partitioning, acceleration, and data reduction techniques for improving the performance of Breadth First Search (BFS) and the related HPC benchmark, Graph500. However, few implementations have focused on cloud-based systems like Amazon's Web Services, which differ from HPC systems in several ways, most importantly in terms of network interconnect.
 
-
-This work looks at optimizations to reduce the communication overhead of an accelerated, distributed BFS on an HPC system and a smaller cloud-like system that contains GPUs. We demonstrate the effects of an efficient 2D partitioning scheme and allreduce implementation, as well as different CPU-based compression schemes for reducing the overall amount of data shared between nodes. Timing and Score-P profiling results demonstrate a dramatic reduction in row and column frontier queue data (up to 91%) and show how compression can improve performance for a bandwidth-limited cluster.
+This codebase is evaluated in a related paper, Optimizing Communication for a 2D-Partitioned Scalable BFS, presented at the 2016 High Performance Extreme Computing Conference (HPEC 2016). This implementation supports optimizations to reduce the communication overhead of an accelerated, distributed BFS on an HPC system and a smaller cloud-like system that contains GPUs. In particular, this code implements an efficient 2D partitioning scheme and allreduce implementation, as well as different CPU-based compression schemes for reducing the overall amount of data shared between nodes. Timing and Score-P profiling results detailed in the paper demonstrate a dramatic reduction in row and column frontier queue data (up to 91%) and show that compression can improve performance for a bandwidth-limited cluster.
 
 
 
@@ -69,7 +69,6 @@ $ make
 ```
 
 Consecutive builds:
-
 ```
 $ cd cpu_2d
 $ ./configure --enable-aggressive-optimizations --enable-ptxa-optimizations  --disable-openmp --enable-compression --enable-simd  # ./configure options (1)
@@ -95,7 +94,7 @@ $ mpirun -np 16 ../cpu_2d/g500 -s 22 -C 4 -gpus 1 -qs 2 -be "s4-bp128-d4" -btr 6
 ```
 See a full description of the [options](#execution-options) below.
 
-runs a test with 16 proccesses in 8 nodes, using Scale Factor 21
+runs a test with 16 processes on 8 nodes, using Scale Factor 21
 
 # Profiling
 This application allows the code to be instrumented in zones using Score-P (Scalasca) with low overhead.
@@ -147,7 +146,7 @@ The variable `G500_ENABLE_RUNTIME_SCALASCA` set to yes will enable the required 
 See TurboPFOR in [Resources](#resources)
 
 ## instrumentation
-Results will be stored on folders with the format `scorep-*`.
+Results will be stored in folders with the format `scorep-*`.
 
 Possible ways of instrumenting:
 
@@ -431,7 +430,7 @@ Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of H
 
 * Embed the [compression encoding routines](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd/include/codecfactory.h#L106) in the [communication module](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L536) (e.g lambda functions). The [current implementation](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/compression.hh#L15) does not allow code inlining by the Linker (due to the use of the `virtual` keyword).
 
-* Remove [types convertion](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd.hh#L93) in the compression calls (Using a [GPU PFOR-compression implementation?](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/gpusimt/cudacompress.cu#L196)).
+* Remove [type conversion](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd.hh#L93) in the compression calls (Using a [GPU PFOR-compression implementation?](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/gpusimt/cudacompress.cu#L196)). The associated paper demonstrates that while compression reduces overheads and data movement, the type conversion from 64 bit to 32 bit values for CPU-based compression can outweigh communication savings. 
 
 # Resources
 [D. Lemire's SIMDCompression](https://github.com/lemire/SIMDCompressionAndIntersection)
