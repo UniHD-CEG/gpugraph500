@@ -420,7 +420,6 @@ Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of H
 
 * Add compression to the [Predecessor list reduction](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L230) phase (Once rows and columns are compressed, this represents the of the total data movement). Currently, this process is done by (i) each node computes its Frontier Queue verices by aplying its Frontier Queue Bitmap and transmit this to the rest using a P2P fashion; the same process is done with the node's predecessor list and the node's predecessor list Bitmap. (ii) This new sequence of integers is transmitted in an [MPI_AllGatherv](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L1081) fashion.
 As result of applying the bitmap and then transmitting, the transmited data results on a random-like, non ordered sequence of integers, and thus it loses the data characteristics that enable it for achieving the same reduction that in Row and Column transfers.
-
 A new [approach](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L1001), consisting on compressing first and then sending the compressed four data structures (FQ, FQ's bitmap, PL, PL's bitmap) through MPI_AllGatherv would enable each node to compute the general Predeccesor list avoiding the uncompressed P2P and [MPI_AllGatherv](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L1081) transfers.
 
 # Resources
