@@ -156,7 +156,7 @@ Possible ways of instrumenting:
 ```
 $HOME/cube/bin/cube_stat -p -m time  -r BFSRUN_region_Compression,BFSRUN_region_Decompression,CPUSIMD_region_encode,BFSRUN_region_vreduceCompr,BFSRUN_region_vreduceDecompr profile.cubex
 ```
-Flag -m in ´cube_stat´ may be set to: time or bytes_sent
+Flag -m in `cube_stat` may be set to: time or bytes_sent
 
 
 * Using scorep-score (text ouptut)
