@@ -33,11 +33,10 @@ This codebase is evaluated in a related paper, Optimizing Communication for a 2D
 
 
 # Requirements
-- C compiler. C++ Compiler with c++11 support.
-- A MPI implementation: OpenMPI (MPICH2 is not fully supported)
-- To use CUDA-BFS or CUDA-compression: CUDA 6+ support.
-- To use SIMD compression: SSE2 support (SSE4+ support recommended)
-- To use SIMD+ compression SSE2 support. (Optional)
+- C compiler; C++ Compiler with c++11 support. (tested on gcc 4.7)
+- MPI implementation: tested on OpenMPI. MPICH2 is not fully supported.
+- CUDA 6+ for NVIDIA GPU-based BFS.
+- SSE2 support (SSE4+ support recommended) for SIMD compression.
 - Scalasca (Score-P) and CUBE4+ for instrumentation and profiling (Optional)
 - System packages: `libtool`, `automake`
 
@@ -64,14 +63,14 @@ First build: (or when editing `configure.ac`)
 
 ```
 $ cd cpu_2d
-$ ./autogen.sh [option1 option2 ...] # ./configure options: (1)
+$ ./autogen.sh [option1 option2 ...] # See (1) below.
 $ make
 ```
 
 Consecutive builds:
 ```
 $ cd cpu_2d
-$ ./configure [option1 option2 ...]  # ./configure options (1)
+$ ./configure [option1 option2 ...]  # See (1) below.
 $ make
 ```
 
@@ -109,11 +108,11 @@ BFSRUN_region_vertexBroadcast     |        Initial vertices broadcast (No compre
 BFSRUN_region_localExpansion      |        Predecessor List Reduction (No compression)
 BFSRUN_region_columnCommunication |           Column communication phase (Compression)
 BFSRUN_region_rowCommunication    |              Row communication phase (Compression)
-BFSRUN_region_Compression         |      Row Compression (type convertions + compression/ encoding)
-BFSRUN_region_Decompression       |    Row Decompression (type convertions + decompression/ encoding)
+BFSRUN_region_Compression         |      Row compression (type convertions + compression/ encoding)
+BFSRUN_region_Decompression       |    Row decompression (type convertions + decompression/ encoding)
 CPUSIMD_region_encode             |                          compression or decompression/ encoding
-BFSRUN_region_vreduceCompr        |   Column Compression (type convertions + compression/ encoding)
-BFSRUN_region_vreduceDecompr      | Column Decompression (type convertions + decompression/ encoding)
+BFSRUN_region_vreduceCompr        |   Column compression (type convertions + compression/ encoding)
+BFSRUN_region_vreduceDecompr      | Column decompression (type convertions + decompression/ encoding)
 
 ## system variables
 The following example asumes an installation of CUBE and scalasca in `$HOME/cube` and `$HOME/scorep`
@@ -365,8 +364,6 @@ Some influential environment variables:
               you have headers in a nonstandard directory <include dir>
   CC          C compiler command
   CPP         C preprocessor
-  DOXYGEN_PAPER_SIZE
-              a4wide (default), a4, letter, legal or executive
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -419,7 +416,12 @@ Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of H
 
 * Embed the [compression encoding routines](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd/include/codecfactory.h#L106) in the [communication module](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L536) (e.g. by using lambda functions). The [current implementation](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/compression.hh#L15) does not allow code inlining by the Linker (due to the use of the `virtual` keyword).
 
-* Remove [type conversion](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd.hh#L93) in the compression calls (Using a [GPU PFOR-compression implementation?](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/gpusimt/cudacompress.cu#L196)). The associated paper demonstrates that while compression reduces overheads and data movement, the type conversion from 64 bit to 32 bit values for CPU-based compression can outweigh communication savings. 
+* Remove [type conversion](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd.hh#L93) in the compression calls (Using a [GPU PFOR-compression implementation?](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/gpusimt/cudacompress.cu#L196)). The associated paper demonstrates that while compression reduces overheads and data movement, the type conversion from 64 bit to 32 bit values for CPU-based compression can outweigh communication savings.
+
+* Add compression to the [Predecessor list reduction](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L230) phase (Once rows and columns are compressed, this represents the of the total data movement). Currently, this process is done by (i) each node computes its Frontier Queue verices by aplying its Frontier Queue Bitmap and transmit this to the rest using a P2P fashion; the same process is done with the node's predecessor list and the node's predecessor list Bitmap. (ii) This new sequence of integers is transmitted in an [MPI_AllGatherv](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L1081) fashion.
+As result of applying the bitmap and then transmitting, the transmited data results on a random-like, non ordered sequence of integers, and thus it loses the data characteristics that enable it for achieving the same reduction that in Row and Column transfers.
+
+A new [approach](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L1001), consisting on compressing first and then sending the compressed four data structures (FQ, FQ's bitmap, PL, PL's bitmap) through MPI_AllGatherv would enable each node to compute the general Predeccesor list avoiding the uncompressed P2P and [MPI_AllGatherv](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/globalbfs.hh#L1081) transfers.
 
 # Resources
 [D. Lemire's SIMDCompression](https://github.com/lemire/SIMDCompressionAndIntersection)
