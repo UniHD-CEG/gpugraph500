@@ -7,7 +7,7 @@
 - [Build](#build)
 - [Run](#run)
   - [Run (using SLURM)](#run-using-slurm)
-  - [Run (using MPI)](#run-using-mpi)
+  - [Run (using MPIRUN)](#run-using-mpirun)
 - [Profiling](#profiling)
   - [zones](#zones)
   - [system variables](#system-variables)
@@ -19,7 +19,7 @@
   - [currently supported codecs in the gpugraph500 binary](#currently-supported-codecs-in-the-gpugraph500-binary)
 - [Troubleshooting](#troubleshooting)
 - [Future work](#future-work)
-- [Author](#author)
+- [Authors](#authors)
 - [License](#license)
 - [Resources](#resources)
 
