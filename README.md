@@ -400,23 +400,31 @@ $ export G500_ENABLE_RUNTIME_SCALASCA=no
 
 # Authors
 
-Computer Engineering Group at Ruprecht-Karls University of Heidelberg
-and
+Computer Engineering Group at Ruprecht-Karls University of Heidelberg,
+
 School of Computer Science at Georgia Institute of Technology
 
 # License
-- Duane Merrill's BC40 (back40computing) is licenced under [Apache 2 Licence.](https://github.com/UniHD-CEG/gpugraph500/tree/master/b40c/LICENSE.TXT)
+- Duane Merrill's BC40 (back40computing) is licenced under [BSD Licence.](https://github.com/UniHD-CEG/gpugraph500/tree/master/b40c/LICENSE.TXT)
 - SIMDcompressionAndIntersection is licenced under [Apache 2 Licence.](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/cpusimd/LICENSE)
 - Alenka GPU database engine is licensed under [Apache 2 License.](https://github.com/UniHD-CEG/gpugraph500/blob/master/cpu_2d/compression/gpusimt/cudacompress.cu)
 
 
-Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of Heidelberg, Germany and School of Computer Science at Georgia Institute of Technology, USA. All rights reserved.
+Copyright (c) 2016, Computer Engineering Group at Ruprecht-Karls University of Heidelberg, Germany. All rights reserved.
+
+Copyright (c) 2016, School of Computer Science at Georgia Institute of Technology, USA. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
 * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-* Neither the name of the organization nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+* Neither the name of
+
+Ruprecht-Karls University of Heidelberg,
+
+Georgia Institute of Technology
+
+ nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
